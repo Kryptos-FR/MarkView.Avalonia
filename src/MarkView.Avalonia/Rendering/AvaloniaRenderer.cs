@@ -1,0 +1,164 @@
+using Avalonia.Controls;
+using Avalonia.Controls.Documents;
+using Markdig.Renderers;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
+using MarkView.Avalonia.Rendering.Containers;
+using AvaloniaInline = Avalonia.Controls.Documents.Inline;
+
+namespace MarkView.Avalonia.Rendering;
+
+/// <summary>
+/// Renders a Markdig <see cref="MarkdownDocument"/> into an Avalonia control tree.
+/// </summary>
+public class AvaloniaRenderer : RendererBase
+{
+    private readonly Stack<IContainer> _stack = new();
+
+    /// <summary>
+    /// The root panel that contains all rendered block-level elements.
+    /// </summary>
+    public StackPanel RootPanel { get; }
+
+    /// <summary>
+    /// Optional base URI for resolving relative image and link paths.
+    /// </summary>
+    public Uri? BaseUri { get; set; }
+
+    /// <summary>
+    /// Raised when a hyperlink is clicked.
+    /// </summary>
+    public event EventHandler<LinkClickedEventArgs>? LinkClicked;
+
+    public AvaloniaRenderer()
+    {
+        RootPanel = new StackPanel { Spacing = 8 };
+        _stack.Push(new BlockContainer(RootPanel));
+        LoadRenderers();
+    }
+
+    public override object Render(MarkdownObject markdownObject)
+    {
+        Write(markdownObject);
+        return RootPanel;
+    }
+
+    /// <summary>
+    /// Registers all built-in object renderers. Override to customize.
+    /// </summary>
+    protected virtual void LoadRenderers()
+    {
+        // Block renderers — added in subsequent tasks
+        // Inline renderers — added in subsequent tasks
+    }
+
+    /// <summary>
+    /// Pushes a panel as a block container onto the stack.
+    /// </summary>
+    public void Push(Panel panel)
+    {
+        _stack.Push(new BlockContainer(panel));
+    }
+
+    /// <summary>
+    /// Pushes an inline collection as an inline container onto the stack.
+    /// </summary>
+    public void Push(InlineCollection inlines)
+    {
+        _stack.Push(new InlineContainer(inlines));
+    }
+
+    /// <summary>
+    /// Pops the top container from the stack.
+    /// </summary>
+    public void Pop()
+    {
+        _stack.Pop();
+    }
+
+    /// <summary>
+    /// Adds a block-level control to the current block container.
+    /// </summary>
+    public void WriteBlock(Control control)
+    {
+        if (_stack.Peek() is BlockContainer block)
+            block.Add(control);
+    }
+
+    /// <summary>
+    /// Adds an inline to the current inline container.
+    /// </summary>
+    public void WriteInline(AvaloniaInline inline)
+    {
+        if (_stack.Peek() is InlineContainer container)
+            container.Add(inline);
+    }
+
+    /// <summary>
+    /// Adds a control wrapped in InlineUIContainer to the current inline container.
+    /// </summary>
+    public void WriteInline(Control control)
+    {
+        if (_stack.Peek() is InlineContainer container)
+            container.Add(control);
+    }
+
+    /// <summary>
+    /// Writes all inlines of a leaf block (paragraph, heading, etc.) into the current inline container.
+    /// </summary>
+    public void WriteLeafInline(LeafBlock leafBlock)
+    {
+        Markdig.Syntax.Inlines.Inline? inline = leafBlock.Inline;
+        while (inline != null)
+        {
+            Write(inline);
+            inline = inline.NextSibling;
+        }
+    }
+
+    /// <summary>
+    /// Writes the raw text lines of a leaf block (code blocks).
+    /// </summary>
+    public void WriteLeafRawLines(LeafBlock leafBlock)
+    {
+        if (leafBlock.Lines.Lines == null)
+            return;
+
+        var lines = leafBlock.Lines;
+        for (int i = 0; i < lines.Count; i++)
+        {
+            var line = lines.Lines[i];
+            if (i > 0)
+                WriteInline(new LineBreak());
+            WriteInline(new Run(line.Slice.ToString()));
+        }
+    }
+
+    /// <summary>
+    /// Resolves a URL against the <see cref="BaseUri"/> if set and the URL is relative.
+    /// </summary>
+    public string ResolveUrl(string url)
+    {
+        if (BaseUri != null && Uri.TryCreate(url, UriKind.Relative, out _))
+        {
+            return new Uri(BaseUri, url).ToString();
+        }
+        return url;
+    }
+
+    internal void OnLinkClicked(string url)
+    {
+        LinkClicked?.Invoke(this, new LinkClickedEventArgs(url));
+    }
+}
+
+/// <summary>
+/// Event args for hyperlink click events.
+/// </summary>
+public class LinkClickedEventArgs(string url) : EventArgs
+{
+    /// <summary>
+    /// The URL of the clicked link.
+    /// </summary>
+    public string Url { get; } = url;
+}
