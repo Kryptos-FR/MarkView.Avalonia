@@ -3,5 +3,12 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- NuGet shared metadata (opt-in packaging per project) -->
+    <IsPackable>false</IsPackable>
+    <Authors>Nicolas Musset</Authors>
+    <PackageProjectUrl>https://github.com/Kryptos-FR/MarkView.Avalonia</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Kryptos-FR/MarkView.Avalonia</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>
