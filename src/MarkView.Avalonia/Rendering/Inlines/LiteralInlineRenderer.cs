@@ -10,6 +10,9 @@ public class LiteralInlineRenderer : AvaloniaObjectRenderer<LiteralInline>
 {
     protected override void Write(AvaloniaRenderer renderer, LiteralInline obj)
     {
+        if (obj.Content.IsEmpty)
+            return;
+
         renderer.WriteInline(new Run(obj.Content.ToString()));
     }
 }

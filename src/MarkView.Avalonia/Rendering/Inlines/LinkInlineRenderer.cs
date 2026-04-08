@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Media;
 using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Inlines;
@@ -20,7 +21,7 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
         var url = renderer.ResolveUrl(obj.Url ?? string.Empty);
 
         // Build the button content as a TextBlock with inlines
-        var contentTextBlock = new TextBlock();
+        var contentTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap };
         renderer.Push(contentTextBlock.Inlines!);
         renderer.WriteChildren(obj);
         renderer.Pop();
@@ -34,6 +35,9 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
             button.NavigateUri = uri;
 
         button.Classes.Add("markdown-link");
+
+        if (!string.IsNullOrEmpty(obj.Title))
+            ToolTip.SetTip(button, obj.Title);
 
         button.Click += (_, _) => renderer.OnLinkClicked(url);
 
