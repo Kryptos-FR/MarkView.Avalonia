@@ -1,0 +1,99 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mv="using:MarkView.Avalonia">
+
+  <!-- Headings -->
+  <Style Selector="TextBlock.markdown-h1">
+    <Setter Property="FontSize" Value="28" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Margin" Value="0,8,0,4" />
+  </Style>
+  <Style Selector="TextBlock.markdown-h2">
+    <Setter Property="FontSize" Value="24" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Margin" Value="0,8,0,4" />
+  </Style>
+  <Style Selector="TextBlock.markdown-h3">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Margin" Value="0,6,0,2" />
+  </Style>
+  <Style Selector="TextBlock.markdown-h4">
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Margin" Value="0,4,0,2" />
+  </Style>
+  <Style Selector="TextBlock.markdown-h5">
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Margin" Value="0,4,0,2" />
+  </Style>
+  <Style Selector="TextBlock.markdown-h6">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Margin" Value="0,4,0,2" />
+  </Style>
+
+  <!-- Paragraphs -->
+  <Style Selector="TextBlock.markdown-paragraph">
+    <Setter Property="Margin" Value="0,2" />
+  </Style>
+
+  <!-- Code blocks -->
+  <Style Selector="Border.markdown-code-block">
+    <Setter Property="Background" Value="#1E1E1E" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="Margin" Value="0,4" />
+  </Style>
+  <Style Selector="Border.markdown-code-block > TextBlock">
+    <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="#D4D4D4" />
+  </Style>
+
+  <!-- Inline code -->
+  <Style Selector="Border.markdown-code-inline">
+    <Setter Property="Background" Value="#2D2D2D" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="Padding" Value="4,1" />
+  </Style>
+  <Style Selector="Border.markdown-code-inline > TextBlock">
+    <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="#CE9178" />
+  </Style>
+
+  <!-- Blockquote -->
+  <Style Selector="Border.markdown-blockquote">
+    <Setter Property="BorderBrush" Value="#4A9ECC" />
+    <Setter Property="BorderThickness" Value="3,0,0,0" />
+    <Setter Property="Padding" Value="12,4" />
+    <Setter Property="Margin" Value="0,4" />
+    <Setter Property="Opacity" Value="0.85" />
+  </Style>
+
+  <!-- Lists -->
+  <Style Selector="StackPanel.markdown-list">
+    <Setter Property="Margin" Value="16,4,0,4" />
+  </Style>
+
+  <!-- Thematic break -->
+  <Style Selector="Separator.markdown-thematic-break">
+    <Setter Property="Margin" Value="0,8" />
+  </Style>
+
+  <!-- Images -->
+  <Style Selector="Image.markdown-image">
+    <Setter Property="MaxWidth" Value="800" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Margin" Value="0,4" />
+  </Style>
+
+  <!-- Links -->
+  <Style Selector="HyperlinkButton.markdown-link">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+</Styles>
