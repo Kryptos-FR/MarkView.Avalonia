@@ -58,6 +58,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new ThematicBreakRenderer());
         ObjectRenderers.Add(new QuoteBlockRenderer());
         ObjectRenderers.Add(new HtmlBlockRenderer());
+        ObjectRenderers.Add(new TableRenderer());
 
         // Inline renderers
         ObjectRenderers.Add(new LiteralInlineRenderer());

@@ -96,4 +96,20 @@
     <Setter Property="Cursor" Value="Hand" />
   </Style>
 
+  <!-- Tables -->
+  <Style Selector="Grid.markdown-table">
+    <Setter Property="Margin" Value="0,4" />
+  </Style>
+  <Style Selector="Border.markdown-table-cell">
+    <Setter Property="BorderBrush" Value="#40808080" />
+    <Setter Property="BorderThickness" Value="0,0,1,1" />
+    <Setter Property="Padding" Value="8,4" />
+  </Style>
+  <Style Selector="Border.markdown-table-header">
+    <Setter Property="Background" Value="#20808080" />
+  </Style>
+  <Style Selector="Border.markdown-table-header > StackPanel > TextBlock">
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
 </Styles>
