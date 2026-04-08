@@ -11,7 +11,6 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Markdig" />
-    <PackageReference Include="MinVer" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Themes\**" />

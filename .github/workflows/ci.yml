@@ -22,3 +22,5 @@ jobs:
     permissions:
       id-token: write
     uses: ./.github/workflows/publish.yml
+    with:
+      dry-run: true

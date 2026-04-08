@@ -2,7 +2,17 @@ name: Publish
 
 on:
   workflow_call:
+    inputs:
+      dry-run:
+        type: boolean
+        default: false
+        description: If true, pack and print the version but do not push to NuGet.org
   workflow_dispatch:
+    inputs:
+      dry-run:
+        type: boolean
+        default: true
+        description: If true, pack and print the version but do not push to NuGet.org
 
 jobs:
   publish:
@@ -11,9 +21,10 @@ jobs:
       id-token: write  # required for GitHub OIDC token exchange with NuGet.org
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # MinVer needs full history to read git tags
-          fetch-tags: true
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -26,13 +37,18 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Pack
-        run: dotnet pack src/MarkView.Avalonia/MarkView.Avalonia.csproj --no-build --configuration Release --output ./nupkgs
+        run: dotnet pack src/MarkView.Avalonia/MarkView.Avalonia.csproj --no-build --configuration Release -p:Version=${{ steps.version.outputs.VERSION }} --output ./nupkgs
+
+      - name: Show package version
+        run: echo "Package version => ${{ steps.version.outputs.VERSION }}"
 
       - name: Login to NuGet.org
+        if: ${{ !inputs.dry-run }}
         uses: NuGet/login@v1
         id: login
         with:
           user: ${{ vars.NUGET_USER }}
 
       - name: Push to NuGet.org
+        if: ${{ !inputs.dry-run }}
         run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

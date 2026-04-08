@@ -18,9 +18,6 @@ jobs:
     runs-on: ${{ inputs.os }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # MinVer needs full history to read git tags
-          fetch-tags: true
 
       - uses: actions/setup-dotnet@v4
         with:
