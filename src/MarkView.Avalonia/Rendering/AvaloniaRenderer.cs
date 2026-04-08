@@ -64,6 +64,9 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new CodeInlineRenderer());
         ObjectRenderers.Add(new LinkInlineRenderer());
         ObjectRenderers.Add(new AutolinkInlineRenderer());
+        ObjectRenderers.Add(new LineBreakInlineRenderer());
+        ObjectRenderers.Add(new DelimiterInlineRenderer());
+        ObjectRenderers.Add(new HtmlEntityInlineRenderer());
     }
 
     /// <summary>
