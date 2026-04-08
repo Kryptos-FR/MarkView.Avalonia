@@ -1,12 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>MarkView.Avalonia</RootNamespace>
+    <!-- Packaging -->
+    <IsPackable>true</IsPackable>
+    <PackageId>MarkView.Avalonia</PackageId>
+    <Description>A Markdig-powered markdown viewer control for Avalonia UI.</Description>
+    <PackageTags>avalonia;markdown;markdig;viewer;control</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Markdig" />
+    <PackageReference Include="MinVer" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Themes\**" />
+    <!-- Bundle the repo-root README into the NuGet package -->
+    <None Include="..\..\README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>
