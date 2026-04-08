@@ -3,7 +3,9 @@ using Avalonia.Controls.Documents;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
+using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Rendering.Containers;
+using MarkView.Avalonia.Rendering.Inlines;
 using AvaloniaInline = Avalonia.Controls.Documents.Inline;
 
 namespace MarkView.Avalonia.Rendering;
@@ -48,8 +50,11 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     protected virtual void LoadRenderers()
     {
-        // Block renderers — added in subsequent tasks
-        // Inline renderers — added in subsequent tasks
+        // Block renderers
+        ObjectRenderers.Add(new ParagraphRenderer());
+
+        // Inline renderers
+        ObjectRenderers.Add(new LiteralInlineRenderer());
     }
 
     /// <summary>
