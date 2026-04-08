@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Inlines;
@@ -10,6 +11,7 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// </summary>
 public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {
+    private static readonly HttpClient HttpClient = new();
     protected override void Write(AvaloniaRenderer renderer, LinkInline obj)
     {
         if (obj.IsImage)
@@ -60,6 +62,26 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 
         image.Tag = url;
 
+        // Fire-and-forget async image loading
+        _ = LoadImageAsync(image, url);
+
         renderer.WriteInline(image);
+    }
+
+    private static async Task LoadImageAsync(Image image, string url)
+    {
+        try
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                return;
+
+            var bytes = await HttpClient.GetByteArrayAsync(uri);
+            using var stream = new MemoryStream(bytes);
+            image.Source = new Bitmap(stream);
+        }
+        catch
+        {
+            // Image failed to load — leave blank
+        }
     }
 }
