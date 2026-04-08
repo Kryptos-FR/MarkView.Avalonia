@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mv="using:MarkView.Avalonia"
+        xmlns:local="using:MarkView.Avalonia.Demo"
+        x:Class="MarkView.Avalonia.Demo.MainWindow"
+        x:DataType="local:MainViewModel"
+        Title="MarkView.Avalonia Demo - Stride Release Notes"
+        Width="1000" Height="750">
+
+  <DockPanel>
+    <!-- Top bar: version selector -->
+    <Border DockPanel.Dock="Top" Padding="12,8">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="Stride Version:" VerticalAlignment="Center" />
+        <ComboBox ItemsSource="{Binding Versions}"
+                  SelectedIndex="{Binding SelectedVersionIndex}"
+                  MinWidth="120" />
+        <ProgressBar IsIndeterminate="True"
+                     IsVisible="{Binding IsLoading}"
+                     Width="120"
+                     VerticalAlignment="Center" />
+      </StackPanel>
+    </Border>
+
+    <!-- Bottom status bar -->
+    <Border DockPanel.Dock="Bottom" Padding="12,6"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+      <TextBlock Text="{Binding StatusText}" FontSize="12" />
+    </Border>
+
+    <!-- Markdown content -->
+    <mv:MarkdownViewer x:Name="MarkdownView"
+                       Markdown="{Binding Markdown}"
+                       BaseUri="{Binding BaseUri}" />
+  </DockPanel>
+
+</Window>

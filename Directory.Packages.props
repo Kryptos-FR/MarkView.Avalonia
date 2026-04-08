@@ -7,11 +7,13 @@
   <ItemGroup>
     <!-- Core dependencies -->
     <PackageVersion Include="Avalonia" Version="12.0.0" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.0.0" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.0.0" />
     <PackageVersion Include="Avalonia.Markup.Xaml" Version="12.0.0" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.0.0" />
     <PackageVersion Include="Markdig" Version="1.1.2" />
     <!-- Test dependencies -->
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.0.0" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.*" />
     <PackageVersion Include="xunit.v3" Version="3.*" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.*" />
