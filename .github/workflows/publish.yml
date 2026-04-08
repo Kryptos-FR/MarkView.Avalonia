@@ -2,14 +2,13 @@ name: Publish
 
 on:
   workflow_call:
-    secrets:
-      NUGET_API_KEY:
-        required: true
   workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # required for GitHub OIDC token exchange with NuGet.org
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,5 +27,11 @@ jobs:
       - name: Pack
         run: dotnet pack src/MarkView.Avalonia/MarkView.Avalonia.csproj --no-build --configuration Release --output ./nupkgs
 
+      - name: Login to NuGet.org
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ vars.NUGET_USER }}
+
       - name: Push to NuGet.org
-        run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
