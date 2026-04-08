@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Markdig;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Inlines;
@@ -34,5 +36,16 @@ public class EmphasisTests : RenderTestBase
         var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
         var inlines = textBlock.Inlines!.ToList();
         Assert.Equal(4, inlines.Count); // "normal " + Bold + " and " + Italic
+    }
+
+    [AvaloniaFact]
+    public void Strikethrough_text_renders_with_strikethrough_decoration()
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseEmphasisExtras().Build();
+        var result = Render("~~deleted~~", pipeline);
+
+        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
+        var span = Assert.IsType<Span>(Assert.Single(textBlock.Inlines!));
+        Assert.Equal(TextDecorations.Strikethrough, span.TextDecorations);
     }
 }

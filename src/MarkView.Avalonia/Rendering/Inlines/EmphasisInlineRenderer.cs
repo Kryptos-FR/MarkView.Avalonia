@@ -1,4 +1,5 @@
 using Avalonia.Controls.Documents;
+using Avalonia.Media;
 using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Inlines;
@@ -11,6 +12,7 @@ public class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInline>
         {
             '*' or '_' when obj.DelimiterCount == 2 => new Bold(),
             '*' or '_' => new Italic(),
+            '~' when obj.DelimiterCount == 2 => CreateStrikethrough(),
             _ => new Span(),
         };
 
@@ -19,5 +21,12 @@ public class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInline>
         renderer.Pop();
 
         renderer.WriteInline(span);
+    }
+
+    private static Span CreateStrikethrough()
+    {
+        var span = new Span();
+        span.TextDecorations = TextDecorations.Strikethrough;
+        return span;
     }
 }
