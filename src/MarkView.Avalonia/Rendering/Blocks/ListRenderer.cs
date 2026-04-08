@@ -9,12 +9,16 @@ public class ListRenderer : AvaloniaObjectRenderer<ListBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, ListBlock obj)
     {
-        var listPanel = new StackPanel { Spacing = 4 };
+        var listPanel = new StackPanel { Spacing = obj.IsLoose ? 8 : 2 };
         listPanel.Classes.Add("markdown-list");
         if (obj.IsOrdered)
             listPanel.Classes.Add("markdown-list-ordered");
         else
             listPanel.Classes.Add("markdown-list-unordered");
+        if (obj.IsLoose)
+            listPanel.Classes.Add("markdown-list-loose");
+        else
+            listPanel.Classes.Add("markdown-list-tight");
 
         int index = obj.IsOrdered ? (obj.OrderedStart is null ? 1 : int.TryParse(obj.OrderedStart, out var start) ? start : 1) : 0;
 

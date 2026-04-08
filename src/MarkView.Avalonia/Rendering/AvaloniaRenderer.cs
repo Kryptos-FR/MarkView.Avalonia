@@ -57,6 +57,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new ListRenderer());
         ObjectRenderers.Add(new ThematicBreakRenderer());
         ObjectRenderers.Add(new QuoteBlockRenderer());
+        ObjectRenderers.Add(new HtmlBlockRenderer());
 
         // Inline renderers
         ObjectRenderers.Add(new LiteralInlineRenderer());
@@ -67,6 +68,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new LineBreakInlineRenderer());
         ObjectRenderers.Add(new DelimiterInlineRenderer());
         ObjectRenderers.Add(new HtmlEntityInlineRenderer());
+        ObjectRenderers.Add(new HtmlInlineRenderer());
     }
 
     /// <summary>
