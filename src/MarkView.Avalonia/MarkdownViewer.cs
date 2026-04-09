@@ -106,10 +106,28 @@ public class MarkdownViewer : ContentControl
 
     private void ScrollToAnchor(string anchorId)
     {
-        if (_anchors.TryGetValue(anchorId, out var control))
-            control.BringIntoView();
+        if (!_anchors.TryGetValue(anchorId, out var control))
+            return;
 
-        // TODO: expose AnchorNavigationRequested event so consumers can override
-        // or cancel scroll behaviour (e.g. custom scroll animation, external router).
+        if (Content is not ScrollViewer scrollViewer || scrollViewer.Content is not Visual rootPanel)
+        {
+            control.BringIntoView();
+            return;
+        }
+
+        // TranslatePoint gives the heading's exact Y in the scroll content, so the
+        // heading top lands at the viewport top instead of BringIntoView's minimum-
+        // scroll behaviour (which positions the bottom edge at the viewport bottom).
+        var point = control.TranslatePoint(new Point(0, 0), rootPanel);
+        if (point is null)
+        {
+            control.BringIntoView();
+            return;
+        }
+
+        // Subtract a small margin so the heading sits below the viewport top
+        // rather than flush against it, keeping both title and following content in view.
+        const double topMargin = 16;
+        scrollViewer.Offset = new Vector(scrollViewer.Offset.X, Math.Max(0, point.Value.Y - topMargin));
     }
 }
