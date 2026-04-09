@@ -3,11 +3,13 @@
     <Project Path="src/MarkView.Avalonia/MarkView.Avalonia.csproj" />
     <Project Path="src/MarkView.Avalonia.SyntaxHighlighting/MarkView.Avalonia.SyntaxHighlighting.csproj" />
     <Project Path="src/MarkView.Avalonia.Svg/MarkView.Avalonia.Svg.csproj" />
+    <Project Path="src/MarkView.Avalonia.Mermaid/MarkView.Avalonia.Mermaid.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MarkView.Avalonia.Tests/MarkView.Avalonia.Tests.csproj" />
     <Project Path="tests/MarkView.Avalonia.SyntaxHighlighting.Tests/MarkView.Avalonia.SyntaxHighlighting.Tests.csproj" />
     <Project Path="tests/MarkView.Avalonia.Svg.Tests/MarkView.Avalonia.Svg.Tests.csproj" />
+    <Project Path="tests/MarkView.Avalonia.Mermaid.Tests/MarkView.Avalonia.Mermaid.Tests.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/MarkView.Avalonia.Demo/MarkView.Avalonia.Demo.csproj" />
