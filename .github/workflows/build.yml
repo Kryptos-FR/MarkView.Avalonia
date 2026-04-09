@@ -13,6 +13,9 @@ on:
         default: ubuntu-latest
         description: Runner OS (ubuntu-latest, windows-latest, macos-latest)
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ${{ inputs.os }}
