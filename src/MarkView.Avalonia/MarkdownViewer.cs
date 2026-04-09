@@ -10,6 +10,7 @@ namespace MarkView.Avalonia;
 /// </summary>
 public class MarkdownViewer : ContentControl
 {
+    private Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Defines the <see cref="Markdown"/> property.
     /// </summary>
@@ -72,6 +73,7 @@ public class MarkdownViewer : ContentControl
         if (string.IsNullOrEmpty(Markdown))
         {
             Content = null;
+            _anchors = new(StringComparer.OrdinalIgnoreCase);
             return;
         }
 
@@ -79,13 +81,35 @@ public class MarkdownViewer : ContentControl
         var document = Markdig.Markdown.Parse(Markdown, pipeline);
 
         var renderer = new AvaloniaRenderer { BaseUri = BaseUri };
-        renderer.LinkClicked += (_, e) => LinkClicked?.Invoke(this, e);
+        renderer.LinkClicked += OnLinkClicked;
         pipeline.Setup(renderer);
         renderer.Render(document);
+
+        _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);
 
         Content = new ScrollViewer
         {
             Content = renderer.RootPanel,
         };
+    }
+
+    private void OnLinkClicked(object? sender, LinkClickedEventArgs e)
+    {
+        if (e.Url.StartsWith('#'))
+        {
+            ScrollToAnchor(e.Url[1..]);
+            return;
+            // Fragment links are handled internally — do not fire public LinkClicked.
+        }
+        LinkClicked?.Invoke(this, e);
+    }
+
+    private void ScrollToAnchor(string anchorId)
+    {
+        if (_anchors.TryGetValue(anchorId, out var control))
+            control.BringIntoView();
+
+        // TODO: expose AnchorNavigationRequested event so consumers can override
+        // or cancel scroll behaviour (e.g. custom scroll animation, external router).
     }
 }
