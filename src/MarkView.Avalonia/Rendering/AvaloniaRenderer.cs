@@ -3,6 +3,7 @@ using Avalonia.Controls.Documents;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
+using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Rendering.Containers;
 using MarkView.Avalonia.Rendering.Inlines;
@@ -44,6 +45,32 @@ public class AvaloniaRenderer : RendererBase
     /// Registers a heading control under the given anchor ID.
     /// </summary>
     public void RegisterAnchor(string id, Control control) => _anchors[id] = control;
+
+    /// <summary>
+    /// Optional syntax highlighter used by <c>TextMateCodeBlockRenderer</c>.
+    /// Set by <see cref="Extensions.IMarkViewExtension.Register"/> implementations.
+    /// </summary>
+    public ICodeHighlighter? CodeHighlighter { get; set; }
+
+    /// <summary>
+    /// Ordered list of image loaders tried before the built-in HTTP fallback.
+    /// Extensions insert at index 0 to take priority.
+    /// </summary>
+    public IList<IImageLoader> ImageLoaders { get; } = new List<IImageLoader>();
+
+    /// <summary>
+    /// Removes the first registered renderer of type <typeparamref name="TRenderer"/>
+    /// and adds <paramref name="replacement"/> at the end of the list.
+    /// If none exists, simply adds <paramref name="replacement"/>.
+    /// </summary>
+    public void ReplaceOrAdd<TRenderer>(IMarkdownObjectRenderer replacement)
+        where TRenderer : IMarkdownObjectRenderer
+    {
+        var existing = ObjectRenderers.Find<TRenderer>();
+        if (existing != null)
+            ObjectRenderers.Remove(existing);
+        ObjectRenderers.Add(replacement);
+    }
 
     /// <summary>
     /// Raised when a hyperlink is clicked.

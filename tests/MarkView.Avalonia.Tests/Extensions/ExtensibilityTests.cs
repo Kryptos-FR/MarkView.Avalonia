@@ -1,6 +1,10 @@
 // tests/MarkView.Avalonia.Tests/Extensions/ExtensibilityTests.cs
+using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using MarkView.Avalonia.Extensions;
+using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Blocks;
+using System.Linq;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Extensions;
@@ -59,6 +63,49 @@ public class ExtensibilityTests
         IImageLoader loader = new StubImageLoader("none");
         var result = await loader.LoadAsync("https://example.com/any.png");
         Assert.Null(result);
+    }
+
+    // ── AvaloniaRenderer extensions ───────────────────────────────────────────
+
+    [AvaloniaFact]
+    public void AvaloniaRenderer_exposes_CodeHighlighter_settable()
+    {
+        var renderer = new AvaloniaRenderer();
+        Assert.Null(renderer.CodeHighlighter);
+    }
+
+    [AvaloniaFact]
+    public void AvaloniaRenderer_exposes_ImageLoaders_collection()
+    {
+        var renderer = new AvaloniaRenderer();
+        Assert.NotNull(renderer.ImageLoaders);
+        Assert.Empty(renderer.ImageLoaders);
+    }
+
+    [AvaloniaFact]
+    public void ReplaceOrAdd_replaces_existing_renderer()
+    {
+        var renderer = new AvaloniaRenderer();
+        // CodeBlockRenderer is registered by LoadRenderers()
+        var replacement = new CodeBlockRenderer();
+        renderer.ReplaceOrAdd<CodeBlockRenderer>(replacement);
+        // Only one CodeBlockRenderer must exist
+        var found = renderer.ObjectRenderers.OfType<CodeBlockRenderer>().ToList();
+        Assert.Single(found);
+        Assert.Same(replacement, found[0]);
+    }
+
+    [AvaloniaFact]
+    public void ReplaceOrAdd_adds_when_not_present()
+    {
+        var renderer = new AvaloniaRenderer();
+        // Remove the existing one first
+        var existing = renderer.ObjectRenderers.OfType<CodeBlockRenderer>().Single();
+        renderer.ObjectRenderers.Remove(existing);
+
+        var newRenderer = new CodeBlockRenderer();
+        renderer.ReplaceOrAdd<CodeBlockRenderer>(newRenderer);
+        Assert.Contains(newRenderer, renderer.ObjectRenderers);
     }
 
     // ── Stubs ─────────────────────────────────────────────────────────────────
