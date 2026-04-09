@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using MarkView.Avalonia.Rendering;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests;
@@ -26,7 +27,7 @@ public class MarkdownViewerTests
         viewer.Markdown = "# Second";
         var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(scrollViewer.Content);
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(panel.Children));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(panel.Children));
         Assert.Contains("markdown-h1", textBlock.Classes);
     }
 

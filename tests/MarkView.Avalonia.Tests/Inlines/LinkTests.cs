@@ -13,7 +13,7 @@ public class LinkTests : RenderTestBase
     public void Link_renders_as_MarkdownHyperlink_span()
     {
         var result = Render("[click me](https://example.com)");
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
         Assert.Equal(new Uri("https://example.com"), hyperlink.NavigateUri);
     }
@@ -22,7 +22,7 @@ public class LinkTests : RenderTestBase
     public void Link_text_is_a_Run_inside_hyperlink()
     {
         var result = Render("[click me](https://example.com)");
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
         var run = Assert.IsType<Run>(Assert.Single(hyperlink.Inlines));
         Assert.Equal("click me", run.Text);
@@ -32,7 +32,7 @@ public class LinkTests : RenderTestBase
     public void Link_has_markdown_link_css_class()
     {
         var result = Render("[click me](https://example.com)");
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
         Assert.Contains("markdown-link", hyperlink.Classes);
     }
@@ -41,7 +41,7 @@ public class LinkTests : RenderTestBase
     public void Link_with_title_stores_Title_on_hyperlink()
     {
         var result = Render("[click me](https://example.com \"My Title\")");
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
         Assert.Equal("My Title", hyperlink.Title);
     }
@@ -60,7 +60,7 @@ public class LinkTests : RenderTestBase
         renderer.Render(document);
         var result = renderer.RootPanel;
 
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
         Assert.Equal(new Uri("https://doc.stride3d.net/4.2/path/to/doc"), hyperlink.NavigateUri);
     }
