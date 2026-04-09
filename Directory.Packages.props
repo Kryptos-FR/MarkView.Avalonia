@@ -19,5 +19,6 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.*" />
     <PackageVersion Include="TextMateSharp" Version="1.*" />
     <PackageVersion Include="TextMateSharp.Grammars" Version="1.*" />
+    <PackageVersion Include="Svg.Controls.Skia.Avalonia" Version="12.*" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>MarkView.Avalonia.Svg</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>MarkView.Avalonia.Svg</PackageId>
+    <Description>SVG image rendering extension for MarkView.Avalonia.</Description>
+    <PackageTags>avalonia;markdown;svg</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Svg.Controls.Skia.Avalonia" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
+  </ItemGroup>
+</Project>
