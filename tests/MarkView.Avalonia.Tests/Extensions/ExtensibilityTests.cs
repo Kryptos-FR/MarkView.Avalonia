@@ -61,7 +61,9 @@ public class ExtensibilityTests
     public async Task IImageLoader_LoadAsync_returns_null_when_not_found()
     {
         IImageLoader loader = new StubImageLoader("none");
-        var result = await loader.LoadAsync("https://example.com/any.png");
+        var result = await loader.LoadAsync(
+            "https://example.com/any.png",
+            TestContext.Current.CancellationToken);
         Assert.Null(result);
     }
 
