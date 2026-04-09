@@ -1,6 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mv="using:MarkView.Avalonia">
+        xmlns:mv="using:MarkView.Avalonia"
+        xmlns:mri="using:MarkView.Avalonia.Rendering.Inlines">
 
   <!-- Headings -->
   <Style Selector="TextBlock.markdown-h1">
@@ -53,15 +54,10 @@
   </Style>
 
   <!-- Inline code -->
-  <Style Selector="Border.markdown-code-inline">
-    <Setter Property="Background" Value="#2D2D2D" />
-    <Setter Property="CornerRadius" Value="3" />
-    <Setter Property="Padding" Value="4,1" />
-  </Style>
-  <Style Selector="Border.markdown-code-inline > TextBlock">
-    <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace" />
-    <Setter Property="FontSize" Value="13" />
-    <Setter Property="Foreground" Value="#CE9178" />
+  <Style Selector="Run.markdown-code-inline">
+    <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace"/>
+    <Setter Property="Background" Value="#1A000000"/>
+    <Setter Property="Foreground" Value="#CE9178"/>
   </Style>
 
   <!-- Blockquote -->
@@ -91,9 +87,9 @@
   </Style>
 
   <!-- Links -->
-  <Style Selector="HyperlinkButton.markdown-link">
-    <Setter Property="Padding" Value="0" />
-    <Setter Property="Cursor" Value="Hand" />
+  <Style Selector="mri|MarkdownHyperlink.markdown-link">
+    <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}"/>
+    <Setter Property="TextDecorations" Value="Underline"/>
   </Style>
 
   <!-- Tables -->
