@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 using Xunit;
 
@@ -74,5 +75,45 @@ public class MarkdownViewerTests
         renderer.Render(document);
 
         Assert.True(renderer.Anchors.ContainsKey("hello-world"));
+    }
+
+    [AvaloniaFact]
+    public void Extensions_list_is_empty_by_default()
+    {
+        var viewer = new MarkdownViewer();
+        Assert.NotNull(viewer.Extensions);
+        Assert.Empty(viewer.Extensions);
+    }
+
+    [AvaloniaFact]
+    public void Extensions_Register_is_called_during_render()
+    {
+        var spy = new SpyExtension();
+        var viewer = new MarkdownViewer();
+        viewer.Extensions.Add(spy);
+        viewer.Markdown = "Hello";
+        Assert.True(spy.RegisterCalled);
+    }
+
+    [AvaloniaFact]
+    public void Extensions_Register_receives_renderer_instance()
+    {
+        var spy = new SpyExtension();
+        var viewer = new MarkdownViewer();
+        viewer.Extensions.Add(spy);
+        viewer.Markdown = "```csharp\nvar x = 1;\n```";
+        Assert.NotNull(spy.ReceivedRenderer);
+    }
+
+    private sealed class SpyExtension : IMarkViewExtension
+    {
+        public bool RegisterCalled { get; private set; }
+        public AvaloniaRenderer? ReceivedRenderer { get; private set; }
+
+        public void Register(AvaloniaRenderer renderer)
+        {
+            RegisterCalled = true;
+            ReceivedRenderer = renderer;
+        }
     }
 }
