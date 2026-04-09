@@ -4,14 +4,14 @@
         xmlns:local="using:MarkView.Avalonia.Demo"
         x:Class="MarkView.Avalonia.Demo.MainWindow"
         x:DataType="local:MainViewModel"
-        Title="MarkView.Avalonia Demo - Stride Release Notes"
+        Title="MarkView.Avalonia Demo"
         Width="1000" Height="750">
 
   <DockPanel>
     <!-- Top bar: version selector -->
     <Border DockPanel.Dock="Top" Padding="12,8">
       <StackPanel Orientation="Horizontal" Spacing="8">
-        <TextBlock Text="Stride Version:" VerticalAlignment="Center" />
+        <TextBlock Text="View:" VerticalAlignment="Center" />
         <ComboBox ItemsSource="{Binding Versions}"
                   SelectedIndex="{Binding SelectedVersionIndex}"
                   MinWidth="120" />
