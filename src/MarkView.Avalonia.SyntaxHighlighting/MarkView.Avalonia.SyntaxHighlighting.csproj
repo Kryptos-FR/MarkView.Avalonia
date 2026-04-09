@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>MarkView.Avalonia.SyntaxHighlighting</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>MarkView.Avalonia.SyntaxHighlighting</PackageId>
+    <Description>TextMate syntax highlighting extension for MarkView.Avalonia.</Description>
+    <PackageTags>avalonia;markdown;syntax-highlighting;textmate</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="TextMateSharp" />
+    <PackageReference Include="TextMateSharp.Grammars" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
+  </ItemGroup>
+</Project>

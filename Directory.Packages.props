@@ -17,5 +17,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.*" />
     <PackageVersion Include="xunit.v3" Version="3.*" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.*" />
+    <PackageVersion Include="TextMateSharp" Version="1.*" />
+    <PackageVersion Include="TextMateSharp.Grammars" Version="1.*" />
   </ItemGroup>
 </Project>
