@@ -86,6 +86,11 @@
     <Setter Property="Margin" Value="0,4" />
   </Style>
 
+  <!-- Text selection highlight -->
+  <Style Selector=":is(SelectableTextBlock)">
+    <Setter Property="SelectionBrush" Value="{DynamicResource SystemAccentColor}"/>
+  </Style>
+
   <!-- Links -->
   <Style Selector="mri|MarkdownHyperlink.markdown-link">
     <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}"/>
