@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>MarkView.Avalonia.Mermaid</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>MarkView.Avalonia.Mermaid</PackageId>
+    <Description>Mermaid diagram rendering extension for MarkView.Avalonia.</Description>
+    <PackageTags>avalonia;markdown;mermaid;diagram</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
+  </ItemGroup>
+</Project>
