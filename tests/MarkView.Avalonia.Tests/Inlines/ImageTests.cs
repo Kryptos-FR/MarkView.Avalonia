@@ -1,5 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using MarkView.Avalonia.Extensions;
+using MarkView.Avalonia.Rendering;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Inlines;
@@ -48,6 +51,35 @@ public class ImageTests : RenderTestBase
         Assert.Equal("https://doc.stride3d.net/4.2/ReleaseNotes/media/screenshot.png", image.Tag?.ToString());
     }
 
+    [AvaloniaFact]
+    public void Custom_image_loader_is_invoked_for_matching_url()
+    {
+        var loader = new SpyImageLoader("https://example.com/image.png");
+        var pipeline = new Markdig.MarkdownPipelineBuilder().Build();
+        var document = Markdig.Markdown.Parse("![alt](https://example.com/image.png)", pipeline);
+        var renderer = new AvaloniaRenderer();
+        renderer.ImageLoaders.Add(loader);
+        pipeline.Setup(renderer);
+        renderer.Render(document);
+
+        // Loader was consulted — CanLoad must have been called
+        Assert.True(loader.CanLoadCalled);
+    }
+
+    [AvaloniaFact]
+    public void Image_with_no_matching_loader_falls_back_to_http_path()
+    {
+        // A loader that never matches — should not throw, HTTP fallback is used
+        var loader = new SpyImageLoader("does-not-match");
+        var pipeline = new Markdig.MarkdownPipelineBuilder().Build();
+        var document = Markdig.Markdown.Parse("![alt](https://example.com/image.png)", pipeline);
+        var renderer = new AvaloniaRenderer();
+        renderer.ImageLoaders.Add(loader);
+        pipeline.Setup(renderer);
+        renderer.Render(document);
+        // No assertion beyond "doesn't throw"
+    }
+
     private static T? FindFirst<T>(Control root) where T : Control
     {
         if (root is T match) return match;
@@ -75,5 +107,19 @@ public class ImageTests : RenderTestBase
             }
         }
         return null;
+    }
+
+    private sealed class SpyImageLoader(string matchUrl) : IImageLoader
+    {
+        public bool CanLoadCalled { get; private set; }
+
+        public bool CanLoad(string url)
+        {
+            CanLoadCalled = true;
+            return url == matchUrl;
+        }
+
+        public Task<IImage?> LoadAsync(string url, CancellationToken cancellationToken = default)
+            => Task.FromResult<IImage?>(null);
     }
 }
