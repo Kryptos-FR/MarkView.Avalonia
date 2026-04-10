@@ -2,7 +2,9 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 
 using Markdig.Syntax.Inlines;
 
@@ -46,7 +48,7 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
         var altText = string.Concat(obj.SelectMany(c =>
             c is LiteralInline literal ? literal.Content.ToString() : string.Empty));
 
-        var image = new Image();
+        var image = new Image { Stretch = Stretch.None };
         image.Classes.Add("markdown-image");
 
         if (!string.IsNullOrEmpty(altText))
@@ -80,7 +82,7 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
                 var loaded = await loader.LoadAsync(url, cancellationToken);
                 if (loaded != null)
                 {
-                    image.Source = loaded;
+                    await Dispatcher.UIThread.InvokeAsync(() => image.Source = loaded);
                     return;
                 }
             }
@@ -90,13 +92,10 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
                 return;
 
             var bytes = await HttpClient.GetByteArrayAsync(uri, cancellationToken);
-            using var stream = new MemoryStream(bytes);
-            image.Source = new Bitmap(stream);
+            var bitmap = new Bitmap(new MemoryStream(bytes));
+            await Dispatcher.UIThread.InvokeAsync(() => image.Source = bitmap);
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
+        catch (OperationCanceledException) { }
         catch (HttpRequestException) { }
         catch (IOException) { }
     }
