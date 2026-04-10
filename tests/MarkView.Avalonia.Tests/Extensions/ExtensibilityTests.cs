@@ -1,10 +1,12 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 // tests/MarkView.Avalonia.Tests/Extensions/ExtensibilityTests.cs
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Rendering.Blocks;
-using System.Linq;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Extensions;

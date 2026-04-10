@@ -1,9 +1,8 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 using Avalonia.Headless.XUnit;
-
-using MarkView.Avalonia.SyntaxHighlighting;
-
 using TextMateSharp.Grammars;
-
 using Xunit;
 
 namespace MarkView.Avalonia.SyntaxHighlighting.Tests;

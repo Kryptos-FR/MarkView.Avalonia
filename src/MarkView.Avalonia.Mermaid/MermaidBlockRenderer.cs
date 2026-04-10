@@ -1,3 +1,6 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 using System.Globalization;
 using System.Text;
 
@@ -9,14 +12,11 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Svg.Skia;
 using Avalonia.VisualTree;
-
 using Markdig.Syntax;
-
+using MarkView.Avalonia.Rendering;
 using Mermaider;
 
 using MermaidRenderOptions = Mermaider.Models.RenderOptions;
-
-using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia.Mermaid;
 

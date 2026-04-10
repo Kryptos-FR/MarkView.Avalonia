@@ -1,10 +1,11 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Markdig;
-using MarkView.Avalonia;
 using MarkView.Avalonia.Rendering;
-using MarkView.Avalonia.SyntaxHighlighting;
 using TextMateSharp.Grammars;
 using Xunit;
 

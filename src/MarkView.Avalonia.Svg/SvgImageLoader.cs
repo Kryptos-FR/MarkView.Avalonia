@@ -1,7 +1,11 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
+using System.Xml;
+
 using Avalonia.Media;
 using Avalonia.Svg.Skia;
 using MarkView.Avalonia.Extensions;
-using System.Xml;
 
 namespace MarkView.Avalonia.Svg;
 

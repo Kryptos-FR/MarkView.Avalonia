@@ -1,3 +1,6 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia.Extensions;

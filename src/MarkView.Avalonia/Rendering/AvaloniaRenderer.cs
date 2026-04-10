@@ -1,13 +1,17 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+
 using Markdig.Renderers;
 using Markdig.Syntax;
-using Markdig.Syntax.Inlines;
+
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Rendering.Containers;
 using MarkView.Avalonia.Rendering.Inlines;
-using System.Collections.Generic;
+
 using AvaloniaInline = Avalonia.Controls.Documents.Inline;
 
 namespace MarkView.Avalonia.Rendering;
