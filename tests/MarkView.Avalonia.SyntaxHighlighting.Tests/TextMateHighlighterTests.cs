@@ -1,13 +1,16 @@
-using Avalonia.Media;
+using Avalonia.Headless.XUnit;
+
 using MarkView.Avalonia.SyntaxHighlighting;
+
 using TextMateSharp.Grammars;
+
 using Xunit;
 
 namespace MarkView.Avalonia.SyntaxHighlighting.Tests;
 
 public class TextMateHighlighterTests
 {
-    [Fact]
+    [AvaloniaFact]
     public void Highlight_returns_null_for_unknown_language()
     {
         var highlighter = new TextMateHighlighter();
@@ -15,7 +18,7 @@ public class TextMateHighlighterTests
         Assert.Null(result);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Highlight_returns_tokens_for_csharp()
     {
         var highlighter = new TextMateHighlighter();
@@ -27,7 +30,7 @@ public class TextMateHighlighterTests
         Assert.Equal("var x = 1;", string.Concat(tokens.Select(t => t.Text)));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Highlight_returns_tokens_for_json()
     {
         var highlighter = new TextMateHighlighter();
@@ -36,7 +39,7 @@ public class TextMateHighlighterTests
         Assert.Equal("{\"key\": 42}", string.Concat(result!.Select(t => t.Text)));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Highlight_accepts_null_language_and_returns_null()
     {
         var highlighter = new TextMateHighlighter();
@@ -44,7 +47,7 @@ public class TextMateHighlighterTests
         Assert.Null(result);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Highlight_with_DarkPlus_theme_produces_colored_tokens()
     {
         var highlighter = new TextMateHighlighter(ThemeName.DarkPlus);

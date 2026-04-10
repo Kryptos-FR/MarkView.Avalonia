@@ -1,4 +1,5 @@
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using MarkView.Avalonia.Extensions;
 using TextMateSharp.Grammars;
 using TextMateSharp.Registry;
@@ -81,7 +82,7 @@ public class TextMateHighlighter : ICodeHighlighter
             {
                 var hex = _theme.GetColor(rules[0].foreground);
                 if (!string.IsNullOrEmpty(hex))
-                    brush = new SolidColorBrush(Color.Parse(hex));
+                    brush = new ImmutableSolidColorBrush(Color.Parse(hex));
             }
 
             tokens.Add((text, brush));
