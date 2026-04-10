@@ -1,8 +1,13 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Text.RegularExpressions;
+
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using Avalonia.Threading;
 
 using Markdig.Syntax.Inlines;
 
@@ -11,9 +16,13 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// <summary>
 /// Renders a Markdig <see cref="LinkInline"/> as a <see cref="MarkdownHyperlink"/> span or image.
 /// </summary>
-public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
+public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {
     private static readonly HttpClient HttpClient = new();
+
+    // Matches the "=WxH" title produced by MarkdownViewer's preprocessor.
+    [GeneratedRegex(@"^=(\d+)x(\d+)$", RegexOptions.Compiled)]
+    private static partial Regex DimensionTitleRegex();
 
     protected override void Write(AvaloniaRenderer renderer, LinkInline obj)
     {
@@ -46,19 +55,38 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
         var altText = string.Concat(obj.SelectMany(c =>
             c is LiteralInline literal ? literal.Content.ToString() : string.Empty));
 
-        var image = new Image();
+        var image = new Image { Stretch = Stretch.None };
         image.Classes.Add("markdown-image");
 
         if (!string.IsNullOrEmpty(altText))
             ToolTip.SetTip(image, altText);
 
+        // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor).
+        if (!string.IsNullOrEmpty(obj.Title))
+        {
+            var dim = DimensionTitleRegex().Match(obj.Title);
+            if (dim.Success)
+            {
+                image.Width = int.Parse(dim.Groups[1].Value);
+                image.Height = int.Parse(dim.Groups[2].Value);
+                image.Stretch = Stretch.Uniform;
+            }
+        }
+
         image.Tag = url;
 
-        // CancellationToken tied to visual-tree lifetime
-        var cts = new CancellationTokenSource();
-        image.DetachedFromVisualTree += (_, _) => cts.Cancel();
-
-        _ = LoadImageAsync(renderer, image, url, cts.Token);
+        // Start loading on first attach; cancel on detach.
+        // Deferring to AttachedToVisualTree avoids spurious cancellations from
+        // Avalonia's layout passes that detach/reattach controls during initialisation.
+        CancellationTokenSource? cts = null;
+        image.AttachedToVisualTree += (_, _) =>
+        {
+            if (image.Source != null) return; // already loaded, no need to reload
+            cts?.Cancel();
+            cts = new CancellationTokenSource();
+            _ = LoadImageAsync(renderer, image, url, cts.Token);
+        };
+        image.DetachedFromVisualTree += (_, _) => cts?.Cancel();
 
         renderer.WriteInline(image);
     }
@@ -80,24 +108,31 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
                 var loaded = await loader.LoadAsync(url, cancellationToken);
                 if (loaded != null)
                 {
-                    image.Source = loaded;
+                    await Dispatcher.UIThread.InvokeAsync(() => image.Source = loaded);
                     return;
                 }
             }
 
-            // HTTP fallback for absolute URLs
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 return;
 
+            // avares:// — Avalonia embedded resource
+            if (uri.Scheme == "avares")
+            {
+                using var stream = AssetLoader.Open(uri);
+                var bitmap = new Bitmap(stream);
+                await Dispatcher.UIThread.InvokeAsync(() => image.Source = bitmap);
+                return;
+            }
+
+            // HTTP/HTTPS fallback
             var bytes = await HttpClient.GetByteArrayAsync(uri, cancellationToken);
-            using var stream = new MemoryStream(bytes);
-            image.Source = new Bitmap(stream);
+            var httpBitmap = new Bitmap(new MemoryStream(bytes));
+            await Dispatcher.UIThread.InvokeAsync(() => image.Source = httpBitmap);
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
+        catch (OperationCanceledException) { }
         catch (HttpRequestException) { }
         catch (IOException) { }
     }
+
 }

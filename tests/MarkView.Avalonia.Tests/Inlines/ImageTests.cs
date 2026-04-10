@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 
+using MarkView.Avalonia;
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 
@@ -67,8 +68,26 @@ public class ImageTests : RenderTestBase
         pipeline.Setup(renderer);
         renderer.Render(document);
 
-        // Loader was consulted — CanLoad must have been called
+        // Loading is deferred to AttachedToVisualTree; attach to a headless window so
+        // the event fires and CanLoad is called (synchronously, before the first await).
+        var window = new Window { Content = renderer.RootPanel };
+        window.Show();
+
         Assert.True(loader.CanLoadCalled);
+    }
+
+    [AvaloniaFact]
+    public void Image_size_hint_sets_Width_and_Height()
+    {
+        var viewer = new MarkdownViewer();
+        viewer.Markdown = "![logo](https://example.com/logo.png =200x100)";
+
+        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
+        var panel = Assert.IsType<StackPanel>(scrollViewer.Content);
+        var image = FindFirst<Image>(panel);
+        Assert.NotNull(image);
+        Assert.Equal(200.0, image.Width);
+        Assert.Equal(100.0, image.Height);
     }
 
     [AvaloniaFact]

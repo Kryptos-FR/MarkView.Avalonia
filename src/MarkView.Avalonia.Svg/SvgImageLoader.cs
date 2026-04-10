@@ -5,6 +5,8 @@ using System.Xml;
 
 using Avalonia.Media;
 using Avalonia.Svg.Skia;
+using Avalonia.Threading;
+
 using MarkView.Avalonia.Extensions;
 
 namespace MarkView.Avalonia.Svg;
@@ -27,7 +29,16 @@ public sealed class SvgImageLoader : IImageLoader
 
         // Check extension — ignore query string
         var path = url.Split('?')[0];
-        return path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase);
+        if (path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Accept any absolute HTTP/HTTPS URL speculatively — LoadAsync will return null
+        // if the response is not valid SVG, letting the bitmap fallback take over.
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            return true;
+
+        return false;
     }
 
     public async Task<IImage?> LoadAsync(string url, CancellationToken cancellationToken = default)
@@ -47,9 +58,12 @@ public sealed class SvgImageLoader : IImageLoader
                 bytes = await HttpClient.GetByteArrayAsync(uri, cancellationToken);
             }
 
-            using var stream = new MemoryStream(bytes);
-            var source = SvgSource.LoadFromStream(stream);
-            return new SvgImage { Source = source };
+            SvgSource source;
+            using (var stream = new MemoryStream(bytes))
+                source = SvgSource.LoadFromStream(stream);
+
+            // SvgImage is an AvaloniaObject — must be created on the UI thread.
+            return await Dispatcher.UIThread.InvokeAsync(() => new SvgImage { Source = source });
         }
         catch (OperationCanceledException)
         {
