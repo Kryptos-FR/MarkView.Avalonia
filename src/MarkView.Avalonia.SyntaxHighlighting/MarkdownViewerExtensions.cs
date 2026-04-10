@@ -13,12 +13,15 @@ public static class MarkdownViewerSyntaxHighlightingExtensions
     /// <summary>
     /// Adds <see cref="SyntaxHighlighting.TextMateExtension"/> to the viewer's
     /// <see cref="MarkdownViewer.Extensions"/> list.
+    /// The extension automatically selects the appropriate highlighter theme based on
+    /// the current <see cref="Avalonia.Styling.ThemeVariant"/>.
     /// </summary>
     public static MarkdownViewer UseTextMateHighlighting(
         this MarkdownViewer viewer,
-        ThemeName theme = ThemeName.DarkPlus)
+        ThemeName darkTheme = ThemeName.DarkPlus,
+        ThemeName lightTheme = ThemeName.LightPlus)
     {
-        viewer.Extensions.Add(new SyntaxHighlighting.TextMateExtension(theme));
+        viewer.Extensions.Add(new SyntaxHighlighting.TextMateExtension(darkTheme, lightTheme));
         return viewer;
     }
 }

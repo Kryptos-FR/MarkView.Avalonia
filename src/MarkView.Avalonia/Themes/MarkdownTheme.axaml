@@ -3,6 +3,25 @@
         xmlns:mv="using:MarkView.Avalonia"
         xmlns:mri="using:MarkView.Avalonia.Rendering.Inlines">
 
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#1E1E1E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#D4D4D4</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#1A000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#CE9178</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#F3F3F3</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#1E1E1E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#0A000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#A31515</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+
   <!-- Headings — use :is() to match MarkdownSelectableTextBlock (a TextBlock subclass) -->
   <Style Selector=":is(TextBlock).markdown-h1">
     <Setter Property="FontSize" Value="28" />
@@ -42,7 +61,7 @@
 
   <!-- Code blocks -->
   <Style Selector="Border.markdown-code-block">
-    <Setter Property="Background" Value="#1E1E1E" />
+    <Setter Property="Background" Value="{DynamicResource MarkdownCodeBlockBackground}" />
     <Setter Property="CornerRadius" Value="4" />
     <Setter Property="Padding" Value="12,8" />
     <Setter Property="Margin" Value="0,4" />
@@ -50,14 +69,14 @@
   <Style Selector="Border.markdown-code-block > TextBlock">
     <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace" />
     <Setter Property="FontSize" Value="13" />
-    <Setter Property="Foreground" Value="#D4D4D4" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeBlockForeground}" />
   </Style>
 
   <!-- Inline code -->
   <Style Selector="Run.markdown-code-inline">
     <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace"/>
-    <Setter Property="Background" Value="#1A000000"/>
-    <Setter Property="Foreground" Value="#CE9178"/>
+    <Setter Property="Background" Value="{DynamicResource MarkdownCodeInlineBackground}"/>
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeInlineForeground}"/>
   </Style>
 
   <!-- Blockquote -->

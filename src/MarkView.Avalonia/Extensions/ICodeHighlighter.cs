@@ -15,3 +15,13 @@ public interface ICodeHighlighter
 {
     IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(string line, string? language);
 }
+
+/// <summary>
+/// Extends <see cref="ICodeHighlighter"/> with explicit dark/light variant highlighting,
+/// enabling code block renderers to update token colours in-place when the theme changes
+/// without rebuilding the entire document.
+/// </summary>
+public interface IThemeAwareCodeHighlighter : ICodeHighlighter
+{
+    IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(string line, string? language, bool isDark);
+}
