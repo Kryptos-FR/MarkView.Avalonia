@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Avalonia;
+using Avalonia.Styling;
 
 namespace MarkView.Avalonia.Demo;
 
@@ -160,8 +162,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isLoading;
     private int _selectedVersionIndex;
     private Uri? _baseUri;
+    private bool _isLightTheme;
 
     public string[] Versions { get; } = ["Feature Showcase", "Stride latest", "Stride 4.2", "Stride 4.1"];
+
+    public bool IsLightTheme
+    {
+        get => _isLightTheme;
+        set
+        {
+            if (!SetField(ref _isLightTheme, value)) return;
+            Application.Current!.RequestedThemeVariant = value ? ThemeVariant.Light : ThemeVariant.Dark;
+        }
+    }
 
     public int SelectedVersionIndex
     {

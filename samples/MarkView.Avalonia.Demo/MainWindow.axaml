@@ -19,6 +19,9 @@
                      IsVisible="{Binding IsLoading}"
                      Width="120"
                      VerticalAlignment="Center" />
+        <ToggleButton IsChecked="{Binding IsLightTheme}"
+                      Content="Light theme"
+                      VerticalAlignment="Center" />
       </StackPanel>
     </Border>
 
