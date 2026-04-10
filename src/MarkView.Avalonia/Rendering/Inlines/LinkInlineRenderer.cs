@@ -4,6 +4,7 @@
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Threading;
 
 using Markdig.Syntax.Inlines;
@@ -94,13 +95,22 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
                 }
             }
 
-            // HTTP fallback for absolute URLs
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 return;
 
+            // avares:// — Avalonia embedded resource
+            if (uri.Scheme == "avares")
+            {
+                using var stream = AssetLoader.Open(uri);
+                var bitmap = new Bitmap(stream);
+                await Dispatcher.UIThread.InvokeAsync(() => image.Source = bitmap);
+                return;
+            }
+
+            // HTTP/HTTPS fallback
             var bytes = await HttpClient.GetByteArrayAsync(uri, cancellationToken);
-            var bitmap = new Bitmap(new MemoryStream(bytes));
-            await Dispatcher.UIThread.InvokeAsync(() => image.Source = bitmap);
+            var httpBitmap = new Bitmap(new MemoryStream(bytes));
+            await Dispatcher.UIThread.InvokeAsync(() => image.Source = httpBitmap);
         }
         catch (OperationCanceledException) { }
         catch (HttpRequestException) { }
