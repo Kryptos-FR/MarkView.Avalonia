@@ -1,6 +1,9 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 using Avalonia.Controls;
-using Avalonia.Controls.Documents;
 using Avalonia.Media.Imaging;
+
 using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Inlines;
@@ -50,21 +53,49 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
             ToolTip.SetTip(image, altText);
 
         image.Tag = url;
-        _ = LoadImageAsync(image, url);
+
+        // CancellationToken tied to visual-tree lifetime
+        var cts = new CancellationTokenSource();
+        image.DetachedFromVisualTree += (_, _) => cts.Cancel();
+
+        _ = LoadImageAsync(renderer, image, url, cts.Token);
 
         renderer.WriteInline(image);
     }
 
-    private static async Task LoadImageAsync(Image image, string url)
+    private static async Task LoadImageAsync(
+        AvaloniaRenderer renderer,
+        Image image,
+        string url,
+        CancellationToken cancellationToken)
     {
         try
         {
+            // Try registered loaders first (priority order, index 0 = highest)
+            foreach (var loader in renderer.ImageLoaders)
+            {
+                if (!loader.CanLoad(url))
+                    continue;
+
+                var loaded = await loader.LoadAsync(url, cancellationToken);
+                if (loaded != null)
+                {
+                    image.Source = loaded;
+                    return;
+                }
+            }
+
+            // HTTP fallback for absolute URLs
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 return;
 
-            var bytes = await HttpClient.GetByteArrayAsync(uri);
+            var bytes = await HttpClient.GetByteArrayAsync(uri, cancellationToken);
             using var stream = new MemoryStream(bytes);
             image.Source = new Bitmap(stream);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (HttpRequestException) { }
         catch (IOException) { }

@@ -1,5 +1,10 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 using System.Text.RegularExpressions;
+
 using Avalonia.Controls.Documents;
+
 using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Inlines;

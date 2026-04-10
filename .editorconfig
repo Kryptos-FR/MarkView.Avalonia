@@ -35,9 +35,9 @@ insert_final_newline = true
 [*.{cs,vb}]
 
 # Organize usings
-dotnet_separate_import_directive_groups = true
+dotnet_separate_import_directive_groups = false
 dotnet_sort_system_directives_first = true
-file_header_template = unset
+file_header_template = // Copyright (c) Nicolas Musset\n// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 # this. and Me. preferences
 dotnet_style_qualification_for_event = false:silent

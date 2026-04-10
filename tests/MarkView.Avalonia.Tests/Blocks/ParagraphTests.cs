@@ -1,4 +1,6 @@
-using Avalonia.Controls;
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;

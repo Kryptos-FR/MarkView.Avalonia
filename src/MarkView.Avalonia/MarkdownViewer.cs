@@ -1,6 +1,12 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 using Avalonia;
 using Avalonia.Controls;
+
 using Markdig;
+
+using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia;
@@ -11,6 +17,7 @@ namespace MarkView.Avalonia;
 public class MarkdownViewer : ContentControl
 {
     private Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Defines the <see cref="Markdown"/> property.
     /// </summary>
@@ -57,6 +64,14 @@ public class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Extensions that customise the renderer before each render pass.
+    /// Add entries before setting <see cref="Markdown"/> or assigning
+    /// a new <see cref="Pipeline"/>; each extension's
+    /// <see cref="IMarkViewExtension.Register"/> is called once per render.
+    /// </summary>
+    public IList<IMarkViewExtension> Extensions { get; } = new List<IMarkViewExtension>();
+
+    /// <summary>
     /// Raised when a hyperlink in the rendered markdown is clicked.
     /// </summary>
     public event EventHandler<LinkClickedEventArgs>? LinkClicked;
@@ -82,6 +97,11 @@ public class MarkdownViewer : ContentControl
 
         var renderer = new AvaloniaRenderer { BaseUri = BaseUri };
         renderer.LinkClicked += OnLinkClicked;
+
+        // Extensions register before pipeline.Setup() so they can swap renderers
+        foreach (var ext in Extensions)
+            ext.Register(renderer);
+
         pipeline.Setup(renderer);
         renderer.Render(document);
 

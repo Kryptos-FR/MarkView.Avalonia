@@ -1,4 +1,5 @@
 using System.Diagnostics;
+
 using Avalonia.Controls;
 
 namespace MarkView.Avalonia.Demo;

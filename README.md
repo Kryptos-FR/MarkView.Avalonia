@@ -67,6 +67,98 @@ viewer.Pipeline = new MarkdownPipelineBuilder()
 | Hard line breaks | CommonMark (`\` or two spaces) |
 | HTML `<br>` / `<br />` | Rendered as line break |
 
+## Extension Packages
+
+MarkView.Avalonia ships optional NuGet packages that add richer rendering capabilities. Each package implements `IMarkViewExtension` and is activated via a convenience method on `MarkdownViewer`.
+
+### Syntax Highlighting (`MarkView.Avalonia.SyntaxHighlighting`)
+
+Adds TextMate grammar-based syntax highlighting to fenced code blocks.
+
+```bash
+dotnet add package MarkView.Avalonia.SyntaxHighlighting
+```
+
+```csharp
+using TextMateSharp.Grammars;
+
+viewer.UseTextMateHighlighting(ThemeName.DarkPlus); // default theme
+```
+
+The extension replaces the built-in `CodeBlockRenderer` with `TextMateCodeBlockRenderer`, which tokenises each line and emits coloured `Run` elements. Unsupported languages fall back to the default monochrome rendering automatically.
+
+Available `ThemeName` values are defined by TextMateSharp.Grammars: `DarkPlus`, `LightPlus`, `Monokai`, `SolarizedDark`, `SolarizedLight`, and more.
+
+### SVG Images (`MarkView.Avalonia.Svg`)
+
+Renders SVG images embedded in markdown (`![desc](path/to/image.svg)`), including `data:image/svg+xml` data URIs.
+
+```bash
+dotnet add package MarkView.Avalonia.Svg
+```
+
+```csharp
+viewer.UseSvg();
+```
+
+The extension inserts `SvgImageLoader` at the front of the image loader chain. Regular raster images continue to load via the built-in HTTP fallback.
+
+### Mermaid Diagrams (`MarkView.Avalonia.Mermaid`)
+
+Renders fenced `mermaid` code blocks as live diagrams using an embedded NativeWebView and bundled mermaid.min.js (v11). On Linux, a plain-text fallback is shown instead.
+
+```bash
+dotnet add package MarkView.Avalonia.Mermaid
+```
+
+```csharp
+viewer.UseMermaid(initialHeight: 300); // height in device-independent pixels
+```
+
+Markdown syntax:
+
+````markdown
+```mermaid
+graph TD
+  A[Start] --> B{Decision}
+  B -- Yes --> C[End]
+  B -- No  --> A
+```
+````
+
+### Combining extensions
+
+All three can be stacked:
+
+```csharp
+viewer
+    .UseTextMateHighlighting()
+    .UseSvg()
+    .UseMermaid();
+```
+
+Extensions are applied in the order they are added to `viewer.Extensions`. Each extension's `Register` method is called once per render pass, before the Markdig pipeline is set up.
+
+### Writing your own extension
+
+Implement `IMarkViewExtension` from the core package:
+
+```csharp
+using MarkView.Avalonia.Extensions;
+using MarkView.Avalonia.Rendering;
+
+public class MyExtension : IMarkViewExtension
+{
+    public void Register(AvaloniaRenderer renderer)
+    {
+        // swap a renderer, add an image loader, or set a code highlighter
+        renderer.ReplaceOrAdd<CodeBlockRenderer>(new MyCodeBlockRenderer());
+    }
+}
+
+viewer.Extensions.Add(new MyExtension());
+```
+
 ## Theming / Customization
 
 Include `MarkdownTheme.axaml` for default styles. Override any style class in your own `Styles` to customise appearance:
