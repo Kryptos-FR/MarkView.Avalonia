@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.IO;
 using System.Text;
+
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
@@ -9,9 +9,13 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Svg.Skia;
 using Avalonia.VisualTree;
+
 using Markdig.Syntax;
+
 using Mermaider;
+
 using MermaidRenderOptions = Mermaider.Models.RenderOptions;
+
 using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia.Mermaid;
@@ -102,20 +106,24 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
             : new MermaidRenderOptions { Bg = "#FFFFFF", Fg = "#27272A", Accent = "#3b82f6", Transparent = false };
     }
 
+    private readonly record struct Rgb(byte R, byte G, byte B);
+
     /// <summary>
     /// Replaces Mermaider's CSS custom property references (<c>var(--_xxx)</c>) with
-    /// computed hex values so SkiaSharp can render the diagram.  SkiaSharp does not
-    /// implement the CSS cascade and silently ignores <c>var()</c> expressions.
+    /// computed hex values so SkiaSharp can render the diagram.
     /// </summary>
+    /// <remarks>
+    /// SkiaSharp does not implement the CSS cascade and silently ignores <c>var()</c> expressions.
+    /// </remarks>
     private static string InlineCssVariables(string svg, MermaidRenderOptions opts)
     {
-        var bg  = ParseHex(opts.Bg     ?? "#FFFFFF");
-        var fg  = ParseHex(opts.Fg     ?? "#27272A");
-        var acc = ParseHex(opts.Accent ?? "#3b82f6");
-        var mut = opts.Muted   is { } m ? ParseHex(m) : (Rgb?)null;
-        var lin = opts.Line    is { } l ? ParseHex(l) : (Rgb?)null;
-        var sur = opts.Surface is { } s ? ParseHex(s) : (Rgb?)null;
-        var brd = opts.Border  is { } b ? ParseHex(b) : (Rgb?)null;
+        var bg = Parse(opts.Bg ?? "#FFFFFF");
+        var fg = Parse(opts.Fg ?? "#27272A");
+        var acc = Parse(opts.Accent ?? "#3b82f6");
+        var mut = opts.Muted is { } m ? Parse(m) : (Rgb?)null;
+        var lin = opts.Line is { } l ? Parse(l) : (Rgb?)null;
+        var sur = opts.Surface is { } s ? Parse(s) : (Rgb?)null;
+        var brd = opts.Border is { } b ? Parse(b) : (Rgb?)null;
 
         // Mirror the CSS variable formulas from Mermaider's <style> block
         var vars = new (string Token, Rgb Color)[]
@@ -140,36 +148,33 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 
         var sb = new StringBuilder(svg);
         foreach (var (token, color) in vars)
-            sb.Replace(token, ToHex(color));
+            sb.Replace(token, Hex(color));
 
         // Root background: replace the inline style var reference
-        sb.Replace("background:var(--bg)", $"background:{ToHex(bg)}");
+        sb.Replace("background:var(--bg)", $"background:{Hex(bg)}");
 
         return sb.ToString();
+
+
+        static Rgb Parse(string hex)
+        {
+            hex = hex.TrimStart('#');
+            return new Rgb(Convert.ToByte(hex[..2], 16),
+                           Convert.ToByte(hex[2..4], 16),
+                           Convert.ToByte(hex[4..6], 16));
+        }
+
+        // color-mix(in srgb, a N%, b) — linear interpolation in sRGB space
+        static Rgb Mix(Rgb a, int aPercent, Rgb b)
+        {
+            int bp = 100 - aPercent;
+            return new Rgb((byte)(a.R * aPercent / 100 + b.R * bp / 100),
+                           (byte)(a.G * aPercent / 100 + b.G * bp / 100),
+                           (byte)(a.B * aPercent / 100 + b.B * bp / 100));
+        }
+
+        static string Hex(Rgb c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
     }
-
-    private readonly record struct Rgb(byte R, byte G, byte B);
-
-    private static Rgb ParseHex(string hex)
-    {
-        hex = hex.TrimStart('#');
-        return new Rgb(
-            Convert.ToByte(hex[..2], 16),
-            Convert.ToByte(hex[2..4], 16),
-            Convert.ToByte(hex[4..6], 16));
-    }
-
-    /// <summary>Linearly mixes <paramref name="a"/> and <paramref name="b"/> in sRGB space.</summary>
-    private static Rgb Mix(Rgb a, int aPercent, Rgb b)
-    {
-        int bp = 100 - aPercent;
-        return new Rgb(
-            (byte)(a.R * aPercent / 100 + b.R * bp / 100),
-            (byte)(a.G * aPercent / 100 + b.G * bp / 100),
-            (byte)(a.B * aPercent / 100 + b.B * bp / 100));
-    }
-
-    private static string ToHex(Rgb c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
 
     private static string ExtractSource(FencedCodeBlock block)
     {
