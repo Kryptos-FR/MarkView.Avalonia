@@ -5,6 +5,8 @@ using System.Xml;
 
 using Avalonia.Media;
 using Avalonia.Svg.Skia;
+using Avalonia.Threading;
+
 using MarkView.Avalonia.Extensions;
 
 namespace MarkView.Avalonia.Svg;
@@ -56,9 +58,12 @@ public sealed class SvgImageLoader : IImageLoader
                 bytes = await HttpClient.GetByteArrayAsync(uri, cancellationToken);
             }
 
-            using var stream = new MemoryStream(bytes);
-            var source = SvgSource.LoadFromStream(stream);
-            return new SvgImage { Source = source };
+            SvgSource source;
+            using (var stream = new MemoryStream(bytes))
+                source = SvgSource.LoadFromStream(stream);
+
+            // SvgImage is an AvaloniaObject — must be created on the UI thread.
+            return await Dispatcher.UIThread.InvokeAsync(() => new SvgImage { Source = source });
         }
         catch (OperationCanceledException)
         {
