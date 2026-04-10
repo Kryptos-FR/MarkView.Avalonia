@@ -4,6 +4,7 @@ using Xunit;
 
 namespace MarkView.Avalonia.Tests.Rendering;
 
+// Tests non-rendering behaviour directly on AvaloniaRenderer; RenderTestBase not needed.
 public class AvaloniaRendererTests
 {
     [AvaloniaFact]
