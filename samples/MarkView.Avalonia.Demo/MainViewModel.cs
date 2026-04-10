@@ -1,5 +1,11 @@
+// Copyright (c) Nicolas Musset
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
+
 using System.ComponentModel;
+using System.IO;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+
 using Avalonia;
 using Avalonia.Styling;
 
@@ -7,9 +13,7 @@ namespace MarkView.Avalonia.Demo;
 
 public sealed class MainViewModel : INotifyPropertyChanged
 {
-    private static readonly HttpClient Http = new();
-
-    private static readonly string[] StrideVersions = ["latest", "4.2", "4.1"];
+    private static readonly string ReadmeMarkdown = LoadReadme();
 
     private const string ShowcaseMarkdown = """
         # MarkView.Avalonia Feature Showcase
@@ -68,7 +72,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
         - [x] Mermaid diagram rendering via `MarkView.Avalonia.Mermaid`
         - [x] Tables, blockquotes, task lists
         - [ ] PDF export (planned)
-        - [ ] Dark-mode auto-detection (planned)
 
         ---
 
@@ -79,7 +82,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         | `MarkView.Avalonia` | Core rendering | ✅ Published | Markdig-based |
         | `MarkView.Avalonia.SyntaxHighlighting` | Code highlighting | ✅ Published | TextMate grammars |
         | `MarkView.Avalonia.Svg` | SVG images | ✅ Published | Avalonia.Svg |
-        | `MarkView.Avalonia.Mermaid` | Mermaid diagrams | ✅ Published | WebView2 / WKWebView |
+        | `MarkView.Avalonia.Mermaid` | Mermaid diagrams | ✅ Published | Pure .NET |
 
         ---
 
@@ -154,17 +157,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         ---
 
-        *End of showcase. Select a **Stride** release from the dropdown above to see real-world docs.*
+        *End of showcase.*
         """;
 
     private string? _markdown;
-    private string _statusText = "Ready";
-    private bool _isLoading;
-    private int _selectedVersionIndex;
-    private Uri? _baseUri;
+    private int _selectedIndex;
     private bool _isLightTheme;
 
-    public string[] Versions { get; } = ["Feature Showcase", "Stride latest", "Stride 4.2", "Stride 4.1"];
+    public string[] Views { get; } = ["Feature Showcase", "README"];
+
+    public int SelectedIndex
+    {
+        get => _selectedIndex;
+        set
+        {
+            if (SetField(ref _selectedIndex, value))
+                LoadContent();
+        }
+    }
 
     public bool IsLightTheme
     {
@@ -176,80 +186,29 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public int SelectedVersionIndex
-    {
-        get => _selectedVersionIndex;
-        set
-        {
-            if (SetField(ref _selectedVersionIndex, value))
-                _ = LoadContentAsync();
-        }
-    }
-
     public string? Markdown
     {
         get => _markdown;
         private set => SetField(ref _markdown, value);
     }
 
-    public Uri? BaseUri
-    {
-        get => _baseUri;
-        private set => SetField(ref _baseUri, value);
-    }
-
-    public string StatusText
-    {
-        get => _statusText;
-        private set => SetField(ref _statusText, value);
-    }
-
-    public bool IsLoading
-    {
-        get => _isLoading;
-        private set => SetField(ref _isLoading, value);
-    }
-
     public MainViewModel()
     {
-        _ = LoadContentAsync();
+        LoadContent();
     }
 
-    private async Task LoadContentAsync()
+    private void LoadContent()
     {
-        if (_selectedVersionIndex == 0)
-        {
-            IsLoading = false;
-            Markdown = ShowcaseMarkdown;
-            BaseUri = null;
-            StatusText = "Feature Showcase";
-            return;
-        }
+        Markdown = _selectedIndex == 0 ? ShowcaseMarkdown : ReadmeMarkdown;
+    }
 
-        var strideVersion = StrideVersions[_selectedVersionIndex - 1];
-        var url = $"https://doc.stride3d.net/{strideVersion}/en/ReleaseNotes/ReleaseNotes.md";
-        var baseUrl = $"https://doc.stride3d.net/{strideVersion}/en/ReleaseNotes/";
-
-        IsLoading = true;
-        StatusText = $"Loading release notes for Stride {strideVersion}...";
-        Markdown = null;
-
-        try
-        {
-            var md = await Http.GetStringAsync(url);
-            Markdown = md;
-            BaseUri = new Uri(baseUrl);
-            StatusText = $"Loaded release notes for Stride {strideVersion}";
-        }
-        catch (Exception ex)
-        {
-            Markdown = $"# Error\n\nFailed to load release notes:\n\n```\n{ex.Message}\n```";
-            StatusText = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+    private static string LoadReadme()
+    {
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("README.md");
+        if (stream is null)
+            return "# README not found";
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

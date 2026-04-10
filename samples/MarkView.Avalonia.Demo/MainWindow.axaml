@@ -8,33 +8,22 @@
         Width="1000" Height="750">
 
   <DockPanel>
-    <!-- Top bar: version selector -->
+    <!-- Top bar -->
     <Border DockPanel.Dock="Top" Padding="12,8">
       <StackPanel Orientation="Horizontal" Spacing="8">
         <TextBlock Text="View:" VerticalAlignment="Center" />
-        <ComboBox ItemsSource="{Binding Versions}"
-                  SelectedIndex="{Binding SelectedVersionIndex}"
+        <ComboBox ItemsSource="{Binding Views}"
+                  SelectedIndex="{Binding SelectedIndex}"
                   MinWidth="120" />
-        <ProgressBar IsIndeterminate="True"
-                     IsVisible="{Binding IsLoading}"
-                     Width="120"
-                     VerticalAlignment="Center" />
         <ToggleButton IsChecked="{Binding IsLightTheme}"
                       Content="Light theme"
                       VerticalAlignment="Center" />
       </StackPanel>
     </Border>
 
-    <!-- Bottom status bar -->
-    <Border DockPanel.Dock="Bottom" Padding="12,6"
-            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
-      <TextBlock Text="{Binding StatusText}" FontSize="12" />
-    </Border>
-
     <!-- Markdown content -->
     <mv:MarkdownViewer x:Name="MarkdownView"
-                       Markdown="{Binding Markdown}"
-                       BaseUri="{Binding BaseUri}" />
+                       Markdown="{Binding Markdown}" />
   </DockPanel>
 
 </Window>
