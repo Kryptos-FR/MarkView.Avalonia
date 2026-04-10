@@ -1,6 +1,8 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Text.RegularExpressions;
+
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -14,9 +16,13 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// <summary>
 /// Renders a Markdig <see cref="LinkInline"/> as a <see cref="MarkdownHyperlink"/> span or image.
 /// </summary>
-public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
+public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {
     private static readonly HttpClient HttpClient = new();
+
+    // Matches the "=WxH" title produced by MarkdownViewer's preprocessor.
+    [GeneratedRegex(@"^=(\d+)x(\d+)$", RegexOptions.Compiled)]
+    private static partial Regex DimensionTitleRegex();
 
     protected override void Write(AvaloniaRenderer renderer, LinkInline obj)
     {
@@ -54,6 +60,18 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 
         if (!string.IsNullOrEmpty(altText))
             ToolTip.SetTip(image, altText);
+
+        // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor).
+        if (!string.IsNullOrEmpty(obj.Title))
+        {
+            var dim = DimensionTitleRegex().Match(obj.Title);
+            if (dim.Success)
+            {
+                image.Width = int.Parse(dim.Groups[1].Value);
+                image.Height = int.Parse(dim.Groups[2].Value);
+                image.Stretch = Stretch.Uniform;
+            }
+        }
 
         image.Tag = url;
 
@@ -116,4 +134,5 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
         catch (HttpRequestException) { }
         catch (IOException) { }
     }
+
 }

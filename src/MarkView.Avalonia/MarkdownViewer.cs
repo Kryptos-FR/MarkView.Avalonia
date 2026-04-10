@@ -1,6 +1,8 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Text.RegularExpressions;
+
 using Avalonia;
 using Avalonia.Controls;
 
@@ -14,8 +16,13 @@ namespace MarkView.Avalonia;
 /// <summary>
 /// A control that renders Markdown text into Avalonia visual elements.
 /// </summary>
-public class MarkdownViewer : ContentControl
+public partial class MarkdownViewer : ContentControl
 {
+    // Converts the non-standard "![alt](url =WxH)" size hint to the title slot so Markdig
+    // can parse it: "![alt](url "=WxH")". CommonMark has no image-size syntax.
+    [GeneratedRegex(@"(\!\[[^\]]*\]\()([^\s\)]+)\s+=(\d+x\d+)(\))", RegexOptions.Compiled)]
+    private static partial Regex ImageSizePreprocessorRegex();
+
     private Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -93,7 +100,8 @@ public class MarkdownViewer : ContentControl
         }
 
         var pipeline = Pipeline ?? new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
-        var document = Markdig.Markdown.Parse(Markdown, pipeline);
+        var markdownText = ImageSizePreprocessorRegex().Replace(Markdown, "$1$2 \"=$3\"$4");
+        var document = Markdig.Markdown.Parse(markdownText, pipeline);
 
         var renderer = new AvaloniaRenderer { BaseUri = BaseUri };
         renderer.LinkClicked += OnLinkClicked;
@@ -150,4 +158,5 @@ public class MarkdownViewer : ContentControl
         const double topMargin = 16;
         scrollViewer.Offset = new Vector(scrollViewer.Offset.X, Math.Max(0, point.Value.Y - topMargin));
     }
+
 }
