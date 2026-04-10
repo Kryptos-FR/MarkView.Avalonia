@@ -8,9 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
-    <PackageReference Include="Avalonia.Controls.WebView" />
-  </ItemGroup>
-  <ItemGroup>
-    <AvaloniaResource Include="Assets\**" />
+    <PackageReference Include="Mermaider" />
+    <PackageReference Include="Svg.Controls.Skia.Avalonia" />
   </ItemGroup>
 </Project>

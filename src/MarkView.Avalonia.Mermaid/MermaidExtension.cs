@@ -9,15 +9,8 @@ namespace MarkView.Avalonia.Mermaid;
 /// </summary>
 public sealed class MermaidExtension : IMarkViewExtension
 {
-    private readonly double _initialHeight;
-
-    public MermaidExtension(double initialHeight = 300)
-    {
-        _initialHeight = initialHeight;
-    }
-
     public void Register(AvaloniaRenderer renderer)
     {
-        renderer.ObjectRenderers.Insert(0, new MermaidBlockRenderer(_initialHeight));
+        renderer.ObjectRenderers.Insert(0, new MermaidBlockRenderer());
     }
 }

@@ -1,96 +1,46 @@
 using System.IO;
-using System.Text.Json;
+using System.Text;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Media;
-using Avalonia.Platform;
+using Avalonia.Svg.Skia;
 using Markdig.Syntax;
+using Mermaider;
 using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia.Mermaid;
 
 /// <summary>
 /// Handles all <see cref="FencedCodeBlock"/> nodes.  Mermaid blocks are rendered
-/// via a native WebView (or a text fallback on Linux); all other fenced blocks are
-/// rendered as styled code blocks and respect any <see cref="AvaloniaRenderer.CodeHighlighter"/>
-/// that has been registered (e.g. by the SyntaxHighlighting extension).
+/// to SVG via <see cref="MermaidRenderer"/> (pure .NET, no browser required);
+/// non-mermaid fenced blocks are rendered as styled code blocks and respect any
+/// <see cref="AvaloniaRenderer.CodeHighlighter"/> registered by the SyntaxHighlighting extension.
 /// </summary>
 public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 {
-    private static readonly Uri MermaidJsUri =
-        new("avares://MarkView.Avalonia.Mermaid/Assets/mermaid.min.js");
-
-    private readonly double _initialHeight;
-
-    public MermaidBlockRenderer(double initialHeight = 300)
-    {
-        _initialHeight = initialHeight;
-    }
-
     protected override void Write(AvaloniaRenderer renderer, FencedCodeBlock obj)
     {
         if (string.Equals(obj.Info, "mermaid", StringComparison.OrdinalIgnoreCase))
-        {
-            var source = ExtractSource(obj);
-            if (OperatingSystem.IsLinux())
-                WriteFallback(renderer, source);
-            else
-                WriteWebView(renderer, source);
-        }
+            WriteMermaid(renderer, obj);
         else
-        {
             WriteStandardCodeBlock(renderer, obj);
+    }
+
+    private static void WriteMermaid(AvaloniaRenderer renderer, FencedCodeBlock obj)
+    {
+        var source = ExtractSource(obj);
+        try
+        {
+            var svg = MermaidRenderer.RenderSvg(source);
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
+            var svgSource = SvgSource.LoadFromStream(stream);
+            renderer.WriteBlock(new Image { Source = new SvgImage { Source = svgSource } });
+        }
+        catch (Exception ex)
+        {
+            WriteFallback(renderer, source, ex.Message);
         }
     }
-
-    private void WriteWebView(AvaloniaRenderer renderer, string source)
-    {
-        var safeSource = JsonSerializer.Serialize(source);
-
-        // NavigateToString has a 2 MB COM limit; mermaid.min.js alone exceeds it.
-        // Write both files to a temp directory and Navigate to a file:// URI instead.
-        var tempDir = Path.Combine(Path.GetTempPath(), $"markview-mermaid-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(tempDir);
-
-        using (var assetStream = AssetLoader.Open(MermaidJsUri))
-        using (var jsFile = File.Create(Path.Combine(tempDir, "mermaid.min.js")))
-            assetStream.CopyTo(jsFile);
-
-        var htmlPath = Path.Combine(tempDir, "diagram.html");
-        File.WriteAllText(htmlPath, BuildHtml(safeSource));
-
-        var webView = new NativeWebView { Height = _initialHeight };
-        webView.Navigate(new Uri(htmlPath));
-        webView.DetachedFromVisualTree += (_, _) =>
-        {
-            try { Directory.Delete(tempDir, recursive: true); } catch { }
-        };
-
-        renderer.WriteBlock(webView);
-    }
-
-    private static string BuildHtml(string safeSource) => $$"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8" />
-          <style>
-            body { margin: 0; padding: 8px; background: transparent; }
-            .mermaid { width: 100%; }
-          </style>
-        </head>
-        <body>
-          <div id="diagram"></div>
-          <script src="mermaid.min.js"></script>
-          <script>
-            mermaid.initialize({ startOnLoad: false, theme: 'default' });
-            mermaid.render('mermaid-svg', {{safeSource}}).then(function(result) {
-              document.getElementById('diagram').innerHTML = result.svg;
-            });
-          </script>
-        </body>
-        </html>
-        """;
 
     private static string ExtractSource(FencedCodeBlock block)
     {
@@ -103,10 +53,11 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
                       .Select(i => lines.Lines[i].Slice.ToString()));
     }
 
-    private static void WriteFallback(AvaloniaRenderer renderer, string source)
+    private static void WriteFallback(AvaloniaRenderer renderer, string source, string? errorMessage = null)
     {
         var panel = new StackPanel { Spacing = 4 };
-        panel.Children.Add(new TextBlock { Text = "Mermaid diagram (preview unavailable on this platform)" });
+        if (errorMessage != null)
+            panel.Children.Add(new TextBlock { Text = $"Mermaid render error: {errorMessage}" });
         panel.Children.Add(new TextBlock { Text = source });
 
         var border = new Border { Child = panel };

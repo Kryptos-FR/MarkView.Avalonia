@@ -9,11 +9,9 @@ public static class MarkdownViewerMermaidExtensions
     /// Adds <see cref="Mermaid.MermaidExtension"/> to the viewer's
     /// <see cref="MarkdownViewer.Extensions"/> list.
     /// </summary>
-    public static MarkdownViewer UseMermaid(
-        this MarkdownViewer viewer,
-        double initialHeight = 300)
+    public static MarkdownViewer UseMermaid(this MarkdownViewer viewer)
     {
-        viewer.Extensions.Add(new Mermaid.MermaidExtension(initialHeight));
+        viewer.Extensions.Add(new Mermaid.MermaidExtension());
         return viewer;
     }
 }

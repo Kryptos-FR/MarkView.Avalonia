@@ -1,22 +1,22 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+
 using Markdig;
-using MarkView.Avalonia;
-using MarkView.Avalonia.Mermaid;
+
 using MarkView.Avalonia.Rendering;
+
 using Xunit;
 
 namespace MarkView.Avalonia.Mermaid.Tests;
 
 public class MermaidBlockRendererTests
 {
-    private static StackPanel Render(string markdown, double initialHeight = 300)
+    private static StackPanel Render(string markdown)
     {
         var pipeline = new MarkdownPipelineBuilder().Build();
         var document = Markdown.Parse(markdown, pipeline);
         var renderer = new AvaloniaRenderer();
-        var extension = new MermaidExtension(initialHeight);
-        extension.Register(renderer);
+        new MermaidExtension().Register(renderer);
         pipeline.Setup(renderer);
         renderer.Render(document);
         return renderer.RootPanel;
@@ -43,8 +43,7 @@ public class MermaidBlockRendererTests
     public void MermaidExtension_Register_inserts_renderer_at_index_0()
     {
         var renderer = new AvaloniaRenderer();
-        var extension = new MermaidExtension();
-        extension.Register(renderer);
+        new MermaidExtension().Register(renderer);
         Assert.IsType<MermaidBlockRenderer>(renderer.ObjectRenderers[0]);
     }
 
