@@ -27,7 +27,16 @@ public sealed class SvgImageLoader : IImageLoader
 
         // Check extension — ignore query string
         var path = url.Split('?')[0];
-        return path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase);
+        if (path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Accept any absolute HTTP/HTTPS URL speculatively — LoadAsync will return null
+        // if the response is not valid SVG, letting the bitmap fallback take over.
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            return true;
+
+        return false;
     }
 
     public async Task<IImage?> LoadAsync(string url, CancellationToken cancellationToken = default)
