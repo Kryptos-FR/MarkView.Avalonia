@@ -29,6 +29,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         - [Task List](#task-list)
         - [Tables](#tables)
         - [Code Blocks](#code-blocks)
+        - [Bitmap Image](#bitmap-image)
         - [SVG Image](#svg-image)
         - [Mermaid Diagram](#mermaid-diagram)
 
@@ -126,6 +127,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
         data_uri = f"data:image/svg+xml;base64,{encoded}"
         print(data_uri)
         ```
+
+        ---
+
+        ## Bitmap Image
+
+        The image below is an Avalonia resource embedded in the demo app (`avares://` URI):
+
+        ![Avalonia Logo](avares://MarkView.Avalonia.Demo/Assets/avalonia-logo.png)
 
         ---
 
