@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Avalonia;
@@ -36,7 +37,15 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
         var source = ExtractSource(obj);
         try
         {
-            var svg = MermaidRenderer.RenderSvg(source, GetRenderOptions());
+            // Mermaider formats SVG numbers using the thread's current culture.
+            // On locales with ',' as decimal separator this corrupts the SVG dimensions
+            // (e.g. width="908,16" → invalid SVG, viewBox height becomes 16 trillion px).
+            // Force InvariantCulture for the duration of the call and restore afterwards.
+            var prevCulture = Thread.CurrentThread.CurrentCulture;
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            string svg;
+            try { svg = MermaidRenderer.RenderSvg(source, GetRenderOptions()); }
+            finally { Thread.CurrentThread.CurrentCulture = prevCulture; }
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
             var svgSource = SvgSource.LoadFromStream(stream);
 
