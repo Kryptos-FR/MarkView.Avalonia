@@ -134,7 +134,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         The image below is an Avalonia resource embedded in the demo app (`avares://` URI):
 
-        ![Avalonia Logo](avares://MarkView.Avalonia.Demo/Assets/avalonia-logo.png)
+        ![Avalonia Logo](avares://MarkView.Avalonia.Demo/Assets/avalonia-logo.png =80x80)
 
         ---
 
