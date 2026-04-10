@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
@@ -16,6 +17,7 @@ namespace MarkView.Avalonia.Rendering;
 /// requires a custom document container — see Markdown.Avalonia's CTextBlock for
 /// a geometry-based reference implementation.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 public class MarkdownSelectableTextBlock : SelectableTextBlock
 {
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
