@@ -1,7 +1,9 @@
 using System.IO;
 using System.Text;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Svg.Skia;
 using Markdig.Syntax;
@@ -34,7 +36,30 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
             var svg = MermaidRenderer.RenderSvg(source);
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
             var svgSource = SvgSource.LoadFromStream(stream);
-            renderer.WriteBlock(new Image { Source = new SvgImage { Source = svgSource } });
+
+            var image = new Image
+            {
+                Source = new SvgImage { Source = svgSource },
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Left,
+            };
+            // The StackPanel inside a ScrollViewer passes infinite width — constrain
+            // the image to the actual visible viewport width when it becomes known.
+            image.EffectiveViewportChanged += (_, e) =>
+            {
+                if (e.EffectiveViewport.Width > 0)
+                    image.MaxWidth = e.EffectiveViewport.Width;
+            };
+
+            var border = new Border
+            {
+                Child = image,
+                Background = Brushes.White,
+                Padding = new Thickness(8),
+            };
+            border.Classes.Add("markdown-mermaid");
+
+            renderer.WriteBlock(border);
         }
         catch (Exception ex)
         {
