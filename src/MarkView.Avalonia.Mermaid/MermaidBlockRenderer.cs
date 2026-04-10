@@ -47,21 +47,6 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
                 HorizontalAlignment = HorizontalAlignment.Left,
             };
 
-            // Render (or re-render) the SVG with the current theme colours.
-            void ApplyTheme()
-            {
-                var opts = GetRenderOptions();
-                var prevCulture = Thread.CurrentThread.CurrentCulture;
-                Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-                string svg;
-                try { svg = MermaidRenderer.RenderSvg(source, opts); }
-                finally { Thread.CurrentThread.CurrentCulture = prevCulture; }
-
-                svg = InlineCssVariables(svg, opts);
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
-                image.Source = new SvgImage { Source = SvgSource.LoadFromStream(stream) };
-            }
-
             ApplyTheme();
 
             // Re-render when the user switches light/dark theme.
@@ -77,13 +62,6 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
                 var sv = image.FindAncestorOfType<ScrollViewer>();
                 if (sv is null) return;
 
-                void Update()
-                {
-                    var w = sv.Viewport.Width;
-                    if (w > 0) image.MaxWidth = w;
-                }
-
-                void OnSizeChanged(object? s, SizeChangedEventArgs e) => Update();
                 sv.SizeChanged += OnSizeChanged;
                 image.DetachedFromVisualTree += (_, _) =>
                 {
@@ -91,11 +69,33 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
                     Application.Current?.PropertyChanged -= OnThemeChanged;
                 };
                 Update();
+
+                void Update()
+                {
+                    var w = sv.Viewport.Width;
+                    if (w > 0) image.MaxWidth = w;
+                }
+
+                void OnSizeChanged(object? s, SizeChangedEventArgs e) => Update();
             };
 
             var border = new Border { Child = image };
             border.Classes.Add("markdown-mermaid");
             renderer.WriteBlock(border);
+
+            void ApplyTheme()
+            {
+                var opts = GetRenderOptions();
+                var prevCulture = Thread.CurrentThread.CurrentCulture;
+                Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+                string svg;
+                try { svg = MermaidRenderer.RenderSvg(source, opts); }
+                finally { Thread.CurrentThread.CurrentCulture = prevCulture; }
+
+                svg = InlineCssVariables(svg, opts);
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
+                image.Source = new SvgImage { Source = SvgSource.LoadFromStream(stream) };
+            }
         }
         catch (Exception ex)
         {
