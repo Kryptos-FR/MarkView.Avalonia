@@ -5,11 +5,15 @@
     <PackageId>MarkView.Avalonia.Svg</PackageId>
     <Description>SVG image rendering extension for MarkView.Avalonia.</Description>
     <PackageTags>avalonia;markdown;svg</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Svg.Controls.Skia.Avalonia" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>
