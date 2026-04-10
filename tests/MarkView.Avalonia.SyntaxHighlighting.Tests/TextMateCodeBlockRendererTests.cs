@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Markdig;
+using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 using TextMateSharp.Grammars;
 using Xunit;
@@ -76,5 +77,46 @@ public class TextMateCodeBlockRendererTests
         viewer.UseTextMateHighlighting();
         Assert.Single(viewer.Extensions);
         Assert.IsType<TextMateExtension>(viewer.Extensions[0]);
+    }
+
+    [AvaloniaFact]
+    public void TextMateExtension_Register_sets_theme_aware_CodeHighlighter()
+    {
+        var renderer = new AvaloniaRenderer();
+        new TextMateExtension().Register(renderer);
+        Assert.IsAssignableFrom<IThemeAwareCodeHighlighter>(renderer.CodeHighlighter);
+    }
+
+    [AvaloniaFact]
+    public void Theme_aware_highlighter_returns_tokens_for_both_variants()
+    {
+        var renderer = new AvaloniaRenderer();
+        new TextMateExtension().Register(renderer);
+        var themeAware = (IThemeAwareCodeHighlighter)renderer.CodeHighlighter!;
+
+        var darkTokens = themeAware.HighlightVariant("var x = 1;", "csharp", isDark: true);
+        var lightTokens = themeAware.HighlightVariant("var x = 1;", "csharp", isDark: false);
+
+        Assert.NotNull(darkTokens);
+        Assert.NotNull(lightTokens);
+        Assert.NotEmpty(darkTokens);
+        Assert.NotEmpty(lightTokens);
+    }
+
+    [AvaloniaFact]
+    public void Dark_and_light_variants_produce_different_token_colours()
+    {
+        var renderer = new AvaloniaRenderer();
+        new TextMateExtension().Register(renderer);
+        var themeAware = (IThemeAwareCodeHighlighter)renderer.CodeHighlighter!;
+
+        var dark = themeAware.HighlightVariant("var x = 1;", "csharp", isDark: true)!;
+        var light = themeAware.HighlightVariant("var x = 1;", "csharp", isDark: false)!;
+
+        // At least one token should differ in colour between dark and light themes.
+        var darkColours = dark.Select(t => t.Foreground?.ToString()).ToList();
+        var lightColours = light.Select(t => t.Foreground?.ToString()).ToList();
+        Assert.False(darkColours.SequenceEqual(lightColours),
+            "Expected dark and light themes to produce at least one different token colour.");
     }
 }

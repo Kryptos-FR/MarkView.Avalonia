@@ -12,7 +12,8 @@ public class SvgImageLoaderTests
 {
     [Theory]
     [InlineData("https://example.com/icon.svg", true)]
-    [InlineData("https://example.com/image.png", false)]
+    [InlineData("https://example.com/image.png", true)]  // accepted speculatively; LoadAsync returns null if not SVG
+    [InlineData("https://shields.io/badge/build-passing-green", true)]  // no extension; may be SVG response
     [InlineData("data:image/svg+xml;base64,PHN2Zy8+", true)]
     [InlineData("data:image/png;base64,abc", false)]
     [InlineData("https://example.com/icon.SVG", true)]   // case-insensitive extension
