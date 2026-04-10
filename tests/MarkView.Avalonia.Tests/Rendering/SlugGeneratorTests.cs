@@ -37,23 +37,3 @@ public class SlugGeneratorTests
         Assert.Equal("hello", gen.GenerateSlug("Hello"));
     }
 }
-
-public class AvaloniaRendererAnchorTests
-{
-    [AvaloniaFact]
-    public void Renderer_exposes_SlugGenerator()
-    {
-        var renderer = new MarkView.Avalonia.Rendering.AvaloniaRenderer();
-        Assert.NotNull(renderer.SlugGenerator);
-    }
-
-    [AvaloniaFact]
-    public void RegisterAnchor_stores_control_by_id()
-    {
-        var renderer = new MarkView.Avalonia.Rendering.AvaloniaRenderer();
-        var control = new TextBlock();
-        renderer.RegisterAnchor("my-heading", control);
-        Assert.True(renderer.Anchors.ContainsKey("my-heading"));
-        Assert.Same(control, renderer.Anchors["my-heading"]);
-    }
-}

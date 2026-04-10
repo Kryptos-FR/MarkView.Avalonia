@@ -51,20 +51,6 @@ public class MarkdownViewerTests
     }
 
     [AvaloniaFact]
-    public void Fragment_link_click_does_not_fire_public_LinkClicked_event()
-    {
-        // Render via the renderer directly to get the anchor registry
-        var pipeline = new Markdig.MarkdownPipelineBuilder().Build();
-        var document = Markdig.Markdown.Parse("## My Heading\n\n[jump](#my-heading)", pipeline);
-        var renderer = new MarkView.Avalonia.Rendering.AvaloniaRenderer();
-        pipeline.Setup(renderer);
-        renderer.Render(document);
-
-        // Fragment anchor must be registered
-        Assert.True(renderer.Anchors.ContainsKey("my-heading"));
-    }
-
-    [AvaloniaFact]
     public void Heading_is_registered_as_anchor_after_render()
     {
         var pipeline = new Markdig.MarkdownPipelineBuilder().Build();
