@@ -2,7 +2,12 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>WinExe</OutputType>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\README.md" LogicalName="README.md" />
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
@@ -10,5 +15,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
+    <ProjectReference Include="..\..\src\MarkView.Avalonia.SyntaxHighlighting\MarkView.Avalonia.SyntaxHighlighting.csproj" />
+    <ProjectReference Include="..\..\src\MarkView.Avalonia.Svg\MarkView.Avalonia.Svg.csproj" />
+    <ProjectReference Include="..\..\src\MarkView.Avalonia.Mermaid\MarkView.Avalonia.Mermaid.csproj" />
   </ItemGroup>
 </Project>

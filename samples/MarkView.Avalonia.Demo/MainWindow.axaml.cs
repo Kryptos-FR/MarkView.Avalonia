@@ -9,6 +9,11 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        MarkdownView.UseTextMateHighlighting()
+                    .UseSvg()
+                    .UseMermaid();
+
         DataContext = new MainViewModel();
 
         MarkdownView.LinkClicked += OnLinkClicked;
