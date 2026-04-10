@@ -23,20 +23,36 @@ public class MermaidBlockRendererTests
     }
 
     [AvaloniaFact]
-    public void Mermaid_fence_renders_as_single_block()
+    public void Mermaid_fence_renders_border_with_mermaid_class()
     {
         var result = Render("```mermaid\ngraph TD\n  A --> B\n```");
-        Assert.Single(result.Children);
+        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        Assert.Contains("markdown-mermaid", border.Classes);
     }
 
     [AvaloniaFact]
-    public void Non_mermaid_fence_is_not_handled_by_MermaidBlockRenderer()
+    public void Mermaid_fence_border_contains_image()
     {
-        // A plain csharp fence must still produce a Border with markdown-code-block
+        var result = Render("```mermaid\ngraph TD\n  A --> B\n```");
+        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        Assert.IsType<Image>(border.Child);
+    }
+
+    [AvaloniaFact]
+    public void Non_mermaid_fence_renders_with_code_block_class()
+    {
         var result = Render("```csharp\nvar x = 1;\n```");
         var border = Assert.IsType<Border>(Assert.Single(result.Children));
         Assert.Contains("markdown-code-block", border.Classes);
         Assert.DoesNotContain("markdown-mermaid-fallback", border.Classes);
+    }
+
+    [AvaloniaFact]
+    public void Non_mermaid_fence_gets_language_class()
+    {
+        var result = Render("```csharp\nvar x = 1;\n```");
+        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        Assert.Contains("language-csharp", border.Classes);
     }
 
     [AvaloniaFact]
