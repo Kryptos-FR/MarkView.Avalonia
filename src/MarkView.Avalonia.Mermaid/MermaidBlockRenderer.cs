@@ -41,33 +41,37 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
         var source = ExtractSource(obj);
         try
         {
-            var opts = GetRenderOptions();
-
-            // Mermaider formats SVG numbers using the thread's current culture.
-            // On locales with ',' as decimal separator this corrupts dimensions.
-            var prevCulture = Thread.CurrentThread.CurrentCulture;
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            string svg;
-            try { svg = MermaidRenderer.RenderSvg(source, opts); }
-            finally { Thread.CurrentThread.CurrentCulture = prevCulture; }
-
-            // SkiaSharp does not support CSS custom properties (var(--x)).
-            // Resolve all Mermaider CSS variables to concrete hex values.
-            svg = InlineCssVariables(svg, opts);
-
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
-            var svgSource = SvgSource.LoadFromStream(stream);
-
             var image = new Image
             {
-                Source = new SvgImage { Source = svgSource },
                 Stretch = Stretch.Uniform,
                 HorizontalAlignment = HorizontalAlignment.Left,
             };
 
+            // Render (or re-render) the SVG with the current theme colours.
+            void ApplyTheme()
+            {
+                var opts = GetRenderOptions();
+                var prevCulture = Thread.CurrentThread.CurrentCulture;
+                Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+                string svg;
+                try { svg = MermaidRenderer.RenderSvg(source, opts); }
+                finally { Thread.CurrentThread.CurrentCulture = prevCulture; }
+
+                svg = InlineCssVariables(svg, opts);
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
+                image.Source = new SvgImage { Source = SvgSource.LoadFromStream(stream) };
+            }
+
+            ApplyTheme();
+
+            // Re-render when the user switches light/dark theme.
+            // Standard Avalonia controls update automatically via DynamicResource, but
+            // the Mermaid SVG has colours baked in at render time so it must be rebuilt.
+            void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e) => ApplyTheme();
+            Application.Current!.PropertyChanged += OnThemeChanged;
+
             // A ScrollViewer passes infinite available width to its children.
-            // Once attached to the visual tree, find the host ScrollViewer and
-            // constrain MaxWidth to its Viewport.Width, updating on resize.
+            // Constrain MaxWidth to the viewport width, updating on resize.
             image.AttachedToVisualTree += (_, _) =>
             {
                 var sv = image.FindAncestorOfType<ScrollViewer>();
@@ -81,7 +85,11 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 
                 void OnSizeChanged(object? s, SizeChangedEventArgs e) => Update();
                 sv.SizeChanged += OnSizeChanged;
-                image.DetachedFromVisualTree += (_, _) => sv.SizeChanged -= OnSizeChanged;
+                image.DetachedFromVisualTree += (_, _) =>
+                {
+                    sv.SizeChanged -= OnSizeChanged;
+                    Application.Current?.PropertyChanged -= OnThemeChanged;
+                };
                 Update();
             };
 
