@@ -37,7 +37,7 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Pack
-        run: dotnet pack src/MarkView.Avalonia/MarkView.Avalonia.csproj --no-build --configuration Release -p:Version=${{ steps.version.outputs.VERSION }} --output ./nupkgs
+        run: dotnet pack MarkView.Avalonia.slnx --no-build --configuration Release -p:Version=${{ steps.version.outputs.VERSION }} --output ./nupkgs
 
       - name: Show package version
         run: echo "Package version => ${{ steps.version.outputs.VERSION }}"
