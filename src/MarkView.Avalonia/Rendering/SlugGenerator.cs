@@ -13,7 +13,7 @@ namespace MarkView.Avalonia.Rendering;
 /// TODO: expose ISlugGenerator interface and allow injection via AvaloniaRenderer
 /// to support alternative anchor schemes (e.g. GitLab, Gitea, or user-defined).
 /// </remarks>
-public class SlugGenerator
+public partial class SlugGenerator
 {
     private readonly Dictionary<string, int> _seen = new(StringComparer.Ordinal);
 
@@ -39,12 +39,19 @@ public class SlugGenerator
         // Lowercase
         text = text.ToLowerInvariant();
         // Remove characters that are not letters, digits, spaces, or hyphens
-        text = Regex.Replace(text, @"[^\p{L}\p{N}\s\-]", "");
+        text = InvalidCharacterRegex().Replace(text, "");
         // Replace whitespace runs with a single hyphen
-        text = Regex.Replace(text, @"\s+", "-");
+        text = WhitespaceRegex().Replace(text, "-");
         // Collapse consecutive hyphens
-        text = Regex.Replace(text, @"-{2,}", "-");
+        text = CollapseRegex().Replace(text, "-");
         // Trim leading/trailing hyphens
         return text.Trim('-');
     }
+
+    [GeneratedRegex(@"[^\p{L}\p{N}\s\-]")]
+    private static partial Regex InvalidCharacterRegex();
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegex();
+    [GeneratedRegex(@"-{2,}")]
+    private static partial Regex CollapseRegex();
 }
