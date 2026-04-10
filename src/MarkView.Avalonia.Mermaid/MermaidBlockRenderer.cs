@@ -37,15 +37,20 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
         var source = ExtractSource(obj);
         try
         {
+            var opts = GetRenderOptions();
+
             // Mermaider formats SVG numbers using the thread's current culture.
-            // On locales with ',' as decimal separator this corrupts the SVG dimensions
-            // (e.g. width="908,16" → invalid SVG, viewBox height becomes 16 trillion px).
-            // Force InvariantCulture for the duration of the call and restore afterwards.
+            // On locales with ',' as decimal separator this corrupts dimensions.
             var prevCulture = Thread.CurrentThread.CurrentCulture;
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             string svg;
-            try { svg = MermaidRenderer.RenderSvg(source, GetRenderOptions()); }
+            try { svg = MermaidRenderer.RenderSvg(source, opts); }
             finally { Thread.CurrentThread.CurrentCulture = prevCulture; }
+
+            // SkiaSharp does not support CSS custom properties (var(--x)).
+            // Resolve all Mermaider CSS variables to concrete hex values.
+            svg = InlineCssVariables(svg, opts);
+
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
             var svgSource = SvgSource.LoadFromStream(stream);
 
@@ -87,8 +92,7 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
     }
 
     /// <summary>
-    /// Builds <see cref="MermaidRenderOptions"/> matching the current Avalonia theme variant
-    /// so the diagram colours look correct on both light and dark backgrounds.
+    /// Builds render options matching the current Avalonia theme variant.
     /// </summary>
     private static MermaidRenderOptions GetRenderOptions()
     {
@@ -97,6 +101,75 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
             ? new MermaidRenderOptions { Bg = "#18181B", Fg = "#FAFAFA", Accent = "#60a5fa", Transparent = false }
             : new MermaidRenderOptions { Bg = "#FFFFFF", Fg = "#27272A", Accent = "#3b82f6", Transparent = false };
     }
+
+    /// <summary>
+    /// Replaces Mermaider's CSS custom property references (<c>var(--_xxx)</c>) with
+    /// computed hex values so SkiaSharp can render the diagram.  SkiaSharp does not
+    /// implement the CSS cascade and silently ignores <c>var()</c> expressions.
+    /// </summary>
+    private static string InlineCssVariables(string svg, MermaidRenderOptions opts)
+    {
+        var bg  = ParseHex(opts.Bg     ?? "#FFFFFF");
+        var fg  = ParseHex(opts.Fg     ?? "#27272A");
+        var acc = ParseHex(opts.Accent ?? "#3b82f6");
+        var mut = opts.Muted   is { } m ? ParseHex(m) : (Rgb?)null;
+        var lin = opts.Line    is { } l ? ParseHex(l) : (Rgb?)null;
+        var sur = opts.Surface is { } s ? ParseHex(s) : (Rgb?)null;
+        var brd = opts.Border  is { } b ? ParseHex(b) : (Rgb?)null;
+
+        // Mirror the CSS variable formulas from Mermaider's <style> block
+        var vars = new (string Token, Rgb Color)[]
+        {
+            ("var(--_text)",          fg),
+            ("var(--_text-sec)",      mut  ?? Mix(fg, 55, bg)),
+            ("var(--_text-muted)",    mut  ?? Mix(fg, 35, bg)),
+            ("var(--_text-faint)",    Mix(fg, 20, bg)),
+            ("var(--_line)",          lin  ?? Mix(fg, 32, bg)),
+            ("var(--_arrow)",         acc),
+            ("var(--_node-fill)",     sur  ?? Mix(fg,  4, bg)),
+            ("var(--_node-stroke)",   brd  ?? Mix(fg, 22, bg)),
+            ("var(--_group-fill)",    bg),
+            ("var(--_group-hdr)",     Mix(fg,  4, bg)),
+            ("var(--_group-stroke)",  Mix(fg, 10, bg)),
+            ("var(--_inner-stroke)",  Mix(fg, 10, bg)),
+            ("var(--_key-badge)",     Mix(fg,  8, bg)),
+            ("var(--_accent-fill)",   Mix(acc,  8, bg)),
+            ("var(--_accent-stroke)", Mix(acc, 20, bg)),
+            ("var(--_accent-text)",   Mix(acc, 65, bg)),
+        };
+
+        var sb = new StringBuilder(svg);
+        foreach (var (token, color) in vars)
+            sb.Replace(token, ToHex(color));
+
+        // Root background: replace the inline style var reference
+        sb.Replace("background:var(--bg)", $"background:{ToHex(bg)}");
+
+        return sb.ToString();
+    }
+
+    private readonly record struct Rgb(byte R, byte G, byte B);
+
+    private static Rgb ParseHex(string hex)
+    {
+        hex = hex.TrimStart('#');
+        return new Rgb(
+            Convert.ToByte(hex[..2], 16),
+            Convert.ToByte(hex[2..4], 16),
+            Convert.ToByte(hex[4..6], 16));
+    }
+
+    /// <summary>Linearly mixes <paramref name="a"/> and <paramref name="b"/> in sRGB space.</summary>
+    private static Rgb Mix(Rgb a, int aPercent, Rgb b)
+    {
+        int bp = 100 - aPercent;
+        return new Rgb(
+            (byte)(a.R * aPercent / 100 + b.R * bp / 100),
+            (byte)(a.G * aPercent / 100 + b.G * bp / 100),
+            (byte)(a.B * aPercent / 100 + b.B * bp / 100));
+    }
+
+    private static string ToHex(Rgb c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
 
     private static string ExtractSource(FencedCodeBlock block)
     {
