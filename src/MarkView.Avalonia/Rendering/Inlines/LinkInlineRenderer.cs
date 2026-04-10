@@ -56,11 +56,18 @@ public class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 
         image.Tag = url;
 
-        // CancellationToken tied to visual-tree lifetime
-        var cts = new CancellationTokenSource();
-        image.DetachedFromVisualTree += (_, _) => cts.Cancel();
-
-        _ = LoadImageAsync(renderer, image, url, cts.Token);
+        // Start loading on first attach; cancel on detach.
+        // Deferring to AttachedToVisualTree avoids spurious cancellations from
+        // Avalonia's layout passes that detach/reattach controls during initialisation.
+        CancellationTokenSource? cts = null;
+        image.AttachedToVisualTree += (_, _) =>
+        {
+            if (image.Source != null) return; // already loaded, no need to reload
+            cts?.Cancel();
+            cts = new CancellationTokenSource();
+            _ = LoadImageAsync(renderer, image, url, cts.Token);
+        };
+        image.DetachedFromVisualTree += (_, _) => cts?.Cancel();
 
         renderer.WriteInline(image);
     }
