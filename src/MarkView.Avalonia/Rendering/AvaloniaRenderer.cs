@@ -6,6 +6,7 @@ using Markdig.Syntax.Inlines;
 using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Rendering.Containers;
 using MarkView.Avalonia.Rendering.Inlines;
+using System.Collections.Generic;
 using AvaloniaInline = Avalonia.Controls.Documents.Inline;
 
 namespace MarkView.Avalonia.Rendering;
@@ -28,6 +29,23 @@ public class AvaloniaRenderer : RendererBase
     public Uri? BaseUri { get; set; }
 
     /// <summary>
+    /// Generates GitHub-style anchor IDs for headings. Reset on each render pass.
+    /// </summary>
+    public SlugGenerator SlugGenerator { get; } = new();
+
+    private readonly Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Maps anchor IDs to their heading controls for fragment link navigation.
+    /// </summary>
+    public IReadOnlyDictionary<string, Control> Anchors => _anchors;
+
+    /// <summary>
+    /// Registers a heading control under the given anchor ID.
+    /// </summary>
+    public void RegisterAnchor(string id, Control control) => _anchors[id] = control;
+
+    /// <summary>
     /// Raised when a hyperlink is clicked.
     /// </summary>
     public event EventHandler<LinkClickedEventArgs>? LinkClicked;
@@ -41,6 +59,8 @@ public class AvaloniaRenderer : RendererBase
 
     public override object Render(MarkdownObject markdownObject)
     {
+        _anchors.Clear();
+        SlugGenerator.Reset();
         Write(markdownObject);
         return RootPanel;
     }

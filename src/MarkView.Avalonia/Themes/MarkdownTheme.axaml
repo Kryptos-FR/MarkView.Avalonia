@@ -1,41 +1,42 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mv="using:MarkView.Avalonia">
+        xmlns:mv="using:MarkView.Avalonia"
+        xmlns:mri="using:MarkView.Avalonia.Rendering.Inlines">
 
-  <!-- Headings -->
-  <Style Selector="TextBlock.markdown-h1">
+  <!-- Headings — use :is() to match MarkdownSelectableTextBlock (a TextBlock subclass) -->
+  <Style Selector=":is(TextBlock).markdown-h1">
     <Setter Property="FontSize" Value="28" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Margin" Value="0,8,0,4" />
   </Style>
-  <Style Selector="TextBlock.markdown-h2">
+  <Style Selector=":is(TextBlock).markdown-h2">
     <Setter Property="FontSize" Value="24" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Margin" Value="0,8,0,4" />
   </Style>
-  <Style Selector="TextBlock.markdown-h3">
+  <Style Selector=":is(TextBlock).markdown-h3">
     <Setter Property="FontSize" Value="20" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Margin" Value="0,6,0,2" />
   </Style>
-  <Style Selector="TextBlock.markdown-h4">
+  <Style Selector=":is(TextBlock).markdown-h4">
     <Setter Property="FontSize" Value="18" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Margin" Value="0,4,0,2" />
   </Style>
-  <Style Selector="TextBlock.markdown-h5">
+  <Style Selector=":is(TextBlock).markdown-h5">
     <Setter Property="FontSize" Value="16" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Margin" Value="0,4,0,2" />
   </Style>
-  <Style Selector="TextBlock.markdown-h6">
+  <Style Selector=":is(TextBlock).markdown-h6">
     <Setter Property="FontSize" Value="14" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Margin" Value="0,4,0,2" />
   </Style>
 
   <!-- Paragraphs -->
-  <Style Selector="TextBlock.markdown-paragraph">
+  <Style Selector=":is(TextBlock).markdown-paragraph">
     <Setter Property="Margin" Value="0,2" />
   </Style>
 
@@ -53,15 +54,10 @@
   </Style>
 
   <!-- Inline code -->
-  <Style Selector="Border.markdown-code-inline">
-    <Setter Property="Background" Value="#2D2D2D" />
-    <Setter Property="CornerRadius" Value="3" />
-    <Setter Property="Padding" Value="4,1" />
-  </Style>
-  <Style Selector="Border.markdown-code-inline > TextBlock">
-    <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace" />
-    <Setter Property="FontSize" Value="13" />
-    <Setter Property="Foreground" Value="#CE9178" />
+  <Style Selector="Run.markdown-code-inline">
+    <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace"/>
+    <Setter Property="Background" Value="#1A000000"/>
+    <Setter Property="Foreground" Value="#CE9178"/>
   </Style>
 
   <!-- Blockquote -->
@@ -90,10 +86,15 @@
     <Setter Property="Margin" Value="0,4" />
   </Style>
 
+  <!-- Text selection highlight -->
+  <Style Selector=":is(SelectableTextBlock)">
+    <Setter Property="SelectionBrush" Value="{DynamicResource SystemAccentColor}"/>
+  </Style>
+
   <!-- Links -->
-  <Style Selector="HyperlinkButton.markdown-link">
-    <Setter Property="Padding" Value="0" />
-    <Setter Property="Cursor" Value="Hand" />
+  <Style Selector="mri|MarkdownHyperlink.markdown-link">
+    <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}"/>
+    <Setter Property="TextDecorations" Value="Underline"/>
   </Style>
 
   <!-- Tables -->

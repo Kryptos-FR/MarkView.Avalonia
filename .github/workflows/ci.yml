@@ -19,8 +19,13 @@ jobs:
     with:
       os: ${{ matrix.os }}
 
+  coverage:
+    permissions:
+      pull-requests: write
+    uses: ./.github/workflows/coverage.yml
+
   publish:
-    needs: build
+    needs: [build, coverage]
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       id-token: write

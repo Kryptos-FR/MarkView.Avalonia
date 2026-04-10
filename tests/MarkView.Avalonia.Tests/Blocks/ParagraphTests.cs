@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using MarkView.Avalonia.Rendering;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Blocks;
@@ -12,7 +13,7 @@ public class ParagraphTests : RenderTestBase
     public void Simple_paragraph_renders_as_TextBlock_with_Run()
     {
         var result = Render("Hello, world!");
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var run = Assert.IsType<Run>(Assert.Single(textBlock.Inlines!));
         Assert.Equal("Hello, world!", run.Text);
     }
@@ -22,14 +23,21 @@ public class ParagraphTests : RenderTestBase
     {
         var result = Render("First paragraph.\n\nSecond paragraph.");
         Assert.Equal(2, result.Children.Count);
-        Assert.All(result.Children, child => Assert.IsType<TextBlock>(child));
+        Assert.All(result.Children, child => Assert.IsType<MarkdownSelectableTextBlock>(child));
     }
 
     [AvaloniaFact]
     public void Paragraph_TextBlock_has_text_wrapping()
     {
         var result = Render("Hello, world!");
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         Assert.Equal(TextWrapping.Wrap, textBlock.TextWrapping);
+    }
+
+    [AvaloniaFact]
+    public void Paragraph_renders_as_MarkdownSelectableTextBlock()
+    {
+        var result = Render("Hello world");
+        Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
     }
 }

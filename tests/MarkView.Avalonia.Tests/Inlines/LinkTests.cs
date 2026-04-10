@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
+using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Inlines;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Inlines;
@@ -8,25 +10,40 @@ namespace MarkView.Avalonia.Tests.Inlines;
 public class LinkTests : RenderTestBase
 {
     [AvaloniaFact]
-    public void Link_renders_as_HyperlinkButton_in_InlineUIContainer()
+    public void Link_renders_as_MarkdownHyperlink_span()
     {
         var result = Render("[click me](https://example.com)");
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
-        var container = Assert.IsType<InlineUIContainer>(Assert.Single(textBlock.Inlines!));
-        var button = Assert.IsType<HyperlinkButton>(container.Child);
-        Assert.Equal(new Uri("https://example.com"), button.NavigateUri);
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
+        Assert.Equal(new Uri("https://example.com"), hyperlink.NavigateUri);
     }
 
     [AvaloniaFact]
-    public void Link_text_is_rendered_as_button_content()
+    public void Link_text_is_a_Run_inside_hyperlink()
     {
         var result = Render("[click me](https://example.com)");
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
-        var container = Assert.IsType<InlineUIContainer>(Assert.Single(textBlock.Inlines!));
-        var button = Assert.IsType<HyperlinkButton>(container.Child);
-        var content = Assert.IsType<TextBlock>(button.Content);
-        var run = Assert.IsType<Run>(Assert.Single(content.Inlines!));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
+        var run = Assert.IsType<Run>(Assert.Single(hyperlink.Inlines));
         Assert.Equal("click me", run.Text);
+    }
+
+    [AvaloniaFact]
+    public void Link_has_markdown_link_css_class()
+    {
+        var result = Render("[click me](https://example.com)");
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
+        Assert.Contains("markdown-link", hyperlink.Classes);
+    }
+
+    [AvaloniaFact]
+    public void Link_with_title_stores_Title_on_hyperlink()
+    {
+        var result = Render("[click me](https://example.com \"My Title\")");
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
+        Assert.Equal("My Title", hyperlink.Title);
     }
 
     [AvaloniaFact]
@@ -35,7 +52,7 @@ public class LinkTests : RenderTestBase
         var markdown = "[docs](path/to/doc)";
         var pipeline = new Markdig.MarkdownPipelineBuilder().Build();
         var document = Markdig.Markdown.Parse(markdown, pipeline);
-        var renderer = new MarkView.Avalonia.Rendering.AvaloniaRenderer
+        var renderer = new AvaloniaRenderer
         {
             BaseUri = new Uri("https://doc.stride3d.net/4.2/")
         };
@@ -43,9 +60,8 @@ public class LinkTests : RenderTestBase
         renderer.Render(document);
         var result = renderer.RootPanel;
 
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
-        var container = Assert.IsType<InlineUIContainer>(Assert.Single(textBlock.Inlines!));
-        var button = Assert.IsType<HyperlinkButton>(container.Child);
-        Assert.Equal(new Uri("https://doc.stride3d.net/4.2/path/to/doc"), button.NavigateUri);
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
+        Assert.Equal(new Uri("https://doc.stride3d.net/4.2/path/to/doc"), hyperlink.NavigateUri);
     }
 }

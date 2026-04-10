@@ -1,6 +1,6 @@
-using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
+using MarkView.Avalonia.Rendering;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Inlines;
@@ -16,7 +16,7 @@ public class HtmlInlineTests : RenderTestBase
     {
         var result = Render(markdown);
 
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var inlines = textBlock.Inlines!.ToList();
         // Should be: Run("before") + LineBreak + Run("after")
         Assert.Equal(3, inlines.Count);
@@ -30,7 +30,7 @@ public class HtmlInlineTests : RenderTestBase
     {
         var result = Render("text<span>more</span>end");
 
-        var textBlock = Assert.IsType<TextBlock>(Assert.Single(result.Children));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         // The <span> and </span> tags should be dropped, leaving just text runs
         var inlines = textBlock.Inlines!.ToList();
         Assert.All(inlines, i => Assert.True(i is Run));

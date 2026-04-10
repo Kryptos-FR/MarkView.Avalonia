@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Markdig.Extensions.TaskLists;
 using Markdig.Syntax;
 
 namespace MarkView.Avalonia.Rendering.Blocks;
@@ -31,16 +32,23 @@ public class ListRenderer : AvaloniaObjectRenderer<ListBlock>
                 ColumnDefinitions = new ColumnDefinitions("Auto,*"),
             };
 
-            var markerText = obj.IsOrdered ? $"{index}." : "\u2022";
-            var marker = new TextBlock
+            bool isTaskItem = listItem.Count > 0
+                && listItem[0] is ParagraphBlock para
+                && para.Inline?.FirstChild is TaskList;
+
+            if (!isTaskItem)
             {
-                Text = markerText,
-                Margin = new Thickness(0, 0, 8, 0),
-                VerticalAlignment = VerticalAlignment.Top,
-            };
-            marker.Classes.Add("markdown-list-marker");
-            Grid.SetColumn(marker, 0);
-            itemGrid.Children.Add(marker);
+                var markerText = obj.IsOrdered ? $"{index}." : "\u2022";
+                var marker = new TextBlock
+                {
+                    Text = markerText,
+                    Margin = new Thickness(0, 0, 8, 0),
+                    VerticalAlignment = VerticalAlignment.Top,
+                };
+                marker.Classes.Add("markdown-list-marker");
+                Grid.SetColumn(marker, 0);
+                itemGrid.Children.Add(marker);
+            }
 
             var contentPanel = new StackPanel { Spacing = 4 };
             Grid.SetColumn(contentPanel, 1);
