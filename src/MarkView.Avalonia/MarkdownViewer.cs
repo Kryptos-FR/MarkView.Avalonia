@@ -164,6 +164,14 @@ public partial class MarkdownViewer : ContentControl
                             ? MarkdownSelectableTextBlock.ExtractPlainText(codeTb.Inlines)
                             : codeTb.Text ?? string.Empty));
                     break;
+                // Lists: register each item with its marker prepended to the first paragraph
+                case Panel listPanel when listPanel.Classes.Contains("markdown-list"):
+                    RegisterListItems(layer, listPanel);
+                    break;
+                // Tables: register one DocumentBlock per row with cells joined by tabs
+                case Grid tableGrid when tableGrid.Classes.Contains("markdown-table"):
+                    RegisterTableRows(layer, tableGrid);
+                    break;
                 case Border { Child: Panel borderPanel }:
                     RegisterBlocks(layer, borderPanel);
                     break;
@@ -173,6 +181,116 @@ public partial class MarkdownViewer : ContentControl
             }
         }
     }
+
+    private void RegisterListItems(DocumentSelectionLayer layer, Panel listPanel)
+    {
+        foreach (var child in listPanel.Children)
+        {
+            if (child is not Grid itemGrid) continue;
+
+            // Column 0 holds the marker TextBlock (absent for task-list checkboxes)
+            var markerText = itemGrid.Children
+                .OfType<TextBlock>()
+                .FirstOrDefault(c => Grid.GetColumn(c) == 0)?.Text ?? string.Empty;
+
+            // Column 1 holds the content StackPanel
+            var contentPanel = itemGrid.Children
+                .OfType<Panel>()
+                .FirstOrDefault(c => Grid.GetColumn(c) == 1);
+            if (contentPanel is null) continue;
+
+            bool markerApplied = false;
+            RegisterListContent(layer, contentPanel, markerText, ref markerApplied);
+        }
+    }
+
+    private void RegisterListContent(DocumentSelectionLayer layer, Panel panel,
+        string marker, ref bool markerApplied)
+    {
+        foreach (var child in panel.Children)
+        {
+            switch (child)
+            {
+                case MarkdownSelectableTextBlock tb:
+                    var text = MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!);
+                    if (!markerApplied && !string.IsNullOrEmpty(marker))
+                    {
+                        text = marker + " " + text;
+                        markerApplied = true;
+                    }
+                    layer.Register(new DocumentBlock(tb, text));
+                    break;
+                // Nested list — recurse with its own markers
+                case Panel nestedList when nestedList.Classes.Contains("markdown-list"):
+                    RegisterListItems(layer, nestedList);
+                    break;
+                case Border { Child: Panel borderPanel }:
+                    RegisterListContent(layer, borderPanel, marker, ref markerApplied);
+                    break;
+                case Panel nested:
+                    RegisterListContent(layer, nested, marker, ref markerApplied);
+                    break;
+            }
+        }
+    }
+
+    private void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid)
+    {
+        // Collect cells (Border elements) grouped by row then column
+        var rowMap = new SortedDictionary<int, SortedDictionary<int, Border>>();
+        foreach (var child in tableGrid.Children)
+        {
+            if (child is not Border cell) continue;
+            int row = Grid.GetRow(cell);
+            int col = Grid.GetColumn(cell);
+            if (!rowMap.TryGetValue(row, out var cols))
+                rowMap[row] = cols = new SortedDictionary<int, Border>();
+            cols[col] = cell;
+        }
+
+        foreach (var (_, colMap) in rowMap)
+        {
+            var cellTexts = new List<string>();
+            TextBlock? anchorTb = null;
+            foreach (var (_, cell) in colMap)
+            {
+                cellTexts.Add(cell.Child is Panel p ? ExtractPanelText(p) : string.Empty);
+                anchorTb ??= FindFirstTextBlock(cell);
+            }
+            if (anchorTb is null || cellTexts.Count == 0) continue;
+            layer.Register(new DocumentBlock(anchorTb, string.Join('\t', cellTexts)));
+        }
+    }
+
+    /// <summary>Extracts plain text from a panel, joining child texts with a space.</summary>
+    private static string ExtractPanelText(Panel panel)
+    {
+        var parts = new List<string>();
+        foreach (var child in panel.Children)
+        {
+            switch (child)
+            {
+                case MarkdownSelectableTextBlock tb:
+                    var t = MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!);
+                    if (!string.IsNullOrEmpty(t)) parts.Add(t);
+                    break;
+                case Panel nested:
+                    var nt = ExtractPanelText(nested);
+                    if (!string.IsNullOrEmpty(nt)) parts.Add(nt);
+                    break;
+            }
+        }
+        return string.Join(' ', parts);
+    }
+
+    /// <summary>Returns the first <see cref="TextBlock"/> found in a control subtree.</summary>
+    private static TextBlock? FindFirstTextBlock(Control control) => control switch
+    {
+        TextBlock tb => tb,
+        Border { Child: Control child } => FindFirstTextBlock(child),
+        Panel panel => panel.Children.Select(FindFirstTextBlock).FirstOrDefault(tb => tb is not null),
+        _ => null,
+    };
 
     // ── Pointer handlers ──────────────────────────────────────────────────────
 
