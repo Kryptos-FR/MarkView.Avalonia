@@ -190,11 +190,9 @@ Example — increase heading size and add a bottom border:
 
 ## Known Limitations
 
-Text selection is scoped to individual blocks (paragraphs, headings). Selecting text across multiple blocks (e.g. from a heading into the next paragraph) is not supported in v1.
-
 | Limitation | Detail |
 |---|---|
-| Within-block selection only | Each text block is an independent `SelectableTextBlock`. Cross-block selection requires a custom document container — see [Markdown.Avalonia's CTextBlock](https://github.com/whistyun/Markdown.Avalonia) for a geometry-based reference. |
+| Partial cross-block selection | `DocumentSelectionLayer` coordinates selection over paragraphs, headings, and code blocks. Tables, blockquotes, and list items are not yet wired; their text is skipped in clipboard output. `Ctrl+A` + `Ctrl+C` copies all wired content. |
 | Images are non-selectable | Images in inline position are embedded as `InlineUIContainer` — selection skips around them. This is the same behaviour as all reference libraries. |
 | Task checkboxes are non-selectable | Same reason as images. |
 | Anchor scroll is instant | `BringIntoView()` jumps without animation. Smooth scrolling is a future improvement. |
