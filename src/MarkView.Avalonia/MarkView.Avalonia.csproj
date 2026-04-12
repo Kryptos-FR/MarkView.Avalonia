@@ -13,11 +13,6 @@
     <PackageReference Include="Markdig" />
   </ItemGroup>
   <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-      <_Parameter1>MarkView.Avalonia.Tests</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
-  <ItemGroup>
     <AvaloniaResource Include="Themes\**" />
     <!-- Bundle the repo-root README into the NuGet package -->
     <None Include="..\..\README.md" Pack="true" PackagePath="/" />
