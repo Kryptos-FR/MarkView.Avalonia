@@ -164,6 +164,9 @@ public partial class MarkdownViewer : ContentControl
                             ? MarkdownSelectableTextBlock.ExtractPlainText(codeTb.Inlines)
                             : codeTb.Text ?? string.Empty));
                     break;
+                case Border { Child: Panel borderPanel }:
+                    RegisterBlocks(layer, borderPanel);
+                    break;
                 case Panel nested:
                     RegisterBlocks(layer, nested);
                     break;
