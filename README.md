@@ -105,7 +105,7 @@ The extension inserts `SvgImageLoader` at the front of the image loader chain. R
 
 ### Mermaid Diagrams (`MarkView.Avalonia.Mermaid`)
 
-Renders fenced `mermaid` code blocks as live diagrams using an embedded NativeWebView and bundled mermaid.min.js (v11). On Linux, a plain-text fallback is shown instead.
+Renders fenced `mermaid` code blocks as SVG diagrams using the [Mermaider](https://github.com/FoggyBalrog/Mermaider) library (pure .NET, no browser required). Works on all platforms including Linux. Diagrams re-render automatically when the user switches between light and dark themes.
 
 ```bash
 dotnet add package MarkView.Avalonia.Mermaid
