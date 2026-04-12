@@ -59,9 +59,15 @@ public class MarkdownSelectableTextBlock : TextBlock
     /// <summary>
     /// Extracts plain text from an <see cref="InlineCollection"/>, recursing into spans.
     /// Used at registration time to populate <see cref="DocumentBlock.PlainText"/>.
+    /// Returns the existing <see cref="Run.Text"/> string directly when there is exactly
+    /// one <see cref="Run"/> (the common case), avoiding a <see cref="StringBuilder"/> allocation.
     /// </summary>
     internal static string ExtractPlainText(InlineCollection inlines)
     {
+        // Fast path: single Run → return the string reference directly, no allocation
+        if (inlines.Count == 1 && inlines[0] is Run singleRun)
+            return singleRun.Text ?? string.Empty;
+
         var sb = new StringBuilder();
         AppendInlines(sb, inlines);
         return sb.ToString();
