@@ -31,4 +31,13 @@ public static class MarkdownExtensions
     {
         return builder.Use<Markdig.Extensions.Footnotes.FootnoteExtension>();
     }
+
+    /// <summary>
+    /// Enables Markdig GitHub-style alert block parsing (NOTE, WARNING, TIP, IMPORTANT, CAUTION).
+    /// Activate on the viewer with <c>viewer.UseAlertBlocks()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseAlertBlocks(this MarkdownPipelineBuilder builder)
+    {
+        return builder.Use<Markdig.Extensions.Alerts.AlertExtension>();
+    }
 }

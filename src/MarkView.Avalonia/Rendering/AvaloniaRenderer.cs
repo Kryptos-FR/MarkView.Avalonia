@@ -114,6 +114,9 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new CodeBlockRenderer());
         ObjectRenderers.Add(new ListRenderer());
         ObjectRenderers.Add(new ThematicBreakRenderer());
+        // AlertBlockRenderer must precede QuoteBlockRenderer: AlertBlock extends QuoteBlock
+        // and Markdig dispatches to the first renderer whose Accept() matches.
+        ObjectRenderers.Add(new AlertBlockRenderer());
         ObjectRenderers.Add(new QuoteBlockRenderer());
         ObjectRenderers.Add(new HtmlBlockRenderer());
         ObjectRenderers.Add(new TableRenderer());
