@@ -191,9 +191,13 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
             return string.Empty;
 
         var lines = block.Lines;
-        return string.Join("\n",
-            Enumerable.Range(0, lines.Count)
-                      .Select(i => lines.Lines[i].Slice.ToString()));
+        var sb = new StringBuilder();
+        for (int i = 0; i < lines.Count; i++)
+        {
+            if (i > 0) sb.Append('\n');
+            sb.Append(lines.Lines[i].Slice.AsSpan());
+        }
+        return sb.ToString();
     }
 
     private static void WriteFallback(AvaloniaRenderer renderer, string source, string? errorMessage = null)
@@ -226,9 +230,9 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
         }
 
         // Materialise source lines once so they can be reused on theme change.
-        var lineTexts = Enumerable.Range(0, obj.Lines.Count)
-            .Select(i => obj.Lines.Lines[i].Slice.ToString())
-            .ToList();
+        var lineTexts = new List<string>(obj.Lines.Count);
+        for (int i = 0; i < obj.Lines.Count; i++)
+            lineTexts.Add(obj.Lines.Lines[i].Slice.ToString());
 
         var isDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
         BuildInlines(textBlock, renderer.CodeHighlighter, language, isDark, lineTexts);

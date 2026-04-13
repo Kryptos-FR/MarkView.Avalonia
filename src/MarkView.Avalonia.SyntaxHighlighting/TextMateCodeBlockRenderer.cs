@@ -41,9 +41,9 @@ public class TextMateCodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock>
         }
 
         // Materialise source lines once so they can be reused on theme change.
-        var lineTexts = Enumerable.Range(0, obj.Lines.Count)
-            .Select(i => obj.Lines.Lines[i].Slice.ToString())
-            .ToList();
+        var lineTexts = new List<string>(obj.Lines.Count);
+        for (int i = 0; i < obj.Lines.Count; i++)
+            lineTexts.Add(obj.Lines.Lines[i].Slice.ToString());
 
         var isDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
         BuildInlines(textBlock, renderer.CodeHighlighter, language, isDark, lineTexts);

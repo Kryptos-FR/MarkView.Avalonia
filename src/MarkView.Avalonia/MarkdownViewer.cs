@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Text;
 using System.Text.RegularExpressions;
 
 using Avalonia;
@@ -31,6 +32,9 @@ public partial class MarkdownViewer : ContentControl
     private bool _isDragging;
     private Point _dragStart;
     private const double DragThreshold = 3.0;
+
+    private static readonly MarkdownPipeline DefaultPipeline =
+        new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
 
     /// <summary>
     /// Defines the <see cref="Markdown"/> property.
@@ -108,7 +112,7 @@ public partial class MarkdownViewer : ContentControl
             return;
         }
 
-        var pipeline = Pipeline ?? new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
+        var pipeline = Pipeline ?? DefaultPipeline;
         var markdownText = ImageSizePreprocessorRegex().Replace(Markdown, "$1$2 \"=$3\"$4");
         var document = Markdig.Markdown.Parse(markdownText, pipeline);
 
@@ -187,14 +191,17 @@ public partial class MarkdownViewer : ContentControl
             if (child is not Grid itemGrid) continue;
 
             // Column 0 holds the marker TextBlock (absent for task-list checkboxes)
-            var markerText = itemGrid.Children
-                .OfType<TextBlock>()
-                .FirstOrDefault(c => Grid.GetColumn(c) == 0)?.Text ?? string.Empty;
-
             // Column 1 holds the content StackPanel
-            var contentPanel = itemGrid.Children
-                .OfType<Panel>()
-                .FirstOrDefault(c => Grid.GetColumn(c) == 1);
+            TextBlock? markerTb = null;
+            Panel? contentPanel = null;
+            foreach (var gridChild in itemGrid.Children)
+            {
+                if (gridChild is TextBlock tb && Grid.GetColumn(tb) == 0)
+                    markerTb = tb;
+                else if (gridChild is Panel pnl && Grid.GetColumn(pnl) == 1)
+                    contentPanel = pnl;
+            }
+            var markerText = markerTb?.Text ?? string.Empty;
             if (contentPanel is null) continue;
 
             bool markerApplied = false;
@@ -248,16 +255,19 @@ public partial class MarkdownViewer : ContentControl
 
         foreach (var (_, colMap) in rowMap)
         {
-            var cells = colMap.Values.ToList();
-            for (int i = 0; i < cells.Count; i++)
+            int cellCount = colMap.Count;
+            int i = 0;
+            foreach (var cell in colMap.Values)
             {
-                var cell = cells[i];
                 var tb = FindFirstTextBlock(cell);
-                if (tb is null) continue;
-                var text = cell.Child is Panel p ? ExtractPanelText(p) : string.Empty;
-                // Last cell in row separates with newline; others with tab
-                var separator = (i == cells.Count - 1) ? "\n" : "\t";
-                layer.Register(new IndexEntry(tb, text, separator));
+                if (tb is not null)
+                {
+                    var text = cell.Child is Panel p ? ExtractPanelText(p) : string.Empty;
+                    // Last cell in row separates with newline; others with tab
+                    var separator = (i == cellCount - 1) ? "\n" : "\t";
+                    layer.Register(new IndexEntry(tb, text, separator));
+                }
+                i++;
             }
         }
     }
@@ -265,32 +275,41 @@ public partial class MarkdownViewer : ContentControl
     /// <summary>Extracts plain text from a panel, joining child texts with a space.</summary>
     private static string ExtractPanelText(Panel panel)
     {
-        var parts = new List<string>();
+        var sb = new StringBuilder();
         foreach (var child in panel.Children)
         {
             switch (child)
             {
                 case MarkdownSelectableTextBlock tb:
                     var t = MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!);
-                    if (!string.IsNullOrEmpty(t)) parts.Add(t);
+                    if (!string.IsNullOrEmpty(t)) { if (sb.Length > 0) sb.Append(' '); sb.Append(t); }
                     break;
                 case Panel nested:
                     var nt = ExtractPanelText(nested);
-                    if (!string.IsNullOrEmpty(nt)) parts.Add(nt);
+                    if (!string.IsNullOrEmpty(nt)) { if (sb.Length > 0) sb.Append(' '); sb.Append(nt); }
                     break;
             }
         }
-        return string.Join(' ', parts);
+        return sb.ToString();
     }
 
     /// <summary>Returns the first <see cref="TextBlock"/> found in a control subtree.</summary>
-    private static TextBlock? FindFirstTextBlock(Control control) => control switch
+    private static TextBlock? FindFirstTextBlock(Control control)
     {
-        TextBlock tb => tb,
-        Border { Child: Control child } => FindFirstTextBlock(child),
-        Panel panel => panel.Children.Select(FindFirstTextBlock).FirstOrDefault(tb => tb is not null),
-        _ => null,
-    };
+        switch (control)
+        {
+            case TextBlock tb: return tb;
+            case Border { Child: Control child }: return FindFirstTextBlock(child);
+            case Panel panel:
+                foreach (var c in panel.Children)
+                {
+                    var found = FindFirstTextBlock(c);
+                    if (found is not null) return found;
+                }
+                return null;
+            default: return null;
+        }
+    }
 
     // ── Pointer handlers ──────────────────────────────────────────────────────
 

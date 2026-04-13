@@ -23,6 +23,9 @@ public class TextMateHighlighter : ICodeHighlighter
     // Grammar cache: language id → grammar (null = unsupported)
     private readonly Dictionary<string, IGrammar?> _grammarCache = new(StringComparer.OrdinalIgnoreCase);
 
+    // Brush cache: theme colour hex string → brush (avoids per-token allocation)
+    private readonly Dictionary<string, IBrush> _brushCache = new(StringComparer.OrdinalIgnoreCase);
+
     public TextMateHighlighter(ThemeName theme = ThemeName.DarkPlus)
     {
         _options = new RegistryOptions(theme);
@@ -85,7 +88,10 @@ public class TextMateHighlighter : ICodeHighlighter
             {
                 var hex = _theme.GetColor(rules[0].foreground);
                 if (!string.IsNullOrEmpty(hex))
-                    brush = new ImmutableSolidColorBrush(Color.Parse(hex));
+                {
+                    if (!_brushCache.TryGetValue(hex, out brush))
+                        _brushCache[hex] = brush = new ImmutableSolidColorBrush(Color.Parse(hex));
+                }
             }
 
             tokens.Add((text, brush));
