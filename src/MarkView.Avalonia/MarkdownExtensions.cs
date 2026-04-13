@@ -49,4 +49,13 @@ public static class MarkdownExtensions
     {
         return builder.Use<Markdig.Extensions.Abbreviations.AbbreviationExtension>();
     }
+
+    /// <summary>
+    /// Enables Markdig figure block parsing (^^^ fences with optional caption).
+    /// Activate on the viewer with <c>viewer.UseFigures()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseFigures(this MarkdownPipelineBuilder builder)
+    {
+        return builder.Use<Markdig.Extensions.Figures.FigureExtension>();
+    }
 }

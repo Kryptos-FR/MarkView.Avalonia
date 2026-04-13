@@ -121,6 +121,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new HtmlBlockRenderer());
         ObjectRenderers.Add(new TableRenderer());
         ObjectRenderers.Add(new FootnoteGroupRenderer());
+        ObjectRenderers.Add(new FigureRenderer());
 
         // Inline renderers
         ObjectRenderers.Add(new LiteralInlineRenderer());
