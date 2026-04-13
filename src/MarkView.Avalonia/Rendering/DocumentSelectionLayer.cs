@@ -13,14 +13,16 @@ namespace MarkView.Avalonia.Rendering;
 /// Placed as a sibling of the markdown <see cref="StackPanel"/> in a single-cell
 /// <see cref="Grid"/>, it receives coordinate-translated pointer events from
 /// <see cref="MarkdownViewer"/> and paints selection highlights via <see cref="Render"/>.
+/// Selection is expressed as two absolute char offsets in the flat document char space.
 /// </summary>
 internal sealed class DocumentSelectionLayer : Control
 {
-    private readonly List<DocumentBlock> _blocks = new();
+    private readonly List<IndexEntry> _entries = new();
+    private int _totalLength;
 
-    // Anchor and focus in (blockIndex, charOffset) space.
-    private (int BlockIdx, int Offset)? _anchor;
-    private (int BlockIdx, int Offset)? _focus;
+    // Anchor and focus as absolute char offsets.
+    private int? _anchor;
+    private int? _focus;
 
     public DocumentSelectionLayer()
     {
@@ -29,23 +31,26 @@ internal sealed class DocumentSelectionLayer : Control
 
     // ── Registration ─────────────────────────────────────────────────────────
 
-    /// <summary>Registers a block in document order. Call after render, before user interaction.</summary>
-    public void Register(DocumentBlock block) => _blocks.Add(block);
-
-    /// <summary>Removes all registered blocks. Call before each re-render.</summary>
-    public void ClearBlocks() => _blocks.Clear();
-
-    /// <summary>Exposes registered blocks for hyperlink hit-testing from <see cref="MarkdownViewer"/>.</summary>
-    internal IReadOnlyList<DocumentBlock> Blocks => _blocks;
+    /// <summary>
+    /// Registers an entry in document order.
+    /// Stamps <paramref name="entry"/>.AbsStart and advances the running offset.
+    /// Call after render, before user interaction.
+    /// </summary>
+    public void Register(IndexEntry entry)
+    {
+        entry.AbsStart = _totalLength;
+        _entries.Add(entry);
+        _totalLength += entry.PlainText.Length + entry.Separator.Length;
+    }
 
     // ── Public selection API ──────────────────────────────────────────────────
 
-    /// <summary>Selects all text in all registered blocks.</summary>
+    /// <summary>Selects all text in all registered entries.</summary>
     public void SelectAll()
     {
-        if (_blocks.Count == 0) return;
-        _anchor = (0, 0);
-        _focus = (_blocks.Count - 1, _blocks[^1].PlainText.Length);
+        if (_entries.Count == 0) return;
+        _anchor = 0;
+        _focus  = _entries[^1].AbsEnd;   // up to (not including) trailing separator
         InvalidateVisual();
     }
 
@@ -53,25 +58,34 @@ internal sealed class DocumentSelectionLayer : Control
     public void ClearSelection()
     {
         _anchor = null;
-        _focus = null;
+        _focus  = null;
         InvalidateVisual();
     }
 
-    /// <summary>Returns selected plain text, with newlines between blocks.</summary>
+    /// <summary>Returns selected plain text in reading order with separators between entries.</summary>
     public string GetSelectedText()
     {
         if (_anchor is null || _focus is null) return string.Empty;
-        var (start, end) = Ordered(_anchor.Value, _focus.Value);
+        int selStart = Math.Min(_anchor.Value, _focus.Value);
+        int selEnd   = Math.Max(_anchor.Value, _focus.Value);
+        if (selStart == selEnd) return string.Empty;
 
-        if (start.BlockIdx == end.BlockIdx)
-            return Slice(_blocks[start.BlockIdx].PlainText, start.Offset, end.Offset);
+        var sb = new System.Text.StringBuilder();
+        foreach (var entry in _entries)
+        {
+            if (entry.AbsEndWithSep <= selStart) continue;  // entirely before selection (including separator)
+            if (entry.AbsStart >= selEnd) break;              // entirely after selection
 
-        var parts = new List<string>();
-        parts.Add(Slice(_blocks[start.BlockIdx].PlainText, start.Offset, _blocks[start.BlockIdx].PlainText.Length));
-        for (int i = start.BlockIdx + 1; i < end.BlockIdx; i++)
-            parts.Add(_blocks[i].PlainText);
-        parts.Add(Slice(_blocks[end.BlockIdx].PlainText, 0, end.Offset));
-        return string.Join('\n', parts);
+            int localStart = Math.Max(0, selStart - entry.AbsStart);
+            int localEnd   = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
+            if (localEnd > localStart)
+                sb.Append(entry.PlainText.AsSpan(localStart, localEnd - localStart));
+
+            // Append separator if selection extends into or past the separator gap
+            if (selEnd > entry.AbsEnd && entry.Separator.Length > 0)
+                sb.Append(entry.Separator);
+        }
+        return sb.ToString();
     }
 
     /// <summary>Copies selected text to the clipboard.</summary>
@@ -92,10 +106,10 @@ internal sealed class DocumentSelectionLayer : Control
     public void OnPointerPressed(Point posInLayer)
     {
         ClearSelection();
-        var hit = HitTestBlocks(posInLayer);
-        if (hit is null) return;
-        _anchor = hit;
-        _focus = hit;
+        var offset = HitTestOffset(posInLayer);
+        if (offset is null) return;
+        _anchor = offset;
+        _focus  = offset;
     }
 
     /// <summary>
@@ -105,35 +119,43 @@ internal sealed class DocumentSelectionLayer : Control
     public void OnPointerMoved(Point posInLayer)
     {
         if (_anchor is null) return;
-        var hit = HitTestBlocks(posInLayer);
-        if (hit is null) return;
-        _focus = hit;
+        var offset = HitTestOffset(posInLayer);
+        if (offset is null) return;
+        _focus = offset;
         InvalidateVisual();
     }
 
+    // ── Hit testing ───────────────────────────────────────────────────────────
+
     /// <summary>
-    /// Performs a hit-test against all registered blocks.
-    /// Returns (blockIndex, charOffset) of the closest hit, or null if nothing is hit.
-    /// Uses <c>TranslatePoint</c> to convert <paramref name="posInLayer"/> to each block's local space.
+    /// Returns the absolute char offset at <paramref name="posInLayer"/>, or null if no entry
+    /// was hit. Used for selection anchor/focus.
     /// </summary>
-    public (int BlockIdx, int Offset)? HitTestBlocks(Point posInLayer)
+    public int? HitTestOffset(Point posInLayer)
     {
-        for (int i = 0; i < _blocks.Count; i++)
+        foreach (var entry in _entries)
         {
-            var tb = _blocks[i].TextBlock;
-            var origin = tb.TranslatePoint(new Point(0, 0), this);
-            if (origin is null) continue;
+            var localPos = ToLocalPos(entry.TextBlock, posInLayer);
+            if (localPos is null) continue;
 
-            var localPos = posInLayer - origin.Value;
+            var textPos = new Point(localPos.Value.X - entry.TextBlock.Padding.Left,
+                                    localPos.Value.Y - entry.TextBlock.Padding.Top);
+            var hit = entry.TextBlock.TextLayout.HitTestPoint(textPos);
+            return entry.AbsStart + hit.TextPosition;
+        }
+        return null;
+    }
 
-            // Skip if clearly outside the block's bounds
-            if (localPos.X < 0 || localPos.Y < 0 ||
-                localPos.X > tb.Bounds.Width || localPos.Y > tb.Bounds.Height)
-                continue;
-
-            var textPos = new Point(localPos.X - tb.Padding.Left, localPos.Y - tb.Padding.Top);
-            var hit = tb.TextLayout.HitTestPoint(textPos);
-            return (i, hit.TextPosition);
+    /// <summary>
+    /// Returns the <see cref="IndexEntry"/> whose TextBlock bounds contain
+    /// <paramref name="posInLayer"/>, or null. Used for hyperlink hit-testing.
+    /// </summary>
+    public IndexEntry? HitTestEntry(Point posInLayer)
+    {
+        foreach (var entry in _entries)
+        {
+            if (ToLocalPos(entry.TextBlock, posInLayer) is not null)
+                return entry;
         }
         return null;
     }
@@ -143,54 +165,57 @@ internal sealed class DocumentSelectionLayer : Control
     public override void Render(DrawingContext context)
     {
         if (_anchor is null || _focus is null) return;
-        var brush = new SolidColorBrush(Colors.CornflowerBlue, 0.35);
-        var (start, end) = Ordered(_anchor.Value, _focus.Value);
+        int selStart = Math.Min(_anchor.Value, _focus.Value);
+        int selEnd   = Math.Max(_anchor.Value, _focus.Value);
+        if (selStart == selEnd) return;
 
-        for (int i = start.BlockIdx; i <= end.BlockIdx && i < _blocks.Count; i++)
+        var brush = new SolidColorBrush(Colors.CornflowerBlue, 0.35);
+
+        foreach (var entry in _entries)
         {
-            var tb = _blocks[i].TextBlock;
-            var origin = tb.TranslatePoint(new Point(0, 0), this);
+            if (entry.AbsEnd <= selStart) continue;
+            if (entry.AbsStart >= selEnd) break;
+
+            var origin = entry.TextBlock.TranslatePoint(new Point(0, 0), this);
             if (origin is null) continue;
 
-            var textOrigin = origin.Value + new Vector(tb.Padding.Left, tb.Padding.Top);
-            int charStart = (i == start.BlockIdx) ? start.Offset : 0;
-            int charEnd   = (i == end.BlockIdx)   ? end.Offset   : _blocks[i].PlainText.Length;
-            int length = charEnd - charStart;
+            var textOrigin  = origin.Value + new Vector(entry.TextBlock.Padding.Left,
+                                                         entry.TextBlock.Padding.Top);
+            int localStart = Math.Max(0, selStart - entry.AbsStart);
+            int localEnd   = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
+            int length     = localEnd - localStart;
             if (length <= 0) continue;
 
-            foreach (var rect in tb.TextLayout.HitTestTextRange(charStart, length))
+            foreach (var rect in entry.TextBlock.TextLayout.HitTestTextRange(localStart, length))
                 context.DrawRectangle(brush, null, rect.Translate(textOrigin));
         }
     }
 
     // ── Test helpers ──────────────────────────────────────────────────────────
 
-    internal void SetSelectionForTest(int blockIdx, int startOffset, int endOffset)
+    /// <summary>Directly sets anchor and focus as absolute offsets. For unit tests only.</summary>
+    internal void SetSelectionForTest(int start, int end)
     {
-        _anchor = (blockIdx, startOffset);
-        _focus = (blockIdx, endOffset);
-    }
-
-    internal void SetSelectionForTest(int startBlock, int startOffset, int endBlock, int endOffset)
-    {
-        _anchor = (startBlock, startOffset);
-        _focus = (endBlock, endOffset);
+        _anchor = start;
+        _focus  = end;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private static string Slice(string text, int start, int end)
+    /// <summary>
+    /// Returns <paramref name="posInLayer"/> in the TextBlock's local coordinate space,
+    /// or null if the point is outside the TextBlock's bounds.
+    /// </summary>
+    private Point? ToLocalPos(TextBlock tb, Point posInLayer)
     {
-        start = Math.Clamp(start, 0, text.Length);
-        end   = Math.Clamp(end, start, text.Length);
-        return text[start..end];
-    }
+        var origin = tb.TranslatePoint(new Point(0, 0), this);
+        if (origin is null) return null;
 
-    private static ((int BlockIdx, int Offset) start, (int BlockIdx, int Offset) end)
-        Ordered((int BlockIdx, int Offset) a, (int BlockIdx, int Offset) b)
-    {
-        if (a.BlockIdx < b.BlockIdx) return (a, b);
-        if (a.BlockIdx > b.BlockIdx) return (b, a);
-        return a.Offset <= b.Offset ? (a, b) : (b, a);
+        var local = posInLayer - origin.Value;
+        if (local.X < 0 || local.Y < 0 ||
+            local.X > tb.Bounds.Width || local.Y > tb.Bounds.Height)
+            return null;
+
+        return local;
     }
 }

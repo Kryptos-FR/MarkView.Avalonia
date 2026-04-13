@@ -154,21 +154,19 @@ public partial class MarkdownViewer : ContentControl
             switch (child)
             {
                 case MarkdownSelectableTextBlock tb:
-                    layer.Register(new DocumentBlock(tb,
-                        MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!)));
+                    layer.Register(new IndexEntry(tb,
+                        MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!), "\n"));
                     break;
                 case Border { Child: TextBlock codeTb } border
                     when border.Classes.Contains("markdown-code-block"):
-                    layer.Register(new DocumentBlock(codeTb,
+                    layer.Register(new IndexEntry(codeTb,
                         codeTb.Inlines != null
                             ? MarkdownSelectableTextBlock.ExtractPlainText(codeTb.Inlines)
-                            : codeTb.Text ?? string.Empty));
+                            : codeTb.Text ?? string.Empty, "\n"));
                     break;
-                // Lists: register each item with its marker prepended to the first paragraph
                 case Panel listPanel when listPanel.Classes.Contains("markdown-list"):
                     RegisterListItems(layer, listPanel);
                     break;
-                // Tables: register one DocumentBlock per row with cells joined by tabs
                 case Grid tableGrid when tableGrid.Classes.Contains("markdown-table"):
                     RegisterTableRows(layer, tableGrid);
                     break;
@@ -218,7 +216,7 @@ public partial class MarkdownViewer : ContentControl
                         text = marker + " " + text;
                         markerApplied = true;
                     }
-                    layer.Register(new DocumentBlock(tb, text));
+                    layer.Register(new IndexEntry(tb, text, "\n"));
                     break;
                 // Nested list — recurse with its own markers
                 case Panel nestedList when nestedList.Classes.Contains("markdown-list"):
@@ -250,15 +248,17 @@ public partial class MarkdownViewer : ContentControl
 
         foreach (var (_, colMap) in rowMap)
         {
-            var cellTexts = new List<string>();
-            TextBlock? anchorTb = null;
-            foreach (var (_, cell) in colMap)
+            var cells = colMap.Values.ToList();
+            for (int i = 0; i < cells.Count; i++)
             {
-                cellTexts.Add(cell.Child is Panel p ? ExtractPanelText(p) : string.Empty);
-                anchorTb ??= FindFirstTextBlock(cell);
+                var cell = cells[i];
+                var tb = FindFirstTextBlock(cell);
+                if (tb is null) continue;
+                var text = cell.Child is Panel p ? ExtractPanelText(p) : string.Empty;
+                // Last cell in row separates with newline; others with tab
+                var separator = (i == cells.Count - 1) ? "\n" : "\t";
+                layer.Register(new IndexEntry(tb, text, separator));
             }
-            if (anchorTb is null || cellTexts.Count == 0) continue;
-            layer.Register(new DocumentBlock(anchorTb, string.Join('\t', cellTexts)));
         }
     }
 
@@ -357,25 +357,19 @@ public partial class MarkdownViewer : ContentControl
     private void TryFireHyperlinkClick(Point posInLayer)
     {
         if (_selectionLayer is null) return;
-        var hit = _selectionLayer.HitTestBlocks(posInLayer);
-        if (hit is null) return;
-        var tb = _selectionLayer.Blocks[hit.Value.BlockIdx].TextBlock;
-        if (tb is MarkdownSelectableTextBlock mstb)
-        {
-            var origin = mstb.TranslatePoint(new Point(0, 0), _selectionLayer) ?? default;
-            var hyperlink = mstb.HitTestHyperlink(posInLayer - origin);
-            if (hyperlink?.NavigateUri != null)
-                OnLinkClicked(this, new LinkClickedEventArgs(hyperlink.NavigateUri.ToString()));
-        }
+        var entry = _selectionLayer.HitTestEntry(posInLayer);
+        if (entry?.TextBlock is not MarkdownSelectableTextBlock mstb) return;
+        var origin = mstb.TranslatePoint(new Point(0, 0), _selectionLayer) ?? default;
+        var hyperlink = mstb.HitTestHyperlink(posInLayer - origin);
+        if (hyperlink?.NavigateUri != null)
+            OnLinkClicked(this, new LinkClickedEventArgs(hyperlink.NavigateUri.ToString()));
     }
 
     private MarkdownHyperlink? FindHyperlinkAt(Point posInLayer)
     {
         if (_selectionLayer is null) return null;
-        var hit = _selectionLayer.HitTestBlocks(posInLayer);
-        if (hit is null) return null;
-        var tb = _selectionLayer.Blocks[hit.Value.BlockIdx].TextBlock;
-        if (tb is not MarkdownSelectableTextBlock mstb) return null;
+        var entry = _selectionLayer.HitTestEntry(posInLayer);
+        if (entry?.TextBlock is not MarkdownSelectableTextBlock mstb) return null;
         var origin = mstb.TranslatePoint(new Point(0, 0), _selectionLayer) ?? default;
         return mstb.HitTestHyperlink(posInLayer - origin);
     }
