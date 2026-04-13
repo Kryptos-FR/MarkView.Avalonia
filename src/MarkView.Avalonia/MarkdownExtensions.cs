@@ -22,4 +22,13 @@ public static class MarkdownExtensions
             .UsePipeTables()
             .UseTaskLists();
     }
+
+    /// <summary>
+    /// Enables Markdig footnote parsing for use with MarkView.Avalonia's footnote renderers.
+    /// Activate on the viewer with <c>viewer.UseFootnotes()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseFootnotes(this MarkdownPipelineBuilder builder)
+    {
+        return builder.Use<Markdig.Extensions.Footnotes.FootnoteExtension>();
+    }
 }

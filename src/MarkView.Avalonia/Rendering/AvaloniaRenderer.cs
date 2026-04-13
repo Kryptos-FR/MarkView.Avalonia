@@ -117,6 +117,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new QuoteBlockRenderer());
         ObjectRenderers.Add(new HtmlBlockRenderer());
         ObjectRenderers.Add(new TableRenderer());
+        ObjectRenderers.Add(new FootnoteGroupRenderer());
 
         // Inline renderers
         ObjectRenderers.Add(new LiteralInlineRenderer());
@@ -129,6 +130,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new HtmlEntityInlineRenderer());
         ObjectRenderers.Add(new HtmlInlineRenderer());
         ObjectRenderers.Add(new TaskListRenderer());
+        ObjectRenderers.Add(new FootnoteLinkRenderer());
     }
 
     /// <summary>
