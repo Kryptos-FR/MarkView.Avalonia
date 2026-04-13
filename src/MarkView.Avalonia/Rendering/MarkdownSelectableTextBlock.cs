@@ -48,13 +48,19 @@ public class MarkdownSelectableTextBlock : TextBlock
         return null;
     }
 
-    internal static int MeasureInlineLength(Inline inline) => inline switch
+    internal static int MeasureInlineLength(Inline inline)
     {
-        Run r => r.Text?.Length ?? 0,
-        Span s => s.Inlines.Sum(MeasureInlineLength),
-        LineBreak => Environment.NewLine.Length,
-        _ => 1,
-    };
+        switch (inline)
+        {
+            case Run r: return r.Text?.Length ?? 0;
+            case Span s:
+                int total = 0;
+                foreach (var child in s.Inlines) total += MeasureInlineLength(child);
+                return total;
+            case LineBreak: return Environment.NewLine.Length;
+            default: return 1;
+        }
+    }
 
     /// <summary>
     /// Extracts plain text from an <see cref="InlineCollection"/>, recursing into spans.

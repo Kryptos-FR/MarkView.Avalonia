@@ -45,22 +45,21 @@ public sealed class SvgImageLoader : IImageLoader
     {
         try
         {
-            byte[] bytes;
+            SvgSource source;
 
             if (url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
             {
-                bytes = DecodeDataUri(url);
+                var bytes = DecodeDataUri(url);
+                using var ms = new MemoryStream(bytes);
+                source = SvgSource.LoadFromStream(ms);
             }
             else
             {
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                     return null;
-                bytes = await HttpClient.GetByteArrayAsync(uri, cancellationToken);
+                using var responseStream = await HttpClient.GetStreamAsync(uri, cancellationToken);
+                source = SvgSource.LoadFromStream(responseStream);
             }
-
-            SvgSource source;
-            using (var stream = new MemoryStream(bytes))
-                source = SvgSource.LoadFromStream(stream);
 
             // SvgImage is an AvaloniaObject — must be created on the UI thread.
             return await Dispatcher.UIThread.InvokeAsync(() => new SvgImage { Source = source });
@@ -81,14 +80,12 @@ public sealed class SvgImageLoader : IImageLoader
         if (commaIndex < 0)
             return [];
 
-        var header = dataUri[..commaIndex];
-        var data = dataUri[(commaIndex + 1)..];
-
-        if (header.EndsWith(";base64", StringComparison.OrdinalIgnoreCase))
-            return Convert.FromBase64String(data);
+        // Use AsSpan to test the header without allocating a substring
+        if (dataUri.AsSpan(0, commaIndex).EndsWith(";base64", StringComparison.OrdinalIgnoreCase))
+            return Convert.FromBase64String(dataUri[(commaIndex + 1)..]);
 
         // URL-encoded text
-        var decoded = Uri.UnescapeDataString(data);
+        var decoded = Uri.UnescapeDataString(dataUri[(commaIndex + 1)..]);
         return System.Text.Encoding.UTF8.GetBytes(decoded);
     }
 }
