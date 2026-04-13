@@ -29,9 +29,11 @@ public class HeadingRenderer : AvaloniaObjectRenderer<HeadingBlock>
         renderer.Pop();
 
         // Generate anchor slug and register for fragment navigation
-        var headingText = string.Concat(obj.Inline?.SelectMany(
-            c => c is LiteralInline lit ? lit.Content.ToString() : string.Empty)
-            ?? []);
+        var sb = new System.Text.StringBuilder();
+        if (obj.Inline is not null)
+            foreach (var c in obj.Inline)
+                if (c is LiteralInline lit) sb.Append(lit.Content.AsSpan());
+        var headingText = sb.ToString();
         var slug = renderer.SlugGenerator.GenerateSlug(headingText);
         textBlock.Tag = slug;
         renderer.RegisterAnchor(slug, textBlock);

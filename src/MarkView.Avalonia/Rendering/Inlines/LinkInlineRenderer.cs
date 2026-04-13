@@ -52,8 +52,10 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
     {
         var url = renderer.ResolveUrl(obj.Url ?? string.Empty);
 
-        var altText = string.Concat(obj.SelectMany(c =>
-            c is LiteralInline literal ? literal.Content.ToString() : string.Empty));
+        var sb = new System.Text.StringBuilder();
+        foreach (var c in obj)
+            if (c is LiteralInline literal) sb.Append(literal.Content.AsSpan());
+        var altText = sb.ToString();
 
         var image = new Image { Stretch = Stretch.None };
         image.Classes.Add("markdown-image");
@@ -126,8 +128,8 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
             }
 
             // HTTP/HTTPS fallback
-            var bytes = await HttpClient.GetByteArrayAsync(uri, cancellationToken);
-            var httpBitmap = new Bitmap(new MemoryStream(bytes));
+            using var responseStream = await HttpClient.GetStreamAsync(uri, cancellationToken);
+            var httpBitmap = new Bitmap(responseStream);
             await Dispatcher.UIThread.InvokeAsync(() => image.Source = httpBitmap);
         }
         catch (OperationCanceledException) { }

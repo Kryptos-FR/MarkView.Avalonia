@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input.Platform;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 
 namespace MarkView.Avalonia.Rendering;
 
@@ -17,6 +18,9 @@ namespace MarkView.Avalonia.Rendering;
 /// </summary>
 internal sealed class DocumentSelectionLayer : Control
 {
+    private static readonly ImmutableSolidColorBrush SelectionBrush =
+        new(Colors.CornflowerBlue, 0.35);
+
     private readonly List<IndexEntry> _entries = new();
     private int _totalLength;
 
@@ -169,8 +173,6 @@ internal sealed class DocumentSelectionLayer : Control
         int selEnd   = Math.Max(_anchor.Value, _focus.Value);
         if (selStart == selEnd) return;
 
-        var brush = new SolidColorBrush(Colors.CornflowerBlue, 0.35);
-
         foreach (var entry in _entries)
         {
             if (entry.AbsEnd <= selStart) continue;
@@ -187,7 +189,7 @@ internal sealed class DocumentSelectionLayer : Control
             if (length <= 0) continue;
 
             foreach (var rect in entry.TextBlock.TextLayout.HitTestTextRange(localStart, length))
-                context.DrawRectangle(brush, null, rect.Translate(textOrigin));
+                context.DrawRectangle(SelectionBrush, null, rect.Translate(textOrigin));
         }
     }
 
