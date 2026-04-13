@@ -196,7 +196,7 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
         };
         playOverlay.Classes.Add("markdown-youtube-play");
 
-        var overlayGrid = new Grid(); 
+        var overlayGrid = new Grid();
         overlayGrid.Classes.Add("markdown-youtube-overlay");
 
         var button = new Button { Content = overlayGrid };
