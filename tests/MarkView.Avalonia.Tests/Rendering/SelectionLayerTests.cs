@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using MarkView.Avalonia.Rendering;
@@ -99,7 +100,7 @@ public class SelectionLayerTests
         // Offsets: Alice=0..4(text), 5='\t'; 30=6..7(text), 8='\n'
         var layer = new DocumentSelectionLayer();
         layer.Register(new IndexEntry(MakeBlock("Alice"), "Alice", "\t"));
-        layer.Register(new IndexEntry(MakeBlock("30"),    "30",    "\n"));
+        layer.Register(new IndexEntry(MakeBlock("30"), "30", "\n"));
 
         layer.SelectAll(); // selects 0..7 (AbsEnd of last entry = 7)
 
@@ -113,9 +114,9 @@ public class SelectionLayerTests
         // Row 2: "Bob"\t"25"\n    → offsets 9..11, 13..14
         var layer = new DocumentSelectionLayer();
         layer.Register(new IndexEntry(MakeBlock("Alice"), "Alice", "\t"));
-        layer.Register(new IndexEntry(MakeBlock("30"),    "30",    "\n"));
-        layer.Register(new IndexEntry(MakeBlock("Bob"),   "Bob",   "\t"));
-        layer.Register(new IndexEntry(MakeBlock("25"),    "25",    "\n"));
+        layer.Register(new IndexEntry(MakeBlock("30"), "30", "\n"));
+        layer.Register(new IndexEntry(MakeBlock("Bob"), "Bob", "\t"));
+        layer.Register(new IndexEntry(MakeBlock("25"), "25", "\n"));
 
         layer.SelectAll();
 
@@ -128,7 +129,7 @@ public class SelectionLayerTests
         // Row 1: Alice(0-4)\t(5) 30(6-7)\n(8)
         var layer = new DocumentSelectionLayer();
         layer.Register(new IndexEntry(MakeBlock("Alice"), "Alice", "\t"));
-        layer.Register(new IndexEntry(MakeBlock("30"),    "30",    "\n"));
+        layer.Register(new IndexEntry(MakeBlock("30"), "30", "\n"));
 
         // Select only "30" (offsets 6..8, which is AbsStart=6, AbsEnd=8)
         layer.SetSelectionForTest(6, 8);
@@ -142,9 +143,9 @@ public class SelectionLayerTests
         // Table row: "A" | "" | "C" with tab separators
         // AbsStart: A=0, empty=2, C=3
         var layer = new DocumentSelectionLayer();
-        layer.Register(new IndexEntry(MakeBlock("A"),  "A",  "\t")); // AbsStart=0, AbsEnd=1, AbsEndWithSep=2
-        layer.Register(new IndexEntry(MakeBlock(""),   "",   "\t")); // AbsStart=2, AbsEnd=2, AbsEndWithSep=3
-        layer.Register(new IndexEntry(MakeBlock("C"),  "C",  "\n")); // AbsStart=3, AbsEnd=4, AbsEndWithSep=5
+        layer.Register(new IndexEntry(MakeBlock("A"), "A", "\t")); // AbsStart=0, AbsEnd=1, AbsEndWithSep=2
+        layer.Register(new IndexEntry(MakeBlock(""), "", "\t")); // AbsStart=2, AbsEnd=2, AbsEndWithSep=3
+        layer.Register(new IndexEntry(MakeBlock("C"), "C", "\n")); // AbsStart=3, AbsEnd=4, AbsEndWithSep=5
 
         layer.SelectAll(); // selects 0..4 (AbsEnd of last entry)
 
@@ -172,7 +173,7 @@ public class SelectionLayerTests
     public void Register_stamps_AbsStart_on_entries()
     {
         var layer = new DocumentSelectionLayer();
-        var e1 = new IndexEntry(MakeBlock("Hi"),    "Hi",    "\n"); // 0..1, sep='\n' → next=3
+        var e1 = new IndexEntry(MakeBlock("Hi"), "Hi", "\n"); // 0..1, sep='\n' → next=3
         var e2 = new IndexEntry(MakeBlock("There"), "There", "\n"); // 3..7
 
         layer.Register(e1);
@@ -183,4 +184,83 @@ public class SelectionLayerTests
     }
 
     private static TextBlock MakeBlock(string text) => new() { Text = text };
+
+    // ── Pointer events ────────────────────────────────────────────────────────
+
+    [AvaloniaFact]
+    public void OnPointerPressed_clears_existing_selection()
+    {
+        var layer = new DocumentSelectionLayer();
+        layer.Register(new IndexEntry(MakeBlock("Hello"), "Hello", "\n"));
+        layer.SetSelectionForTest(0, 5);
+
+        // Point that won't hit (no visual tree) → HitTestOffset returns null
+        layer.OnPointerPressed(new Point(999, 999));
+
+        // Selection must be cleared; anchor is null → empty text
+        Assert.Equal(string.Empty, layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void OnPointerMoved_with_no_anchor_does_nothing()
+    {
+        var layer = new DocumentSelectionLayer();
+        layer.Register(new IndexEntry(MakeBlock("Hello"), "Hello", "\n"));
+
+        // No anchor set → must not throw, selection stays empty
+        layer.OnPointerMoved(new Point(0, 0));
+
+        Assert.Equal(string.Empty, layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void OnPointerMoved_with_anchor_but_no_layout_preserves_focus()
+    {
+        var layer = new DocumentSelectionLayer();
+        layer.Register(new IndexEntry(MakeBlock("Hello"), "Hello", "\n"));
+        layer.SetSelectionForTest(0, 3); // anchor=0, focus=3
+
+        // HitTestOffset returns null (no visual tree) → focus unchanged
+        layer.OnPointerMoved(new Point(999, 999));
+
+        // Focus still at 3, so text is first 3 chars of "Hello"
+        Assert.Equal("Hel", layer.GetSelectedText());
+    }
+
+    // ── Hit testing ───────────────────────────────────────────────────────────
+
+    [AvaloniaFact]
+    public void HitTestOffset_returns_null_for_empty_layer()
+    {
+        var layer = new DocumentSelectionLayer();
+        Assert.Null(layer.HitTestOffset(new Point(0, 0)));
+    }
+
+    [AvaloniaFact]
+    public void HitTestOffset_returns_null_when_entries_have_no_layout()
+    {
+        var layer = new DocumentSelectionLayer();
+        layer.Register(new IndexEntry(MakeBlock("Hello"), "Hello", "\n"));
+        layer.Register(new IndexEntry(MakeBlock("World"), "World", "\n"));
+
+        // TextBlocks are not in a visual tree → TranslatePoint returns null
+        Assert.Null(layer.HitTestOffset(new Point(10, 10)));
+    }
+
+    [AvaloniaFact]
+    public void HitTestEntry_returns_null_for_empty_layer()
+    {
+        var layer = new DocumentSelectionLayer();
+        Assert.Null(layer.HitTestEntry(new Point(0, 0)));
+    }
+
+    [AvaloniaFact]
+    public void HitTestEntry_returns_null_when_entries_have_no_layout()
+    {
+        var layer = new DocumentSelectionLayer();
+        layer.Register(new IndexEntry(MakeBlock("Hello"), "Hello", "\n"));
+
+        // TextBlock not in visual tree → TranslatePoint returns null → no entry found
+        Assert.Null(layer.HitTestEntry(new Point(10, 10)));
+    }
 }
