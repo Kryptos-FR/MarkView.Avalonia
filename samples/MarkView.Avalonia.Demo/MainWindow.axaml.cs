@@ -1,6 +1,7 @@
 using System.Diagnostics;
 
 using Avalonia.Controls;
+using Markdig;
 
 namespace MarkView.Avalonia.Demo;
 
@@ -9,6 +10,16 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        // Combine all opt-in Markdig extensions into one pipeline
+        MarkdownView.Pipeline = new MarkdownPipelineBuilder()
+            .UseSupportedExtensions()
+            .UseFootnotes()
+            .UseAlertBlocks()
+            .UseAbbreviations()
+            .UseFigures()
+            .UseMediaLinks()
+            .Build();
 
         MarkdownView.UseTextMateHighlighting()
                     .UseSvg()
