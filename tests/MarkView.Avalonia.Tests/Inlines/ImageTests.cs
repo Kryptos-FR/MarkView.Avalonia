@@ -64,7 +64,9 @@ public class ImageTests : RenderTestBase
         var pipeline = new Markdig.MarkdownPipelineBuilder().Build();
         var document = Markdig.Markdown.Parse("![alt](https://example.com/image.png)", pipeline);
         var renderer = new AvaloniaRenderer();
-        renderer.ImageLoaders.Add(loader);
+        // Insert at index 0 so the spy takes priority over the default BitmapImageLoader
+        // and its CanLoad is called synchronously (before the first await in the loader chain).
+        renderer.ImageLoaders.Insert(0, loader);
         pipeline.Setup(renderer);
         renderer.Render(document);
 

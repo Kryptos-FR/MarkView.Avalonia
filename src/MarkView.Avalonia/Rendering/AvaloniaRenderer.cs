@@ -64,10 +64,11 @@ public class AvaloniaRenderer : RendererBase
     internal bool SkipNextTaskList { get; set; }
 
     /// <summary>
-    /// Ordered list of image loaders tried before the built-in HTTP fallback.
-    /// Extensions insert at index 0 to take priority.
+    /// Ordered list of image loaders. The last entry is always the built-in
+    /// <see cref="BitmapImageLoader"/> which handles avares://, http/https, and
+    /// data URIs for bitmap formats. Extensions insert at index 0 to take priority.
     /// </summary>
-    public IList<IImageLoader> ImageLoaders { get; } = new List<IImageLoader>();
+    public IList<IImageLoader> ImageLoaders { get; } = new List<IImageLoader> { new BitmapImageLoader() };
 
     /// <summary>
     /// Removes the first registered renderer of type <typeparamref name="TRenderer"/>

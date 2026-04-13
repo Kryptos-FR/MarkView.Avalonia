@@ -6,8 +6,6 @@ using System.Text.RegularExpressions;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 using Avalonia.Threading;
 
 using Markdig.Syntax.Inlines;
@@ -129,35 +127,12 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
                 }
             }
 
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-                return;
-
-            // avares:// — Avalonia embedded resource
-            if (uri.Scheme == "avares")
-            {
-                using var stream = AssetLoader.Open(uri);
-                var bitmap = new Bitmap(stream);
-                await Dispatcher.UIThread.InvokeAsync(() => image.Source = bitmap);
-                return;
-            }
-
-            // HTTP/HTTPS fallback
-            using var responseStream = await HttpClient.GetStreamAsync(uri, cancellationToken);
-            var httpBitmap = new Bitmap(responseStream);
-            await Dispatcher.UIThread.InvokeAsync(() => image.Source = httpBitmap);
+            // No loader claimed the URL — nothing to do.
+            // (BitmapImageLoader is always registered last as the catch-all.)
         }
-        catch (OperationCanceledException e)
-        {
-
-        }
-        catch (HttpRequestException e)
-        {
-
-        }
-        catch (IOException e)
-        {
-            
-        }
+        catch (OperationCanceledException) { }
+        catch (HttpRequestException) { }
+        catch (IOException) { }
     }
 
     private static string? ExtractYoutubeId(string? url)
