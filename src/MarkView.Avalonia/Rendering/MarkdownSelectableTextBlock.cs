@@ -52,7 +52,7 @@ public class MarkdownSelectableTextBlock : TextBlock
     {
         Run r => r.Text?.Length ?? 0,
         Span s => s.Inlines.Sum(MeasureInlineLength),
-        LineBreak => 1,
+        LineBreak => Environment.NewLine.Length,
         _ => 1,
     };
 
@@ -80,7 +80,7 @@ public class MarkdownSelectableTextBlock : TextBlock
             switch (inline)
             {
                 case Run r: sb.Append(r.Text); break;
-                case LineBreak: sb.Append('\n'); break;
+                case LineBreak: sb.Append(Environment.NewLine); break;
                 case Span s: AppendInlines(sb, s.Inlines); break;
             }
         }
