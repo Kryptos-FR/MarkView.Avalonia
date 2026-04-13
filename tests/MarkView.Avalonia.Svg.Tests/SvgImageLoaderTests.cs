@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Headless.XUnit;
+using Avalonia.Svg.Skia;
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 using Xunit;
@@ -56,6 +57,45 @@ public class SvgImageLoaderTests
         viewer.UseSvg();
         Assert.Single(viewer.Extensions);
         Assert.IsType<SvgExtension>(viewer.Extensions[0]);
+    }
+
+    [AvaloniaFact]
+    public async Task LoadAsync_with_base64_data_uri_returns_SvgImage()
+    {
+        const string svg = """<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>""";
+        var base64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svg));
+        var dataUri = $"data:image/svg+xml;base64,{base64}";
+
+        var loader = new SvgImageLoader();
+        var result = await loader.LoadAsync(dataUri);
+
+        Assert.NotNull(result);
+        Assert.IsType<SvgImage>(result);
+    }
+
+    [AvaloniaFact]
+    public async Task LoadAsync_with_url_encoded_data_uri_returns_SvgImage()
+    {
+        const string svg = """<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>""";
+        var dataUri = $"data:image/svg+xml,{Uri.EscapeDataString(svg)}";
+
+        var loader = new SvgImageLoader();
+        var result = await loader.LoadAsync(dataUri);
+
+        Assert.NotNull(result);
+        Assert.IsType<SvgImage>(result);
+    }
+
+    [AvaloniaFact]
+    public async Task LoadAsync_with_invalid_svg_data_uri_returns_null()
+    {
+        var base64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("not valid svg"));
+        var dataUri = $"data:image/svg+xml;base64,{base64}";
+
+        var loader = new SvgImageLoader();
+        var result = await loader.LoadAsync(dataUri);
+
+        Assert.Null(result);
     }
 
     private sealed class DummyLoader : IImageLoader
