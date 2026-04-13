@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
@@ -22,7 +23,8 @@ public class MarkdownViewerTests
         };
         Assert.NotNull(viewer.Content);
         var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var panel = Assert.IsType<StackPanel>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         Assert.Equal(2, panel.Children.Count);
     }
 
@@ -32,7 +34,8 @@ public class MarkdownViewerTests
         var viewer = new MarkdownViewer { Markdown = "First" };
         viewer.Markdown = "# Second";
         var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var panel = Assert.IsType<StackPanel>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(panel.Children));
         Assert.Contains("markdown-h1", textBlock.Classes);
     }
@@ -54,7 +57,8 @@ public class MarkdownViewerTests
             Markdown = "![img](image.png)"
         };
         var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var panel = Assert.IsType<StackPanel>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(panel.Children));
         var uiContainer = textBlock.Inlines!.OfType<InlineUIContainer>().Single();
         var image = Assert.IsType<Image>(uiContainer.Child);
@@ -84,7 +88,8 @@ public class MarkdownViewerTests
             Markdown = "| A | B |\n|---|---|\n| 1 | 2 |"
         };
         var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var panel = Assert.IsType<StackPanel>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         Assert.DoesNotContain(panel.Children, c => c is Grid);
     }
 
@@ -97,7 +102,8 @@ public class MarkdownViewerTests
         viewer.LinkClicked += (_, e) => clickedUrl = e.Url;
 
         var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var panel = Assert.IsType<StackPanel>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(panel.Children));
         var uiContainer = textBlock.Inlines!.OfType<InlineUIContainer>().Single();
         var button = Assert.IsType<HyperlinkButton>(uiContainer.Child);
@@ -133,6 +139,33 @@ public class MarkdownViewerTests
         viewer.Extensions.Add(spy);
         viewer.Markdown = "```csharp\nvar x = 1;\n```";
         Assert.NotNull(spy.ReceivedRenderer);
+    }
+
+    [AvaloniaFact]
+    public void SelectAll_returns_full_document_text()
+    {
+        var viewer = new MarkdownViewer { Markdown = "Hello\n\nWorld" };
+        viewer.Measure(new Size(800, 600));
+        viewer.Arrange(new Rect(0, 0, 800, 600));
+
+        viewer.SelectAll();
+
+        var text = viewer.GetSelectedText();
+        Assert.Contains("Hello", text);
+        Assert.Contains("World", text);
+    }
+
+    [AvaloniaFact]
+    public void ClearSelection_returns_empty_string()
+    {
+        var viewer = new MarkdownViewer { Markdown = "Hello\n\nWorld" };
+        viewer.Measure(new Size(800, 600));
+        viewer.Arrange(new Rect(0, 0, 800, 600));
+
+        viewer.SelectAll();
+        viewer.ClearSelection();
+
+        Assert.Equal(string.Empty, viewer.GetSelectedText());
     }
 
     private sealed class SpyExtension : IMarkViewExtension

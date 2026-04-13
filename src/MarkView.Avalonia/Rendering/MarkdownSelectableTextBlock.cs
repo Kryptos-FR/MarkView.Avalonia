@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 using Avalonia;
 using Avalonia.Controls;
@@ -13,53 +14,28 @@ using MarkView.Avalonia.Rendering.Inlines;
 namespace MarkView.Avalonia.Rendering;
 
 /// <summary>
-/// A <see cref="SelectableTextBlock"/> that intercepts pointer clicks on
-/// <see cref="MarkdownHyperlink"/> spans and dispatches them as link-clicked events.
-/// Text selection falls through to the base class for all non-link areas.
+/// A <see cref="TextBlock"/> that exposes hyperlink hit-testing and plain-text extraction
+/// for use by <see cref="MarkdownViewer"/>'s pointer handling and selection layer registration.
+/// Does not own selection — that is managed by <see cref="DocumentSelectionLayer"/>.
 /// </summary>
-/// <remarks>
-/// V1 limitation: selection is scoped to a single block. Cross-block selection
-/// requires a custom document container — see Markdown.Avalonia's CTextBlock for
-/// a geometry-based reference implementation.
-/// </remarks>
 [ExcludeFromCodeCoverage]
-public class MarkdownSelectableTextBlock : SelectableTextBlock
+public class MarkdownSelectableTextBlock : TextBlock
 {
-    private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
-
     internal AvaloniaRenderer? Renderer { get; set; }
 
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
-    {
-        var hyperlink = HitTestHyperlink(e.GetPosition(this));
-        if (hyperlink?.NavigateUri != null)
-        {
-            Renderer?.OnLinkClicked(hyperlink.NavigateUri.ToString());
-            e.Handled = true;
-            return;
-        }
-        base.OnPointerPressed(e);
-    }
-
-    protected override void OnPointerMoved(PointerEventArgs e)
-    {
-        var hyperlink = HitTestHyperlink(e.GetPosition(this));
-        Cursor = hyperlink != null ? HandCursor : Cursor.Default;
-        base.OnPointerMoved(e);
-    }
-
-    private MarkdownHyperlink? HitTestHyperlink(Point point)
+    /// <summary>
+    /// Returns the <see cref="MarkdownHyperlink"/> at <paramref name="point"/> (in this control's
+    /// local coordinates), or <c>null</c> if no hyperlink is present there.
+    /// </summary>
+    internal MarkdownHyperlink? HitTestHyperlink(Point point)
     {
         if (TextLayout == null || Inlines == null) return null;
-
-        var hitResult = TextLayout.HitTestPoint(point);
-        int charIndex = hitResult.TextPosition;
-
-        return FindHyperlinkAtIndex(Inlines, charIndex);
+        var adjusted = new Point(point.X - Padding.Left, point.Y - Padding.Top);
+        var hitResult = TextLayout.HitTestPoint(adjusted);
+        return FindHyperlinkAtIndex(Inlines, hitResult.TextPosition);
     }
 
-    private static MarkdownHyperlink? FindHyperlinkAtIndex(
-        InlineCollection inlines, int targetIndex)
+    private static MarkdownHyperlink? FindHyperlinkAtIndex(InlineCollection inlines, int targetIndex)
     {
         int current = 0;
         foreach (var inline in inlines)
@@ -72,11 +48,42 @@ public class MarkdownSelectableTextBlock : SelectableTextBlock
         return null;
     }
 
-    private static int MeasureInlineLength(Inline inline) => inline switch
+    internal static int MeasureInlineLength(Inline inline) => inline switch
     {
         Run r => r.Text?.Length ?? 0,
         Span s => s.Inlines.Sum(MeasureInlineLength),
-        LineBreak => 1,
+        LineBreak => Environment.NewLine.Length,
         _ => 1,
     };
+
+    /// <summary>
+    /// Extracts plain text from an <see cref="InlineCollection"/>, recursing into spans.
+    /// Used at registration time to populate <see cref="DocumentBlock.PlainText"/>.
+    /// Returns the existing <see cref="Run.Text"/> string directly when there is exactly
+    /// one <see cref="Run"/> (the common case), avoiding a <see cref="StringBuilder"/> allocation.
+    /// </summary>
+    internal static string ExtractPlainText(InlineCollection inlines)
+    {
+        // Fast path: single Run → return the string reference directly, no allocation
+        if (inlines.Count == 1 && inlines[0] is Run singleRun)
+            return singleRun.Text ?? string.Empty;
+
+        var sb = new StringBuilder();
+        AppendInlines(sb, inlines);
+        return sb.ToString();
+    }
+
+    private static void AppendInlines(StringBuilder sb, InlineCollection inlines)
+    {
+        foreach (var inline in inlines)
+        {
+            switch (inline)
+            {
+                case Run r: sb.Append(r.Text); break;
+                case LineBreak: sb.Append(Environment.NewLine); break;
+                case Span s: AppendInlines(sb, s.Inlines); break;
+            }
+        }
+    }
 }
+
