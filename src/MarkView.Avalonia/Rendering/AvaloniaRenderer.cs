@@ -134,6 +134,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new HtmlInlineRenderer());
         ObjectRenderers.Add(new TaskListRenderer());
         ObjectRenderers.Add(new FootnoteLinkRenderer());
+        ObjectRenderers.Add(new AbbreviationInlineRenderer());
     }
 
     /// <summary>

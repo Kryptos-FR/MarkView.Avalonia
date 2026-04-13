@@ -40,4 +40,13 @@ public static class MarkdownExtensions
     {
         return builder.Use<Markdig.Extensions.Alerts.AlertExtension>();
     }
+
+    /// <summary>
+    /// Enables Markdig abbreviation parsing. Matched words gain tooltip definitions.
+    /// Activate on the viewer with <c>viewer.UseAbbreviations()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseAbbreviations(this MarkdownPipelineBuilder builder)
+    {
+        return builder.Use<Markdig.Extensions.Abbreviations.AbbreviationExtension>();
+    }
 }
