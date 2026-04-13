@@ -192,7 +192,6 @@ Example — increase heading size and add a bottom border:
 
 | Limitation | Detail |
 |---|---|
-| Partial cross-block selection | `DocumentSelectionLayer` coordinates selection over paragraphs, headings, and code blocks. Tables, blockquotes, and list items are not yet wired; their text is skipped in clipboard output. `Ctrl+A` + `Ctrl+C` copies all wired content. |
 | Images are non-selectable | Images in inline position are embedded as `InlineUIContainer` — selection skips around them. This is the same behaviour as all reference libraries. |
 | Task checkboxes are non-selectable | Same reason as images. |
 | Anchor scroll is instant | `BringIntoView()` jumps without animation. Smooth scrolling is a future improvement. |
