@@ -58,4 +58,13 @@ public static class MarkdownExtensions
     {
         return builder.Use<Markdig.Extensions.Figures.FigureExtension>();
     }
+
+    /// <summary>
+    /// Enables Markdig media link parsing. YouTube image-syntax links are rendered
+    /// as clickable thumbnail embeds. Activate on the viewer with <c>viewer.UseMediaLinks()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseMediaLinks(this MarkdownPipelineBuilder builder)
+    {
+        return builder.Use<Markdig.Extensions.MediaLinks.MediaLinkExtension>();
+    }
 }
