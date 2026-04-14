@@ -1,16 +1,23 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Headless.XUnit;
 using MarkView.Avalonia.Rendering;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Rendering;
 
+// Note: tests here use [Fact] rather than [AvaloniaFact] intentionally.
+// All tested methods (Register, SelectAll, ClearSelection, GetSelectedText,
+// SetSelectionForTest, OnPointerPressed, OnPointerMoved) are pure data/string
+// logic that never touches the visual tree or TextLayout. Using [AvaloniaFact]
+// routes tests through AvaloniaTestRunner / HeadlessUnitTestSession, whose
+// cleanup phase can resume on a different thread in xUnit v3's async lifecycle,
+// causing sporadic Dispatcher.VerifyAccess() failures. Plain [Fact] avoids
+// that entirely without losing any test coverage.
 public class SelectionLayerTests
 {
     // ── SelectAll / ClearSelection ────────────────────────────────────────────
 
-    [AvaloniaFact]
+    [Fact]
     public void SelectAll_covers_all_registered_entries()
     {
         var layer = new DocumentSelectionLayer();
@@ -23,7 +30,7 @@ public class SelectionLayerTests
         Assert.Equal("Hello\nWorld", layer.GetSelectedText());
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void ClearSelection_returns_empty_text()
     {
         var layer = new DocumentSelectionLayer();
@@ -36,7 +43,7 @@ public class SelectionLayerTests
 
     // ── Single-entry selection ────────────────────────────────────────────────
 
-    [AvaloniaFact]
+    [Fact]
     public void GetSelectedText_single_entry_partial()
     {
         var layer = new DocumentSelectionLayer();
@@ -48,7 +55,7 @@ public class SelectionLayerTests
         Assert.Equal("Hello", layer.GetSelectedText());
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void GetSelectedText_empty_when_anchor_equals_focus()
     {
         var layer = new DocumentSelectionLayer();
@@ -61,7 +68,7 @@ public class SelectionLayerTests
 
     // ── Cross-entry selection ─────────────────────────────────────────────────
 
-    [AvaloniaFact]
+    [Fact]
     public void GetSelectedText_cross_entry_with_newline_separator()
     {
         // "Hello\n" = offsets 0-5 text, 5 = '\n' separator
@@ -76,7 +83,7 @@ public class SelectionLayerTests
         Assert.Equal("lo\nWor", layer.GetSelectedText());
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void GetSelectedText_cross_entry_excludes_separator_when_focus_before_separator()
     {
         // "Hello\n" = 0-5 text; separator at 5
@@ -93,7 +100,7 @@ public class SelectionLayerTests
 
     // ── Table cell selection (tab separator) ─────────────────────────────────
 
-    [AvaloniaFact]
+    [Fact]
     public void GetSelectedText_table_row_uses_tab_separator()
     {
         // Cells in one row: "Alice"\t"30"\n
@@ -107,7 +114,7 @@ public class SelectionLayerTests
         Assert.Equal("Alice\t30", layer.GetSelectedText());
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void GetSelectedText_cross_table_rows()
     {
         // Row 1: "Alice"\t"30"\n  → offsets 0..4, 6..7, newline at 8
@@ -123,7 +130,7 @@ public class SelectionLayerTests
         Assert.Equal("Alice\t30\nBob\t25", layer.GetSelectedText());
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void GetSelectedText_partial_table_second_column()
     {
         // Row 1: Alice(0-4)\t(5) 30(6-7)\n(8)
@@ -137,7 +144,7 @@ public class SelectionLayerTests
         Assert.Equal("30", layer.GetSelectedText());
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void GetSelectedText_empty_middle_cell_preserves_tab()
     {
         // Table row: "A" | "" | "C" with tab separators
@@ -154,7 +161,7 @@ public class SelectionLayerTests
 
     // ── Reversed selection (focus before anchor) ──────────────────────────────
 
-    [AvaloniaFact]
+    [Fact]
     public void GetSelectedText_reversed_selection_same_as_forward()
     {
         var layer = new DocumentSelectionLayer();
@@ -169,7 +176,7 @@ public class SelectionLayerTests
 
     // ── AbsStart stamping ─────────────────────────────────────────────────────
 
-    [AvaloniaFact]
+    [Fact]
     public void Register_stamps_AbsStart_on_entries()
     {
         var layer = new DocumentSelectionLayer();
@@ -187,7 +194,7 @@ public class SelectionLayerTests
 
     // ── Pointer events ────────────────────────────────────────────────────────
 
-    [AvaloniaFact]
+    [Fact]
     public void OnPointerPressed_clears_existing_selection()
     {
         var layer = new DocumentSelectionLayer();
@@ -201,7 +208,7 @@ public class SelectionLayerTests
         Assert.Equal(string.Empty, layer.GetSelectedText());
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void OnPointerMoved_with_no_anchor_does_nothing()
     {
         var layer = new DocumentSelectionLayer();
@@ -213,7 +220,7 @@ public class SelectionLayerTests
         Assert.Equal(string.Empty, layer.GetSelectedText());
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void OnPointerMoved_with_anchor_but_no_layout_preserves_focus()
     {
         var layer = new DocumentSelectionLayer();
@@ -229,14 +236,14 @@ public class SelectionLayerTests
 
     // ── Hit testing ───────────────────────────────────────────────────────────
 
-    [AvaloniaFact]
+    [Fact]
     public void HitTestOffset_returns_null_for_empty_layer()
     {
         var layer = new DocumentSelectionLayer();
         Assert.Null(layer.HitTestOffset(new Point(0, 0)));
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void HitTestOffset_returns_null_when_entries_have_no_layout()
     {
         var layer = new DocumentSelectionLayer();
@@ -247,14 +254,14 @@ public class SelectionLayerTests
         Assert.Null(layer.HitTestOffset(new Point(10, 10)));
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void HitTestEntry_returns_null_for_empty_layer()
     {
         var layer = new DocumentSelectionLayer();
         Assert.Null(layer.HitTestEntry(new Point(0, 0)));
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void HitTestEntry_returns_null_when_entries_have_no_layout()
     {
         var layer = new DocumentSelectionLayer();
