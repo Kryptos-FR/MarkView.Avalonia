@@ -54,7 +54,7 @@ internal sealed class DocumentSelectionLayer : Control
     {
         if (_entries.Count == 0) return;
         _anchor = 0;
-        _focus  = _entries[^1].AbsEnd;   // up to (not including) trailing separator
+        _focus = _entries[^1].AbsEnd;   // up to (not including) trailing separator
         InvalidateVisual();
     }
 
@@ -62,7 +62,7 @@ internal sealed class DocumentSelectionLayer : Control
     public void ClearSelection()
     {
         _anchor = null;
-        _focus  = null;
+        _focus = null;
         InvalidateVisual();
     }
 
@@ -71,7 +71,7 @@ internal sealed class DocumentSelectionLayer : Control
     {
         if (_anchor is null || _focus is null) return string.Empty;
         int selStart = Math.Min(_anchor.Value, _focus.Value);
-        int selEnd   = Math.Max(_anchor.Value, _focus.Value);
+        int selEnd = Math.Max(_anchor.Value, _focus.Value);
         if (selStart == selEnd) return string.Empty;
 
         var sb = new System.Text.StringBuilder();
@@ -81,7 +81,7 @@ internal sealed class DocumentSelectionLayer : Control
             if (entry.AbsStart >= selEnd) break;              // entirely after selection
 
             int localStart = Math.Max(0, selStart - entry.AbsStart);
-            int localEnd   = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
+            int localEnd = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
             if (localEnd > localStart)
                 sb.Append(entry.PlainText.AsSpan(localStart, localEnd - localStart));
 
@@ -113,7 +113,7 @@ internal sealed class DocumentSelectionLayer : Control
         var offset = HitTestOffset(posInLayer);
         if (offset is null) return;
         _anchor = offset;
-        _focus  = offset;
+        _focus = offset;
     }
 
     /// <summary>
@@ -170,7 +170,7 @@ internal sealed class DocumentSelectionLayer : Control
     {
         if (_anchor is null || _focus is null) return;
         int selStart = Math.Min(_anchor.Value, _focus.Value);
-        int selEnd   = Math.Max(_anchor.Value, _focus.Value);
+        int selEnd = Math.Max(_anchor.Value, _focus.Value);
         if (selStart == selEnd) return;
 
         foreach (var entry in _entries)
@@ -181,11 +181,11 @@ internal sealed class DocumentSelectionLayer : Control
             var origin = entry.TextBlock.TranslatePoint(new Point(0, 0), this);
             if (origin is null) continue;
 
-            var textOrigin  = origin.Value + new Vector(entry.TextBlock.Padding.Left,
+            var textOrigin = origin.Value + new Vector(entry.TextBlock.Padding.Left,
                                                          entry.TextBlock.Padding.Top);
             int localStart = Math.Max(0, selStart - entry.AbsStart);
-            int localEnd   = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
-            int length     = localEnd - localStart;
+            int localEnd = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
+            int length = localEnd - localStart;
             if (length <= 0) continue;
 
             foreach (var rect in entry.TextBlock.TextLayout.HitTestTextRange(localStart, length))
@@ -199,7 +199,7 @@ internal sealed class DocumentSelectionLayer : Control
     internal void SetSelectionForTest(int start, int end)
     {
         _anchor = start;
-        _focus  = end;
+        _focus = end;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
