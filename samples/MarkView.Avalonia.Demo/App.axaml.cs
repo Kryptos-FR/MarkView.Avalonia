@@ -33,8 +33,32 @@ public class App : Application
         MarkdownViewerDefaults.Extensions.AddMermaid();
 
         // Global link handler — handles external links for every MarkdownViewer in the app
-        MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>((_, e) =>
+        MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>(OnLinkClicked);
+
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            desktop.MainWindow = new MainWindow();
+        }
+
+        base.OnFrameworkInitializationCompleted();
+        return;
+
+        static void OnLinkClicked(MarkdownViewer sender, Rendering.LinkClickedEventArgs e)
+        {
+            // If the link resolves to a local .md file, open it in the viewer instead of the browser.
+            if (Uri.TryCreate(e.Url, UriKind.Absolute, out var uri)
+                && uri.IsFile
+                && (uri.LocalPath.EndsWith(".md", StringComparison.OrdinalIgnoreCase)
+                    || uri.LocalPath.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase)))
+            {
+                var path = uri.LocalPath;
+                if (File.Exists(path))
+                {
+                    ((MainViewModel)sender.DataContext!).LoadFile(path);
+                    return;
+                }
+            }
+
             try
             {
                 Process.Start(new ProcessStartInfo(e.Url) { UseShellExecute = true });
@@ -43,13 +67,6 @@ public class App : Application
             {
                 // Ignore failures to open browser
             }
-        });
-
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            desktop.MainWindow = new MainWindow();
         }
-
-        base.OnFrameworkInitializationCompleted();
     }
 }
