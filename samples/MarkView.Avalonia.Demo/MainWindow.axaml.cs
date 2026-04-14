@@ -12,6 +12,12 @@ public partial class MainWindow : Window
         DataContext = new MainViewModel();
     }
 
+    private void OnGoBackClicked(object? sender, RoutedEventArgs e) =>
+        ((MainViewModel)DataContext!).GoBack();
+
+    private void OnGoForwardClicked(object? sender, RoutedEventArgs e) =>
+        ((MainViewModel)DataContext!).GoForward();
+
     private async void OnOpenFileClicked(object? sender, RoutedEventArgs e)
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
