@@ -2,7 +2,6 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.ComponentModel;
-using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -248,6 +247,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         """;
 
     private string? _markdown;
+    private Uri? _baseUri;
     private int _selectedIndex;
     private bool _isLightTheme;
 
@@ -279,6 +279,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         private set => SetField(ref _markdown, value);
     }
 
+    public Uri? BaseUri
+    {
+        get => _baseUri;
+        private set => SetField(ref _baseUri, value);
+    }
+
     public MainViewModel()
     {
         LoadContent();
@@ -286,12 +292,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void LoadContent()
     {
+        BaseUri = null;
         Markdown = _selectedIndex switch
         {
             0 => ShowcaseMarkdown,
             1 => ExtensionsShowcaseMarkdown,
             _ => ReadmeMarkdown,
         };
+    }
+
+    public void LoadFile(string filePath)
+    {
+        var dir = Path.GetFullPath(Path.GetDirectoryName(filePath)!);
+        BaseUri = new Uri(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar);
+        Markdown = File.ReadAllText(filePath);
     }
 
     private static string LoadReadme()
