@@ -30,7 +30,7 @@ jobs:
         with:
           reports: 'TestResults/**/coverage.cobertura.xml'
           targetdir: coveragereport
-          reporttypes: 'Html;MarkdownSummary'
+          reporttypes: 'Html;MarkdownSummaryGithub'
           customSettings: 'minimumCoverageThresholds:lineCoverage=80'
 
       - name: Upload HTML coverage report
@@ -43,7 +43,7 @@ jobs:
       - name: Check coverage thresholds
         shell: pwsh
         run: |
-          $summaryFile = "coveragereport/Summary.md"
+          $summaryFile = "coveragereport/SummaryGithub.md"
           if (-not (Test-Path $summaryFile)) {
             Write-Error "Summary file not found: $summaryFile"
             exit 1
@@ -75,4 +75,4 @@ jobs:
         if: always() && github.event_name == 'pull_request'
         with:
           recreate: true
-          path: coveragereport/Summary.md
+          path: coveragereport/SummaryGithub.md
