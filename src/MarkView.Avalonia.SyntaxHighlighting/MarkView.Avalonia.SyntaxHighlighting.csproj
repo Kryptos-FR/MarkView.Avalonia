@@ -5,6 +5,7 @@
     <PackageId>MarkView.Avalonia.SyntaxHighlighting</PackageId>
     <Description>TextMate syntax highlighting extension for MarkView.Avalonia.</Description>
     <PackageTags>avalonia;markdown;syntax-highlighting;textmate</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="TextMateSharp" />
@@ -12,5 +13,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>
