@@ -57,6 +57,13 @@ public class AvaloniaRenderer : RendererBase
     public ICodeHighlighter? CodeHighlighter { get; set; }
 
     /// <summary>
+    /// When <c>true</c>, the next <see cref="Inlines.TaskListRenderer"/> call is skipped
+    /// and this flag is reset to <c>false</c>.  Set by <see cref="Blocks.ListRenderer"/>
+    /// when it has already placed the checkbox in the list-item grid's column 0.
+    /// </summary>
+    internal bool SkipNextTaskList { get; set; }
+
+    /// <summary>
     /// Ordered list of image loaders tried before the built-in HTTP fallback.
     /// Extensions insert at index 0 to take priority.
     /// </summary>

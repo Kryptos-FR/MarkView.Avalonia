@@ -22,9 +22,28 @@ public class MarkdownExtensionsTests : RenderTestBase
         var listPanel = Assert.IsType<StackPanel>(Assert.Single(result.Children));
         Assert.Contains("markdown-list", listPanel.Classes);
         Assert.Equal(2, listPanel.Children.Count);
-        // UseTaskLists produces CheckBox controls — plain lists do not
-        var checkBox = FindFirst<CheckBox>(listPanel);
-        Assert.NotNull(checkBox);
+        // Task list items use unicode ☐/☑ TextBlock markers with class markdown-task-list
+        var marker = FindTaskMarker(listPanel);
+        Assert.NotNull(marker);
+    }
+
+    private static TextBlock? FindTaskMarker(Control root)
+    {
+        if (root is TextBlock tb && tb.Classes.Contains("markdown-task-list"))
+            return tb;
+        if (root is Panel panel)
+        {
+            foreach (var child in panel.Children)
+            {
+                var found = FindTaskMarker(child);
+                if (found != null) return found;
+            }
+        }
+        if (root is ContentControl cc && cc.Content is Control content)
+            return FindTaskMarker(content);
+        if (root is Decorator dec && dec.Child is Control decChild)
+            return FindTaskMarker(decChild);
+        return null;
     }
 
     [AvaloniaFact]

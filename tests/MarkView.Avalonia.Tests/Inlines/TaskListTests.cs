@@ -2,7 +2,6 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Controls;
-using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 
 using Markdig;
@@ -19,10 +18,9 @@ public class TaskListTests : RenderTestBase
         var pipeline = new MarkdownPipelineBuilder().UseTaskLists().Build();
         var result = Render("- [ ] Todo item", pipeline);
 
-        var checkbox = FindFirst<CheckBox>(result);
-        Assert.NotNull(checkbox);
-        Assert.False(checkbox.IsChecked);
-        Assert.False(checkbox.IsEnabled);
+        var marker = FindTaskMarker(result);
+        Assert.NotNull(marker);
+        Assert.Equal("\u2610", marker!.Text);
     }
 
     [AvaloniaFact]
@@ -31,38 +29,27 @@ public class TaskListTests : RenderTestBase
         var pipeline = new MarkdownPipelineBuilder().UseTaskLists().Build();
         var result = Render("- [x] Done item", pipeline);
 
-        var checkbox = FindFirst<CheckBox>(result);
-        Assert.NotNull(checkbox);
-        Assert.True(checkbox.IsChecked);
+        var marker = FindTaskMarker(result);
+        Assert.NotNull(marker);
+        Assert.Equal("\u2611", marker!.Text);
     }
 
-    private static T? FindFirst<T>(Control root) where T : Control
+    private static TextBlock? FindTaskMarker(Control root)
     {
-        if (root is T match) return match;
+        if (root is TextBlock tb && tb.Classes.Contains("markdown-task-list"))
+            return tb;
         if (root is Panel panel)
         {
             foreach (var child in panel.Children)
             {
-                var found = FindFirst<T>(child);
+                var found = FindTaskMarker(child);
                 if (found != null) return found;
             }
         }
         if (root is ContentControl cc && cc.Content is Control content)
-            return FindFirst<T>(content);
+            return FindTaskMarker(content);
         if (root is Decorator dec && dec.Child is Control decChild)
-            return FindFirst<T>(decChild);
-        // Traverse TextBlock inlines for InlineUIContainer
-        if (root is TextBlock tb && tb.Inlines != null)
-        {
-            foreach (var inline in tb.Inlines)
-            {
-                if (inline is InlineUIContainer iuc && iuc.Child is Control iucChild)
-                {
-                    var found = FindFirst<T>(iucChild);
-                    if (found != null) return found;
-                }
-            }
-        }
+            return FindTaskMarker(decChild);
         return null;
     }
 }
