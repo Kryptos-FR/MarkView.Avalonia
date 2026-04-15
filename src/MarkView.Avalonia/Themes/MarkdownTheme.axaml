@@ -22,6 +22,7 @@
           <SolidColorBrush x:Key="MarkdownAlertWarningBackground">#1AEAB308</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#EF4444</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#1AEF4444</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownMarkedBackground">#5C4B00</SolidColorBrush>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#F3F3F3</SolidColorBrush>
@@ -39,6 +40,7 @@
           <SolidColorBrush x:Key="MarkdownAlertWarningBackground">#FEFCE8</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#DC2626</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#FEF2F2</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownMarkedBackground">#FFFF00</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -99,6 +101,11 @@
     <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace"/>
     <Setter Property="Background" Value="{DynamicResource MarkdownCodeInlineBackground}"/>
     <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeInlineForeground}"/>
+  </Style>
+
+  <!-- Marked / highlighted text -->
+  <Style Selector="Span.markdown-marked">
+    <Setter Property="Background" Value="{DynamicResource MarkdownMarkedBackground}"/>
   </Style>
 
   <!-- Blockquote -->
