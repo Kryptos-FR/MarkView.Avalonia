@@ -74,7 +74,7 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
                 void Update()
                 {
                     var w = sv.Viewport.Width;
-                    if (w > 0) image.MaxWidth = w;
+                    if (w > 0) image.MaxWidth = Math.Min(w, 800);
                 }
 
                 void OnSizeChanged(object? s, SizeChangedEventArgs e) => Update();

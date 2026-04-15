@@ -190,7 +190,7 @@ public partial class MarkdownViewer : ContentControl
         {
             if (child is not Grid itemGrid) continue;
 
-            // Column 0 holds the marker TextBlock (absent for task-list checkboxes)
+            // Column 0 holds the marker TextBlock (bullet/ordered) or a CheckBox (task list)
             // Column 1 holds the content StackPanel
             TextBlock? markerTb = null;
             Panel? contentPanel = null;

@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 
 using Markdig.Extensions.TaskLists;
 
@@ -14,13 +15,20 @@ public class TaskListRenderer : AvaloniaObjectRenderer<TaskList>
 {
     protected override void Write(AvaloniaRenderer renderer, TaskList obj)
     {
-        var checkBox = new CheckBox
+        // ListRenderer places the marker in column 0 of the list-item grid and sets
+        // this flag so we don't emit a duplicate inline.
+        if (renderer.SkipNextTaskList)
         {
-            IsChecked = obj.Checked,
-            IsEnabled = false,
-        };
-        checkBox.Classes.Add("markdown-task-list");
+            renderer.SkipNextTaskList = false;
+            return;
+        }
 
-        renderer.WriteInline(checkBox);
+        // Fallback: render inline (outside a list context).
+        var run = new Run
+        {
+            Text = obj.Checked ? "\u2611" : "\u2610",
+        };
+        run.Classes.Add("markdown-task-list");
+        renderer.WriteInline(run);
     }
 }

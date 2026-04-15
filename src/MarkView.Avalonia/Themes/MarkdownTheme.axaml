@@ -93,6 +93,11 @@
     <Setter Property="Margin" Value="16,4,0,4" />
   </Style>
 
+  <!-- Task list markers — force a symbol font to prevent emoji rendering of ☐/☑ -->
+  <Style Selector=":is(TextBlock).markdown-task-list">
+    <Setter Property="FontFamily" Value="Segoe UI Symbol, Noto Sans Symbols, DejaVu Sans, sans-serif" />
+  </Style>
+
   <!-- Thematic break -->
   <Style Selector="Separator.markdown-thematic-break">
     <Setter Property="Margin" Value="0,8" />

@@ -40,7 +40,21 @@ public class ListRenderer : AvaloniaObjectRenderer<ListBlock>
                 && listItem[0] is ParagraphBlock para
                 && para.Inline?.FirstChild is TaskList;
 
-            if (!isTaskItem)
+            if (isTaskItem)
+            {
+                var taskList = (TaskList)((ParagraphBlock)listItem[0]).Inline!.FirstChild!;
+                var marker = new TextBlock
+                {
+                    Text = taskList.Checked ? "\u2611" : "\u2610",
+                    Margin = new Thickness(0, 0, 8, 0),
+                    VerticalAlignment = VerticalAlignment.Top,
+                };
+                marker.Classes.Add("markdown-list-marker");
+                marker.Classes.Add("markdown-task-list");
+                Grid.SetColumn(marker, 0);
+                itemGrid.Children.Add(marker);
+            }
+            else
             {
                 var markerText = obj.IsOrdered ? $"{index}." : "\u2022";
                 var marker = new TextBlock
@@ -59,6 +73,7 @@ public class ListRenderer : AvaloniaObjectRenderer<ListBlock>
             itemGrid.Children.Add(contentPanel);
 
             renderer.Push(contentPanel);
+            if (isTaskItem) renderer.SkipNextTaskList = true;
             renderer.WriteChildren(listItem);
             renderer.Pop();
 
