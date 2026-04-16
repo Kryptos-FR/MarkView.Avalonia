@@ -2,7 +2,6 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.ComponentModel;
-using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -247,7 +246,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ![Big Buck Bunny trailer](https://youtu.be/aqz-KE-bpKQ)
         """;
 
+    private readonly List<(string? Markdown, Uri? BaseUri)> _history = [];
+    private int _historyIndex = -1;
+    private bool _navigating;
+
     private string? _markdown;
+    private Uri? _baseUri;
     private int _selectedIndex;
     private bool _isLightTheme;
 
@@ -279,6 +283,55 @@ public sealed class MainViewModel : INotifyPropertyChanged
         private set => SetField(ref _markdown, value);
     }
 
+    public Uri? BaseUri
+    {
+        get => _baseUri;
+        private set => SetField(ref _baseUri, value);
+    }
+
+    public bool CanGoBack => _historyIndex > 0;
+    public bool CanGoForward => _historyIndex < _history.Count - 1;
+
+    public void GoBack()
+    {
+        if (!CanGoBack) return;
+        _historyIndex--;
+        RestoreEntry(_history[_historyIndex]);
+    }
+
+    public void GoForward()
+    {
+        if (!CanGoForward) return;
+        _historyIndex++;
+        RestoreEntry(_history[_historyIndex]);
+    }
+
+    private void RestoreEntry((string? Markdown, Uri? BaseUri) entry)
+    {
+        _navigating = true;
+        BaseUri = entry.BaseUri;
+        Markdown = entry.Markdown;
+        _navigating = false;
+        NotifyNavigation();
+    }
+
+    private void PushEntry(string? markdown, Uri? baseUri)
+    {
+        if (_navigating) return;
+        // Discard any forward entries
+        if (_historyIndex < _history.Count - 1)
+            _history.RemoveRange(_historyIndex + 1, _history.Count - _historyIndex - 1);
+        _history.Add((markdown, baseUri));
+        _historyIndex = _history.Count - 1;
+        NotifyNavigation();
+    }
+
+    private void NotifyNavigation()
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanGoBack)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanGoForward)));
+    }
+
     public MainViewModel()
     {
         LoadContent();
@@ -286,12 +339,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void LoadContent()
     {
+        BaseUri = null;
         Markdown = _selectedIndex switch
         {
             0 => ShowcaseMarkdown,
             1 => ExtensionsShowcaseMarkdown,
             _ => ReadmeMarkdown,
         };
+        PushEntry(Markdown, null);
+    }
+
+    public void LoadFile(string filePath)
+    {
+        var dir = Path.GetFullPath(Path.GetDirectoryName(filePath)!);
+        BaseUri = new Uri(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar);
+        Markdown = File.ReadAllText(filePath);
+        PushEntry(Markdown, BaseUri);
     }
 
     private static string LoadReadme()

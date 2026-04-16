@@ -15,6 +15,19 @@
         <ComboBox ItemsSource="{Binding Views}"
                   SelectedIndex="{Binding SelectedIndex}"
                   MinWidth="120" />
+        <Button Content="←"
+                Click="OnGoBackClicked"
+                IsEnabled="{Binding CanGoBack}"
+                ToolTip.Tip="Go back"
+                VerticalAlignment="Center" />
+        <Button Content="→"
+                Click="OnGoForwardClicked"
+                IsEnabled="{Binding CanGoForward}"
+                ToolTip.Tip="Go forward"
+                VerticalAlignment="Center" />
+        <Button Content="Open file…"
+                Click="OnOpenFileClicked"
+                VerticalAlignment="Center" />
         <ToggleButton IsChecked="{Binding IsLightTheme}"
                       Content="Light theme"
                       VerticalAlignment="Center" />
@@ -23,7 +36,8 @@
 
     <!-- Markdown content -->
     <mv:MarkdownViewer x:Name="MarkdownView"
-                       Markdown="{Binding Markdown}" />
+                       Markdown="{Binding Markdown}"
+                       BaseUri="{Binding BaseUri}" />
   </DockPanel>
 
 </Window>

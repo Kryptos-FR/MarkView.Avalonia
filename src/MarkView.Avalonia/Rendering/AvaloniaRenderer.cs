@@ -224,11 +224,21 @@ public class AvaloniaRenderer : RendererBase
 
     /// <summary>
     /// Resolves a URL against the <see cref="BaseUri"/> if set and the URL is relative.
+    /// The fragment part (everything from <c>#</c> onward) is split off before combining
+    /// with the base URI so that <c>#</c> is never percent-encoded to <c>%23</c>.
     /// </summary>
     public string ResolveUrl(string url)
     {
         if (BaseUri != null && Uri.TryCreate(url, UriKind.Relative, out _))
         {
+            // Separate path from fragment before combining to prevent '#' → '%23' encoding.
+            var hashIdx = url.IndexOf('#');
+            if (hashIdx >= 0)
+            {
+                var path = url[..hashIdx];
+                var fragment = url[hashIdx..]; // includes the '#'
+                return new Uri(BaseUri, path) + fragment;
+            }
             return new Uri(BaseUri, url).ToString();
         }
         return url;

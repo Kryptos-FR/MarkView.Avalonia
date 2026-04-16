@@ -30,14 +30,35 @@ public class HeadingRenderer : AvaloniaObjectRenderer<HeadingBlock>
 
         // Generate anchor slug and register for fragment navigation
         var sb = new System.Text.StringBuilder();
-        if (obj.Inline is not null)
-            foreach (var c in obj.Inline)
-                if (c is LiteralInline lit) sb.Append(lit.Content.AsSpan());
-        var headingText = sb.ToString();
-        var slug = renderer.SlugGenerator.GenerateSlug(headingText);
+        ExtractText(obj.Inline, sb);
+        var slug = renderer.SlugGenerator.GenerateSlug(sb.ToString());
         textBlock.Tag = slug;
         renderer.RegisterAnchor(slug, textBlock);
 
         renderer.WriteBlock(textBlock);
+    }
+
+    /// <summary>
+    /// Recursively extracts plain text from an inline tree, matching GitHub's behaviour:
+    /// literal text and code-span content are included; container inlines are descended into.
+    /// </summary>
+    private static void ExtractText(Markdig.Syntax.Inlines.Inline? inline, System.Text.StringBuilder sb)
+    {
+        while (inline is not null)
+        {
+            switch (inline)
+            {
+                case LiteralInline lit:
+                    sb.Append(lit.Content.AsSpan());
+                    break;
+                case Markdig.Syntax.Inlines.CodeInline code:
+                    sb.Append(code.Content);
+                    break;
+                case ContainerInline container:
+                    ExtractText(container.FirstChild, sb);
+                    break;
+            }
+            inline = inline.NextSibling;
+        }
     }
 }

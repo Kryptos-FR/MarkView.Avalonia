@@ -459,7 +459,7 @@ public partial class MarkdownViewer : ContentControl
         RaiseEvent(e);
     }
 
-    private void ScrollToAnchor(string anchorId)
+    public void ScrollToAnchor(string anchorId)
     {
         if (!_anchors.TryGetValue(anchorId, out var control))
             return;
