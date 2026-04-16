@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Markdig;
 using MarkView.Avalonia.Extensions;
@@ -20,10 +21,15 @@ public class MarkdownViewerDefaultsTests
 
         MarkdownViewerDefaults.Pipeline = null;
 
-        var viewer = new MarkdownViewer { Markdown = "hello" };
+        var viewer = new MarkdownViewer { Markdown = "- [ ] item" };
 
-        // No exception = built-in default pipeline was used
-        Assert.NotNull(viewer.Content);
+        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var rootPanel = contentGrid.Children.OfType<StackPanel>().First();
+
+        // Built-in default uses UseSupportedExtensions which includes UseTaskLists.
+        // A task list item renders a TextBlock with class "markdown-task-list" when the extension is active.
+        Assert.NotNull(FindTaskMarker(rootPanel));
     }
 
     [AvaloniaFact]
@@ -31,15 +37,17 @@ public class MarkdownViewerDefaultsTests
     {
         using var _ = new MarkdownViewerDefaultsScope();
 
-        var globalPipeline = new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
-        MarkdownViewerDefaults.Pipeline = globalPipeline;
+        // A pipeline without UseTaskLists
+        MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder().Build();
 
-        var viewer = new MarkdownViewer { Markdown = "hello" };
+        var viewer = new MarkdownViewer { Markdown = "- [ ] item" };
 
-        // Pipeline property is null (not set on instance) — global should have been used.
-        // We can only verify indirectly: render should succeed without error.
-        Assert.Null(viewer.Pipeline);
-        Assert.NotNull(viewer.Content);
+        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var rootPanel = contentGrid.Children.OfType<StackPanel>().First();
+
+        // Without UseTaskLists, no task marker is rendered — task list item renders as plain text.
+        Assert.Null(FindTaskMarker(rootPanel));
     }
 
     [AvaloniaFact]
@@ -47,18 +55,22 @@ public class MarkdownViewerDefaultsTests
     {
         using var _ = new MarkdownViewerDefaultsScope();
 
-        var globalPipeline = new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
-        var instancePipeline = new MarkdownPipelineBuilder().UseSupportedExtensions().UseFootnotes().Build();
-        MarkdownViewerDefaults.Pipeline = globalPipeline;
+        // Global has task lists; instance does not
+        MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
+        var instancePipeline = new MarkdownPipelineBuilder().Build(); // no task lists
 
         var viewer = new MarkdownViewer
         {
             Pipeline = instancePipeline,
-            Markdown = "hello"
+            Markdown = "- [ ] item"
         };
 
-        Assert.Same(instancePipeline, viewer.Pipeline);
-        Assert.NotNull(viewer.Content);
+        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var rootPanel = contentGrid.Children.OfType<StackPanel>().First();
+
+        // Instance pipeline (no task lists) wins over global — no task marker rendered.
+        Assert.Null(FindTaskMarker(rootPanel));
     }
 
     // ── Extension composition ─────────────────────────────────────────────────
@@ -83,9 +95,9 @@ public class MarkdownViewerDefaultsTests
 
         var tracker = new TrackingExtension();
 
-        var viewer = new MarkdownViewer { Markdown = "# hi" };
+        var viewer = new MarkdownViewer();
         viewer.Extensions.Add(tracker);
-        viewer.Markdown = "# hello"; // trigger re-render
+        viewer.Markdown = "# hello";
 
         Assert.Equal(1, tracker.RegisterCallCount);
     }
@@ -134,5 +146,24 @@ public class MarkdownViewerDefaultsTests
     private sealed class OrderTrackingExtension(string name, List<string> log) : IMarkViewExtension
     {
         public void Register(AvaloniaRenderer renderer) => log.Add(name);
+    }
+
+    private static TextBlock? FindTaskMarker(Control root)
+    {
+        if (root is TextBlock tb && tb.Classes.Contains("markdown-task-list"))
+            return tb;
+        if (root is Panel panel)
+        {
+            foreach (var child in panel.Children)
+            {
+                var found = FindTaskMarker(child);
+                if (found != null) return found;
+            }
+        }
+        if (root is ContentControl cc && cc.Content is Control content)
+            return FindTaskMarker(content);
+        if (root is Decorator dec && dec.Child is Control decChild)
+            return FindTaskMarker(decChild);
+        return null;
     }
 }
