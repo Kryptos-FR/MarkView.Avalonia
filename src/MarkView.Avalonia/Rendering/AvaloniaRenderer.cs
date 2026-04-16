@@ -3,6 +3,7 @@
 
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Interactivity;
 
 using Markdig.Renderers;
 using Markdig.Syntax;
@@ -242,7 +243,7 @@ public class AvaloniaRenderer : RendererBase
 /// <summary>
 /// Event args for hyperlink click events.
 /// </summary>
-public class LinkClickedEventArgs(string url) : EventArgs
+public class LinkClickedEventArgs(string url) : RoutedEventArgs
 {
     /// <summary>
     /// The URL of the clicked link.

@@ -90,9 +90,22 @@ public partial class MarkdownViewer : ContentControl
     public IList<IMarkViewExtension> Extensions { get; } = [];
 
     /// <summary>
-    /// Raised when a hyperlink in the rendered markdown is clicked.
+    /// Identifies the <see cref="LinkClicked"/> routed event.
     /// </summary>
-    public event EventHandler<LinkClickedEventArgs>? LinkClicked;
+    public static readonly RoutedEvent<LinkClickedEventArgs> LinkClickedEvent =
+        RoutedEvent.Register<MarkdownViewer, LinkClickedEventArgs>(
+            nameof(LinkClicked), RoutingStrategies.Bubble);
+
+    /// <summary>
+    /// Raised when a hyperlink in the rendered markdown is clicked.
+    /// Bubbles up the visual tree; subscribe globally with
+    /// <c>MarkdownViewer.LinkClickedEvent.AddClassHandler&lt;MarkdownViewer&gt;(...)</c>.
+    /// </summary>
+    public event EventHandler<LinkClickedEventArgs>? LinkClicked
+    {
+        add => AddHandler(LinkClickedEvent, value);
+        remove => RemoveHandler(LinkClickedEvent, value);
+    }
 
     static MarkdownViewer()
     {
@@ -442,7 +455,8 @@ public partial class MarkdownViewer : ContentControl
             ScrollToAnchor(e.Url[1..]);
             return;
         }
-        LinkClicked?.Invoke(this, e);
+        e.RoutedEvent = LinkClickedEvent;
+        RaiseEvent(e);
     }
 
     private void ScrollToAnchor(string anchorId)
