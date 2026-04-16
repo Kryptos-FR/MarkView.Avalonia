@@ -24,6 +24,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         - [Headings](#headings)
         - [Text Formatting](#text-formatting)
+        - [Emphasis Extras](#emphasis-extras)
         - [Blockquotes](#blockquotes)
         - [Task List](#task-list)
         - [Tables](#tables)
@@ -50,6 +51,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Regular paragraph with **bold text**, *italic text*, ~~strikethrough~~, and `inline code`.
 
         You can also combine them: ***bold and italic***, **`bold code`**, *~~italic strikethrough~~*.
+
+        ---
+
+        ## Emphasis Extras
+
+        The `EmphasisExtras` Markdig extension unlocks four additional inline styles:
+
+        | Syntax | Result | Description |
+        |--------|--------|-----------|
+        | `~text~` | H~2~O | Subscript |
+        | `^text^` | x^2^ + y^2^ = r^2^ | Superscript |
+        | `++text++` | ++inserted++ | Underline (inserted) |
+        | `==text==` | ==marked== | Highlighted (marked) |
 
         ---
 
