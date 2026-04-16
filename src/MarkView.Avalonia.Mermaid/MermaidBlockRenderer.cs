@@ -64,7 +64,7 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
                 if (sv is null) return;
 
                 sv.SizeChanged += OnSizeChanged;
-                image.DetachedFromVisualTree += (_, _) =>
+                image.DetachedFromLogicalTree += (_, _) =>
                 {
                     sv.SizeChanged -= OnSizeChanged;
                     Application.Current?.PropertyChanged -= OnThemeChanged;
@@ -249,7 +249,7 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
                 BuildInlines(textBlock, themeAware, language, newIsDark, lineTexts);
             }
             Application.Current!.PropertyChanged += OnThemeChanged;
-            border.DetachedFromVisualTree += (_, _) => Application.Current?.PropertyChanged -= OnThemeChanged;
+            border.DetachedFromLogicalTree += (_, _) => Application.Current?.PropertyChanged -= OnThemeChanged;
         }
 
         renderer.WriteBlock(border);

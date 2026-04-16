@@ -60,7 +60,7 @@ public class TextMateCodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock>
                 BuildInlines(textBlock, themeAware, language, newIsDark, lineTexts);
             }
             Application.Current!.PropertyChanged += OnThemeChanged;
-            border.DetachedFromVisualTree += (_, _) => Application.Current?.PropertyChanged -= OnThemeChanged;
+            border.DetachedFromLogicalTree += (_, _) => Application.Current?.PropertyChanged -= OnThemeChanged;
         }
 
         renderer.WriteBlock(border);
