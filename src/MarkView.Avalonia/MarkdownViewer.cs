@@ -134,17 +134,21 @@ public partial class MarkdownViewer : ContentControl
 
         // Extensions register before pipeline.Setup() so they can swap renderers.
         // Globals first, then per-instance; skip exact-reference duplicates.
-        var seen = new HashSet<IMarkViewExtension>(ReferenceEqualityComparer.Instance);
+        // Allocate the dedup HashSet only when at least one list is non-empty.
+        if (MarkdownViewerDefaults.Extensions.Count > 0 || Extensions.Count > 0)
+        {
+            var seen = new HashSet<IMarkViewExtension>(ReferenceEqualityComparer.Instance);
 
-        foreach (var ext in MarkdownViewerDefaults.Extensions)
-        {
-            if (seen.Add(ext))
-                ext.Register(renderer);
-        }
-        foreach (var ext in Extensions)
-        {
-            if (seen.Add(ext))
-                ext.Register(renderer);
+            foreach (var ext in MarkdownViewerDefaults.Extensions)
+            {
+                if (seen.Add(ext))
+                    ext.Register(renderer);
+            }
+            foreach (var ext in Extensions)
+            {
+                if (seen.Add(ext))
+                    ext.Register(renderer);
+            }
         }
 
         pipeline.Setup(renderer);
