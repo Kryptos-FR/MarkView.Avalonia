@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using MarkView.Avalonia.Extensions;
 using TextMateSharp.Grammars;
 
 namespace MarkView.Avalonia;
@@ -10,6 +11,26 @@ namespace MarkView.Avalonia;
 /// </summary>
 public static class MarkdownViewerSyntaxHighlightingExtensions
 {
+    /// <summary>
+    /// Adds <see cref="SyntaxHighlighting.TextMateExtension"/> to the extension list.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// // Global (App.axaml.cs)
+    /// MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
+    /// // Per-instance
+    /// viewer.Extensions.AddTextMateHighlighting();
+    /// </code>
+    /// </example>
+    public static void AddTextMateHighlighting(
+        this IList<IMarkViewExtension> extensions,
+        ThemeName darkTheme = ThemeName.DarkPlus,
+        ThemeName lightTheme = ThemeName.LightPlus)
+    {
+        extensions.Add(
+            new SyntaxHighlighting.TextMateExtension(darkTheme, lightTheme));
+    }
+
     /// <summary>
     /// Adds <see cref="SyntaxHighlighting.TextMateExtension"/> to the viewer's
     /// <see cref="MarkdownViewer.Extensions"/> list.
@@ -21,7 +42,7 @@ public static class MarkdownViewerSyntaxHighlightingExtensions
         ThemeName darkTheme = ThemeName.DarkPlus,
         ThemeName lightTheme = ThemeName.LightPlus)
     {
-        viewer.Extensions.Add(new SyntaxHighlighting.TextMateExtension(darkTheme, lightTheme));
+        viewer.Extensions.AddTextMateHighlighting(darkTheme, lightTheme);
         return viewer;
     }
 }

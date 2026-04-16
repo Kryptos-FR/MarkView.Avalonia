@@ -3,6 +3,7 @@
 
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Interactivity;
 
 using Markdig.Renderers;
 using Markdig.Syntax;
@@ -64,10 +65,11 @@ public class AvaloniaRenderer : RendererBase
     internal bool SkipNextTaskList { get; set; }
 
     /// <summary>
-    /// Ordered list of image loaders tried before the built-in HTTP fallback.
-    /// Extensions insert at index 0 to take priority.
+    /// Ordered list of image loaders. The last entry is always the built-in
+    /// <see cref="BitmapImageLoader"/> which handles avares://, http/https, and
+    /// data URIs for bitmap formats. Extensions insert at index 0 to take priority.
     /// </summary>
-    public IList<IImageLoader> ImageLoaders { get; } = new List<IImageLoader>();
+    public IList<IImageLoader> ImageLoaders { get; } = [new BitmapImageLoader()];
 
     /// <summary>
     /// Removes the first registered renderer of type <typeparamref name="TRenderer"/>
@@ -114,9 +116,14 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new CodeBlockRenderer());
         ObjectRenderers.Add(new ListRenderer());
         ObjectRenderers.Add(new ThematicBreakRenderer());
+        // AlertBlockRenderer must precede QuoteBlockRenderer: AlertBlock extends QuoteBlock
+        // and Markdig dispatches to the first renderer whose Accept() matches.
+        ObjectRenderers.Add(new AlertBlockRenderer());
         ObjectRenderers.Add(new QuoteBlockRenderer());
         ObjectRenderers.Add(new HtmlBlockRenderer());
         ObjectRenderers.Add(new TableRenderer());
+        ObjectRenderers.Add(new FootnoteGroupRenderer());
+        ObjectRenderers.Add(new FigureRenderer());
 
         // Inline renderers
         ObjectRenderers.Add(new LiteralInlineRenderer());
@@ -129,6 +136,8 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new HtmlEntityInlineRenderer());
         ObjectRenderers.Add(new HtmlInlineRenderer());
         ObjectRenderers.Add(new TaskListRenderer());
+        ObjectRenderers.Add(new FootnoteLinkRenderer());
+        ObjectRenderers.Add(new AbbreviationInlineRenderer());
     }
 
     /// <summary>
@@ -234,7 +243,7 @@ public class AvaloniaRenderer : RendererBase
 /// <summary>
 /// Event args for hyperlink click events.
 /// </summary>
-public class LinkClickedEventArgs(string url) : EventArgs
+public class LinkClickedEventArgs(string url) : RoutedEventArgs
 {
     /// <summary>
     /// The URL of the clicked link.

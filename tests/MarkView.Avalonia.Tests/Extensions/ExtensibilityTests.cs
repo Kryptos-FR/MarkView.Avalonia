@@ -83,7 +83,8 @@ public class ExtensibilityTests
     {
         var renderer = new AvaloniaRenderer();
         Assert.NotNull(renderer.ImageLoaders);
-        Assert.Empty(renderer.ImageLoaders);
+        Assert.Single(renderer.ImageLoaders);
+        Assert.IsType<BitmapImageLoader>(renderer.ImageLoaders[0]);
     }
 
     [AvaloniaFact]

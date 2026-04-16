@@ -4,9 +4,8 @@
 using System.Text.RegularExpressions;
 
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 using Avalonia.Threading;
 
 using Markdig.Syntax.Inlines;
@@ -15,6 +14,7 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 
 /// <summary>
 /// Renders a Markdig <see cref="LinkInline"/> as a <see cref="MarkdownHyperlink"/> span or image.
+/// YouTube video links (produced by UseMediaLinks) are rendered as clickable thumbnails.
 /// </summary>
 public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {
@@ -24,10 +24,19 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
     [GeneratedRegex(@"^=(\d+)x(\d+)$", RegexOptions.Compiled)]
     private static partial Regex DimensionTitleRegex();
 
+    [GeneratedRegex(@"(?:youtu\.be/|[?&]v=)([A-Za-z0-9_\-]{11})", RegexOptions.Compiled)]
+    private static partial Regex YoutubeIdRegex();
+
     protected override void Write(AvaloniaRenderer renderer, LinkInline obj)
     {
         if (obj.IsImage)
         {
+            var videoId = ExtractYoutubeId(obj.Url);
+            if (videoId is not null)
+            {
+                WriteYoutubeEmbed(renderer, obj, videoId);
+                return;
+            }
             WriteImage(renderer, obj);
             return;
         }
@@ -83,12 +92,15 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
         CancellationTokenSource? cts = null;
         image.AttachedToVisualTree += (_, _) =>
         {
-            if (image.Source != null) return; // already loaded, no need to reload
-            cts?.Cancel();
+            // Guard against both "already loaded" and "load already in flight".
+            // AttachedToVisualTree can fire multiple times during layout passes; without
+            // the second guard the first in-flight task would be cancelled and a new one
+            // started, causing the image to never load.
+            if (image.Source != null || cts != null) return;
             cts = new CancellationTokenSource();
             _ = LoadImageAsync(renderer, image, url, cts.Token);
         };
-        image.DetachedFromVisualTree += (_, _) => cts?.Cancel();
+        image.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
 
         renderer.WriteInline(image);
     }
@@ -115,26 +127,81 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
                 }
             }
 
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-                return;
-
-            // avares:// — Avalonia embedded resource
-            if (uri.Scheme == "avares")
-            {
-                using var stream = AssetLoader.Open(uri);
-                var bitmap = new Bitmap(stream);
-                await Dispatcher.UIThread.InvokeAsync(() => image.Source = bitmap);
-                return;
-            }
-
-            // HTTP/HTTPS fallback
-            using var responseStream = await HttpClient.GetStreamAsync(uri, cancellationToken);
-            var httpBitmap = new Bitmap(responseStream);
-            await Dispatcher.UIThread.InvokeAsync(() => image.Source = httpBitmap);
+            // No loader claimed the URL — nothing to do.
+            // (BitmapImageLoader is always registered last as the catch-all.)
         }
         catch (OperationCanceledException) { }
         catch (HttpRequestException) { }
         catch (IOException) { }
+    }
+
+    private static string? ExtractYoutubeId(string? url)
+    {
+        if (string.IsNullOrEmpty(url)) return null;
+        var match = YoutubeIdRegex().Match(url);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    private static void WriteYoutubeEmbed(AvaloniaRenderer renderer, LinkInline obj, string videoId)
+    {
+        if (!Uri.TryCreate(obj.Url, UriKind.Absolute, out var videoUri)) return;
+
+        var thumbnailUrl = $"https://img.youtube.com/vi/{videoId}/hqdefault.jpg";
+
+        var thumbnail = new Image();
+        thumbnail.Classes.Add("markdown-youtube-thumbnail");
+
+        // Honour =WxH title syntax (same as regular images); falls back to theme dimensions.
+        if (!string.IsNullOrEmpty(obj.Title))
+        {
+            var dim = DimensionTitleRegex().Match(obj.Title);
+            if (dim.Success)
+            {
+                thumbnail.Width = int.Parse(dim.Groups[1].Value);
+                thumbnail.Height = int.Parse(dim.Groups[2].Value);
+                thumbnail.Stretch = Stretch.Uniform;
+            }
+        }
+
+        var playOverlay = new TextBlock
+        {
+            Text = "▶",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        playOverlay.Classes.Add("markdown-youtube-play");
+
+        var overlayGrid = new Grid();
+        overlayGrid.Classes.Add("markdown-youtube-overlay");
+
+        var button = new Button { Content = overlayGrid };
+        button.Classes.Add("markdown-youtube");
+
+        button.Click += async (_, _) =>
+        {
+            var launcher = TopLevel.GetTopLevel(button)?.Launcher;
+            if (launcher is not null)
+                await launcher.LaunchUriAsync(videoUri);
+        };
+
+        CancellationTokenSource? cts = null;
+        thumbnail.AttachedToVisualTree += (_, _) =>
+        {
+            // Guard against both "already loaded" and "load already in flight".
+            // AttachedToVisualTree fires multiple times during Avalonia's layout passes
+            // (Button > Grid > Image nesting amplifies this). Without the second guard
+            // each re-attach would cancel the previous in-flight fetch and restart it.
+            if (thumbnail.Source != null || cts != null) return;
+            cts = new CancellationTokenSource();
+            _ = LoadImageAsync(renderer, thumbnail, thumbnailUrl, cts.Token);
+        };
+        // DetachedFromLogicalTree fires on genuine content replacement (e.g. Markdown property
+        // change), unlike DetachedFromVisualTree which also fires during layout passes.
+        thumbnail.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
+
+        overlayGrid.Children.Add(thumbnail);
+        overlayGrid.Children.Add(playOverlay);
+        renderer.WriteInline(button);
     }
 
 }

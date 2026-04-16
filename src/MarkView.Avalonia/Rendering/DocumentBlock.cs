@@ -13,9 +13,9 @@ namespace MarkView.Avalonia.Rendering;
 /// </summary>
 internal sealed class IndexEntry
 {
-    public TextBlock TextBlock  { get; }
-    public string    PlainText  { get; }
-    public string    Separator  { get; }
+    public TextBlock TextBlock { get; }
+    public string PlainText { get; }
+    public string Separator { get; }
 
     /// <summary>
     /// Absolute start offset in the document's flat char space.
@@ -23,8 +23,8 @@ internal sealed class IndexEntry
     /// </summary>
     public int AbsStart { get; internal set; }
 
-    public int AbsEnd        => AbsStart + PlainText.Length;
-    public int AbsEndWithSep => AbsEnd   + Separator.Length;
+    public int AbsEnd => AbsStart + PlainText.Length;
+    public int AbsEndWithSep => AbsEnd + Separator.Length;
 
     public IndexEntry(TextBlock textBlock, string plainText, string separator = "\n")
     {

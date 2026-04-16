@@ -31,7 +31,8 @@ public class SvgImageLoaderTests
         var renderer = new AvaloniaRenderer();
         var extension = new SvgExtension();
         extension.Register(renderer);
-        Assert.Single(renderer.ImageLoaders);
+        // AvaloniaRenderer starts with BitmapImageLoader at index 0; SvgExtension inserts at 0, pushing it to index 1
+        Assert.Equal(2, renderer.ImageLoaders.Count);
         Assert.IsType<SvgImageLoader>(renderer.ImageLoaders[0]);
     }
 
@@ -45,9 +46,11 @@ public class SvgImageLoaderTests
         var extension = new SvgExtension();
         extension.Register(renderer);
 
-        Assert.Equal(2, renderer.ImageLoaders.Count);
+        // AvaloniaRenderer starts with BitmapImageLoader at index 0; after Add(existing) it's at index 1;
+        // SvgExtension inserts at 0, pushing both to indices 1 and 2
+        Assert.Equal(3, renderer.ImageLoaders.Count);
         Assert.IsType<SvgImageLoader>(renderer.ImageLoaders[0]);
-        Assert.Same(existing, renderer.ImageLoaders[1]);
+        Assert.Same(existing, renderer.ImageLoaders[2]);
     }
 
     [AvaloniaFact]

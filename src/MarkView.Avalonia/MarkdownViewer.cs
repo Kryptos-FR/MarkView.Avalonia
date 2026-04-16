@@ -87,12 +87,25 @@ public partial class MarkdownViewer : ContentControl
     /// a new <see cref="Pipeline"/>; each extension's
     /// <see cref="IMarkViewExtension.Register"/> is called once per render.
     /// </summary>
-    public IList<IMarkViewExtension> Extensions { get; } = new List<IMarkViewExtension>();
+    public IList<IMarkViewExtension> Extensions { get; } = [];
+
+    /// <summary>
+    /// Identifies the <see cref="LinkClicked"/> routed event.
+    /// </summary>
+    public static readonly RoutedEvent<LinkClickedEventArgs> LinkClickedEvent =
+        RoutedEvent.Register<MarkdownViewer, LinkClickedEventArgs>(
+            nameof(LinkClicked), RoutingStrategies.Bubble);
 
     /// <summary>
     /// Raised when a hyperlink in the rendered markdown is clicked.
+    /// Bubbles up the visual tree; subscribe globally with
+    /// <c>MarkdownViewer.LinkClickedEvent.AddClassHandler&lt;MarkdownViewer&gt;(...)</c>.
     /// </summary>
-    public event EventHandler<LinkClickedEventArgs>? LinkClicked;
+    public event EventHandler<LinkClickedEventArgs>? LinkClicked
+    {
+        add => AddHandler(LinkClickedEvent, value);
+        remove => RemoveHandler(LinkClickedEvent, value);
+    }
 
     static MarkdownViewer()
     {
@@ -112,16 +125,27 @@ public partial class MarkdownViewer : ContentControl
             return;
         }
 
-        var pipeline = Pipeline ?? DefaultPipeline;
+        var pipeline = Pipeline ?? MarkdownViewerDefaults.Pipeline ?? DefaultPipeline;
         var markdownText = ImageSizePreprocessorRegex().Replace(Markdown, "$1$2 \"=$3\"$4");
         var document = Markdig.Markdown.Parse(markdownText, pipeline);
 
         var renderer = new AvaloniaRenderer { BaseUri = BaseUri };
         renderer.LinkClicked += OnLinkClicked;
 
-        // Extensions register before pipeline.Setup() so they can swap renderers
+        // Extensions register before pipeline.Setup() so they can swap renderers.
+        // Globals first, then per-instance; skip exact-reference duplicates.
+        var seen = new HashSet<IMarkViewExtension>(ReferenceEqualityComparer.Instance);
+
+        foreach (var ext in MarkdownViewerDefaults.Extensions)
+        {
+            if (seen.Add(ext))
+                ext.Register(renderer);
+        }
         foreach (var ext in Extensions)
-            ext.Register(renderer);
+        {
+            if (seen.Add(ext))
+                ext.Register(renderer);
+        }
 
         pipeline.Setup(renderer);
         renderer.Render(document);
@@ -249,7 +273,7 @@ public partial class MarkdownViewer : ContentControl
             int row = Grid.GetRow(cell);
             int col = Grid.GetColumn(cell);
             if (!rowMap.TryGetValue(row, out var cols))
-                rowMap[row] = cols = new SortedDictionary<int, Border>();
+                rowMap[row] = cols = [];
             cols[col] = cell;
         }
 
@@ -431,7 +455,8 @@ public partial class MarkdownViewer : ContentControl
             ScrollToAnchor(e.Url[1..]);
             return;
         }
-        LinkClicked?.Invoke(this, e);
+        e.RoutedEvent = LinkClickedEvent;
+        RaiseEvent(e);
     }
 
     private void ScrollToAnchor(string anchorId)

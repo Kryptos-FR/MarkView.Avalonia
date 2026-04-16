@@ -11,12 +11,34 @@
           <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#D4D4D4</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#1A000000</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#CE9178</SolidColorBrush>
+          <!-- Alert accent colours — dark theme -->
+          <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#3B82F6</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#1A3B82F6</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBorder">#22C55E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBackground">#1A22C55E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBorder">#A855F7</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBackground">#1AA855F7</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBorder">#EAB308</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBackground">#1AEAB308</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#EF4444</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#1AEF4444</SolidColorBrush>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#F3F3F3</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#1E1E1E</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#0A000000</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#A31515</SolidColorBrush>
+          <!-- Alert accent colours — light theme -->
+          <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#2563EB</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#EFF6FF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBorder">#16A34A</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBackground">#F0FDF4</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBorder">#9333EA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBackground">#FAF5FF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBorder">#CA8A04</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBackground">#FEFCE8</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#DC2626</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#FEF2F2</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -135,6 +157,114 @@
   </Style>
   <Style Selector="Border.markdown-table-header > StackPanel > TextBlock">
     <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <!-- Footnotes -->
+  <Style Selector="StackPanel.markdown-footnote-group">
+    <Setter Property="Margin" Value="0,8,0,0" />
+    <Setter Property="Opacity" Value="0.85" />
+  </Style>
+  <Style Selector="Grid.markdown-footnote-item">
+    <Setter Property="Margin" Value="0,2" />
+  </Style>
+  <Style Selector="mri|MarkdownHyperlink.markdown-footnote-ref">
+    <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+    <Setter Property="TextDecorations" Value="Underline" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="BaselineAlignment" Value="Superscript" />
+  </Style>
+
+  <!-- Alert blocks — shared layout -->
+  <Style Selector="Border.markdown-alert">
+    <Setter Property="BorderThickness" Value="4,0,0,0" />
+    <Setter Property="CornerRadius" Value="0,4,4,0" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="Margin" Value="0,4" />
+  </Style>
+  <Style Selector="TextBlock.markdown-alert-header">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <!-- Alert variants — border + background per kind -->
+  <Style Selector="Border.markdown-alert-note">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownAlertNoteBorder}" />
+    <Setter Property="Background" Value="{DynamicResource MarkdownAlertNoteBackground}" />
+  </Style>
+  <Style Selector="Border.markdown-alert-note TextBlock.markdown-alert-header">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownAlertNoteBorder}" />
+  </Style>
+  <Style Selector="Border.markdown-alert-tip">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownAlertTipBorder}" />
+    <Setter Property="Background" Value="{DynamicResource MarkdownAlertTipBackground}" />
+  </Style>
+  <Style Selector="Border.markdown-alert-tip TextBlock.markdown-alert-header">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownAlertTipBorder}" />
+  </Style>
+  <Style Selector="Border.markdown-alert-important">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownAlertImportantBorder}" />
+    <Setter Property="Background" Value="{DynamicResource MarkdownAlertImportantBackground}" />
+  </Style>
+  <Style Selector="Border.markdown-alert-important TextBlock.markdown-alert-header">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownAlertImportantBorder}" />
+  </Style>
+  <Style Selector="Border.markdown-alert-warning">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownAlertWarningBorder}" />
+    <Setter Property="Background" Value="{DynamicResource MarkdownAlertWarningBackground}" />
+  </Style>
+  <Style Selector="Border.markdown-alert-warning TextBlock.markdown-alert-header">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownAlertWarningBorder}" />
+  </Style>
+  <Style Selector="Border.markdown-alert-caution">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownAlertCautionBorder}" />
+    <Setter Property="Background" Value="{DynamicResource MarkdownAlertCautionBackground}" />
+  </Style>
+  <Style Selector="Border.markdown-alert-caution TextBlock.markdown-alert-header">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownAlertCautionBorder}" />
+  </Style>
+
+  <!-- Abbreviations -->
+  <Style Selector="TextBlock.markdown-abbr">
+    <Setter Property="TextDecorations" Value="Underline" />
+    <Setter Property="Cursor" Value="Help" />
+  </Style>
+
+  <!-- Figures -->
+  <Style Selector="Border.markdown-figure">
+    <Setter Property="BorderBrush" Value="#40808080" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="Margin" Value="0,8" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-figure-caption">
+    <Setter Property="FontStyle" Value="Italic" />
+    <Setter Property="TextAlignment" Value="Center" />
+    <Setter Property="Opacity" Value="0.75" />
+    <Setter Property="Margin" Value="0,4,0,0" />
+  </Style>
+
+  <!-- YouTube thumbnail embeds -->
+  <Style Selector="Button.markdown-youtube">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0,4" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <!-- Explicit dimensions ensure the button has a visible area before the thumbnail loads -->
+  <Style Selector="Image.markdown-youtube-thumbnail">
+    <Setter Property="Width" Value="480" />
+    <Setter Property="Height" Value="270" />
+    <Setter Property="Stretch" Value="UniformToFill" />
+  </Style>
+  <Style Selector="Grid.markdown-youtube-overlay">
+    <Setter Property="Background" Value="#FF1A1A1A" />
+  </Style>
+  <Style Selector="TextBlock.markdown-youtube-play">
+    <Setter Property="FontSize" Value="64" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="Opacity" Value="0.85" />
   </Style>
 
 </Styles>

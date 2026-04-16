@@ -169,11 +169,89 @@ public sealed class MainViewModel : INotifyPropertyChanged
         *End of showcase.*
         """;
 
+    private const string ExtensionsShowcaseMarkdown = """
+        # Opt-In Extensions Showcase
+
+        This page demonstrates the five opt-in extensions added to MarkView.Avalonia.
+        All are activated via a combined pipeline in this demo.
+
+        ---
+
+        ## Footnotes
+
+        The CommonMark spec does not define footnotes, but Markdig supports them.[^1]
+        You can reference the same note multiple times.[^1]
+        Or add a second footnote.[^2]
+
+        [^1]: This is the first footnote definition. It can contain **formatted** text.
+        [^2]: This is the second footnote definition.
+
+        ---
+
+        ## Alert Blocks
+
+        GitHub-style alert blocks use `> [!KIND]` syntax:
+
+        > [!NOTE]
+        > The NOTE alert is used for supplementary information.
+
+        > [!TIP]
+        > The TIP alert highlights useful advice and best practices.
+
+        > [!IMPORTANT]
+        > The IMPORTANT alert highlights key information required for success.
+
+        > [!WARNING]
+        > The WARNING alert indicates potential issues that could cause problems.
+
+        > [!CAUTION]
+        > The CAUTION alert advises about risks or negative consequences.
+
+        ---
+
+        ## Abbreviations
+
+        Define abbreviations once; every occurrence in the document gets a tooltip automatically.
+
+        HTML and CSS are the building blocks of the web. The W3C maintains their specifications.
+        API stands for Application Programming Interface. JSON is a common data format.
+
+        *[HTML]: HyperText Markup Language
+        *[CSS]: Cascading Style Sheets
+        *[W3C]: World Wide Web Consortium
+        *[API]: Application Programming Interface
+        *[JSON]: JavaScript Object Notation
+
+        ---
+
+        ## Figures
+
+        Figures wrap block content in a borderd, centred container with an optional caption:
+
+        ^^^
+        ![Avalonia Logo](avares://MarkView.Avalonia.Demo/Assets/avalonia-logo.png =80x80)
+
+        ^^^ **Figure 1** — The Avalonia UI logo (embedded avares:// resource).
+
+        ---
+
+        ## YouTube Thumbnail Embed
+
+        UseMediaLinks turns image-syntax YouTube links into clickable thumbnails.
+        Click the thumbnail below to open the video in your browser:
+
+        ![Rick Astley — Never Gonna Give You Up](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+
+        Short URLs are also supported:
+
+        ![Big Buck Bunny trailer](https://youtu.be/aqz-KE-bpKQ)
+        """;
+
     private string? _markdown;
     private int _selectedIndex;
     private bool _isLightTheme;
 
-    public string[] Views { get; } = ["Feature Showcase", "README"];
+    public string[] Views { get; } = ["Feature Showcase", "Extensions Showcase", "README"];
 
     public int SelectedIndex
     {
@@ -208,7 +286,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void LoadContent()
     {
-        Markdown = _selectedIndex == 0 ? ShowcaseMarkdown : ReadmeMarkdown;
+        Markdown = _selectedIndex switch
+        {
+            0 => ShowcaseMarkdown,
+            1 => ExtensionsShowcaseMarkdown,
+            _ => ReadmeMarkdown,
+        };
     }
 
     private static string LoadReadme()
