@@ -112,16 +112,27 @@ public partial class MarkdownViewer : ContentControl
             return;
         }
 
-        var pipeline = Pipeline ?? DefaultPipeline;
+        var pipeline = Pipeline ?? MarkdownViewerDefaults.Pipeline ?? DefaultPipeline;
         var markdownText = ImageSizePreprocessorRegex().Replace(Markdown, "$1$2 \"=$3\"$4");
         var document = Markdig.Markdown.Parse(markdownText, pipeline);
 
         var renderer = new AvaloniaRenderer { BaseUri = BaseUri };
         renderer.LinkClicked += OnLinkClicked;
 
-        // Extensions register before pipeline.Setup() so they can swap renderers
+        // Extensions register before pipeline.Setup() so they can swap renderers.
+        // Globals first, then per-instance; skip exact-reference duplicates.
+        var seen = new HashSet<IMarkViewExtension>(ReferenceEqualityComparer.Instance);
+
+        foreach (var ext in MarkdownViewerDefaults.Extensions)
+        {
+            if (seen.Add(ext))
+                ext.Register(renderer);
+        }
         foreach (var ext in Extensions)
-            ext.Register(renderer);
+        {
+            if (seen.Add(ext))
+                ext.Register(renderer);
+        }
 
         pipeline.Setup(renderer);
         renderer.Render(document);
