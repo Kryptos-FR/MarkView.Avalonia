@@ -68,7 +68,7 @@ public class AvaloniaRenderer : RendererBase
     /// <see cref="BitmapImageLoader"/> which handles avares://, http/https, and
     /// data URIs for bitmap formats. Extensions insert at index 0 to take priority.
     /// </summary>
-    public IList<IImageLoader> ImageLoaders { get; } = new List<IImageLoader> { new BitmapImageLoader() };
+    public IList<IImageLoader> ImageLoaders { get; } = [new BitmapImageLoader()];
 
     /// <summary>
     /// Removes the first registered renderer of type <typeparamref name="TRenderer"/>

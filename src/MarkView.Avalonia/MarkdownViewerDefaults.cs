@@ -35,5 +35,5 @@ public static class MarkdownViewerDefaults
     /// extensions. The same extension object must not appear in both this list and an instance's
     /// <see cref="MarkdownViewer.Extensions"/> list; duplicate references are silently skipped.
     /// </summary>
-    public static IList<IMarkViewExtension> Extensions { get; } = new List<IMarkViewExtension>();
+    public static IList<IMarkViewExtension> Extensions { get; } = [];
 }

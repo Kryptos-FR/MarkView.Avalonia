@@ -87,7 +87,7 @@ public partial class MarkdownViewer : ContentControl
     /// a new <see cref="Pipeline"/>; each extension's
     /// <see cref="IMarkViewExtension.Register"/> is called once per render.
     /// </summary>
-    public IList<IMarkViewExtension> Extensions { get; } = new List<IMarkViewExtension>();
+    public IList<IMarkViewExtension> Extensions { get; } = [];
 
     /// <summary>
     /// Raised when a hyperlink in the rendered markdown is clicked.
@@ -260,7 +260,7 @@ public partial class MarkdownViewer : ContentControl
             int row = Grid.GetRow(cell);
             int col = Grid.GetColumn(cell);
             if (!rowMap.TryGetValue(row, out var cols))
-                rowMap[row] = cols = new SortedDictionary<int, Border>();
+                rowMap[row] = cols = [];
             cols[col] = cell;
         }
 

@@ -21,7 +21,7 @@ internal sealed class DocumentSelectionLayer : Control
     private static readonly ImmutableSolidColorBrush SelectionBrush =
         new(Colors.CornflowerBlue, 0.35);
 
-    private readonly List<IndexEntry> _entries = new();
+    private readonly List<IndexEntry> _entries = [];
     private int _totalLength;
 
     // Anchor and focus as absolute char offsets.
