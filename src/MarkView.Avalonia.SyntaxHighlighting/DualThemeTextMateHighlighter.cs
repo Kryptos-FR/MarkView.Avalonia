@@ -17,9 +17,9 @@ namespace MarkView.Avalonia.SyntaxHighlighting;
 internal sealed class DualThemeTextMateHighlighter(TextMateHighlighter dark, TextMateHighlighter light)
     : IThemeAwareCodeHighlighter
 {
-    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(string line, string? language)
+    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language)
         => HighlightVariant(line, language, Application.Current?.ActualThemeVariant == ThemeVariant.Dark);
 
-    public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(string line, string? language, bool isDark)
+    public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark)
         => isDark ? dark.Highlight(line, language) : light.Highlight(line, language);
 }

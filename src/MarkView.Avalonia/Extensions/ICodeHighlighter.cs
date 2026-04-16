@@ -13,7 +13,7 @@ namespace MarkView.Avalonia.Extensions;
 /// </summary>
 public interface ICodeHighlighter
 {
-    IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(string line, string? language);
+    IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language);
 }
 
 /// <summary>
@@ -23,5 +23,5 @@ public interface ICodeHighlighter
 /// </summary>
 public interface IThemeAwareCodeHighlighter : ICodeHighlighter
 {
-    IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(string line, string? language, bool isDark);
+    IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark);
 }
