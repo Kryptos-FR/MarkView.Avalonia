@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia;
 using Avalonia.Controls;
 
 namespace MarkView.Avalonia.Rendering;
@@ -25,6 +26,12 @@ internal sealed class IndexEntry
 
     public int AbsEnd => AbsStart + PlainText.Length;
     public int AbsEndWithSep => AbsEnd + Separator.Length;
+
+    /// <summary>
+    /// Bounding rect in the <see cref="DocumentSelectionLayer"/>'s coordinate space.
+    /// Populated by <c>DocumentSelectionLayer.EnsureBounds()</c> and invalidated on layout.
+    /// </summary>
+    public Rect? CachedBounds { get; internal set; }
 
     public IndexEntry(TextBlock textBlock, string plainText, string separator = "\n")
     {

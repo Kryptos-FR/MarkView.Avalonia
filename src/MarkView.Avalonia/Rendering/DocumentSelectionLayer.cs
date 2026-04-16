@@ -33,6 +33,25 @@ internal sealed class DocumentSelectionLayer : Control
         IsHitTestVisible = false;
     }
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        LayoutUpdated += OnLayoutUpdated;
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        LayoutUpdated -= OnLayoutUpdated;
+    }
+
+    private void OnLayoutUpdated(object? sender, EventArgs e)
+    {
+        // Invalidate cached bounds so they're recomputed on the next pointer event.
+        foreach (var entry in _entries)
+            entry.CachedBounds = null;
+    }
+
     // ── Registration ─────────────────────────────────────────────────────────
 
     /// <summary>
@@ -139,7 +158,12 @@ internal sealed class DocumentSelectionLayer : Control
     {
         foreach (var entry in _entries)
         {
-            var localPos = ToLocalPos(entry.TextBlock, posInLayer);
+            // Entries are in document order (top to bottom). Once cached bounds show
+            // we've passed the pointer's Y, no further entry can match.
+            if (entry.CachedBounds is { } b && b.Top > posInLayer.Y)
+                break;
+
+            var localPos = ToLocalPos(entry, posInLayer);
             if (localPos is null) continue;
 
             var textPos = new Point(localPos.Value.X - entry.TextBlock.Padding.Left,
@@ -158,7 +182,10 @@ internal sealed class DocumentSelectionLayer : Control
     {
         foreach (var entry in _entries)
         {
-            if (ToLocalPos(entry.TextBlock, posInLayer) is not null)
+            if (entry.CachedBounds is { } b && b.Top > posInLayer.Y)
+                break;
+
+            if (ToLocalPos(entry, posInLayer) is not null)
                 return entry;
         }
         return null;
@@ -178,7 +205,9 @@ internal sealed class DocumentSelectionLayer : Control
             if (entry.AbsEnd <= selStart) continue;
             if (entry.AbsStart >= selEnd) break;
 
-            var origin = entry.TextBlock.TranslatePoint(new Point(0, 0), this);
+            var origin = entry.CachedBounds is { } b
+                ? b.TopLeft
+                : entry.TextBlock.TranslatePoint(new Point(0, 0), this);
             if (origin is null) continue;
 
             var textOrigin = origin.Value + new Vector(entry.TextBlock.Padding.Left,
@@ -205,19 +234,27 @@ internal sealed class DocumentSelectionLayer : Control
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Returns <paramref name="posInLayer"/> in the TextBlock's local coordinate space,
+    /// Returns <paramref name="posInLayer"/> in the entry's TextBlock local coordinate space,
     /// or null if the point is outside the TextBlock's bounds.
+    /// Caches the bounding <see cref="Rect"/> on <see cref="IndexEntry.CachedBounds"/> so
+    /// subsequent calls avoid a full visual-tree <c>TranslatePoint</c> walk.
     /// </summary>
-    private Point? ToLocalPos(TextBlock tb, Point posInLayer)
+    private Point? ToLocalPos(IndexEntry entry, Point posInLayer)
     {
-        var origin = tb.TranslatePoint(new Point(0, 0), this);
-        if (origin is null) return null;
+        Rect bounds;
+        if (entry.CachedBounds is { } cached)
+        {
+            bounds = cached;
+        }
+        else
+        {
+            var origin = entry.TextBlock.TranslatePoint(new Point(0, 0), this);
+            if (origin is null) return null;
+            bounds = new Rect(origin.Value, entry.TextBlock.Bounds.Size);
+            entry.CachedBounds = bounds;
+        }
 
-        var local = posInLayer - origin.Value;
-        if (local.X < 0 || local.Y < 0 ||
-            local.X > tb.Bounds.Width || local.Y > tb.Bounds.Height)
-            return null;
-
-        return local;
+        if (!bounds.Contains(posInLayer)) return null;
+        return posInLayer - bounds.TopLeft;
     }
 }
