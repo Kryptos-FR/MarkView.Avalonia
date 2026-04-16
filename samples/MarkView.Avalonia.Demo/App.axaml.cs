@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 
 using Markdig;
 
@@ -55,6 +56,9 @@ public class App : Application
                 if (File.Exists(path))
                 {
                     ((MainViewModel)sender.DataContext!).LoadFile(path);
+                    var fragment = uri.Fragment.TrimStart('#');
+                    if (!string.IsNullOrEmpty(fragment))
+                        Dispatcher.UIThread.Post(() => sender.ScrollToAnchor(fragment), DispatcherPriority.Loaded);
                     return;
                 }
             }
