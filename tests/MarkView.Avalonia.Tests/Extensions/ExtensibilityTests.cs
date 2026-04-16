@@ -19,7 +19,7 @@ public class ExtensibilityTests
     public void ICodeHighlighter_returns_null_for_unsupported_language()
     {
         ICodeHighlighter highlighter = new StubHighlighter();
-        var result = highlighter.Highlight("var x = 1;", "unsupported");
+        var result = highlighter.Highlight("var x = 1;".AsMemory(), "unsupported");
         Assert.Null(result);
     }
 
@@ -27,7 +27,7 @@ public class ExtensibilityTests
     public void ICodeHighlighter_returns_tokens_for_supported_language()
     {
         ICodeHighlighter highlighter = new StubHighlighter();
-        var result = highlighter.Highlight("hello", "stub");
+        var result = highlighter.Highlight("hello".AsMemory(), "stub");
         Assert.NotNull(result);
         Assert.Single(result);
         Assert.Equal("hello", result[0].Text);
@@ -38,7 +38,7 @@ public class ExtensibilityTests
     public void ICodeHighlighter_returns_empty_list_for_blank_line()
     {
         ICodeHighlighter highlighter = new StubHighlighter();
-        var result = highlighter.Highlight("", "stub");
+        var result = highlighter.Highlight("".AsMemory(), "stub");
         Assert.NotNull(result);
         Assert.Empty(result);
     }
@@ -117,11 +117,11 @@ public class ExtensibilityTests
 
     private sealed class StubHighlighter : ICodeHighlighter
     {
-        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(string line, string? language)
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language)
         {
             if (language != "stub") return null;
-            if (string.IsNullOrEmpty(line)) return [];
-            return [(line, null)];
+            if (line.IsEmpty) return [];
+            return [(line.ToString(), null)];
         }
     }
 

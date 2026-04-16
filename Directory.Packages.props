@@ -13,12 +13,12 @@
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.0.*" />
     <PackageVersion Include="Markdig" Version="1.1.*" />
     <PackageVersion Include="Svg.Controls.Skia.Avalonia" Version="12.0.*" />
-    <PackageVersion Include="TextMateSharp" Version="1.*" />
-    <PackageVersion Include="TextMateSharp.Grammars" Version="1.*" />
+    <PackageVersion Include="TextMateSharp" Version="2.*" />
+    <PackageVersion Include="TextMateSharp.Grammars" Version="2.*" />
     <!-- Test dependencies -->
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.0.*" />
-    <PackageVersion Include="coverlet.collector" Version="6.*" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageVersion Include="coverlet.collector" Version="8.*" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.*" />
     <PackageVersion Include="xunit.v3" Version="3.*" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.*" />
   </ItemGroup>

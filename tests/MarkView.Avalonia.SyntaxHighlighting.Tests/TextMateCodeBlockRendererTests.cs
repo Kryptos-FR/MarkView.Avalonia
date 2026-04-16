@@ -94,8 +94,8 @@ public class TextMateCodeBlockRendererTests
         new TextMateExtension().Register(renderer);
         var themeAware = (IThemeAwareCodeHighlighter)renderer.CodeHighlighter!;
 
-        var darkTokens = themeAware.HighlightVariant("var x = 1;", "csharp", isDark: true);
-        var lightTokens = themeAware.HighlightVariant("var x = 1;", "csharp", isDark: false);
+        var darkTokens = themeAware.HighlightVariant("var x = 1;".AsMemory(), "csharp", isDark: true);
+        var lightTokens = themeAware.HighlightVariant("var x = 1;".AsMemory(), "csharp", isDark: false);
 
         Assert.NotNull(darkTokens);
         Assert.NotNull(lightTokens);
@@ -110,8 +110,8 @@ public class TextMateCodeBlockRendererTests
         new TextMateExtension().Register(renderer);
         var themeAware = (IThemeAwareCodeHighlighter)renderer.CodeHighlighter!;
 
-        var dark = themeAware.HighlightVariant("var x = 1;", "csharp", isDark: true)!;
-        var light = themeAware.HighlightVariant("var x = 1;", "csharp", isDark: false)!;
+        var dark = themeAware.HighlightVariant("var x = 1;".AsMemory(), "csharp", isDark: true)!;
+        var light = themeAware.HighlightVariant("var x = 1;".AsMemory(), "csharp", isDark: false)!;
 
         // At least one token should differ in colour between dark and light themes.
         var darkColours = dark.Select(t => t.Foreground?.ToString()).ToList();

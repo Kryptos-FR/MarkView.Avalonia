@@ -134,17 +134,21 @@ public partial class MarkdownViewer : ContentControl
 
         // Extensions register before pipeline.Setup() so they can swap renderers.
         // Globals first, then per-instance; skip exact-reference duplicates.
-        var seen = new HashSet<IMarkViewExtension>(ReferenceEqualityComparer.Instance);
+        // Allocate the dedup HashSet only when at least one list is non-empty.
+        if (MarkdownViewerDefaults.Extensions.Count > 0 || Extensions.Count > 0)
+        {
+            var seen = new HashSet<IMarkViewExtension>(ReferenceEqualityComparer.Instance);
 
-        foreach (var ext in MarkdownViewerDefaults.Extensions)
-        {
-            if (seen.Add(ext))
-                ext.Register(renderer);
-        }
-        foreach (var ext in Extensions)
-        {
-            if (seen.Add(ext))
-                ext.Register(renderer);
+            foreach (var ext in MarkdownViewerDefaults.Extensions)
+            {
+                if (seen.Add(ext))
+                    ext.Register(renderer);
+            }
+            foreach (var ext in Extensions)
+            {
+                if (seen.Add(ext))
+                    ext.Register(renderer);
+            }
         }
 
         pipeline.Setup(renderer);
@@ -265,34 +269,24 @@ public partial class MarkdownViewer : ContentControl
 
     private void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid)
     {
-        // Collect cells (Border elements) grouped by row then column
-        var rowMap = new SortedDictionary<int, SortedDictionary<int, Border>>();
+        // TableRenderer adds cells in row-major order (rowIndex / colIndex ascending),
+        // so iterating Children directly avoids the O(N log N) SortedDictionary sort.
+        // Collect borders first, then emit each with "\t" or "\n" based on row boundary.
+        var cells = new List<Border>(tableGrid.Children.Count);
         foreach (var child in tableGrid.Children)
-        {
-            if (child is not Border cell) continue;
-            int row = Grid.GetRow(cell);
-            int col = Grid.GetColumn(cell);
-            if (!rowMap.TryGetValue(row, out var cols))
-                rowMap[row] = cols = [];
-            cols[col] = cell;
-        }
+            if (child is Border b) cells.Add(b);
 
-        foreach (var (_, colMap) in rowMap)
+        for (int i = 0; i < cells.Count; i++)
         {
-            int cellCount = colMap.Count;
-            int i = 0;
-            foreach (var cell in colMap.Values)
-            {
-                var tb = FindFirstTextBlock(cell);
-                if (tb is not null)
-                {
-                    var text = cell.Child is Panel p ? ExtractPanelText(p) : string.Empty;
-                    // Last cell in row separates with newline; others with tab
-                    var separator = (i == cellCount - 1) ? "\n" : "\t";
-                    layer.Register(new IndexEntry(tb, text, separator));
-                }
-                i++;
-            }
+            var cell = cells[i];
+            var tb = FindFirstTextBlock(cell);
+            if (tb is null) continue;
+
+            var text = cell.Child is Panel p ? ExtractPanelText(p) : string.Empty;
+            // Separator: "\n" if this is the last cell in its row, "\t" otherwise.
+            bool isLastInRow = i == cells.Count - 1
+                || Grid.GetRow(cells[i + 1]) != Grid.GetRow(cell);
+            layer.Register(new IndexEntry(tb, text, isLastInRow ? "\n" : "\t"));
         }
     }
 

@@ -34,7 +34,7 @@ public class TextMateHighlighter : ICodeHighlighter
     }
 
     /// <inheritdoc/>
-    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(string line, string? language)
+    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language)
     {
         if (string.IsNullOrEmpty(language))
             return null;
@@ -63,8 +63,10 @@ public class TextMateHighlighter : ICodeHighlighter
         return grammar;
     }
 
-    private IReadOnlyList<(string Text, IBrush? Foreground)> TokenizeLine(IGrammar grammar, string line)
+    private IReadOnlyList<(string Text, IBrush? Foreground)> TokenizeLine(IGrammar grammar, ReadOnlyMemory<char> line)
     {
+        // Implicit ReadOnlyMemory<char> → LineText conversion; TextMateSharp 2.x uses
+        // ArrayPool internally for the required trailing '\n', avoiding a string allocation.
         var result = grammar.TokenizeLine(line, null, TimeSpan.MaxValue);
         var tokens = new List<(string Text, IBrush? Foreground)>(result.Tokens.Length);
 
@@ -80,7 +82,7 @@ public class TextMateHighlighter : ICodeHighlighter
             if (start >= end)
                 continue;
 
-            var text = line[start..end];
+            var text = line.Span[start..end].ToString();
             IBrush? brush = null;
 
             var rules = _theme.Match(token.Scopes);

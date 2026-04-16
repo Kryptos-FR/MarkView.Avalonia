@@ -64,7 +64,7 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
                 if (sv is null) return;
 
                 sv.SizeChanged += OnSizeChanged;
-                image.DetachedFromVisualTree += (_, _) =>
+                image.DetachedFromLogicalTree += (_, _) =>
                 {
                     sv.SizeChanged -= OnSizeChanged;
                     Application.Current?.PropertyChanged -= OnThemeChanged;
@@ -230,9 +230,13 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
         }
 
         // Materialise source lines once so they can be reused on theme change.
-        var lineTexts = new List<string>(obj.Lines.Count);
+        // AsMemory() references the Markdig source buffer directly — no per-line allocation.
+        var lineTexts = new List<ReadOnlyMemory<char>>(obj.Lines.Count);
         for (int i = 0; i < obj.Lines.Count; i++)
-            lineTexts.Add(obj.Lines.Lines[i].Slice.ToString());
+        {
+            var slice = obj.Lines.Lines[i].Slice;
+            lineTexts.Add(slice.Text.AsMemory(slice.Start, slice.Length));
+        }
 
         var isDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
         BuildInlines(textBlock, renderer.CodeHighlighter, language, isDark, lineTexts);
@@ -249,7 +253,7 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
                 BuildInlines(textBlock, themeAware, language, newIsDark, lineTexts);
             }
             Application.Current!.PropertyChanged += OnThemeChanged;
-            border.DetachedFromVisualTree += (_, _) => Application.Current?.PropertyChanged -= OnThemeChanged;
+            border.DetachedFromLogicalTree += (_, _) => Application.Current?.PropertyChanged -= OnThemeChanged;
         }
 
         renderer.WriteBlock(border);
@@ -260,7 +264,7 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
         ICodeHighlighter? highlighter,
         string? language,
         bool isDark,
-        IReadOnlyList<string> lineTexts)
+        IReadOnlyList<ReadOnlyMemory<char>> lineTexts)
     {
         for (int i = 0; i < lineTexts.Count; i++)
         {
@@ -283,7 +287,7 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
             }
             else
             {
-                textBlock.Inlines!.Add(new Run(lineText));
+                textBlock.Inlines!.Add(new Run(lineText.ToString()));
             }
         }
     }

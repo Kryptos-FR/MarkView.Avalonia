@@ -16,9 +16,20 @@ public class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, AlertBlock obj)
     {
-        var kind = obj.Kind.ToString().ToLowerInvariant();
+        // obj.Kind is a StringSlice — call ToString() once, then use a lookup
+        // to avoid two further allocations (ToLowerInvariant + ToUpperInvariant).
+        var kindRaw = obj.Kind.ToString();
+        var (kindLower, kindUpper) = kindRaw.ToUpperInvariant() switch
+        {
+            "NOTE"      => ("note",      "NOTE"),
+            "TIP"       => ("tip",       "TIP"),
+            "WARNING"   => ("warning",   "WARNING"),
+            "IMPORTANT" => ("important", "IMPORTANT"),
+            "CAUTION"   => ("caution",   "CAUTION"),
+            var upper   => (kindRaw.ToLowerInvariant(), upper),
+        };
 
-        var header = new TextBlock { Text = kind.ToUpperInvariant() };
+        var header = new TextBlock { Text = kindUpper };
         header.Classes.Add("markdown-alert-header");
 
         var contentPanel = new StackPanel { Spacing = 4 };
@@ -30,7 +41,7 @@ public class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
 
         var border = new Border { Child = outer };
         border.Classes.Add("markdown-alert");
-        border.Classes.Add($"markdown-alert-{kind}");
+        border.Classes.Add($"markdown-alert-{kindLower}");
 
         renderer.Push(contentPanel);
         renderer.WriteChildren(obj);

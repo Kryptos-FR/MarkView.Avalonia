@@ -12,7 +12,7 @@ public class TextMateHighlighterTests
     public void Highlight_returns_null_for_unknown_language()
     {
         var highlighter = new TextMateHighlighter();
-        var result = highlighter.Highlight("var x = 1;", "notareallanguage");
+        var result = highlighter.Highlight("var x = 1;".AsMemory(), "notareallanguage");
         Assert.Null(result);
     }
 
@@ -20,7 +20,7 @@ public class TextMateHighlighterTests
     public void Highlight_returns_tokens_for_csharp()
     {
         var highlighter = new TextMateHighlighter();
-        var result = highlighter.Highlight("var x = 1;", "csharp");
+        var result = highlighter.Highlight("var x = 1;".AsMemory(), "csharp");
         Assert.NotNull(result);
         var tokens = result!.ToList();
         Assert.NotEmpty(tokens);
@@ -32,7 +32,7 @@ public class TextMateHighlighterTests
     public void Highlight_returns_tokens_for_json()
     {
         var highlighter = new TextMateHighlighter();
-        var result = highlighter.Highlight("{\"key\": 42}", "json");
+        var result = highlighter.Highlight("{\"key\": 42}".AsMemory(), "json");
         Assert.NotNull(result);
         Assert.Equal("{\"key\": 42}", string.Concat(result!.Select(t => t.Text)));
     }
@@ -41,7 +41,7 @@ public class TextMateHighlighterTests
     public void Highlight_accepts_null_language_and_returns_null()
     {
         var highlighter = new TextMateHighlighter();
-        var result = highlighter.Highlight("anything", null);
+        var result = highlighter.Highlight("anything".AsMemory(), null);
         Assert.Null(result);
     }
 
@@ -49,7 +49,7 @@ public class TextMateHighlighterTests
     public void Highlight_with_DarkPlus_theme_produces_colored_tokens()
     {
         var highlighter = new TextMateHighlighter(ThemeName.DarkPlus);
-        var result = highlighter.Highlight("var x = 1;", "csharp");
+        var result = highlighter.Highlight("var x = 1;".AsMemory(), "csharp");
         Assert.NotNull(result);
         // At least one token should have a non-null brush
         Assert.Contains(result!, t => t.Foreground != null);
