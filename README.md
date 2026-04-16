@@ -80,9 +80,7 @@ dotnet add package MarkView.Avalonia.SyntaxHighlighting
 ```
 
 ```csharp
-using TextMateSharp.Grammars;
-
-viewer.UseTextMateHighlighting(ThemeName.DarkPlus); // default theme
+viewer.UseTextMateHighlighting(); // DarkPlus / LightPlus by default
 ```
 
 The extension replaces the built-in `CodeBlockRenderer` with `TextMateCodeBlockRenderer`, which tokenises each line and emits coloured `Run` elements. Unsupported languages fall back to the default monochrome rendering automatically.
@@ -105,14 +103,14 @@ The extension inserts `SvgImageLoader` at the front of the image loader chain. R
 
 ### Mermaid Diagrams (`MarkView.Avalonia.Mermaid`)
 
-Renders fenced `mermaid` code blocks as SVG diagrams using the [Mermaider](https://github.com/FoggyBalrog/Mermaider) library (pure .NET, no browser required). Works on all platforms including Linux. Diagrams re-render automatically when the user switches between light and dark themes.
+Renders fenced `mermaid` code blocks as SVG diagrams using the [Mermaider](https://github.com/nullean/mermaider) library (pure .NET, no browser required). Works on all platforms including Linux. Diagrams re-render automatically when the user switches between light and dark themes.
 
 ```bash
 dotnet add package MarkView.Avalonia.Mermaid
 ```
 
 ```csharp
-viewer.UseMermaid(initialHeight: 300); // height in device-independent pixels
+viewer.UseMermaid();
 ```
 
 Markdown syntax:
