@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Threading;
 
 using Markdig.Syntax.Inlines;
 
@@ -122,7 +121,7 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
                 var loaded = await loader.LoadAsync(url, cancellationToken);
                 if (loaded != null)
                 {
-                    await Dispatcher.UIThread.InvokeAsync(() => image.Source = loaded);
+                    image.Source = loaded;
                     return;
                 }
             }
