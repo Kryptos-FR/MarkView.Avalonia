@@ -10,6 +10,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 
 using Markdig;
+using Markdig.Syntax;
 
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
@@ -29,6 +30,7 @@ public partial class MarkdownViewer : ContentControl
 
     private Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
     private DocumentSelectionLayer? _selectionLayer;
+    private CancellationTokenSource? _renderCts;
     private bool _isDragging;
     private Point _dragStart;
     private const double DragThreshold = 3.0;
@@ -109,14 +111,19 @@ public partial class MarkdownViewer : ContentControl
 
     static MarkdownViewer()
     {
-        MarkdownProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
-        PipelineProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
-        BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        MarkdownProperty.Changed.AddClassHandler<MarkdownViewer>((x, e) => _ = x.RenderMarkdownAsync());
+        PipelineProperty.Changed.AddClassHandler<MarkdownViewer>((x, e) => _ = x.RenderMarkdownAsync());
+        BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, e) => _ = x.RenderMarkdownAsync());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
     }
 
-    private void RenderMarkdown()
+    private async Task RenderMarkdownAsync()
     {
+        _renderCts?.Cancel();
+        _renderCts?.Dispose();
+        var cts = _renderCts = new CancellationTokenSource();
+        var token = cts.Token;
+
         if (string.IsNullOrEmpty(Markdown))
         {
             Content = null;
@@ -127,7 +134,12 @@ public partial class MarkdownViewer : ContentControl
 
         var pipeline = Pipeline ?? MarkdownViewerDefaults.Pipeline ?? DefaultPipeline;
         var markdownText = ImageSizePreprocessorRegex().Replace(Markdown, "$1$2 \"=$3\"$4");
-        var document = Markdig.Markdown.Parse(markdownText, pipeline);
+
+        MarkdownDocument document;
+        try { document = await Task.Run(() => Markdig.Markdown.Parse(markdownText, pipeline), token); }
+        catch (OperationCanceledException) { return; }
+
+        if (token.IsCancellationRequested) return;
 
         var renderer = new AvaloniaRenderer { BaseUri = BaseUri };
         renderer.LinkClicked += OnLinkClicked;
@@ -167,11 +179,11 @@ public partial class MarkdownViewer : ContentControl
         contentGrid.Children.Add(layer);
 
         // Tunnel handlers fire before any child receives the event
-        contentGrid.AddHandler(InputElement.PointerPressedEvent,
+        contentGrid.AddHandler(PointerPressedEvent,
             OnContentPointerPressed, RoutingStrategies.Tunnel);
-        contentGrid.AddHandler(InputElement.PointerMovedEvent,
+        contentGrid.AddHandler(PointerMovedEvent,
             OnContentPointerMoved, RoutingStrategies.Tunnel);
-        contentGrid.AddHandler(InputElement.PointerReleasedEvent,
+        contentGrid.AddHandler(PointerReleasedEvent,
             OnContentPointerReleased, RoutingStrategies.Tunnel);
 
         Content = new ScrollViewer { Content = contentGrid };
