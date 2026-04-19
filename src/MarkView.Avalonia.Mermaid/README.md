@@ -24,6 +24,13 @@ viewer.UseMermaid();
 viewer.Markdown = markdownText;
 ```
 
+Or activate globally at application startup:
+
+```csharp
+// App.axaml.cs
+MarkdownViewerDefaults.Extensions.AddMermaid();
+```
+
 Diagrams are written in standard [Mermaid](https://mermaid.js.org) syntax inside a fenced code block:
 
 ````markdown
@@ -68,9 +75,14 @@ When the user switches between light and dark, the diagram is automatically re-r
 When `MarkView.Avalonia.SyntaxHighlighting` is also registered, non-mermaid fenced code blocks in the same document get full syntax highlighting. Registration order does not matter:
 
 ```csharp
+// Per-instance
 viewer
     .UseTextMateHighlighting()
     .UseMermaid();
+
+// Or globally
+MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
+MarkdownViewerDefaults.Extensions.AddMermaid();
 ```
 
 `MermaidBlockRenderer` handles all `FencedCodeBlock` nodes. Mermaid blocks are rendered as diagrams; all other fenced blocks are rendered as styled code blocks using any `ICodeHighlighter` registered by the SyntaxHighlighting extension.
