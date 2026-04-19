@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 using Avalonia.Controls;
@@ -76,8 +77,8 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             var dim = DimensionTitleRegex().Match(obj.Title);
             if (dim.Success)
             {
-                image.Width = int.Parse(dim.Groups[1].Value);
-                image.Height = int.Parse(dim.Groups[2].Value);
+                image.Width = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
+                image.Height = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
                 image.Stretch = Stretch.Uniform;
             }
         }
@@ -155,8 +156,8 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             var dim = DimensionTitleRegex().Match(obj.Title);
             if (dim.Success)
             {
-                thumbnail.Width = int.Parse(dim.Groups[1].Value);
-                thumbnail.Height = int.Parse(dim.Groups[2].Value);
+                thumbnail.Width = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
+                thumbnail.Height = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
                 thumbnail.Stretch = Stretch.Uniform;
             }
         }
