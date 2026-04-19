@@ -16,7 +16,6 @@ namespace MarkView.Avalonia.Svg;
 /// </summary>
 public sealed class SvgImageLoader : IImageLoader
 {
-    private static readonly HttpClient HttpClient = new();
 
     public bool CanLoad(string url)
     {
@@ -59,7 +58,7 @@ public sealed class SvgImageLoader : IImageLoader
             {
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                     return null;
-                using var responseStream = await HttpClient.GetStreamAsync(uri, cancellationToken);
+                using var responseStream = await SharedHttpClient.Instance.GetStreamAsync(uri, cancellationToken);
                 using var buffer = new MemoryStream();
                 await responseStream.CopyToAsync(buffer, cancellationToken);
                 buffer.Position = 0;

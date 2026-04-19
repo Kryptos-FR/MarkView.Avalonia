@@ -17,7 +17,6 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// </summary>
 public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {
-    private static readonly HttpClient HttpClient = new();
 
     // Matches the "=WxH" title produced by MarkdownViewer's preprocessor.
     [GeneratedRegex(@"^=(\d+)x(\d+)$")]
