@@ -27,7 +27,7 @@ namespace MarkView.Avalonia.Mermaid;
 /// non-mermaid fenced blocks are rendered as styled code blocks and respect any
 /// <see cref="AvaloniaRenderer.CodeHighlighter"/> registered by the SyntaxHighlighting extension.
 /// </summary>
-public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
+public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, FencedCodeBlock obj)
     {

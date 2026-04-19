@@ -11,7 +11,7 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// Renders a Markdig <see cref="CodeInline"/> as a styled <see cref="Run"/>.
 /// Using Run (instead of Border+InlineUIContainer) keeps the text selectable.
 /// </summary>
-public class CodeInlineRenderer : AvaloniaObjectRenderer<CodeInline>
+public sealed class CodeInlineRenderer : AvaloniaObjectRenderer<CodeInline>
 {
     protected override void Write(AvaloniaRenderer renderer, CodeInline obj)
     {

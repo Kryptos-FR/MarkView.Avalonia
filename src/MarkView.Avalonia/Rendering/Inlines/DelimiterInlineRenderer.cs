@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Inlines;
 
-public class DelimiterInlineRenderer : AvaloniaObjectRenderer<DelimiterInline>
+public sealed class DelimiterInlineRenderer : AvaloniaObjectRenderer<DelimiterInline>
 {
     protected override void Write(AvaloniaRenderer renderer, DelimiterInline obj)
     {

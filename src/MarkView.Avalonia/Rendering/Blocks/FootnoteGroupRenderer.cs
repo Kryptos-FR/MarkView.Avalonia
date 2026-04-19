@@ -13,7 +13,7 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// Renders a Markdig <see cref="FootnoteGroup"/> block as a numbered definition list below a separator.
 /// Each footnote definition is registered as an anchor for back-navigation.
 /// </summary>
-public class FootnoteGroupRenderer : AvaloniaObjectRenderer<FootnoteGroup>
+public sealed class FootnoteGroupRenderer : AvaloniaObjectRenderer<FootnoteGroup>
 {
     protected override void Write(AvaloniaRenderer renderer, FootnoteGroup obj)
     {

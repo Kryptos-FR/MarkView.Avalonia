@@ -12,7 +12,7 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// Renders a Markdig <see cref="HeadingBlock"/> as a <see cref="MarkdownSelectableTextBlock"/>
 /// and registers it as an anchor target for in-document navigation.
 /// </summary>
-public class HeadingRenderer : AvaloniaObjectRenderer<HeadingBlock>
+public sealed class HeadingRenderer : AvaloniaObjectRenderer<HeadingBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, HeadingBlock obj)
     {

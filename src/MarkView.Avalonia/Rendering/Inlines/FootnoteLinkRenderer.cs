@@ -11,7 +11,7 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// Renders a Markdig <see cref="FootnoteLink"/> inline as a clickable superscript reference.
 /// Clicking navigates to the footnote definition anchor (fn-N). Back-links are skipped.
 /// </summary>
-public class FootnoteLinkRenderer : AvaloniaObjectRenderer<FootnoteLink>
+public sealed class FootnoteLinkRenderer : AvaloniaObjectRenderer<FootnoteLink>
 {
     protected override void Write(AvaloniaRenderer renderer, FootnoteLink obj)
     {

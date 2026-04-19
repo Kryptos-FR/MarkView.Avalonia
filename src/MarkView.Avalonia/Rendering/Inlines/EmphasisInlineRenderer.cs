@@ -8,7 +8,7 @@ using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Inlines;
 
-public class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInline>
+public sealed class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInline>
 {
     protected override void Write(AvaloniaRenderer renderer, EmphasisInline obj)
     {

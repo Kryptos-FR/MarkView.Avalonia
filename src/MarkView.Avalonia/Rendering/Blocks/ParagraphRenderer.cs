@@ -10,7 +10,7 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// <summary>
 /// Renders a Markdig <see cref="ParagraphBlock"/> as a <see cref="MarkdownSelectableTextBlock"/>.
 /// </summary>
-public class ParagraphRenderer : AvaloniaObjectRenderer<ParagraphBlock>
+public sealed class ParagraphRenderer : AvaloniaObjectRenderer<ParagraphBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, ParagraphBlock obj)
     {

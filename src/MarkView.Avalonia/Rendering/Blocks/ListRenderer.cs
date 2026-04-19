@@ -10,7 +10,7 @@ using Markdig.Syntax;
 
 namespace MarkView.Avalonia.Rendering.Blocks;
 
-public class ListRenderer : AvaloniaObjectRenderer<ListBlock>
+public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, ListBlock obj)
     {

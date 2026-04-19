@@ -15,7 +15,7 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// Renders a Markdig <see cref="LinkInline"/> as a <see cref="MarkdownHyperlink"/> span or image.
 /// YouTube video links (produced by UseMediaLinks) are rendered as clickable thumbnails.
 /// </summary>
-public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
+public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {
     private static readonly HttpClient HttpClient = new();
 

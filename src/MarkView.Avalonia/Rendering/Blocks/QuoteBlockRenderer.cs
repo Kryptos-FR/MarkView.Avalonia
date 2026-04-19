@@ -7,7 +7,7 @@ using Markdig.Syntax;
 
 namespace MarkView.Avalonia.Rendering.Blocks;
 
-public class QuoteBlockRenderer : AvaloniaObjectRenderer<QuoteBlock>
+public sealed class QuoteBlockRenderer : AvaloniaObjectRenderer<QuoteBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, QuoteBlock obj)
     {

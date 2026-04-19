@@ -11,7 +11,7 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// <summary>
 /// Renders a Markdig <see cref="TaskList"/> as a disabled <see cref="CheckBox"/>.
 /// </summary>
-public class TaskListRenderer : AvaloniaObjectRenderer<TaskList>
+public sealed class TaskListRenderer : AvaloniaObjectRenderer<TaskList>
 {
     protected override void Write(AvaloniaRenderer renderer, TaskList obj)
     {

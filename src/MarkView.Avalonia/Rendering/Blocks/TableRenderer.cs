@@ -12,7 +12,7 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// Renders a Markdig <see cref="Table"/> as an Avalonia <see cref="Grid"/>.
 /// Supports pipe tables and grid tables (both share the same AST).
 /// </summary>
-public class TableRenderer : AvaloniaObjectRenderer<Table>
+public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
 {
     protected override void Write(AvaloniaRenderer renderer, Table obj)
     {

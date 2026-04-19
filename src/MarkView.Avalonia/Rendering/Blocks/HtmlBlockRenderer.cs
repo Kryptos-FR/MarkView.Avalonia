@@ -9,7 +9,7 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// Renders a Markdig <see cref="HtmlBlock"/> as raw text.
 /// Full HTML rendering is out of scope; this provides a visible fallback.
 /// </summary>
-public class HtmlBlockRenderer : AvaloniaObjectRenderer<HtmlBlock>
+public sealed class HtmlBlockRenderer : AvaloniaObjectRenderer<HtmlBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, HtmlBlock obj)
     {

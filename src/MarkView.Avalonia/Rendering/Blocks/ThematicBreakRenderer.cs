@@ -7,7 +7,7 @@ using Markdig.Syntax;
 
 namespace MarkView.Avalonia.Rendering.Blocks;
 
-public class ThematicBreakRenderer : AvaloniaObjectRenderer<ThematicBreakBlock>
+public sealed class ThematicBreakRenderer : AvaloniaObjectRenderer<ThematicBreakBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, ThematicBreakBlock obj)
     {

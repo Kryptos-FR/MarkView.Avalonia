@@ -8,7 +8,7 @@ using Markdig.Syntax;
 
 namespace MarkView.Avalonia.Rendering.Blocks;
 
-public class CodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock>
+public sealed class CodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, CodeBlock obj)
     {
