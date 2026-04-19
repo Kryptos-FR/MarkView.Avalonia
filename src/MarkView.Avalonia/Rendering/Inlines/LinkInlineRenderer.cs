@@ -20,10 +20,10 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
     private static readonly HttpClient HttpClient = new();
 
     // Matches the "=WxH" title produced by MarkdownViewer's preprocessor.
-    [GeneratedRegex(@"^=(\d+)x(\d+)$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^=(\d+)x(\d+)$")]
     private static partial Regex DimensionTitleRegex();
 
-    [GeneratedRegex(@"(?:youtu\.be/|[?&]v=)([A-Za-z0-9_\-]{11})", RegexOptions.Compiled)]
+    [GeneratedRegex(@"(?:youtu\.be/|[?&]v=)([A-Za-z0-9_\-]{11})")]
     private static partial Regex YoutubeIdRegex();
 
     protected override void Write(AvaloniaRenderer renderer, LinkInline obj)
