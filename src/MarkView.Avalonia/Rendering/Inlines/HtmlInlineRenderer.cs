@@ -14,7 +14,7 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// Recognizes common self-closing tags (e.g. &lt;br&gt;, &lt;br/&gt;) and renders them
 /// as their visual equivalent. Other HTML tags are silently ignored.
 /// </summary>
-public partial class HtmlInlineRenderer : AvaloniaObjectRenderer<HtmlInline>
+public sealed partial class HtmlInlineRenderer : AvaloniaObjectRenderer<HtmlInline>
 {
     [GeneratedRegex(@"^<br\s*/?\s*>$", RegexOptions.IgnoreCase)]
     private static partial Regex BrTagRegex();

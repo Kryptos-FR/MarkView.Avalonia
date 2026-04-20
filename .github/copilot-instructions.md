@@ -93,7 +93,7 @@ Plain `[Fact]` / `[Theory]` is only safe when a test constructs **zero Avalonia 
 
 **Do not** assume that "no visual tree / no layout" makes a test safe for `[Fact]`. The rule is: **no Avalonia object construction at all**.
 
-> **Known upstream issue:** `Avalonia/Avalonia#20664` — `HeadlessUnitTestSession` cleanup can resume on a different thread in xUnit v3's async lifecycle, causing sporadic `Dispatcher.VerifyAccess()` failures in `[AvaloniaFact]` tests. Mitigation: convert to `[Fact]` only where truly safe (see above); otherwise accept the occasional flake until the upstream fix lands.
+> **Known upstream issue:** `AvaloniaUI/Avalonia#20664` — `HeadlessUnitTestSession` cleanup can resume on a different thread in xUnit v3's async lifecycle, causing sporadic `Dispatcher.VerifyAccess()` failures in `[AvaloniaFact]` tests. Mitigation: convert to `[Fact]` only where truly safe (see above); otherwise accept the occasional flake until the upstream fix lands.
 
 ## Known Limitations / Open TODOs
 

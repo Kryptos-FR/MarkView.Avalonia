@@ -12,7 +12,7 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// Supports GitHub GFM variants: NOTE, TIP, WARNING, IMPORTANT, CAUTION.
 /// BorderBrush per variant is provided by AXAML theme styles (markdown-alert-note, etc.).
 /// </summary>
-public class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
+public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, AlertBlock obj)
     {

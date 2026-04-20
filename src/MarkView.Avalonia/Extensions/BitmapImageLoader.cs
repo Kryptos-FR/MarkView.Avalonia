@@ -16,7 +16,6 @@ namespace MarkView.Avalonia.Extensions;
 /// </summary>
 internal sealed class BitmapImageLoader : IImageLoader
 {
-    private static readonly HttpClient HttpClient = new();
 
     public bool CanLoad(string url)
     {
@@ -52,7 +51,7 @@ internal sealed class BitmapImageLoader : IImageLoader
                 return new Bitmap(stream);
             }
 
-            using var responseStream = await HttpClient.GetStreamAsync(uri, cancellationToken);
+            using var responseStream = await SharedHttpClient.Instance.GetStreamAsync(uri, cancellationToken);
             using var buffer = new MemoryStream();
             await responseStream.CopyToAsync(buffer, cancellationToken);
             buffer.Position = 0;

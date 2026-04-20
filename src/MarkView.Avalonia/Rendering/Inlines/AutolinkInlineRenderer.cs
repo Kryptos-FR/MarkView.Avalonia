@@ -11,7 +11,7 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// <summary>
 /// Renders a Markdig <see cref="AutolinkInline"/> as an Avalonia <see cref="HyperlinkButton"/>.
 /// </summary>
-public class AutolinkInlineRenderer : AvaloniaObjectRenderer<AutolinkInline>
+public sealed class AutolinkInlineRenderer : AvaloniaObjectRenderer<AutolinkInline>
 {
     protected override void Write(AvaloniaRenderer renderer, AutolinkInline obj)
     {

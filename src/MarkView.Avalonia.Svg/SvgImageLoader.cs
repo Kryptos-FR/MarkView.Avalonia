@@ -5,7 +5,6 @@ using System.Xml;
 
 using Avalonia.Media;
 using Avalonia.Svg.Skia;
-using Avalonia.Threading;
 
 using MarkView.Avalonia.Extensions;
 
@@ -17,7 +16,6 @@ namespace MarkView.Avalonia.Svg;
 /// </summary>
 public sealed class SvgImageLoader : IImageLoader
 {
-    private static readonly HttpClient HttpClient = new();
 
     public bool CanLoad(string url)
     {
@@ -50,19 +48,27 @@ public sealed class SvgImageLoader : IImageLoader
             if (url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
             {
                 var bytes = DecodeDataUri(url);
-                using var ms = new MemoryStream(bytes);
-                source = SvgSource.LoadFromStream(ms);
+                source = await Task.Run(() =>
+                {
+                    using var ms = new MemoryStream(bytes);
+                    return SvgSource.LoadFromStream(ms);
+                }, cancellationToken);
             }
             else
             {
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                     return null;
-                using var responseStream = await HttpClient.GetStreamAsync(uri, cancellationToken);
-                source = SvgSource.LoadFromStream(responseStream);
+                using var responseStream = await SharedHttpClient.Instance.GetStreamAsync(uri, cancellationToken);
+                using var buffer = new MemoryStream();
+                await responseStream.CopyToAsync(buffer, cancellationToken);
+                buffer.Position = 0;
+                source = await Task.Run(() => SvgSource.LoadFromStream(buffer), cancellationToken);
             }
 
             // SvgImage is an AvaloniaObject — must be created on the UI thread.
-            return await Dispatcher.UIThread.InvokeAsync(() => new SvgImage { Source = source });
+            // LoadAsync is always awaited from LoadImageAsync which starts on the Avalonia UI
+            // thread, so the SynchronizationContext is captured and continuations resume there.
+            return new SvgImage { Source = source };
         }
         catch (OperationCanceledException)
         {

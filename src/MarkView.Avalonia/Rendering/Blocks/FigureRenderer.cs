@@ -13,7 +13,7 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// Renders Markdig <see cref="Figure"/> blocks. <see cref="FigureCaption"/> children
 /// are rendered as an italic centred caption below the figure content.
 /// </summary>
-public class FigureRenderer : AvaloniaObjectRenderer<Figure>
+public sealed class FigureRenderer : AvaloniaObjectRenderer<Figure>
 {
     protected override void Write(AvaloniaRenderer renderer, Figure obj)
     {

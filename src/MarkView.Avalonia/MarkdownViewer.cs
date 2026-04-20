@@ -24,8 +24,10 @@ public partial class MarkdownViewer : ContentControl
 {
     // Converts the non-standard "![alt](url =WxH)" size hint to the title slot so Markdig
     // can parse it: "![alt](url "=WxH")". CommonMark has no image-size syntax.
-    [GeneratedRegex(@"(\!\[[^\]]*\]\()([^\s\)]+)\s+=(\d+x\d+)(\))", RegexOptions.Compiled)]
+    [GeneratedRegex(@"(\!\[[^\]]*\]\()([^\s\)]+)\s+=(\d+x\d+)(\))")]
     private static partial Regex ImageSizePreprocessorRegex();
+
+    private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
 
     private Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
     private DocumentSelectionLayer? _selectionLayer;
@@ -387,7 +389,7 @@ public partial class MarkdownViewer : ContentControl
     {
         if (_selectionLayer is null) return;
         Cursor = FindHyperlinkAt(posInLayer) != null
-            ? new Cursor(StandardCursorType.Hand)
+            ? HandCursor
             : Cursor.Default;
     }
 

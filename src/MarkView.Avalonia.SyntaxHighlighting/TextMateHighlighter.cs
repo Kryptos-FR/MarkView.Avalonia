@@ -14,7 +14,7 @@ namespace MarkView.Avalonia.SyntaxHighlighting;
 /// Tokenises source-code lines using TextMate grammars and maps token
 /// scopes to <see cref="IBrush"/> colours via the chosen theme.
 /// </summary>
-public class TextMateHighlighter : ICodeHighlighter
+public sealed class TextMateHighlighter : ICodeHighlighter
 {
     private readonly RegistryOptions _options;
     private readonly Registry _registry;

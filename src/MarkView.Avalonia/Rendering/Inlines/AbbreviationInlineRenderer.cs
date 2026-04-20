@@ -12,7 +12,7 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// Renders a Markdig <see cref="AbbreviationInline"/> as a <see cref="TextBlock"/>
 /// inside an <see cref="InlineUIContainer"/> with a tooltip showing the full definition.
 /// </summary>
-public class AbbreviationInlineRenderer : AvaloniaObjectRenderer<AbbreviationInline>
+public sealed class AbbreviationInlineRenderer : AvaloniaObjectRenderer<AbbreviationInline>
 {
     protected override void Write(AvaloniaRenderer renderer, AbbreviationInline obj)
     {

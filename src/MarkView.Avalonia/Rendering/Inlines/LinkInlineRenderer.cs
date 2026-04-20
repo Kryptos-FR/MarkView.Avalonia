@@ -1,12 +1,12 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Threading;
 
 using Markdig.Syntax.Inlines;
 
@@ -16,15 +16,14 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// Renders a Markdig <see cref="LinkInline"/> as a <see cref="MarkdownHyperlink"/> span or image.
 /// YouTube video links (produced by UseMediaLinks) are rendered as clickable thumbnails.
 /// </summary>
-public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
+public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {
-    private static readonly HttpClient HttpClient = new();
 
     // Matches the "=WxH" title produced by MarkdownViewer's preprocessor.
-    [GeneratedRegex(@"^=(\d+)x(\d+)$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^=(\d+)x(\d+)$")]
     private static partial Regex DimensionTitleRegex();
 
-    [GeneratedRegex(@"(?:youtu\.be/|[?&]v=)([A-Za-z0-9_\-]{11})", RegexOptions.Compiled)]
+    [GeneratedRegex(@"(?:youtu\.be/|[?&]v=)([A-Za-z0-9_\-]{11})")]
     private static partial Regex YoutubeIdRegex();
 
     protected override void Write(AvaloniaRenderer renderer, LinkInline obj)
@@ -78,8 +77,8 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
             var dim = DimensionTitleRegex().Match(obj.Title);
             if (dim.Success)
             {
-                image.Width = int.Parse(dim.Groups[1].Value);
-                image.Height = int.Parse(dim.Groups[2].Value);
+                image.Width = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
+                image.Height = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
                 image.Stretch = Stretch.Uniform;
             }
         }
@@ -122,7 +121,7 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
                 var loaded = await loader.LoadAsync(url, cancellationToken);
                 if (loaded != null)
                 {
-                    await Dispatcher.UIThread.InvokeAsync(() => image.Source = loaded);
+                    image.Source = loaded;
                     return;
                 }
             }
@@ -157,8 +156,8 @@ public partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
             var dim = DimensionTitleRegex().Match(obj.Title);
             if (dim.Success)
             {
-                thumbnail.Width = int.Parse(dim.Groups[1].Value);
-                thumbnail.Height = int.Parse(dim.Groups[2].Value);
+                thumbnail.Width = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
+                thumbnail.Height = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
                 thumbnail.Stretch = Stretch.Uniform;
             }
         }

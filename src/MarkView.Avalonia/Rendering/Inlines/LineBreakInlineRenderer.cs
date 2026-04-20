@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Inlines;
 
-public class LineBreakInlineRenderer : AvaloniaObjectRenderer<LineBreakInline>
+public sealed class LineBreakInlineRenderer : AvaloniaObjectRenderer<LineBreakInline>
 {
     protected override void Write(AvaloniaRenderer renderer, LineBreakInline obj)
     {

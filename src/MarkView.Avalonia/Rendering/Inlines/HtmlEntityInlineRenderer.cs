@@ -7,7 +7,7 @@ using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Inlines;
 
-public class HtmlEntityInlineRenderer : AvaloniaObjectRenderer<HtmlEntityInline>
+public sealed class HtmlEntityInlineRenderer : AvaloniaObjectRenderer<HtmlEntityInline>
 {
     protected override void Write(AvaloniaRenderer renderer, HtmlEntityInline obj)
     {

@@ -27,7 +27,7 @@ namespace MarkView.Avalonia.Mermaid;
 /// non-mermaid fenced blocks are rendered as styled code blocks and respect any
 /// <see cref="AvaloniaRenderer.CodeHighlighter"/> registered by the SyntaxHighlighting extension.
 /// </summary>
-public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
+public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, FencedCodeBlock obj)
     {
@@ -40,67 +40,100 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
     private static void WriteMermaid(AvaloniaRenderer renderer, FencedCodeBlock obj)
     {
         var source = ExtractSource(obj);
-        try
+
+        var image = new Image
         {
-            var image = new Image
-            {
-                Stretch = Stretch.Uniform,
-                HorizontalAlignment = HorizontalAlignment.Left,
-            };
+            Stretch = Stretch.Uniform,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
 
-            ApplyTheme();
+        var border = new Border { Child = image };
+        border.Classes.Add("markdown-mermaid");
 
-            // Re-render when the user switches light/dark theme.
-            // Standard Avalonia controls update automatically via DynamicResource, but
-            // the Mermaid SVG has colours baked in at render time so it must be rebuilt.
-            void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e) => ApplyTheme();
-            Application.Current!.PropertyChanged += OnThemeChanged;
+        CancellationTokenSource? cts = null;
 
-            // A ScrollViewer passes infinite available width to its children.
-            // Constrain MaxWidth to the viewport width, updating on resize.
-            image.AttachedToVisualTree += (_, _) =>
-            {
-                var sv = image.FindAncestorOfType<ScrollViewer>();
-                if (sv is null) return;
-
-                sv.SizeChanged += OnSizeChanged;
-                image.DetachedFromLogicalTree += (_, _) =>
-                {
-                    sv.SizeChanged -= OnSizeChanged;
-                    Application.Current?.PropertyChanged -= OnThemeChanged;
-                };
-                Update();
-
-                void Update()
-                {
-                    var w = sv.Viewport.Width;
-                    if (w > 0) image.MaxWidth = Math.Min(w, 800);
-                }
-
-                void OnSizeChanged(object? s, SizeChangedEventArgs e) => Update();
-            };
-
-            var border = new Border { Child = image };
-            border.Classes.Add("markdown-mermaid");
-            renderer.WriteBlock(border);
-
-            void ApplyTheme()
-            {
-                var opts = GetRenderOptions();
-                var prevCulture = Thread.CurrentThread.CurrentCulture;
-                Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-                string svg;
-                try { svg = MermaidRenderer.RenderSvg(source, opts); }
-                finally { Thread.CurrentThread.CurrentCulture = prevCulture; }
-
-                svg = InlineCssVariables(svg, opts);
-                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
-                image.Source = new SvgImage { Source = SvgSource.LoadFromStream(stream) };
-            }
+        // Re-render when the user switches light/dark theme.
+        // Standard Avalonia controls update automatically via DynamicResource, but
+        // the Mermaid SVG has colours baked in at render time so it must be rebuilt.
+        void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property.Name != nameof(Application.ActualThemeVariant)) return;
+            _ = ApplyThemeAsync();
         }
-        catch (Exception ex)
+        Application.Current!.PropertyChanged += OnThemeChanged;
+
+        // A ScrollViewer passes infinite available width to its children.
+        // Constrain MaxWidth to the viewport width, updating on resize.
+        image.AttachedToVisualTree += (_, _) =>
         {
-            WriteFallback(renderer, source, ex.Message);
+            var sv = image.FindAncestorOfType<ScrollViewer>();
+            if (sv is null) return;
+
+            sv.SizeChanged += OnSizeChanged;
+            image.DetachedFromLogicalTree += (_, _) =>
+            {
+                sv.SizeChanged -= OnSizeChanged;
+                Application.Current?.PropertyChanged -= OnThemeChanged;
+                cts?.Cancel();
+                cts?.Dispose();
+            };
+            Update();
+
+            void Update()
+            {
+                var w = sv.Viewport.Width;
+                if (w > 0) image.MaxWidth = Math.Min(w, 800);
+            }
+
+            void OnSizeChanged(object? s, SizeChangedEventArgs e) => Update();
+        };
+
+        renderer.WriteBlock(border);
+        _ = ApplyThemeAsync();
+
+        // Heavy work (MermaidRenderer.RenderSvg + SvgSource.LoadFromStream via SkiaSharp)
+        // is offloaded to a background thread so the UI thread is never blocked.
+        // A CancellationTokenSource allows rapid theme switches to cancel in-flight renders.
+        async Task ApplyThemeAsync()
+        {
+            cts?.Cancel();
+            cts?.Dispose();
+            var localCts = cts = new CancellationTokenSource();
+            var token = localCts.Token;
+
+            var opts = GetRenderOptions();
+
+            try
+            {
+                var svgSource = await Task.Run(() =>
+                {
+                    var prevCulture = Thread.CurrentThread.CurrentCulture;
+                    Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+                    string svg;
+                    try { svg = MermaidRenderer.RenderSvg(source, opts); }
+                    finally { Thread.CurrentThread.CurrentCulture = prevCulture; }
+
+                    svg = InlineCssVariables(svg, opts);
+                    using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
+                    return SvgSource.LoadFromStream(stream);
+                }, token);
+
+                if (!token.IsCancellationRequested)
+                    image.Source = new SvgImage { Source = svgSource };
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                if (!token.IsCancellationRequested)
+                {
+                    var panel = new StackPanel { Spacing = 4 };
+                    panel.Children.Add(new TextBlock { Text = $"Mermaid render error: {ex.Message}" });
+                    panel.Children.Add(new TextBlock { Text = source });
+                    border.Child = panel;
+                    border.Classes.Clear();
+                    border.Classes.Add("markdown-mermaid-fallback");
+                }
+            }
         }
     }
 
@@ -198,19 +231,6 @@ public class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
             sb.Append(lines.Lines[i].Slice.AsSpan());
         }
         return sb.ToString();
-    }
-
-    private static void WriteFallback(AvaloniaRenderer renderer, string source, string? errorMessage = null)
-    {
-        var panel = new StackPanel { Spacing = 4 };
-        if (errorMessage != null)
-            panel.Children.Add(new TextBlock { Text = $"Mermaid render error: {errorMessage}" });
-        panel.Children.Add(new TextBlock { Text = source });
-
-        var border = new Border { Child = panel };
-        border.Classes.Add("markdown-mermaid-fallback");
-
-        renderer.WriteBlock(border);
     }
 
     private static void WriteStandardCodeBlock(AvaloniaRenderer renderer, FencedCodeBlock obj)

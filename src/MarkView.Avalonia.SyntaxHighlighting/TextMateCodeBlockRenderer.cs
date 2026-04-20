@@ -21,7 +21,7 @@ namespace MarkView.Avalonia.SyntaxHighlighting;
 /// and subscribes to theme changes so token colours update in-place when the user switches
 /// between light and dark themes — without rebuilding the surrounding document tree.
 /// </summary>
-public class TextMateCodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock>
+public sealed class TextMateCodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, CodeBlock obj)
     {
