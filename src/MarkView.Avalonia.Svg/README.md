@@ -24,6 +24,13 @@ viewer.UseSvg();
 viewer.Markdown = markdownText;
 ```
 
+Or activate globally at application startup:
+
+```csharp
+// App.axaml.cs
+MarkdownViewerDefaults.Extensions.AddSvg();
+```
+
 Markdown syntax is unchanged — standard image syntax with an `.svg` URL:
 
 ```markdown

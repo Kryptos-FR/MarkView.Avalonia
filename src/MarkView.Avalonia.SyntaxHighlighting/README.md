@@ -24,6 +24,13 @@ viewer.UseTextMateHighlighting();
 viewer.Markdown = markdownText;
 ```
 
+Or activate globally at application startup so every `MarkdownViewer` in the app gets highlighting automatically:
+
+```csharp
+// App.axaml.cs
+MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
+```
+
 By default, `DarkPlus` is used for dark themes and `LightPlus` for light themes. Both highlighters are created lazily — only the one matching the active variant is loaded at startup.
 
 ## Theme Selection
@@ -92,7 +99,8 @@ using MarkView.Avalonia.Extensions;
 
 public class MyHighlighter : ICodeHighlighter
 {
-    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(string line, string? language)
+    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(
+        ReadOnlyMemory<char> line, string? language)
     {
         // return null to fall back to monochrome rendering
         return null;
@@ -107,11 +115,12 @@ For automatic dark/light updates without a document rebuild, implement `IThemeAw
 ```csharp
 public class MyHighlighter : IThemeAwareCodeHighlighter
 {
-    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(string line, string? language)
+    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(
+        ReadOnlyMemory<char> line, string? language)
         => HighlightVariant(line, language, isDark: false);
 
     public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(
-        string line, string? language, bool isDark)
+        ReadOnlyMemory<char> line, string? language, bool isDark)
     {
         // return coloured tokens for the requested variant
         return null;
