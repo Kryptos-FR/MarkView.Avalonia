@@ -1,11 +1,11 @@
 ## Summary
 
 <!--
-One bullet per logical change (•). Be specific: class/method names, packages
+One item per logical change. Be specific: class/method names, packages
 affected, behaviour before → after.
 -->
 
-•
+- 
 
 ## Type of change
 
