@@ -168,6 +168,42 @@ public class MarkdownViewerTests
         Assert.Equal(string.Empty, viewer.GetSelectedText());
     }
 
+    [AvaloniaFact]
+    public void IsSelectionEnabled_defaults_to_true()
+    {
+        var viewer = new MarkdownViewer();
+        Assert.True(viewer.IsSelectionEnabled);
+    }
+
+    [AvaloniaFact]
+    public void IsSelectionEnabled_false_sets_Focusable_false()
+    {
+        var viewer = new MarkdownViewer { IsSelectionEnabled = false };
+        Assert.False(viewer.Focusable);
+    }
+
+    [AvaloniaFact]
+    public void IsSelectionEnabled_true_restores_Focusable_true()
+    {
+        var viewer = new MarkdownViewer { IsSelectionEnabled = false };
+        viewer.IsSelectionEnabled = true;
+        Assert.True(viewer.Focusable);
+    }
+
+    [AvaloniaFact]
+    public void IsSelectionEnabled_false_selection_layer_remains_in_tree()
+    {
+        var viewer = new MarkdownViewer
+        {
+            Markdown = "Hello",
+            IsSelectionEnabled = false
+        };
+        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        // Panel (index 0) + DocumentSelectionLayer (index 1) must both be present
+        Assert.Equal(2, contentGrid.Children.Count);
+    }
+
     private sealed class SpyExtension : IMarkViewExtension
     {
         public bool RegisterCalled { get; private set; }

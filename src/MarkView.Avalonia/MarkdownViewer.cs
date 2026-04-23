@@ -84,6 +84,24 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Defines the <see cref="IsSelectionEnabled"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsSelectionEnabledProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(
+            nameof(IsSelectionEnabled), defaultValue: true);
+
+    /// <summary>
+    /// Gets or sets whether text selection is enabled.
+    /// When <see langword="false"/> the viewer does not steal keyboard focus on click
+    /// and ignores all selection gestures, while hyperlinks remain clickable.
+    /// </summary>
+    public bool IsSelectionEnabled
+    {
+        get => GetValue(IsSelectionEnabledProperty);
+        set => SetValue(IsSelectionEnabledProperty, value);
+    }
+
+    /// <summary>
     /// Extensions that customise the renderer before each render pass.
     /// Add entries before setting <see cref="Markdown"/> or assigning
     /// a new <see cref="Pipeline"/>; each extension's
@@ -115,6 +133,8 @@ public partial class MarkdownViewer : ContentControl
         PipelineProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
+        IsSelectionEnabledProperty.Changed.AddClassHandler<MarkdownViewer>(
+            (x, e) => x.OnIsSelectionEnabledChanged(e.GetNewValue<bool>()));
     }
 
     private void RenderMarkdown()
@@ -177,6 +197,21 @@ public partial class MarkdownViewer : ContentControl
             OnContentPointerReleased, RoutingStrategies.Tunnel);
 
         Content = new ScrollViewer { Content = contentGrid };
+    }
+
+    private void OnIsSelectionEnabledChanged(bool enabled)
+    {
+        if (enabled)
+        {
+            ClearValue(FocusableProperty);
+            ClearValue(CursorProperty);
+        }
+        else
+        {
+            Focusable = false;
+            Cursor = Cursor.Default;
+            _selectionLayer?.ClearSelection();
+        }
     }
 
     // ── Block registration ────────────────────────────────────────────────────
