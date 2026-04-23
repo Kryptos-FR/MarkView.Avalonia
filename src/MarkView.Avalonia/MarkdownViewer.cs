@@ -371,6 +371,7 @@ public partial class MarkdownViewer : ContentControl
     private void OnContentPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (!e.Properties.IsLeftButtonPressed || _selectionLayer is null) return;
+        if (!IsSelectionEnabled) return;
         Focus();
         _isDragging = false;
         _dragStart = e.GetPosition(_selectionLayer);
@@ -382,7 +383,7 @@ public partial class MarkdownViewer : ContentControl
         if (_selectionLayer is null) return;
         var pos = e.GetPosition(_selectionLayer);
 
-        if (e.Properties.IsLeftButtonPressed)
+        if (IsSelectionEnabled && e.Properties.IsLeftButtonPressed)
         {
             if (!_isDragging)
             {
@@ -402,7 +403,8 @@ public partial class MarkdownViewer : ContentControl
             }
         }
 
-        // Update cursor on hover (no drag)
+        // Update cursor on hover (no drag) — runs regardless of IsSelectionEnabled
+        // so that the hand cursor still appears over hyperlinks when selection is off.
         UpdateHyperlinkCursor(pos);
     }
 
@@ -451,17 +453,30 @@ public partial class MarkdownViewer : ContentControl
     // ── Selection API ─────────────────────────────────────────────────────────
 
     /// <summary>Selects all text in the rendered document.</summary>
-    public void SelectAll() => _selectionLayer?.SelectAll();
+    public void SelectAll()
+    {
+        if (!IsSelectionEnabled) return;
+        _selectionLayer?.SelectAll();
+    }
 
     /// <summary>Clears the current selection.</summary>
-    public void ClearSelection() => _selectionLayer?.ClearSelection();
+    public void ClearSelection()
+    {
+        if (!IsSelectionEnabled) return;
+        _selectionLayer?.ClearSelection();
+    }
 
     /// <summary>Returns the currently selected plain text.</summary>
-    public string GetSelectedText() => _selectionLayer?.GetSelectedText() ?? string.Empty;
+    public string GetSelectedText()
+    {
+        if (!IsSelectionEnabled) return string.Empty;
+        return _selectionLayer?.GetSelectedText() ?? string.Empty;
+    }
 
     /// <summary>Copies selected text to the clipboard.</summary>
     public Task CopyToClipboardAsync()
     {
+        if (!IsSelectionEnabled) return Task.CompletedTask;
         var topLevel = TopLevel.GetTopLevel(this);
         return topLevel is not null
             ? _selectionLayer?.CopyToClipboardAsync(topLevel) ?? Task.CompletedTask

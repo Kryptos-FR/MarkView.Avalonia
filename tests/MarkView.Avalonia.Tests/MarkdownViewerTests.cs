@@ -204,6 +204,38 @@ public class MarkdownViewerTests
         Assert.Equal(2, contentGrid.Children.Count);
     }
 
+    [AvaloniaFact]
+    public void IsSelectionEnabled_false_SelectAll_is_noop()
+    {
+        var viewer = new MarkdownViewer
+        {
+            Markdown = "Hello\n\nWorld",
+            IsSelectionEnabled = false
+        };
+        viewer.Measure(new Size(800, 600));
+        viewer.Arrange(new Rect(0, 0, 800, 600));
+
+        viewer.SelectAll();
+
+        Assert.Equal(string.Empty, viewer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void IsSelectionEnabled_false_ClearSelection_is_noop()
+    {
+        var viewer = new MarkdownViewer
+        {
+            Markdown = "Hello",
+            IsSelectionEnabled = false
+        };
+        viewer.Measure(new Size(800, 600));
+        viewer.Arrange(new Rect(0, 0, 800, 600));
+
+        // Should not throw and should return empty text
+        viewer.ClearSelection();
+        Assert.Equal(string.Empty, viewer.GetSelectedText());
+    }
+
     private sealed class SpyExtension : IMarkViewExtension
     {
         public bool RegisterCalled { get; private set; }
