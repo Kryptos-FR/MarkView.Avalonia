@@ -45,6 +45,8 @@ Add the built-in stylesheet to your application. The standard place is `App.axam
 
 ## 3. Bind to a view model
 
+Bind the `Markdown` property to a string on your view model:
+
 ```xml
 <mv:MarkdownViewer Markdown="{Binding DocumentText}" />
 ```
@@ -61,6 +63,22 @@ public class MainViewModel : INotifyPropertyChanged
     }
 }
 ```
+
+Alternatively, use the `Source` property to point directly at a file:
+
+```xml
+<!-- Embedded Avalonia resource -->
+<mv:MarkdownViewer Source="avares://MyApp/Docs/readme.md" />
+
+<!-- Or bind to a Uri on the view model -->
+<mv:MarkdownViewer Source="{Binding DocumentSource}" />
+```
+
+When `Source` is set it takes precedence over `Markdown`. The viewer supports
+`avares://` (embedded resources), `file://` (local files), and `http/https` URIs.
+The base URI for relative image links is inferred automatically from the source location.
+
+See [configuration.md](configuration.md) for the full list of properties.
 
 ## 4. Enable extension packages (optional)
 

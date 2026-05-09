@@ -36,8 +36,8 @@
 
     <!-- Markdown content -->
     <mv:MarkdownViewer x:Name="MarkdownView"
-                       Markdown="{Binding Markdown}"
-                       BaseUri="{Binding BaseUri}" />
+                       Source="{Binding Source}"
+                       Markdown="{Binding Markdown}" />
   </DockPanel>
 
 </Window>

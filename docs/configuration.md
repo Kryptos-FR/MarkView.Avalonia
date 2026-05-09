@@ -5,8 +5,9 @@
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `Markdown` | `string?` | `null` | The markdown text to render. Setting this triggers a full re-render. |
+| `Source` | `Uri?` | `null` | URI of a markdown document to load and render. Takes precedence over `Markdown` when set. Supports `avares://`, `file://`, and `http/https`. |
 | `Pipeline` | `MarkdownPipeline?` | `null` | The Markdig pipeline. `null` falls back to `MarkdownViewerDefaults.Pipeline`, or the built-in default (`UseSupportedExtensions`). |
-| `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. |
+| `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
 | `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. |
 
 ## Markdig Pipeline
@@ -71,17 +72,51 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 2. `MarkdownViewerDefaults.Extensions` are registered first, then `viewer.Extensions`.
 3. If the same extension object appears in both lists it is registered only once (reference equality check).
 
+## Source property
+
+`Source` is a `Uri?` that tells the viewer where to load its markdown from, instead
+of supplying the text directly via `Markdown`.
+
+```xml
+<!-- Embedded Avalonia resource (avares://) -->
+<mv:MarkdownViewer Source="avares://MyApp/Docs/guide.md" />
+```
+
+```csharp
+// File on disk (file://)
+viewer.Source = new Uri("/home/user/documents/notes.md");
+
+// Remote URL
+viewer.Source = new Uri("https://example.com/readme.md");
+
+// Clear Source — falls back to the Markdown property
+viewer.Source = null;
+```
+
+**Supported schemes:**
+
+| Scheme | Loading | Notes |
+|--------|---------|-------|
+| `avares://` | Synchronous | `ManifestResourceStream` — already in memory, no I/O cost |
+| `file://` | Async | Suitable for local and network paths |
+| `http/https` | Async | In-flight request is cancelled when `Source` changes |
+
+**Precedence:** when both `Source` and `Markdown` are set, `Source` wins.
+
+**BaseUri inference:** when `Source` is set and `BaseUri` is not, the viewer infers
+the base URI from the source directory. Relative image links in the loaded document
+resolve correctly without any extra configuration.
+
 ## BaseUri
 
-`BaseUri` is used to resolve relative links in markdown:
+`BaseUri` is used to resolve relative links in markdown when `Source` is not set
+(or when you need to override the inferred base):
 
 ```csharp
 // Load markdown from a GitHub URL — relative image paths resolve against this base
 viewer.BaseUri = new Uri("https://raw.githubusercontent.com/org/repo/main/docs/");
 viewer.Markdown = File.ReadAllText("README.md");
 ```
-
-`BaseUri` is also passed to `IImageLoader.LoadAsync` for each image URL, allowing image loaders to convert relative paths to absolute ones.
 
 ## LinkClicked event
 

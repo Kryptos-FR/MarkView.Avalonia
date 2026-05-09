@@ -4,7 +4,7 @@
     "net10.0": {
       "TextMateSharp": {
         "type": "Direct",
-        "requested": "[2.*, )",
+        "requested": "[2.0.3, )",
         "resolved": "2.0.3",
         "contentHash": "w0wGeqlBi9SYrzxpS1DBcEfiVCs5NY18Yl5YBIsHzXTXQd0OLOh3mP4LRuFvcktR/1MG8nSBHSMJj0rFvrPk+A==",
         "dependencies": {
@@ -13,7 +13,7 @@
       },
       "TextMateSharp.Grammars": {
         "type": "Direct",
-        "requested": "[2.*, )",
+        "requested": "[2.0.3, )",
         "resolved": "2.0.3",
         "contentHash": "qkI1ogusuyGCGTgeyhljDM+GEfATOexoUTqLIgSb5P0ojmfhRXWfSTRXXJRpZkLDErShJ7RWOb+p10lHfhhO+Q==",
         "dependencies": {
@@ -27,8 +27,8 @@
       },
       "Avalonia.Remote.Protocol": {
         "type": "Transitive",
-        "resolved": "12.0.1",
-        "contentHash": "8rqhNyde2I/JiW2TjQ8AkUoRclynr0e8yFXKB8VhehA07ejthx4Bnmt3k1DTSlpwTXbM0FRgYAtB1bTlUc6rgg=="
+        "resolved": "12.0.2",
+        "contentHash": "mlKTvn0cAEQVkRMJunLzDNugZRbtZIksT5yu+XgcAlOvqTHGyZY+mGP+4/+1IwakZx9nrz6SGwI5yrzNT5g0TQ=="
       },
       "MicroCom.Runtime": {
         "type": "Transitive",
@@ -43,24 +43,24 @@
       "markview.avalonia": {
         "type": "Project",
         "dependencies": {
-          "Avalonia": "[12.0.*, )",
-          "Markdig": "[1.1.*, )"
+          "Avalonia": "[12.0.2, )",
+          "Markdig": "[1.1.3, )"
         }
       },
       "Avalonia": {
         "type": "CentralTransitive",
-        "requested": "[12.0.*, )",
-        "resolved": "12.0.1",
-        "contentHash": "4OK0u9EdD3ukqA3qTwwTQ7MnRMj+gzBgm/KmpbYRdRTd94OzcioTRnHrc5PJo94SfMEYKq2rfpO3nq9Jddet+w==",
+        "requested": "[12.0.2, )",
+        "resolved": "12.0.2",
+        "contentHash": "852xwfNNAUWE+aKWFackMALAKofcpKnM2g4PN8VKfxG1SO8Stlih7d6QFCbjQl46vuR9WBw/ZVGwn4Ovbj/oxQ==",
         "dependencies": {
           "Avalonia.BuildServices": "11.3.2",
-          "Avalonia.Remote.Protocol": "12.0.1",
+          "Avalonia.Remote.Protocol": "12.0.2",
           "MicroCom.Runtime": "0.11.4"
         }
       },
       "Markdig": {
         "type": "CentralTransitive",
-        "requested": "[1.1.*, )",
+        "requested": "[1.1.3, )",
         "resolved": "1.1.3",
         "contentHash": "wboYc6YToID7koq+onej7rjd/kv4urZaZ4QMiJoF/jXt/ZlXe2Af9gWG4nOe5tk654UaOPYvKL64iFum7qWEYA=="
       }
