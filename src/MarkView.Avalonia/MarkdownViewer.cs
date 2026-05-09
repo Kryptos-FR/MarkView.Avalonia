@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform;
 
 using Markdig;
 
@@ -35,6 +36,9 @@ public partial class MarkdownViewer : ContentControl
     private Point _dragStart;
     private const double DragThreshold = 3.0;
 
+    private string? _sourceMarkdown;
+    private CancellationTokenSource? _sourceLoadCts;
+
     private static readonly MarkdownPipeline DefaultPipeline =
         new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
 
@@ -55,6 +59,12 @@ public partial class MarkdownViewer : ContentControl
     /// </summary>
     public static readonly StyledProperty<Uri?> BaseUriProperty =
         AvaloniaProperty.Register<MarkdownViewer, Uri?>(nameof(BaseUri));
+
+    /// <summary>
+    /// Defines the <see cref="Source"/> property.
+    /// </summary>
+    public static readonly StyledProperty<Uri?> SourceProperty =
+        AvaloniaProperty.Register<MarkdownViewer, Uri?>(nameof(Source));
 
     /// <summary>
     /// Gets or sets the Markdown text to render.
@@ -81,6 +91,18 @@ public partial class MarkdownViewer : ContentControl
     {
         get => GetValue(BaseUriProperty);
         set => SetValue(BaseUriProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets a URI that points to a Markdown document to load and render.
+    /// Supports <c>avares://</c> embedded resources, <c>file://</c>, and <c>http/https</c> schemes.
+    /// When both <see cref="Source"/> and <see cref="Markdown"/> are set,
+    /// <see cref="Source"/> takes precedence.
+    /// </summary>
+    public Uri? Source
+    {
+        get => GetValue(SourceProperty);
+        set => SetValue(SourceProperty, value);
     }
 
     /// <summary>
@@ -114,12 +136,88 @@ public partial class MarkdownViewer : ContentControl
         MarkdownProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         PipelineProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        SourceProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnSourceChanged());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
+    }
+
+    // ── Source loading ────────────────────────────────────────────────────────
+
+    private void OnSourceChanged()
+    {
+        _sourceLoadCts?.Cancel();
+        _sourceLoadCts = null;
+        _sourceMarkdown = null;
+
+        var source = Source;
+        if (source is null)
+        {
+            RenderMarkdown();
+            return;
+        }
+
+        switch (source.Scheme)
+        {
+            // avares:// is a ManifestResourceStream — memory-mapped into the loaded assembly,
+            // effectively zero I/O cost. No async API exists; synchronous read is appropriate.
+            case "avares":
+            {
+                using var stream = AssetLoader.Open(source);
+                using var reader = new StreamReader(stream);
+                _sourceMarkdown = reader.ReadToEnd();
+                RenderMarkdown();
+                break;
+            }
+            case "file":
+            case "http":
+            case "https":
+                _ = LoadFromUriAsync(source);
+                break;
+        }
+    }
+
+    private async Task LoadFromUriAsync(Uri uri)
+    {
+        var cts = new CancellationTokenSource();
+        _sourceLoadCts = cts;
+        try
+        {
+            string text;
+            if (uri.Scheme == "file")
+            {
+                using var stream = File.OpenRead(uri.LocalPath);
+                using var reader = new StreamReader(stream);
+                text = await reader.ReadToEndAsync(cts.Token);
+            }
+            else
+            {
+                using var stream = await SharedHttpClient.Instance.GetStreamAsync(uri, cts.Token);
+                using var reader = new StreamReader(stream);
+                text = await reader.ReadToEndAsync(cts.Token);
+            }
+
+            if (!cts.IsCancellationRequested)
+            {
+                _sourceMarkdown = text;
+                RenderMarkdown();
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (HttpRequestException) { }
+        catch (IOException) { }
+    }
+
+    private static Uri? InferBaseUri(Uri? source)
+    {
+        if (source is null) return null;
+        var abs = source.AbsoluteUri;
+        var lastSlash = abs.LastIndexOf('/');
+        return lastSlash > 0 ? new Uri(abs[..(lastSlash + 1)]) : null;
     }
 
     private void RenderMarkdown()
     {
-        if (string.IsNullOrEmpty(Markdown))
+        var markdown = _sourceMarkdown ?? Markdown;
+        if (string.IsNullOrEmpty(markdown))
         {
             Content = null;
             _anchors = new(StringComparer.OrdinalIgnoreCase);
@@ -128,10 +226,10 @@ public partial class MarkdownViewer : ContentControl
         }
 
         var pipeline = Pipeline ?? MarkdownViewerDefaults.Pipeline ?? DefaultPipeline;
-        var markdownText = ImageSizePreprocessorRegex().Replace(Markdown, "$1$2 \"=$3\"$4");
+        var markdownText = ImageSizePreprocessorRegex().Replace(markdown, "$1$2 \"=$3\"$4");
         var document = Markdig.Markdown.Parse(markdownText, pipeline);
 
-        var renderer = new AvaloniaRenderer { BaseUri = BaseUri };
+        var renderer = new AvaloniaRenderer { BaseUri = BaseUri ?? InferBaseUri(Source) };
         renderer.LinkClicked += OnLinkClicked;
 
         // Extensions register before pipeline.Setup() so they can swap renderers.
