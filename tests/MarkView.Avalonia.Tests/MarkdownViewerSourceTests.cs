@@ -34,12 +34,10 @@ public class MarkdownViewerSourceTests
             if (e.Property == ContentControl.ContentProperty)
                 tcs.TrySetResult();
         };
-        return Task.WhenAny(tcs.Task, Task.Delay(timeoutMs))
-            .ContinueWith(_ =>
-            {
-                if (!tcs.Task.IsCompleted)
-                    throw new TimeoutException("MarkdownViewer.Content was not set within the timeout.");
-            }, TaskScheduler.Default);
+        // Task.WaitAsync keeps the continuation on the current (Avalonia dispatcher)
+        // sync context, avoiding the scheduler mismatch that Task.WhenAny +
+        // ContinueWith(TaskScheduler.Default) could cause.
+        return tcs.Task.WaitAsync(TimeSpan.FromMilliseconds(timeoutMs));
     }
 
     // ── avares:// ─────────────────────────────────────────────────────────────
