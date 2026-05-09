@@ -5,7 +5,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\..\README.md" LogicalName="README.md" />
+    <Content Include="..\..\README.md" CopyToOutputDirectory="PreserveNewest" />
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
