@@ -4,7 +4,7 @@
     "net10.0": {
       "Avalonia.Headless.XUnit": {
         "type": "Direct",
-        "requested": "[12.0.*, )",
+        "requested": "[12.0.1, )",
         "resolved": "12.0.1",
         "contentHash": "umwbvHUnbq++HYHoDM42KGuLL3Yy0m2L6O6rnPviYHtG9/YKFCqInBxDgWr9MJhl6yh3ECx6L7Dxef0d4/gvWQ==",
         "dependencies": {
@@ -14,7 +14,7 @@
       },
       "Avalonia.Themes.Fluent": {
         "type": "Direct",
-        "requested": "[12.0.*, )",
+        "requested": "[12.0.1, )",
         "resolved": "12.0.1",
         "contentHash": "/vfTVnz0mZR91cDQn5dHKzngLV0OfCZ0i/uT01uxKu6jqyaPbRwpO68d07N0d6ll6hnvdfySfP4lDY7JWtqr4A==",
         "dependencies": {
@@ -23,13 +23,13 @@
       },
       "coverlet.collector": {
         "type": "Direct",
-        "requested": "[10.*, )",
+        "requested": "[10.0.0, )",
         "resolved": "10.0.0",
         "contentHash": "WFejCcOUR6k8UYyDnnR6Gk+obFYMsWrZuNqPJnsVFGVhpPSN0y20D4qbdKJnXinYGx9PQ397Hf9TnU1NBST8vA=="
       },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
-        "requested": "[18.*, )",
+        "requested": "[18.4.0, )",
         "resolved": "18.4.0",
         "contentHash": "w49iZdL4HL6V25l41NVQLXWQ+e71GvSkKVteMrOL02gP/PUkcnO/1yEb2s9FntU4wGmJWfKnyrRAhcMHd9ZZNA==",
         "dependencies": {
@@ -39,13 +39,13 @@
       },
       "xunit.runner.visualstudio": {
         "type": "Direct",
-        "requested": "[3.*, )",
+        "requested": "[3.1.5, )",
         "resolved": "3.1.5",
         "contentHash": "tKi7dSTwP4m5m9eXPM2Ime4Kn7xNf4x4zT9sdLO/G4hZVnQCRiMTWoSZqI/pYTVeI27oPPqHBKYI/DjJ9GsYgA=="
       },
       "xunit.v3": {
         "type": "Direct",
-        "requested": "[3.*, )",
+        "requested": "[3.2.2, )",
         "resolved": "3.2.2",
         "contentHash": "L+4/4y0Uqcg8/d6hfnxhnwh4j9FaeULvefTwrk30rr1o4n/vdPfyUQ8k0yzH8VJx7bmFEkDdcRfbtbjEHlaYcA==",
         "dependencies": {
@@ -363,20 +363,20 @@
       "markview.avalonia": {
         "type": "Project",
         "dependencies": {
-          "Avalonia": "[12.0.*, )",
-          "Markdig": "[1.1.*, )"
+          "Avalonia": "[12.0.1, )",
+          "Markdig": "[1.1.3, )"
         }
       },
       "markview.avalonia.svg": {
         "type": "Project",
         "dependencies": {
           "MarkView.Avalonia": "[1.0.0, )",
-          "Svg.Controls.Skia.Avalonia": "[12.0.*, )"
+          "Svg.Controls.Skia.Avalonia": "[12.0.0.3, )"
         }
       },
       "Avalonia": {
         "type": "CentralTransitive",
-        "requested": "[12.0.*, )",
+        "requested": "[12.0.1, )",
         "resolved": "12.0.1",
         "contentHash": "4OK0u9EdD3ukqA3qTwwTQ7MnRMj+gzBgm/KmpbYRdRTd94OzcioTRnHrc5PJo94SfMEYKq2rfpO3nq9Jddet+w==",
         "dependencies": {
@@ -387,7 +387,7 @@
       },
       "Avalonia.Fonts.Inter": {
         "type": "CentralTransitive",
-        "requested": "[12.0.*, )",
+        "requested": "[12.0.1, )",
         "resolved": "12.0.1",
         "contentHash": "Pm7Xb9fMpjM4i1cpUGtpDtxkMC/oVfijaT93cPl30LPUKPYPbpwm1jkrYwtWLtEr/xTgbUmxyZZvJd0cV9oF8g==",
         "dependencies": {
@@ -396,13 +396,13 @@
       },
       "Markdig": {
         "type": "CentralTransitive",
-        "requested": "[1.1.*, )",
+        "requested": "[1.1.3, )",
         "resolved": "1.1.3",
         "contentHash": "wboYc6YToID7koq+onej7rjd/kv4urZaZ4QMiJoF/jXt/ZlXe2Af9gWG4nOe5tk654UaOPYvKL64iFum7qWEYA=="
       },
       "Svg.Controls.Skia.Avalonia": {
         "type": "CentralTransitive",
-        "requested": "[12.0.*, )",
+        "requested": "[12.0.0.3, )",
         "resolved": "12.0.0.3",
         "contentHash": "TtoRNswWI6CBzcLliWvLaEFiDf0wo9Zi/GTX1H0Q4QVcX2aXItkzPK4MELKv3B3bE+cRmVbXAt1PvwiuD2n6TA==",
         "dependencies": {

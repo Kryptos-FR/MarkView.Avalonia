@@ -4,7 +4,7 @@
     "net10.0": {
       "Mermaider": {
         "type": "Direct",
-        "requested": "[0.*, )",
+        "requested": "[0.6.0, )",
         "resolved": "0.6.0",
         "contentHash": "cmtlEM+xFvWnzPwCXz4mMsOa8Le4DjakNjs57nKHS7xX5ecslqC7fve0iYCwwk+mq/Ggr7BY1n/jSKYjsxyIlg==",
         "dependencies": {
@@ -14,7 +14,7 @@
       },
       "Svg.Controls.Skia.Avalonia": {
         "type": "Direct",
-        "requested": "[12.0.*, )",
+        "requested": "[12.0.0.3, )",
         "resolved": "12.0.0.3",
         "contentHash": "TtoRNswWI6CBzcLliWvLaEFiDf0wo9Zi/GTX1H0Q4QVcX2aXItkzPK4MELKv3B3bE+cRmVbXAt1PvwiuD2n6TA==",
         "dependencies": {
@@ -186,13 +186,13 @@
       "markview.avalonia": {
         "type": "Project",
         "dependencies": {
-          "Avalonia": "[12.0.*, )",
-          "Markdig": "[1.1.*, )"
+          "Avalonia": "[12.0.1, )",
+          "Markdig": "[1.1.3, )"
         }
       },
       "Avalonia": {
         "type": "CentralTransitive",
-        "requested": "[12.0.*, )",
+        "requested": "[12.0.1, )",
         "resolved": "12.0.1",
         "contentHash": "4OK0u9EdD3ukqA3qTwwTQ7MnRMj+gzBgm/KmpbYRdRTd94OzcioTRnHrc5PJo94SfMEYKq2rfpO3nq9Jddet+w==",
         "dependencies": {
@@ -203,7 +203,7 @@
       },
       "Markdig": {
         "type": "CentralTransitive",
-        "requested": "[1.1.*, )",
+        "requested": "[1.1.3, )",
         "resolved": "1.1.3",
         "contentHash": "wboYc6YToID7koq+onej7rjd/kv4urZaZ4QMiJoF/jXt/ZlXe2Af9gWG4nOe5tk654UaOPYvKL64iFum7qWEYA=="
       }
