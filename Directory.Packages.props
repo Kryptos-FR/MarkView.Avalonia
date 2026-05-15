@@ -16,7 +16,7 @@
     <PackageVersion Include="TextMateSharp" Version="2.0.3" />
     <PackageVersion Include="TextMateSharp.Grammars" Version="2.0.3" />
     <!-- Test dependencies -->
-    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.0.2" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.0.3" />
     <PackageVersion Include="coverlet.collector" Version="10.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
