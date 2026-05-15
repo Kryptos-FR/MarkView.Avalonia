@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Core dependencies -->
-    <PackageVersion Include="Avalonia" Version="12.0.2" />
+    <PackageVersion Include="Avalonia" Version="12.0.3" />
     <PackageVersion Include="Mermaider" Version="0.6.0" />
     <PackageVersion Include="Avalonia.Desktop" Version="12.0.2" />
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.0.2" />
