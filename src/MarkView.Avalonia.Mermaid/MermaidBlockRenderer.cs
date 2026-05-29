@@ -1,7 +1,6 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-using System.Globalization;
 using System.Text;
 
 using Avalonia;
@@ -107,12 +106,7 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
             {
                 var svgSource = await Task.Run(() =>
                 {
-                    var prevCulture = Thread.CurrentThread.CurrentCulture;
-                    Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-                    string svg;
-                    try { svg = MermaidRenderer.RenderSvg(source, opts); }
-                    finally { Thread.CurrentThread.CurrentCulture = prevCulture; }
-
+                    var svg = MermaidRenderer.RenderSvg(source, opts);
                     svg = InlineCssVariables(svg, opts);
                     using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
                     return SvgSource.LoadFromStream(stream);
