@@ -253,7 +253,7 @@ public class AvaloniaRenderer : RendererBase
 /// <summary>
 /// Event args for hyperlink click events.
 /// </summary>
-public class LinkClickedEventArgs(string url) : RoutedEventArgs
+public sealed class LinkClickedEventArgs(string url) : RoutedEventArgs
 {
     /// <summary>
     /// The URL of the clicked link.
