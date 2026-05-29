@@ -4,21 +4,21 @@
     "net10.0": {
       "Avalonia.Headless.XUnit": {
         "type": "Direct",
-        "requested": "[12.0.2, )",
-        "resolved": "12.0.2",
-        "contentHash": "wXy0b0r5kvSbcGNDMeNts3bHohdSwbHJ5tczXL8xoGicY32yLNkZzsR+zjmNRB0qz55kPKysFO3uYqxf5KLLJQ==",
+        "requested": "[12.0.4, )",
+        "resolved": "12.0.4",
+        "contentHash": "qfic3uXgnVAydLTOEOtq59axGh0ctMtQd0780paNjkNWitJoLb4iDpS9CEeFtVL6Xb4+3c3xgVaAUHcl9Z2VFA==",
         "dependencies": {
-          "Avalonia.Headless": "12.0.2",
+          "Avalonia.Headless": "12.0.4",
           "xunit.v3.extensibility.core": "3.2.2"
         }
       },
       "Avalonia.Themes.Fluent": {
         "type": "Direct",
-        "requested": "[12.0.2, )",
-        "resolved": "12.0.2",
-        "contentHash": "uEDLnrS7flCulIjWHnW6eiPiUqjxxAOh76suASMpQ0pJ+kntTEua5R1VcIulwZff79ArMqTVPejf7u0cxlVI2A==",
+        "requested": "[12.0.4, )",
+        "resolved": "12.0.4",
+        "contentHash": "SWhg/CGDkQmYspvYHSH7f6OTqhAfdbK5oBpitL1TiGVc/KtslShZeQyW9kLo6vYajJmbjZG01gNGplcmjEyV4g==",
         "dependencies": {
-          "Avalonia": "12.0.2"
+          "Avalonia": "12.0.4"
         }
       },
       "coverlet.collector": {
@@ -59,10 +59,10 @@
       },
       "Avalonia.HarfBuzz": {
         "type": "Transitive",
-        "resolved": "12.0.2",
-        "contentHash": "HGqFe/HmWHQGvwtji7827/RDtEgQxvm3zdnCFl/P6XAwnqek8MoJpnISRTid76XzTBDtNlVqp7qjOujSIE0QCw==",
+        "resolved": "12.0.4",
+        "contentHash": "FT5XHaxnCA+kj+Q6dXAPC9/Gy1eBz3buT7T6KJFu+P8+2WZoSFBN5Pk4mO/VA8OTUwtZB/TOX8lExSrmxUBdqw==",
         "dependencies": {
-          "Avalonia": "12.0.2",
+          "Avalonia": "12.0.4",
           "HarfBuzzSharp": "8.3.1.3",
           "HarfBuzzSharp.NativeAssets.Linux": "8.3.1.3",
           "HarfBuzzSharp.NativeAssets.WebAssembly": "8.3.1.3"
@@ -70,18 +70,18 @@
       },
       "Avalonia.Headless": {
         "type": "Transitive",
-        "resolved": "12.0.2",
-        "contentHash": "9GjjJIe2VHQcJQkKaBNZS2r5ivOUkNQ5uiWDm8ipTZqCKTn8grG0c9ngOdIeB5ibFMbOT7/0If4IBFK9ZkAWhw==",
+        "resolved": "12.0.4",
+        "contentHash": "KFr6cX3QADbx9KeisLdK1MAWywibnzSOxi0mBOT/oKU+niVJ2lJzmOqNnhpmzrkiczNwULbnT0Jg8RRA4uGSDg==",
         "dependencies": {
-          "Avalonia": "12.0.2",
-          "Avalonia.Fonts.Inter": "12.0.2",
-          "Avalonia.HarfBuzz": "12.0.2"
+          "Avalonia": "12.0.4",
+          "Avalonia.Fonts.Inter": "12.0.4",
+          "Avalonia.HarfBuzz": "12.0.4"
         }
       },
       "Avalonia.Remote.Protocol": {
         "type": "Transitive",
-        "resolved": "12.0.2",
-        "contentHash": "mlKTvn0cAEQVkRMJunLzDNugZRbtZIksT5yu+XgcAlOvqTHGyZY+mGP+4/+1IwakZx9nrz6SGwI5yrzNT5g0TQ=="
+        "resolved": "12.0.4",
+        "contentHash": "Cvnzp2KTO7BScBPnn4Q91PmVwLvv19of+ZxrN3KFHYQe8in0qNaefZgOHGEiXZ841WpdO3VUFw7qvxv/1RTTGg=="
       },
       "HarfBuzzSharp": {
         "type": "Transitive",
@@ -261,7 +261,7 @@
       "markview.avalonia": {
         "type": "Project",
         "dependencies": {
-          "Avalonia": "[12.0.2, )",
+          "Avalonia": "[12.0.4, )",
           "Markdig": "[1.1.3, )"
         }
       },
@@ -275,22 +275,22 @@
       },
       "Avalonia": {
         "type": "CentralTransitive",
-        "requested": "[12.0.2, )",
-        "resolved": "12.0.2",
-        "contentHash": "852xwfNNAUWE+aKWFackMALAKofcpKnM2g4PN8VKfxG1SO8Stlih7d6QFCbjQl46vuR9WBw/ZVGwn4Ovbj/oxQ==",
+        "requested": "[12.0.4, )",
+        "resolved": "12.0.4",
+        "contentHash": "0ehIUuOVaR3OmsL8YK8v9yCCnOpzRtQSDgP5Nh2fMc+Lji8WoVGD+J6nvwkGjCH5hbm1urgvkVYWAYWkby0EeQ==",
         "dependencies": {
           "Avalonia.BuildServices": "11.3.2",
-          "Avalonia.Remote.Protocol": "12.0.2",
+          "Avalonia.Remote.Protocol": "12.0.4",
           "MicroCom.Runtime": "0.11.4"
         }
       },
       "Avalonia.Fonts.Inter": {
         "type": "CentralTransitive",
-        "requested": "[12.0.2, )",
-        "resolved": "12.0.2",
-        "contentHash": "2QEaZc52qqO3W58LfGkcV9V3lX4A6uyIt8zJaSb2ULyeyw9CwdLurJ/bwDcYO3M1dwV7LMDcqjOTuqCf8TIZ0Q==",
+        "requested": "[12.0.4, )",
+        "resolved": "12.0.4",
+        "contentHash": "wXyoxswY4hD6Ly9iB9sojD4rZ104trm2Z1HWLgjHo/eZcBpwT6/T0CDOVp2PeN2wSd72bKlE0n3pFj9t/z7Ipw==",
         "dependencies": {
-          "Avalonia": "12.0.2"
+          "Avalonia": "12.0.4"
         }
       },
       "Markdig": {
