@@ -246,8 +246,8 @@
       },
       "Sugiyama": {
         "type": "Transitive",
-        "resolved": "0.6.0",
-        "contentHash": "8ohs4jenGtX+xPKN3yaalRH+LqeOSRjI4yWOlJYdbmiQvwEl6wYkL+My8R9pdCXQzBROnS3iee449SQtKqhh4w=="
+        "resolved": "0.7.1",
+        "contentHash": "mzBwvWUMTdHHX1EwL5PPZSzsK6nkbY0PyjXleaF9ljyUY5Hcf6w1Nwls5IH5ydxzSGhVGeW6EnIWHoh08GKinA=="
       },
       "Svg.Animation": {
         "type": "Transitive",
@@ -381,7 +381,7 @@
         "type": "Project",
         "dependencies": {
           "MarkView.Avalonia": "[1.0.0, )",
-          "Mermaider": "[0.6.0, )",
+          "Mermaider": "[0.7.1, )",
           "Svg.Controls.Skia.Avalonia": "[12.0.0.11, )"
         }
       },
@@ -413,12 +413,12 @@
       },
       "Mermaider": {
         "type": "CentralTransitive",
-        "requested": "[0.6.0, )",
-        "resolved": "0.6.0",
-        "contentHash": "cmtlEM+xFvWnzPwCXz4mMsOa8Le4DjakNjs57nKHS7xX5ecslqC7fve0iYCwwk+mq/Ggr7BY1n/jSKYjsxyIlg==",
+        "requested": "[0.7.1, )",
+        "resolved": "0.7.1",
+        "contentHash": "Y6k/JxPLeCjT23Ps/eCx+KZOYEbZciFkCSmN77TEMLlJ4OsZwuNdhUTOMInXp8NWcCRwqJBcmFUl3JTm2l0iiQ==",
         "dependencies": {
           "Microsoft.Extensions.ObjectPool": "10.0.3",
-          "Sugiyama": "0.6.0"
+          "Sugiyama": "0.7.1"
         }
       },
       "Svg.Controls.Skia.Avalonia": {
