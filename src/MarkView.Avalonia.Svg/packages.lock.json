@@ -4,12 +4,12 @@
     "net10.0": {
       "Svg.Controls.Skia.Avalonia": {
         "type": "Direct",
-        "requested": "[12.0.0.11, )",
-        "resolved": "12.0.0.11",
-        "contentHash": "5KX6xir74WzlNo2G+oun/0j5F6LOWZF0YDkA5uXCXxUmX+lHYmtYWc03JaYLrwazQmkPTjWaLKIzGkv3OXsgVg==",
+        "requested": "[12.0.0.13, )",
+        "resolved": "12.0.0.13",
+        "contentHash": "jepGZzlv7tHLWFWzCEVrZn4XgTHfFjFE2WtFqsV7bANYxKWyPkXfVcBlPJrccNmyH7oARJ71y54YKHKkr8AkjQ==",
         "dependencies": {
           "Avalonia.Skia": "12.0.0",
-          "Svg.Skia": "5.0.0"
+          "Svg.Skia": "5.1.1"
         }
       },
       "Avalonia.BuildServices": {
@@ -77,8 +77,8 @@
       },
       "ShimSkiaSharp": {
         "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "JLNnt0QME9zcqJMdxdNRLkXVwUSgJdzVykHO+GsXc8OQj8dBpziLp+Pwezye0z4MiduXgsJHlMWl1ci6+79JDA=="
+        "resolved": "5.1.1",
+        "contentHash": "yYLSkTgGliFONplDPaSOpmTbV0VhbjHySYAqA3NMJilqPA/OBevX3/4sJ0k4FRhbuI8akyw6O2RMO/xUKwFBxQ=="
       },
       "SkiaSharp": {
         "type": "Transitive",
@@ -111,56 +111,56 @@
       },
       "Svg.Animation": {
         "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "17UFfTLEoLDuam4lyyCAz9ta6BFBoJzFoBkv1sWVtFO8MTNom3qleyMGDDhGJ8nTNoQDj9hElUpQUJXHNsDAfw==",
+        "resolved": "5.1.1",
+        "contentHash": "HUaU5Pa1fvE2CcYMHhA6nQH+4dcJsDEJ5feYfVoO3ha0u506ugOR0gR1fKHANIwEapYs20nLJQHLb39DK/pJlg==",
         "dependencies": {
-          "ShimSkiaSharp": "5.0.0",
+          "ShimSkiaSharp": "5.1.1",
           "SkiaSharp": "3.119.2",
-          "Svg.Custom": "5.0.0",
-          "Svg.Model": "5.0.0"
+          "Svg.Custom": "5.1.1",
+          "Svg.Model": "5.1.1"
         }
       },
       "Svg.Custom": {
         "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "LQ79IO0dEp1e5KIkcKi87DDB2lm9g+wzHIYI0ARM+yXOpW7/9bnEXBUNAGNSnxhUpUIAxxUe5K+XU/sb9Nes/A==",
+        "resolved": "5.1.1",
+        "contentHash": "i53zvhuauElnLtGzezyfzpAs/zJ3UaexqT+JuAQTL6yC5ym1nQXTnjntDhY4qrouJ5elGjEwjag1nzfdPPPGSQ==",
         "dependencies": {
           "ExCSS": "4.3.1"
         }
       },
       "Svg.Model": {
         "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "uNih9t+4XOw0ssLm7S8rSuSXFzhhOgYimRXD9bYG50+s1rnrRwHU0IybKbA/xO2pl+/Z/NddJHIdYpZfd23kWw==",
+        "resolved": "5.1.1",
+        "contentHash": "j9j4kqKL5Girwr/2qwzzDRJ7CDXvGipchbNQfxmmUAk70JG3/6mXaF/QJLiIat6p6NU38MBYaOSilVuqaZuC5w==",
         "dependencies": {
-          "ShimSkiaSharp": "5.0.0",
-          "Svg.Custom": "5.0.0"
+          "ShimSkiaSharp": "5.1.1",
+          "Svg.Custom": "5.1.1"
         }
       },
       "Svg.SceneGraph": {
         "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "/erVvnLb27MRunTzm7trAbMj5Z8InhbHM5k5K+sraFMVeMq9e0pNOomKhzoCgsjnAzVBYq6G8v3AkcL7eM5Gpg==",
+        "resolved": "5.1.1",
+        "contentHash": "p0ti8uOikN7aEg/KDq042xBbWijbOl2sITWMpO9vJ2KEaBeB8jouTDQTK7QssMs8DynR1+FxOsn7WEftXF0jow==",
         "dependencies": {
-          "ShimSkiaSharp": "5.0.0",
-          "Svg.Custom": "5.0.0",
-          "Svg.Model": "5.0.0"
+          "ShimSkiaSharp": "5.1.1",
+          "Svg.Custom": "5.1.1",
+          "Svg.Model": "5.1.1"
         }
       },
       "Svg.Skia": {
         "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "O5UGxW7Ci5a0GhJ2rDo8RF4BY/pMG5k3/cSimJmZFcAAgRf7xhTnGSuDyA9EqfFEwIaVHJTJg6knIk0AaMJ1FQ==",
+        "resolved": "5.1.1",
+        "contentHash": "zBcxwGQlEOE1HKFOmcGl/Sl/0aeRajRv/yEE5lRFQqufhIERuuzCHmq6xWK0fyeA+B1uufOR/h5+MHGMatJz4w==",
         "dependencies": {
           "HarfBuzzSharp": "8.3.1.3",
           "HarfBuzzSharp.NativeAssets.Linux": "8.3.1.3",
           "HarfBuzzSharp.NativeAssets.Win32": "8.3.1.3",
           "HarfBuzzSharp.NativeAssets.macOS": "8.3.1.3",
           "SkiaSharp": "3.119.2",
-          "Svg.Animation": "5.0.0",
-          "Svg.Custom": "5.0.0",
-          "Svg.Model": "5.0.0",
-          "Svg.SceneGraph": "5.0.0"
+          "Svg.Animation": "5.1.1",
+          "Svg.Custom": "5.1.1",
+          "Svg.Model": "5.1.1",
+          "Svg.SceneGraph": "5.1.1"
         }
       },
       "markview.avalonia": {
