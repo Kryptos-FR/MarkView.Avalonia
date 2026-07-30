@@ -123,6 +123,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string? _markdown;
     private int _selectedIndex;
     private bool _isLightTheme;
+    private string _urlText = string.Empty;
 
     public string[] Views { get; } = ["Feature Showcase", "Extensions Showcase", "README"];
 
@@ -144,6 +145,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (!SetField(ref _isLightTheme, value)) return;
             Application.Current!.RequestedThemeVariant = value ? ThemeVariant.Light : ThemeVariant.Dark;
         }
+    }
+
+    public string UrlText
+    {
+        get => _urlText;
+        set => SetField(ref _urlText, value);
     }
 
     public Uri? Source
@@ -229,6 +236,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public void LoadFile(string filePath)
     {
         Source = new Uri(Path.GetFullPath(filePath));
+        Markdown = null;
+        PushEntry(Source, null);
+    }
+
+    public void LoadFromUrl()
+    {
+        var text = UrlText.Trim();
+        if (!Uri.TryCreate(text, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            return;
+        Source = uri;
         Markdown = null;
         PushEntry(Source, null);
     }
