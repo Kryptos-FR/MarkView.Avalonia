@@ -28,6 +28,14 @@
         <Button Content="Open file…"
                 Click="OnOpenFileClicked"
                 VerticalAlignment="Center" />
+        <TextBox Text="{Binding UrlText}"
+                 PlaceholderText="https://…"
+                 Width="350"
+                 VerticalAlignment="Center"
+                 KeyDown="OnUrlTextKeyDown" />
+        <Button Content="Load URL"
+                Click="OnLoadUrlClicked"
+                VerticalAlignment="Center" />
         <ToggleButton IsChecked="{Binding IsLightTheme}"
                       Content="Light theme"
                       VerticalAlignment="Center" />

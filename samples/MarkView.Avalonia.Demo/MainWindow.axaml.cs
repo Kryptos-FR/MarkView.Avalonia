@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 
@@ -37,5 +38,14 @@ public partial class MainWindow : Window
             if (path is not null)
                 ((MainViewModel)DataContext!).LoadFile(path);
         }
+    }
+
+    private void OnLoadUrlClicked(object? sender, RoutedEventArgs e) =>
+        ((MainViewModel)DataContext!).LoadFromUrl();
+
+    private void OnUrlTextKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+            ((MainViewModel)DataContext!).LoadFromUrl();
     }
 }
