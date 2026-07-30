@@ -23,9 +23,10 @@ namespace MarkView.Avalonia;
 /// </summary>
 public partial class MarkdownViewer : ContentControl
 {
-    // Converts the non-standard "![alt](url =WxH)" size hint to the title slot so Markdig
-    // can parse it: "![alt](url "=WxH")". CommonMark has no image-size syntax.
-    [GeneratedRegex(@"(\!\[[^\]]*\]\()([^\s\)]+)\s+=(\d+x\d+)(\))")]
+    // Matches a backtick code span (group 1) or the non-standard "![alt](url =WxH)" size hint
+    // (groups 2-5). Code spans are passed through unchanged so literal syntax examples in
+    // documentation are not mangled.
+    [GeneratedRegex(@"(`+)[\s\S]*?\1|(\!\[[^\]]*\]\()([^\s\)]+)\s+=(\d+x\d+)(\))")]
     private static partial Regex ImageSizePreprocessorRegex();
 
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
@@ -226,7 +227,10 @@ public partial class MarkdownViewer : ContentControl
         }
 
         var pipeline = Pipeline ?? MarkdownViewerDefaults.Pipeline ?? DefaultPipeline;
-        var markdownText = ImageSizePreprocessorRegex().Replace(markdown, "$1$2 \"=$3\"$4");
+        var markdownText = ImageSizePreprocessorRegex().Replace(markdown, static m =>
+            m.Groups[1].Success
+                ? m.Value
+                : $"{m.Groups[2].Value}{m.Groups[3].Value} \"={m.Groups[4].Value}\"{m.Groups[5].Value}");
         var document = Markdig.Markdown.Parse(markdownText, pipeline);
 
         var renderer = new AvaloniaRenderer { BaseUri = BaseUri ?? InferBaseUri(Source) };

@@ -128,9 +128,23 @@ print(data_uri)
 
 ## Bitmap Image
 
-The image below is an Avalonia resource embedded in the demo app (`avares://` URI):
+The images below use relative paths — they resolve against the `BaseUri` that MarkView infers automatically from the `Source` location (here, `avares://MarkView.Avalonia.Demo/Assets/`).
 
-![Avalonia Logo](avares://MarkView.Avalonia.Demo/Assets/avalonia-logo.png =80x80)
+Two equivalent syntaxes are supported for specifying image dimensions:
+
+| Form | Syntax | Notes |
+|------|--------|-------|
+| Quoted title | `![alt](url "=WxH")` | Valid CommonMark — portable across renderers (others show the title as a tooltip) |
+| Shorthand | `![alt](url =WxH)` | MarkView-only convenience; preprocessed to the quoted form before parsing |
+
+The table below shows the same image at different sizes:
+
+| Syntax | Result |
+|--------|--------|
+| `![alt](url "=40x40")` | ![Avalonia Logo](avalonia-logo.png "=40x40") 40×40 |
+| `![alt](url "=80x80")` | ![Avalonia Logo](avalonia-logo.png "=80x80") 80×80 |
+| `![alt](url "=160x160")` | ![Avalonia Logo](avalonia-logo.png "=160x160") 160×160 |
+| `![alt](url)` (no size) | ![Avalonia Logo](avalonia-logo.png) natural size |
 
 ---
 
