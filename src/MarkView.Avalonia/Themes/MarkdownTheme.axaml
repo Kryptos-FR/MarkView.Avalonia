@@ -134,8 +134,6 @@
 
   <!-- Images -->
   <Style Selector="Image.markdown-image">
-    <Setter Property="MaxWidth" Value="800" />
-    <Setter Property="Stretch" Value="Uniform" />
     <Setter Property="Margin" Value="0,4" />
   </Style>
 
