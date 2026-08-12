@@ -118,6 +118,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Ordered and unordered lists | CommonMark, tight and loose |
 | Links and autolinks | CommonMark + extension |
 | Images | CommonMark, remote URLs loaded async |
+| Image sizing | `![alt](url =WxH)` — inline pixel dimensions, e.g. `=80x80` |
 | Thematic breaks | CommonMark |
 | Hard line breaks | CommonMark (`\` or two spaces) |
 | HTML `<br>` / `<br />` | Rendered as line break |
