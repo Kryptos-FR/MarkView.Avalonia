@@ -35,6 +35,12 @@ public class AvaloniaRenderer : RendererBase
     public Uri? BaseUri { get; set; }
 
     /// <summary>
+    /// Controls how images without an explicit "=WxH" size hint are scaled.
+    /// Defaults to <see cref="MarkView.Avalonia.ImageResizeMode.ScaleDownToFit"/>.
+    /// </summary>
+    public ImageResizeMode ImageResizeMode { get; set; } = ImageResizeMode.ScaleDownToFit;
+
+    /// <summary>
     /// Generates GitHub-style anchor IDs for headings. Reset on each render pass.
     /// </summary>
     public SlugGenerator SlugGenerator { get; } = new();

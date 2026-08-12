@@ -33,4 +33,18 @@ public class AvaloniaRendererTests
         var result = renderer.ResolveUrl("images/pic.png");
         Assert.Equal("images/pic.png", result);
     }
+
+    [AvaloniaFact]
+    public void ImageResizeMode_defaults_to_ScaleDownToFit()
+    {
+        var renderer = new AvaloniaRenderer();
+        Assert.Equal(ImageResizeMode.ScaleDownToFit, renderer.ImageResizeMode);
+    }
+
+    [AvaloniaFact]
+    public void ImageResizeMode_can_be_set()
+    {
+        var renderer = new AvaloniaRenderer { ImageResizeMode = ImageResizeMode.Fill };
+        Assert.Equal(ImageResizeMode.Fill, renderer.ImageResizeMode);
+    }
 }
