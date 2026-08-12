@@ -88,7 +88,7 @@ public class BitmapImageLoaderTests
     {
         var wb = new WriteableBitmap(new PixelSize(1, 1), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
         using var ms = new MemoryStream();
-        wb.Save(ms);
+        wb.Save(ms, PngBitmapEncoderOptions.Default);
         return $"data:image/png;base64,{Convert.ToBase64String(ms.ToArray())}";
     }
 }
