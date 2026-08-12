@@ -163,19 +163,29 @@ the viewer's width:
 | `Natural` | No scaling — renders at native pixel size. May appear cropped if the image is wider than the viewer, since horizontal scrolling is disabled by default. |
 | `Fill` | Always fills the container width, enlarging small images if necessary. |
 
-````csharp
+```csharp
 viewer.ImageResizeMode = MarkView.Avalonia.ImageResizeMode.Natural;
-````
+```
 
 Set an app-wide default with a normal Avalonia style:
 
-````xml
+```xml
 <Style Selector="mv|MarkdownViewer">
   <Setter Property="ImageResizeMode" Value="Fill" />
 </Style>
-````
+```
 
-**Explicit per-image sizing:** `![alt](url =WxH)` sets an exact size hint,
+**Explicit per-image sizing:** `![alt](url =WxH)` sets a maximum size hint,
 independent of `ImageResizeMode`. It always acts as a ceiling — the image is
 scaled down to fit `WxH` if larger, but never enlarged past its native resolution
 to reach `WxH`, regardless of the active mode.
+
+**Note:** images are no longer capped at 800px by the theme — they scale to the
+container width instead (see `ScaleDownToFit` above). To restore the previous
+fixed cap, add your own style:
+
+```xml
+<Style Selector="Image.markdown-image">
+  <Setter Property="MaxWidth" Value="800" />
+</Style>
+```

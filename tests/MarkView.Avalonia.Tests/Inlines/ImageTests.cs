@@ -302,6 +302,26 @@ public class ImageTests : RenderTestBase
         Assert.Equal(450, image.Bounds.Height, 0);
     }
 
+    [AvaloniaFact]
+    public async Task MarkdownViewer_default_ScaleDownToFit_flows_through_to_rendered_image()
+    {
+        var bigImage = new RenderTargetBitmap(new PixelSize(1600, 1200));
+        var viewer = new MarkdownViewer { Width = 600, Height = 400 };
+        // Extensions must be registered before Markdown is set — MarkdownViewer renders
+        // synchronously when Markdown changes, and extensions register at render time.
+        viewer.Extensions.Add(new FakeBitmapExtension("fake://big.png", bigImage));
+        viewer.Markdown = "![big](fake://big.png)";
+
+        var window = new Window { Width = 600, Height = 400, Content = viewer };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        var image = FindFirst<Image>(viewer);
+        Assert.NotNull(image);
+        Assert.Equal(600, image!.Bounds.Width, 0);
+        Assert.Equal(450, image.Bounds.Height, 0);
+    }
+
     private static T? FindFirst<T>(Control root) where T : Control
     {
         if (root is T match) return match;
