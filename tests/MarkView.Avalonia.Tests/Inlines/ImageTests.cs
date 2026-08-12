@@ -117,6 +117,11 @@ public class ImageTests : RenderTestBase
             => Task.FromResult<IImage?>(image);
     }
 
+    private sealed class FakeBitmapExtension(string url, IImage image) : IMarkViewExtension
+    {
+        public void Register(AvaloniaRenderer renderer) => renderer.ImageLoaders.Insert(0, new FakeBitmapLoader(url, image));
+    }
+
     private static async Task PumpUntilSettledAsync()
     {
         for (var i = 0; i < 20; i++)
@@ -266,6 +271,35 @@ public class ImageTests : RenderTestBase
 
         Assert.Equal(100, image!.Bounds.Width, 0);
         Assert.Equal(75, image.Bounds.Height, 0);
+    }
+
+    [AvaloniaFact]
+    public void MarkdownViewer_ImageResizeMode_defaults_to_ScaleDownToFit()
+    {
+        var viewer = new MarkdownViewer();
+        Assert.Equal(ImageResizeMode.ScaleDownToFit, viewer.ImageResizeMode);
+    }
+
+    [AvaloniaFact]
+    public async Task MarkdownViewer_ImageResizeMode_flows_through_to_rendered_image()
+    {
+        var smallImage = new RenderTargetBitmap(new PixelSize(200, 150));
+        var viewer = new MarkdownViewer { Width = 600, Height = 400, ImageResizeMode = ImageResizeMode.Fill };
+        // Extensions must be registered before Markdown is set — MarkdownViewer renders
+        // synchronously when Markdown changes, and extensions register at render time.
+        viewer.Extensions.Add(new FakeBitmapExtension("fake://small.png", smallImage));
+        viewer.Markdown = "![small](fake://small.png)";
+
+        var window = new Window { Width = 600, Height = 400, Content = viewer };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        var image = FindFirst<Image>(viewer);
+        Assert.NotNull(image);
+        Assert.Equal(Stretch.Uniform, image!.Stretch);
+        Assert.Equal(StretchDirection.Both, image.StretchDirection);
+        Assert.Equal(600, image.Bounds.Width, 0);
+        Assert.Equal(450, image.Bounds.Height, 0);
     }
 
     private static T? FindFirst<T>(Control root) where T : Control
