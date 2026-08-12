@@ -78,8 +78,11 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             var dim = DimensionTitleRegex().Match(obj.Title);
             if (dim.Success)
             {
-                image.Width = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
-                image.Height = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
+                // MaxWidth/MaxHeight (not Width/Height) so the layout box itself shrinks to
+                // the image's native resolution when it's smaller than the requested size —
+                // Width/Height would hard-pin the arranged size regardless of StretchDirection.
+                image.MaxWidth = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
+                image.MaxHeight = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
                 image.Stretch = Stretch.Uniform;
                 // "=WxH" is a ceiling, never a forced upscale, regardless of ImageResizeMode.
                 image.StretchDirection = StretchDirection.DownOnly;

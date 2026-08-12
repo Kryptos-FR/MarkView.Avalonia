@@ -82,7 +82,7 @@ public class ImageTests : RenderTestBase
     }
 
     [AvaloniaFact]
-    public void Image_size_hint_sets_Width_and_Height()
+    public void Image_size_hint_sets_MaxWidth_and_MaxHeight()
     {
         var viewer = new MarkdownViewer();
         viewer.Markdown = "![logo](https://example.com/logo.png =200x100)";
@@ -92,8 +92,8 @@ public class ImageTests : RenderTestBase
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var image = FindFirst<Image>(panel);
         Assert.NotNull(image);
-        Assert.Equal(200.0, image.Width);
-        Assert.Equal(100.0, image.Height);
+        Assert.Equal(200.0, image.MaxWidth);
+        Assert.Equal(100.0, image.MaxHeight);
     }
 
     [AvaloniaFact]
@@ -235,8 +235,8 @@ public class ImageTests : RenderTestBase
             var renderer = RenderDocument("![img](fake://native.png \"=800x600\")", mode, loader);
             var image = FindFirst<Image>(renderer.RootPanel);
             Assert.NotNull(image);
-            Assert.Equal(800.0, image!.Width);
-            Assert.Equal(600.0, image.Height);
+            Assert.Equal(800.0, image!.MaxWidth);
+            Assert.Equal(600.0, image.MaxHeight);
             Assert.Equal(Stretch.Uniform, image.Stretch);
             Assert.Equal(StretchDirection.DownOnly, image.StretchDirection);
 
