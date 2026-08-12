@@ -5,7 +5,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 
 using MarkView.Avalonia;
@@ -117,6 +116,19 @@ public class ImageTests : RenderTestBase
             => Task.FromResult<IImage?>(image);
     }
 
+    /// <summary>
+    /// Minimal <see cref="IImage"/> stand-in reporting a fixed pixel size, used in place of
+    /// a real <c>RenderTargetBitmap</c> in layout tests. A real bitmap calls into the
+    /// platform's render interface to allocate an actual rendering surface — unnecessary
+    /// (and a source of platform-specific flakiness in headless CI) when the test only
+    /// needs Source.Size for Stretch/layout math, never an actual paint.
+    /// </summary>
+    private sealed class FakeImage(double width, double height) : IImage
+    {
+        public Size Size { get; } = new Size(width, height);
+        public void Draw(DrawingContext context, Rect sourceRect, Rect destRect) { }
+    }
+
     private sealed class FakeBitmapExtension(string url, IImage image) : IMarkViewExtension
     {
         public void Register(AvaloniaRenderer renderer) => renderer.ImageLoaders.Insert(0, new FakeBitmapLoader(url, image));
@@ -181,7 +193,7 @@ public class ImageTests : RenderTestBase
     [AvaloniaFact]
     public async Task ScaleDownToFit_large_image_scales_down_to_container_width()
     {
-        var bigImage = new RenderTargetBitmap(new PixelSize(1600, 1200));
+        var bigImage = new FakeImage(1600, 1200);
         var loader = new FakeBitmapLoader("fake://big.png", bigImage);
         var renderer = RenderDocument("![big](fake://big.png)", ImageResizeMode.ScaleDownToFit, loader);
 
@@ -198,7 +210,7 @@ public class ImageTests : RenderTestBase
     [AvaloniaFact]
     public async Task ScaleDownToFit_small_image_does_not_upscale()
     {
-        var smallImage = new RenderTargetBitmap(new PixelSize(200, 150));
+        var smallImage = new FakeImage(200, 150);
         var loader = new FakeBitmapLoader("fake://small.png", smallImage);
         var renderer = RenderDocument("![small](fake://small.png)", ImageResizeMode.ScaleDownToFit, loader);
 
@@ -215,7 +227,7 @@ public class ImageTests : RenderTestBase
     [AvaloniaFact]
     public async Task Fill_mode_upscales_small_image_to_container_width()
     {
-        var smallImage = new RenderTargetBitmap(new PixelSize(200, 150));
+        var smallImage = new FakeImage(200, 150);
         var loader = new FakeBitmapLoader("fake://small.png", smallImage);
         var renderer = RenderDocument("![small](fake://small.png)", ImageResizeMode.Fill, loader);
 
@@ -234,7 +246,7 @@ public class ImageTests : RenderTestBase
     {
         foreach (var mode in new[] { ImageResizeMode.ScaleDownToFit, ImageResizeMode.Fill, ImageResizeMode.Natural })
         {
-            var nativeImage = new RenderTargetBitmap(new PixelSize(400, 300));
+            var nativeImage = new FakeImage(400, 300);
             var loader = new FakeBitmapLoader("fake://native.png", nativeImage);
             // Explicit request (800x600) is larger than native (400x300).
             var renderer = RenderDocument("![img](fake://native.png \"=800x600\")", mode, loader);
@@ -258,7 +270,7 @@ public class ImageTests : RenderTestBase
     [AvaloniaFact]
     public async Task Explicit_size_downscale_request_is_honoured()
     {
-        var nativeImage = new RenderTargetBitmap(new PixelSize(400, 300));
+        var nativeImage = new FakeImage(400, 300);
         var loader = new FakeBitmapLoader("fake://native.png", nativeImage);
         // Explicit request (100x75) is smaller than native (400x300) — a plain downscale.
         var renderer = RenderDocument("![img](fake://native.png \"=100x75\")", ImageResizeMode.ScaleDownToFit, loader);
@@ -283,7 +295,7 @@ public class ImageTests : RenderTestBase
     [AvaloniaFact]
     public async Task MarkdownViewer_ImageResizeMode_flows_through_to_rendered_image()
     {
-        var smallImage = new RenderTargetBitmap(new PixelSize(200, 150));
+        var smallImage = new FakeImage(200, 150);
         var viewer = new MarkdownViewer { Width = 600, Height = 400, ImageResizeMode = ImageResizeMode.Fill };
         // Extensions must be registered before Markdown is set — MarkdownViewer renders
         // synchronously when Markdown changes, and extensions register at render time.
@@ -305,7 +317,7 @@ public class ImageTests : RenderTestBase
     [AvaloniaFact]
     public async Task MarkdownViewer_default_ScaleDownToFit_flows_through_to_rendered_image()
     {
-        var bigImage = new RenderTargetBitmap(new PixelSize(1600, 1200));
+        var bigImage = new FakeImage(1600, 1200);
         var viewer = new MarkdownViewer { Width = 600, Height = 400 };
         // Extensions must be registered before Markdown is set — MarkdownViewer renders
         // synchronously when Markdown changes, and extensions register at render time.
