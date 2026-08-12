@@ -224,6 +224,50 @@ public class ImageTests : RenderTestBase
         Assert.Equal(450, image.Bounds.Height, 0);
     }
 
+    [AvaloniaFact]
+    public async Task Explicit_size_never_upscales_past_native_resolution_regardless_of_mode()
+    {
+        foreach (var mode in new[] { ImageResizeMode.ScaleDownToFit, ImageResizeMode.Fill, ImageResizeMode.Natural })
+        {
+            var nativeImage = new RenderTargetBitmap(new PixelSize(400, 300));
+            var loader = new FakeBitmapLoader("fake://native.png", nativeImage);
+            // Explicit request (800x600) is larger than native (400x300).
+            var renderer = RenderDocument("![img](fake://native.png \"=800x600\")", mode, loader);
+            var image = FindFirst<Image>(renderer.RootPanel);
+            Assert.NotNull(image);
+            Assert.Equal(800.0, image!.Width);
+            Assert.Equal(600.0, image.Height);
+            Assert.Equal(Stretch.Uniform, image.Stretch);
+            Assert.Equal(StretchDirection.DownOnly, image.StretchDirection);
+
+            var window = new Window { Width = 1000, Height = 800, Content = renderer.RootPanel };
+            window.Show();
+            await PumpUntilSettledAsync();
+
+            // Capped at native resolution — never upscaled to the requested 800x600.
+            Assert.Equal(400, image.Bounds.Width, 0);
+            Assert.Equal(300, image.Bounds.Height, 0);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Explicit_size_downscale_request_is_honoured()
+    {
+        var nativeImage = new RenderTargetBitmap(new PixelSize(400, 300));
+        var loader = new FakeBitmapLoader("fake://native.png", nativeImage);
+        // Explicit request (100x75) is smaller than native (400x300) — a plain downscale.
+        var renderer = RenderDocument("![img](fake://native.png \"=100x75\")", ImageResizeMode.ScaleDownToFit, loader);
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+
+        var window = new Window { Width = 1000, Height = 800, Content = renderer.RootPanel };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        Assert.Equal(100, image!.Bounds.Width, 0);
+        Assert.Equal(75, image.Bounds.Height, 0);
+    }
+
     private static T? FindFirst<T>(Control root) where T : Control
     {
         if (root is T match) return match;

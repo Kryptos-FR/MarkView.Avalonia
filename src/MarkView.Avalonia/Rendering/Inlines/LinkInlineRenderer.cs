@@ -81,6 +81,8 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
                 image.Width = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
                 image.Height = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
                 image.Stretch = Stretch.Uniform;
+                // "=WxH" is a ceiling, never a forced upscale, regardless of ImageResizeMode.
+                image.StretchDirection = StretchDirection.DownOnly;
             }
         }
 
