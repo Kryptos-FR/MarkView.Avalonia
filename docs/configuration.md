@@ -9,6 +9,7 @@
 | `Pipeline` | `MarkdownPipeline?` | `null` | The Markdig pipeline. `null` falls back to `MarkdownViewerDefaults.Pipeline`, or the built-in default (`UseSupportedExtensions`). |
 | `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
 | `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. |
+| `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
 
 ## Markdig Pipeline
 
@@ -150,3 +151,31 @@ viewer.ScrollToAnchor("fn-1");            // matches footnote [^1]
 ```
 
 Anchors are generated from heading text using GitHub-compatible slug rules (lowercase, spaces to hyphens, non-alphanumeric stripped). Headings with identical slugs are disambiguated with a numeric suffix (`-1`, `-2`, …).
+
+## Image sizing
+
+`ImageResizeMode` controls how images without an explicit size scale relative to
+the viewer's width:
+
+| Mode | Behavior |
+|------|----------|
+| `ScaleDownToFit` (default) | Scales down to fit the container width; never enlarges past the image's native resolution. |
+| `Natural` | No scaling — renders at native pixel size. May appear cropped if the image is wider than the viewer, since horizontal scrolling is disabled by default. |
+| `Fill` | Always fills the container width, enlarging small images if necessary. |
+
+````csharp
+viewer.ImageResizeMode = MarkView.Avalonia.ImageResizeMode.Natural;
+````
+
+Set an app-wide default with a normal Avalonia style:
+
+````xml
+<Style Selector="mv|MarkdownViewer">
+  <Setter Property="ImageResizeMode" Value="Fill" />
+</Style>
+````
+
+**Explicit per-image sizing:** `![alt](url =WxH)` sets an exact size hint,
+independent of `ImageResizeMode`. It always acts as a ceiling — the image is
+scaled down to fit `WxH` if larger, but never enlarged past its native resolution
+to reach `WxH`, regardless of the active mode.
