@@ -65,7 +65,8 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             if (c is LiteralInline literal) sb.Append(literal.Content.AsSpan());
         var altText = sb.ToString();
 
-        var image = new Image { Stretch = Stretch.None };
+        var image = new Image();
+        ApplyResizeMode(image, renderer.ImageResizeMode);
         image.Classes.Add("markdown-image");
 
         if (!string.IsNullOrEmpty(altText))
@@ -77,9 +78,14 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             var dim = DimensionTitleRegex().Match(obj.Title);
             if (dim.Success)
             {
-                image.Width = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
-                image.Height = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
+                // MaxWidth/MaxHeight (not Width/Height) so the layout box itself shrinks to
+                // the image's native resolution when it's smaller than the requested size —
+                // Width/Height would hard-pin the arranged size regardless of StretchDirection.
+                image.MaxWidth = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
+                image.MaxHeight = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
                 image.Stretch = Stretch.Uniform;
+                // "=WxH" is a ceiling, never a forced upscale, regardless of ImageResizeMode.
+                image.StretchDirection = StretchDirection.DownOnly;
             }
         }
 
@@ -102,6 +108,25 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         image.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
 
         renderer.WriteInline(image);
+    }
+
+    private static void ApplyResizeMode(Image image, ImageResizeMode mode)
+    {
+        switch (mode)
+        {
+            case ImageResizeMode.Natural:
+                image.Stretch = Stretch.None;
+                break;
+            case ImageResizeMode.Fill:
+                image.Stretch = Stretch.Uniform;
+                image.StretchDirection = StretchDirection.Both;
+                break;
+            case ImageResizeMode.ScaleDownToFit:
+            default:
+                image.Stretch = Stretch.Uniform;
+                image.StretchDirection = StretchDirection.DownOnly;
+                break;
+        }
     }
 
     private static async Task LoadImageAsync(

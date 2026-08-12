@@ -67,6 +67,12 @@ public partial class MarkdownViewer : ContentControl
         AvaloniaProperty.Register<MarkdownViewer, Uri?>(nameof(Source));
 
     /// <summary>
+    /// Defines the <see cref="ImageResizeMode"/> property.
+    /// </summary>
+    public static readonly StyledProperty<ImageResizeMode> ImageResizeModeProperty =
+        AvaloniaProperty.Register<MarkdownViewer, ImageResizeMode>(nameof(ImageResizeMode), ImageResizeMode.ScaleDownToFit);
+
+    /// <summary>
     /// Gets or sets the Markdown text to render.
     /// </summary>
     public string? Markdown
@@ -106,6 +112,16 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets how images without an explicit "=WxH" size hint are scaled
+    /// relative to their container. Defaults to <see cref="ImageResizeMode.ScaleDownToFit"/>.
+    /// </summary>
+    public ImageResizeMode ImageResizeMode
+    {
+        get => GetValue(ImageResizeModeProperty);
+        set => SetValue(ImageResizeModeProperty, value);
+    }
+
+    /// <summary>
     /// Extensions that customise the renderer before each render pass.
     /// Add entries before setting <see cref="Markdown"/> or assigning
     /// a new <see cref="Pipeline"/>; each extension's
@@ -137,6 +153,7 @@ public partial class MarkdownViewer : ContentControl
         PipelineProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         SourceProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnSourceChanged());
+        ImageResizeModeProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
     }
 
@@ -229,7 +246,11 @@ public partial class MarkdownViewer : ContentControl
         var markdownText = ImageSizePreprocessorRegex().Replace(markdown, "$1$2 \"=$3\"$4");
         var document = Markdig.Markdown.Parse(markdownText, pipeline);
 
-        var renderer = new AvaloniaRenderer { BaseUri = BaseUri ?? InferBaseUri(Source) };
+        var renderer = new AvaloniaRenderer
+        {
+            BaseUri = BaseUri ?? InferBaseUri(Source),
+            ImageResizeMode = ImageResizeMode,
+        };
         renderer.LinkClicked += OnLinkClicked;
 
         // Extensions register before pipeline.Setup() so they can swap renderers.

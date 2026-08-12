@@ -1,9 +1,11 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Threading;
 
 using MarkView.Avalonia;
 using MarkView.Avalonia.Extensions;
@@ -79,7 +81,7 @@ public class ImageTests : RenderTestBase
     }
 
     [AvaloniaFact]
-    public void Image_size_hint_sets_Width_and_Height()
+    public void Image_size_hint_sets_MaxWidth_and_MaxHeight()
     {
         var viewer = new MarkdownViewer();
         viewer.Markdown = "![logo](https://example.com/logo.png =200x100)";
@@ -89,8 +91,8 @@ public class ImageTests : RenderTestBase
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var image = FindFirst<Image>(panel);
         Assert.NotNull(image);
-        Assert.Equal(200.0, image.Width);
-        Assert.Equal(100.0, image.Height);
+        Assert.Equal(200.0, image.MaxWidth);
+        Assert.Equal(100.0, image.MaxHeight);
     }
 
     [AvaloniaFact]
@@ -105,6 +107,231 @@ public class ImageTests : RenderTestBase
         pipeline.Setup(renderer);
         renderer.Render(document);
         // No assertion beyond "doesn't throw"
+    }
+
+    private sealed class FakeBitmapLoader(string url, IImage image) : IImageLoader
+    {
+        public bool CanLoad(string checkUrl) => checkUrl == url;
+        public Task<IImage?> LoadAsync(string checkUrl, CancellationToken cancellationToken = default)
+            => Task.FromResult<IImage?>(image);
+    }
+
+    /// <summary>
+    /// Minimal <see cref="IImage"/> stand-in reporting a fixed pixel size, used in place of
+    /// a real <c>RenderTargetBitmap</c> in layout tests. A real bitmap calls into the
+    /// platform's render interface to allocate an actual rendering surface — unnecessary
+    /// (and a source of platform-specific flakiness in headless CI) when the test only
+    /// needs Source.Size for Stretch/layout math, never an actual paint.
+    /// </summary>
+    private sealed class FakeImage(double width, double height) : IImage
+    {
+        public Size Size { get; } = new Size(width, height);
+        public void Draw(DrawingContext context, Rect sourceRect, Rect destRect) { }
+    }
+
+    private sealed class FakeBitmapExtension(string url, IImage image) : IMarkViewExtension
+    {
+        public void Register(AvaloniaRenderer renderer) => renderer.ImageLoaders.Insert(0, new FakeBitmapLoader(url, image));
+    }
+
+    private static async Task PumpUntilSettledAsync()
+    {
+        for (var i = 0; i < 20; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            await Task.Delay(10);
+        }
+    }
+
+    /// <summary>
+    /// Parses and renders markdown with the given mode/loader, returning the renderer so
+    /// callers can either inspect renderer.RootPanel directly or host it under a Window
+    /// for layout (mirrors the existing Custom_image_loader_is_invoked_for_matching_url
+    /// pattern, which already hosts renderer.RootPanel directly under a Window).
+    /// </summary>
+    private static AvaloniaRenderer RenderDocument(string markdown, ImageResizeMode mode, IImageLoader? loader = null)
+    {
+        var pipeline = new Markdig.MarkdownPipelineBuilder().Build();
+        var document = Markdig.Markdown.Parse(markdown, pipeline);
+        var renderer = new AvaloniaRenderer { ImageResizeMode = mode };
+        if (loader is not null)
+            renderer.ImageLoaders.Insert(0, loader);
+        pipeline.Setup(renderer);
+        renderer.Render(document);
+        return renderer;
+    }
+
+    [AvaloniaFact]
+    public void ScaleDownToFit_mode_sets_Uniform_and_DownOnly()
+    {
+        var renderer = RenderDocument("![img](https://example.com/image.png)", ImageResizeMode.ScaleDownToFit);
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(Stretch.Uniform, image!.Stretch);
+        Assert.Equal(StretchDirection.DownOnly, image.StretchDirection);
+    }
+
+    [AvaloniaFact]
+    public void Natural_mode_sets_Stretch_None()
+    {
+        var renderer = RenderDocument("![img](https://example.com/image.png)", ImageResizeMode.Natural);
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(Stretch.None, image!.Stretch);
+    }
+
+    [AvaloniaFact]
+    public void Fill_mode_sets_Uniform_and_Both()
+    {
+        var renderer = RenderDocument("![img](https://example.com/image.png)", ImageResizeMode.Fill);
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(Stretch.Uniform, image!.Stretch);
+        Assert.Equal(StretchDirection.Both, image.StretchDirection);
+    }
+
+    [AvaloniaFact]
+    public async Task ScaleDownToFit_large_image_scales_down_to_container_width()
+    {
+        var bigImage = new FakeImage(1600, 1200);
+        var loader = new FakeBitmapLoader("fake://big.png", bigImage);
+        var renderer = RenderDocument("![big](fake://big.png)", ImageResizeMode.ScaleDownToFit, loader);
+
+        var window = new Window { Width = 600, Height = 400, Content = renderer.RootPanel };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(600, image!.Bounds.Width, 0);
+        Assert.Equal(450, image.Bounds.Height, 0);
+    }
+
+    [AvaloniaFact]
+    public async Task ScaleDownToFit_small_image_does_not_upscale()
+    {
+        var smallImage = new FakeImage(200, 150);
+        var loader = new FakeBitmapLoader("fake://small.png", smallImage);
+        var renderer = RenderDocument("![small](fake://small.png)", ImageResizeMode.ScaleDownToFit, loader);
+
+        var window = new Window { Width = 1200, Height = 400, Content = renderer.RootPanel };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(200, image!.Bounds.Width, 0);
+        Assert.Equal(150, image.Bounds.Height, 0);
+    }
+
+    [AvaloniaFact]
+    public async Task Fill_mode_upscales_small_image_to_container_width()
+    {
+        var smallImage = new FakeImage(200, 150);
+        var loader = new FakeBitmapLoader("fake://small.png", smallImage);
+        var renderer = RenderDocument("![small](fake://small.png)", ImageResizeMode.Fill, loader);
+
+        var window = new Window { Width = 600, Height = 400, Content = renderer.RootPanel };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(600, image!.Bounds.Width, 0);
+        Assert.Equal(450, image.Bounds.Height, 0);
+    }
+
+    [AvaloniaFact]
+    public async Task Explicit_size_never_upscales_past_native_resolution_regardless_of_mode()
+    {
+        foreach (var mode in new[] { ImageResizeMode.ScaleDownToFit, ImageResizeMode.Fill, ImageResizeMode.Natural })
+        {
+            var nativeImage = new FakeImage(400, 300);
+            var loader = new FakeBitmapLoader("fake://native.png", nativeImage);
+            // Explicit request (800x600) is larger than native (400x300).
+            var renderer = RenderDocument("![img](fake://native.png \"=800x600\")", mode, loader);
+            var image = FindFirst<Image>(renderer.RootPanel);
+            Assert.NotNull(image);
+            Assert.Equal(800.0, image!.MaxWidth);
+            Assert.Equal(600.0, image.MaxHeight);
+            Assert.Equal(Stretch.Uniform, image.Stretch);
+            Assert.Equal(StretchDirection.DownOnly, image.StretchDirection);
+
+            var window = new Window { Width = 1000, Height = 800, Content = renderer.RootPanel };
+            window.Show();
+            await PumpUntilSettledAsync();
+
+            // Capped at native resolution — never upscaled to the requested 800x600.
+            Assert.Equal(400, image.Bounds.Width, 0);
+            Assert.Equal(300, image.Bounds.Height, 0);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Explicit_size_downscale_request_is_honoured()
+    {
+        var nativeImage = new FakeImage(400, 300);
+        var loader = new FakeBitmapLoader("fake://native.png", nativeImage);
+        // Explicit request (100x75) is smaller than native (400x300) — a plain downscale.
+        var renderer = RenderDocument("![img](fake://native.png \"=100x75\")", ImageResizeMode.ScaleDownToFit, loader);
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+
+        var window = new Window { Width = 1000, Height = 800, Content = renderer.RootPanel };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        Assert.Equal(100, image!.Bounds.Width, 0);
+        Assert.Equal(75, image.Bounds.Height, 0);
+    }
+
+    [AvaloniaFact]
+    public void MarkdownViewer_ImageResizeMode_defaults_to_ScaleDownToFit()
+    {
+        var viewer = new MarkdownViewer();
+        Assert.Equal(ImageResizeMode.ScaleDownToFit, viewer.ImageResizeMode);
+    }
+
+    [AvaloniaFact]
+    public async Task MarkdownViewer_ImageResizeMode_flows_through_to_rendered_image()
+    {
+        var smallImage = new FakeImage(200, 150);
+        var viewer = new MarkdownViewer { Width = 600, Height = 400, ImageResizeMode = ImageResizeMode.Fill };
+        // Extensions must be registered before Markdown is set — MarkdownViewer renders
+        // synchronously when Markdown changes, and extensions register at render time.
+        viewer.Extensions.Add(new FakeBitmapExtension("fake://small.png", smallImage));
+        viewer.Markdown = "![small](fake://small.png)";
+
+        var window = new Window { Width = 600, Height = 400, Content = viewer };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        var image = FindFirst<Image>(viewer);
+        Assert.NotNull(image);
+        Assert.Equal(Stretch.Uniform, image!.Stretch);
+        Assert.Equal(StretchDirection.Both, image.StretchDirection);
+        Assert.Equal(600, image.Bounds.Width, 0);
+        Assert.Equal(450, image.Bounds.Height, 0);
+    }
+
+    [AvaloniaFact]
+    public async Task MarkdownViewer_default_ScaleDownToFit_flows_through_to_rendered_image()
+    {
+        var bigImage = new FakeImage(1600, 1200);
+        var viewer = new MarkdownViewer { Width = 600, Height = 400 };
+        // Extensions must be registered before Markdown is set — MarkdownViewer renders
+        // synchronously when Markdown changes, and extensions register at render time.
+        viewer.Extensions.Add(new FakeBitmapExtension("fake://big.png", bigImage));
+        viewer.Markdown = "![big](fake://big.png)";
+
+        var window = new Window { Width = 600, Height = 400, Content = viewer };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        var image = FindFirst<Image>(viewer);
+        Assert.NotNull(image);
+        Assert.Equal(600, image!.Bounds.Width, 0);
+        Assert.Equal(450, image.Bounds.Height, 0);
     }
 
     private static T? FindFirst<T>(Control root) where T : Control
