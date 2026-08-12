@@ -1,9 +1,12 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 
 using MarkView.Avalonia;
 using MarkView.Avalonia.Extensions;
@@ -105,6 +108,120 @@ public class ImageTests : RenderTestBase
         pipeline.Setup(renderer);
         renderer.Render(document);
         // No assertion beyond "doesn't throw"
+    }
+
+    private sealed class FakeBitmapLoader(string url, IImage image) : IImageLoader
+    {
+        public bool CanLoad(string checkUrl) => checkUrl == url;
+        public Task<IImage?> LoadAsync(string checkUrl, CancellationToken cancellationToken = default)
+            => Task.FromResult<IImage?>(image);
+    }
+
+    private static async Task PumpUntilSettledAsync()
+    {
+        for (var i = 0; i < 20; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            await Task.Delay(10);
+        }
+    }
+
+    /// <summary>
+    /// Parses and renders markdown with the given mode/loader, returning the renderer so
+    /// callers can either inspect renderer.RootPanel directly or host it under a Window
+    /// for layout (mirrors the existing Custom_image_loader_is_invoked_for_matching_url
+    /// pattern, which already hosts renderer.RootPanel directly under a Window).
+    /// </summary>
+    private static AvaloniaRenderer RenderDocument(string markdown, ImageResizeMode mode, IImageLoader? loader = null)
+    {
+        var pipeline = new Markdig.MarkdownPipelineBuilder().Build();
+        var document = Markdig.Markdown.Parse(markdown, pipeline);
+        var renderer = new AvaloniaRenderer { ImageResizeMode = mode };
+        if (loader is not null)
+            renderer.ImageLoaders.Insert(0, loader);
+        pipeline.Setup(renderer);
+        renderer.Render(document);
+        return renderer;
+    }
+
+    [AvaloniaFact]
+    public void ScaleDownToFit_mode_sets_Uniform_and_DownOnly()
+    {
+        var renderer = RenderDocument("![img](https://example.com/image.png)", ImageResizeMode.ScaleDownToFit);
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(Stretch.Uniform, image!.Stretch);
+        Assert.Equal(StretchDirection.DownOnly, image.StretchDirection);
+    }
+
+    [AvaloniaFact]
+    public void Natural_mode_sets_Stretch_None()
+    {
+        var renderer = RenderDocument("![img](https://example.com/image.png)", ImageResizeMode.Natural);
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(Stretch.None, image!.Stretch);
+    }
+
+    [AvaloniaFact]
+    public void Fill_mode_sets_Uniform_and_Both()
+    {
+        var renderer = RenderDocument("![img](https://example.com/image.png)", ImageResizeMode.Fill);
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(Stretch.Uniform, image!.Stretch);
+        Assert.Equal(StretchDirection.Both, image.StretchDirection);
+    }
+
+    [AvaloniaFact]
+    public async Task ScaleDownToFit_large_image_scales_down_to_container_width()
+    {
+        var bigImage = new RenderTargetBitmap(new PixelSize(1600, 1200));
+        var loader = new FakeBitmapLoader("fake://big.png", bigImage);
+        var renderer = RenderDocument("![big](fake://big.png)", ImageResizeMode.ScaleDownToFit, loader);
+
+        var window = new Window { Width = 600, Height = 400, Content = renderer.RootPanel };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(600, image!.Bounds.Width, 0);
+        Assert.Equal(450, image.Bounds.Height, 0);
+    }
+
+    [AvaloniaFact]
+    public async Task ScaleDownToFit_small_image_does_not_upscale()
+    {
+        var smallImage = new RenderTargetBitmap(new PixelSize(200, 150));
+        var loader = new FakeBitmapLoader("fake://small.png", smallImage);
+        var renderer = RenderDocument("![small](fake://small.png)", ImageResizeMode.ScaleDownToFit, loader);
+
+        var window = new Window { Width = 1200, Height = 400, Content = renderer.RootPanel };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(200, image!.Bounds.Width, 0);
+        Assert.Equal(150, image.Bounds.Height, 0);
+    }
+
+    [AvaloniaFact]
+    public async Task Fill_mode_upscales_small_image_to_container_width()
+    {
+        var smallImage = new RenderTargetBitmap(new PixelSize(200, 150));
+        var loader = new FakeBitmapLoader("fake://small.png", smallImage);
+        var renderer = RenderDocument("![small](fake://small.png)", ImageResizeMode.Fill, loader);
+
+        var window = new Window { Width = 600, Height = 400, Content = renderer.RootPanel };
+        window.Show();
+        await PumpUntilSettledAsync();
+
+        var image = FindFirst<Image>(renderer.RootPanel);
+        Assert.NotNull(image);
+        Assert.Equal(600, image!.Bounds.Width, 0);
+        Assert.Equal(450, image.Bounds.Height, 0);
     }
 
     private static T? FindFirst<T>(Control root) where T : Control

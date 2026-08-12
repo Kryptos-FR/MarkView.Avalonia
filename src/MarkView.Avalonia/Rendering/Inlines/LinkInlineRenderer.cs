@@ -65,7 +65,8 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             if (c is LiteralInline literal) sb.Append(literal.Content.AsSpan());
         var altText = sb.ToString();
 
-        var image = new Image { Stretch = Stretch.None };
+        var image = new Image();
+        ApplyResizeMode(image, renderer.ImageResizeMode);
         image.Classes.Add("markdown-image");
 
         if (!string.IsNullOrEmpty(altText))
@@ -102,6 +103,25 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         image.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
 
         renderer.WriteInline(image);
+    }
+
+    private static void ApplyResizeMode(Image image, ImageResizeMode mode)
+    {
+        switch (mode)
+        {
+            case ImageResizeMode.Natural:
+                image.Stretch = Stretch.None;
+                break;
+            case ImageResizeMode.Fill:
+                image.Stretch = Stretch.Uniform;
+                image.StretchDirection = StretchDirection.Both;
+                break;
+            case ImageResizeMode.ScaleDownToFit:
+            default:
+                image.Stretch = Stretch.Uniform;
+                image.StretchDirection = StretchDirection.DownOnly;
+                break;
+        }
     }
 
     private static async Task LoadImageAsync(
