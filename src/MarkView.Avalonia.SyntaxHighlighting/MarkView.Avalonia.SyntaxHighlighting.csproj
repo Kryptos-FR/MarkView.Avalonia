@@ -6,6 +6,7 @@
     <Description>TextMate syntax highlighting extension for MarkView.Avalonia.</Description>
     <PackageTags>avalonia;markdown;syntax-highlighting;textmate</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="TextMateSharp" />
