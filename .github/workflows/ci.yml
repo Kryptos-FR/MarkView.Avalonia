@@ -25,8 +25,16 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/coverage.yml
 
+  aot-publish:
+    strategy:
+      matrix:
+        os: [windows-latest] # ubuntu-latest, macos-latest pending verification
+    uses: ./.github/workflows/aot-publish.yml
+    with:
+      os: ${{ matrix.os }}
+
   publish:
-    needs: [build, coverage]
+    needs: [build, coverage, aot-publish]
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       id-token: write
