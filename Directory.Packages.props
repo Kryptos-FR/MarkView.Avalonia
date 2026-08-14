@@ -14,6 +14,7 @@
     <PackageVersion Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+    <!-- Prerelease: do NOT merge MarkView.Avalonia.Math to main until CSharpMath ships a stable 1.0.0. -->
     <PackageVersion Include="CSharpMath.SkiaSharp" Version="1.0.0-pre.1" />
     <PackageVersion Include="Markdig" Version="1.3.2" />
     <PackageVersion Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.15" />

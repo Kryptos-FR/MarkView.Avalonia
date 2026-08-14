@@ -49,4 +49,13 @@ public class MathBlockRendererTests
         var image = Assert.IsType<Image>(border.Child);
         Assert.NotNull(image.Source);
     }
+
+    [AvaloniaFact]
+    public void Math_block_with_pathologically_nested_braces_falls_back_instead_of_crashing()
+    {
+        var nested = new string('{', 60) + "x" + new string('}', 60); // 60 > MaxBraceNestingDepth (50) — throws before ever touching CSharpMath
+        var result = Render($"$$\n{nested}\n$$");
+        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        Assert.Contains("markdown-math-fallback", border.Classes);
+    }
 }

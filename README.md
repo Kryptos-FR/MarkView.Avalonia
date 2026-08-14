@@ -199,7 +199,7 @@ dotnet add package MarkView.Avalonia.Math
 viewer.UseMath();
 ```
 
-> Currently pins a CSharpMath prerelease (`1.0.0-pre.1`) — see the [package README](src/MarkView.Avalonia.Math/README.md) for details.
+> **Do not merge/release with this dependency as-is** — currently pins a CSharpMath prerelease (`1.0.0-pre.1`); see the [package README](src/MarkView.Avalonia.Math/README.md) for the merge gate.
 
 ### Mermaid Diagrams (`MarkView.Avalonia.Mermaid`)
 

@@ -54,4 +54,14 @@ public class MathInlineRendererTests
         var image = Assert.IsType<Image>(container.Child);
         Assert.NotNull(image.Source);
     }
+
+    [AvaloniaFact]
+    public void Inline_math_first_render_failure_falls_back_to_source_text()
+    {
+        var nested = new string('{', 60) + "x" + new string('}', 60);
+        var result = Render($"${nested}$");
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var run = Assert.IsType<Run>(Assert.Single(textBlock.Inlines!));
+        Assert.Equal(nested, run.Text);
+    }
 }

@@ -82,4 +82,59 @@ public class MathExtensionTests
         viewer.UseMath();
         Assert.NotNull(viewer.Pipeline);
     }
+
+    [AvaloniaFact]
+    public void UseMath_renders_math_correctly_even_when_markdown_was_set_before_UseMath()
+    {
+        // Regression test: Markdown is set BEFORE UseMath() is called, so the viewer's initial
+        // render (triggered by the Markdown property changing) runs with neither the math
+        // pipeline extension nor MathExtension's renderer registered. UseMath() must still end
+        // up rendering the formula correctly once it runs — this ordering bug would not be
+        // caught by tests that only inspect viewer.Pipeline/viewer.Extensions state.
+        var viewer = new MarkdownViewer();
+        viewer.Markdown = "$$\nx^2\n$$";
+        viewer.UseMath();
+
+        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
+        var border = Assert.IsType<Border>(Assert.Single(panel.Children));
+        Assert.Contains("markdown-math-block", border.Classes);
+        var image = Assert.IsType<Image>(border.Child);
+        Assert.NotNull(image.Source);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void UseMath_and_UseMermaid_together_render_both_correctly_regardless_of_order(bool mathFirst)
+    {
+        var viewer = new MarkdownViewer();
+        if (mathFirst)
+        {
+            viewer.UseMath();
+            viewer.UseMermaid();
+        }
+        else
+        {
+            viewer.UseMermaid();
+            viewer.UseMath();
+        }
+
+        viewer.Markdown = "$$\nx^2\n$$\n\n```mermaid\ngraph TD;\nA-->B;\n```";
+
+        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
+        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
+        Assert.Equal(2, panel.Children.Count);
+
+        var mathBorder = Assert.IsType<Border>(panel.Children[0]);
+        Assert.Contains("markdown-math-block", mathBorder.Classes);
+        var mathImage = Assert.IsType<Image>(mathBorder.Child);
+        Assert.NotNull(mathImage.Source);
+
+        var mermaidBorder = Assert.IsType<Border>(panel.Children[1]);
+        Assert.Contains("markdown-mermaid", mermaidBorder.Classes);
+        Assert.IsType<Image>(mermaidBorder.Child);
+    }
 }

@@ -35,11 +35,11 @@ public static class MarkdownViewerMathExtensions
     /// </summary>
     public static MarkdownViewer UseMath(this MarkdownViewer viewer)
     {
+        viewer.Extensions.AddMath();
         viewer.Pipeline = new MarkdownPipelineBuilder()
             .UseSupportedExtensions()
             .UseMathematics()
             .Build();
-        viewer.Extensions.AddMath();
         return viewer;
     }
 }

@@ -148,4 +148,4 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 MarkdownViewerDefaults.Extensions.AddMath();
 ```
 
-`MermaidBlockRenderer` is inserted at index 0 of `renderer.ObjectRenderers` and intercepts every `FencedCodeBlock`. Mermaid blocks are rendered as diagrams; all other fenced blocks pass through to `TextMateCodeBlockRenderer` (or the default `CodeBlockRenderer` if the SyntaxHighlighting extension is not active).
+`MermaidBlockRenderer` is inserted immediately before the first renderer that already accepts a `FencedCodeBlock` (rather than always at index 0 — this keeps registration order-independent relative to sibling extensions like `MarkView.Avalonia.Math`'s `MathBlockRenderer`) and intercepts every `FencedCodeBlock`. Mermaid blocks are rendered as diagrams; all other fenced blocks pass through to `TextMateCodeBlockRenderer` (or the default `CodeBlockRenderer` if the SyntaxHighlighting extension is not active).
