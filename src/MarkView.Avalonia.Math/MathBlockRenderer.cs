@@ -37,7 +37,7 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
             ApplyTheme();
         }
         Application.Current!.PropertyChanged += OnThemeChanged;
-        image.DetachedFromLogicalTree += (_, _) =>
+        border.DetachedFromLogicalTree += (_, _) =>
             Application.Current?.PropertyChanged -= OnThemeChanged;
 
         ApplyTheme();
