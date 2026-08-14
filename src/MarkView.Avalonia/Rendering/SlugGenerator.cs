@@ -1,7 +1,6 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-using System.Globalization;
 using System.Text;
 
 namespace MarkView.Avalonia.Rendering;
@@ -36,45 +35,25 @@ public class SlugGenerator
     public void Reset() => _seen.Clear();
 
     /// <summary>
-    /// Single-pass normalisation: lowercase + filter + whitespace/hyphen collapsing.
-    /// Eliminates the four intermediate strings produced by the previous regex pipeline.
+    /// Mirrors GitHub's own heading-anchor algorithm (Markdig's <c>LinkHelper.UrilizeAsGfm</c>):
+    /// keep letters/digits/hyphen/underscore, map a literal space to a hyphen, drop everything else.
+    /// Unlike a naive slugifier this does NOT collapse consecutive separators — GitHub doesn't
+    /// either, so e.g. "C# Tips &amp; Tricks" intentionally becomes "c-tips--tricks" (double
+    /// hyphen), matching the anchor GitHub itself generates for the same heading.
     /// </summary>
     private static string Normalize(string text)
     {
         var sb = new StringBuilder(text.Length);
-        bool pendingHyphen = false;
 
-        foreach (char rawCh in text)
+        foreach (char ch in text)
         {
-            char ch = char.ToLowerInvariant(rawCh);
-            var cat = CharUnicodeInfo.GetUnicodeCategory(ch);
-
-            bool isKeepable =
-                cat is UnicodeCategory.LowercaseLetter
-                    or UnicodeCategory.UppercaseLetter  // after ToLowerInvariant — kept for safety
-                    or UnicodeCategory.TitlecaseLetter
-                    or UnicodeCategory.ModifierLetter
-                    or UnicodeCategory.OtherLetter
-                    or UnicodeCategory.DecimalDigitNumber
-                    or UnicodeCategory.LetterNumber
-                    or UnicodeCategory.OtherNumber;
-
-            if (isKeepable)
-            {
-                if (pendingHyphen && sb.Length > 0)
-                    sb.Append('-');
-                pendingHyphen = false;
-                sb.Append(ch);
-            }
-            else if (char.IsWhiteSpace(ch) || ch == '-')
-            {
-                // Defer hyphen until next keepable char; handles runs + leading/trailing
-                if (sb.Length > 0)
-                    pendingHyphen = true;
-            }
-            // else: stripped — not a letter, digit, whitespace, or hyphen
+            if (char.IsLetterOrDigit(ch) || ch == '-' || ch == '_')
+                sb.Append(char.ToLowerInvariant(ch));
+            else if (ch == ' ')
+                sb.Append('-');
+            // else: dropped — not a letter, digit, hyphen, underscore, or plain space
         }
 
-        return sb.ToString();
+        return sb.Length == 0 ? "section" : sb.ToString();
     }
 }
