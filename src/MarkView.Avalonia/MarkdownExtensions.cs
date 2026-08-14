@@ -27,12 +27,12 @@ public static class MarkdownExtensions
     }
 
     /// <summary>
-    /// Enables Markdig footnote parsing for use with MarkView.Avalonia's footnote renderers.
-    /// Activate on the viewer with <c>viewer.UseFootnotes()</c>.
+    /// Enables Markdig abbreviation parsing. Matched words gain tooltip definitions.
+    /// Activate on the viewer with <c>viewer.UseAbbreviations()</c>.
     /// </summary>
-    public static MarkdownPipelineBuilder UseFootnotes(this MarkdownPipelineBuilder builder)
+    public static MarkdownPipelineBuilder UseAbbreviations(this MarkdownPipelineBuilder builder)
     {
-        return builder.Use<Markdig.Extensions.Footnotes.FootnoteExtension>();
+        return builder.Use<Markdig.Extensions.Abbreviations.AbbreviationExtension>();
     }
 
     /// <summary>
@@ -45,12 +45,12 @@ public static class MarkdownExtensions
     }
 
     /// <summary>
-    /// Enables Markdig abbreviation parsing. Matched words gain tooltip definitions.
-    /// Activate on the viewer with <c>viewer.UseAbbreviations()</c>.
+    /// Enables Markdig citation parsing (<c>""quoted text""</c> renders as an italic citation span).
+    /// Activate on the viewer with <c>viewer.UseCitations()</c>.
     /// </summary>
-    public static MarkdownPipelineBuilder UseAbbreviations(this MarkdownPipelineBuilder builder)
+    public static MarkdownPipelineBuilder UseCitations(this MarkdownPipelineBuilder builder)
     {
-        return builder.Use<Markdig.Extensions.Abbreviations.AbbreviationExtension>();
+        return builder.Use<Markdig.Extensions.Citations.CitationExtension>();
     }
 
     /// <summary>
@@ -60,6 +60,15 @@ public static class MarkdownExtensions
     public static MarkdownPipelineBuilder UseFigures(this MarkdownPipelineBuilder builder)
     {
         return builder.Use<Markdig.Extensions.Figures.FigureExtension>();
+    }
+
+    /// <summary>
+    /// Enables Markdig footnote parsing for use with MarkView.Avalonia's footnote renderers.
+    /// Activate on the viewer with <c>viewer.UseFootnotes()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseFootnotes(this MarkdownPipelineBuilder builder)
+    {
+        return builder.Use<Markdig.Extensions.Footnotes.FootnoteExtension>();
     }
 
     /// <summary>

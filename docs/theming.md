@@ -42,6 +42,12 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 
 Subscript, superscript, underline (inserted), bold, italic, and strikethrough use standard Avalonia inline properties (`BaselineAlignment`, `FontFeatures`, `TextDecorations`) and do not have dedicated style classes.
 
+### Citations
+
+| Class | Control | Element |
+|-------|---------|---------|
+| `markdown-citation` | `Span` | Citation text (`""text""`), requires `UseCitations()` |
+
 ### Alert blocks
 
 | Class | Control | Element |

@@ -42,6 +42,11 @@ public sealed class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInli
             {
                 Classes = { "markdown-marked" }
             },
+            // citation
+            '"' when obj.DelimiterCount == 2 => new Span
+            {
+                Classes = { "markdown-citation" }
+            },
             _ => new Span(),
         };
 

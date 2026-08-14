@@ -20,13 +20,13 @@ namespace MarkView.Avalonia;
 public static class MarkdownViewerExtensions
 {
     /// <summary>
-    /// Enables footnote rendering on the viewer.
+    /// Enables abbreviation tooltip rendering on the viewer.
     /// </summary>
-    public static MarkdownViewer UseFootnotes(this MarkdownViewer viewer)
+    public static MarkdownViewer UseAbbreviations(this MarkdownViewer viewer)
     {
         viewer.Pipeline = new MarkdownPipelineBuilder()
             .UseSupportedExtensions()
-            .UseFootnotes()
+            .UseAbbreviations()
             .Build();
         return viewer;
     }
@@ -44,13 +44,13 @@ public static class MarkdownViewerExtensions
     }
 
     /// <summary>
-    /// Enables abbreviation tooltip rendering on the viewer.
+    /// Enables citation rendering (<c>""quoted text""</c>) on the viewer.
     /// </summary>
-    public static MarkdownViewer UseAbbreviations(this MarkdownViewer viewer)
+    public static MarkdownViewer UseCitations(this MarkdownViewer viewer)
     {
         viewer.Pipeline = new MarkdownPipelineBuilder()
             .UseSupportedExtensions()
-            .UseAbbreviations()
+            .UseCitations()
             .Build();
         return viewer;
     }
@@ -63,6 +63,18 @@ public static class MarkdownViewerExtensions
         viewer.Pipeline = new MarkdownPipelineBuilder()
             .UseSupportedExtensions()
             .UseFigures()
+            .Build();
+        return viewer;
+    }
+
+    /// <summary>
+    /// Enables footnote rendering on the viewer.
+    /// </summary>
+    public static MarkdownViewer UseFootnotes(this MarkdownViewer viewer)
+    {
+        viewer.Pipeline = new MarkdownPipelineBuilder()
+            .UseSupportedExtensions()
+            .UseFootnotes()
             .Build();
         return viewer;
     }
