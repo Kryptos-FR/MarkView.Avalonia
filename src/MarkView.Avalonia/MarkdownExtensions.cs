@@ -16,11 +16,12 @@ public static class MarkdownExtensions
     public static MarkdownPipelineBuilder UseSupportedExtensions(this MarkdownPipelineBuilder builder)
     {
         return builder
-            .UseEmphasisExtras()
             .UseAutoLinks()
+            .UseEmphasisExtras()
             .UseGridTables()
             .UsePipeTables()
-            .UseTaskLists();
+            .UseTaskLists()
+            .UseYamlFrontMatter();
     }
 
     /// <summary>
