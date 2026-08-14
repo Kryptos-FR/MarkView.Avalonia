@@ -39,10 +39,12 @@ All configuration is done once in `App.axaml.cs` and applies globally to every `
 // Global pipeline — includes all opt-in extensions for the full showcase
 MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
     .UseSupportedExtensions()
-    .UseFootnotes()
-    .UseAlertBlocks()
     .UseAbbreviations()
+    .UseAlertBlocks()
+    .UseCitations()
     .UseFigures()
+    .UseFootnotes()
+    .UseHardlineBreaks()
     .UseMediaLinks()
     .Build();
 

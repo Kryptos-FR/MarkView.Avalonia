@@ -17,36 +17,44 @@ The pipeline controls which Markdig extensions parse the input markdown. Build o
 
 ```csharp
 viewer.Pipeline = new MarkdownPipelineBuilder()
-    .UseSupportedExtensions()   // bold, italic, strikethrough, subscript, superscript,
-                                // underline, highlight, task lists, tables, autolinks
-    .UseFootnotes()             // [^1] footnotes
-    .UseAlertBlocks()           // > [!NOTE] / > [!WARNING] etc.
+    .UseSupportedExtensions()   // bold, italic, strikethrough, subscript, superscript, underline,
+                                // highlight, task lists, tables, autolinks, emoji shortcodes,
+                                // CJK-friendly emphasis, YAML front matter (hidden)
     .UseAbbreviations()         // *[HTML]: HyperText Markup Language
+    .UseAlertBlocks()           // > [!NOTE] / > [!WARNING] etc.
+    .UseCitations()             // ""quoted text""
     .UseFigures()               // ^^^ figure blocks
+    .UseFootnotes()             // [^1] footnotes
+    .UseHardlineBreaks()        // every soft line break renders as a hard break
     .UseMediaLinks()            // YouTube thumbnail embeds
     .Build();
 ```
 
-`UseSupportedExtensions()` is a MarkView.Avalonia helper that enables the subset of Markdig extensions that have native renderers in the library:
+`UseSupportedExtensions()` is a MarkView.Avalonia helper that enables the subset of Markdig extensions that have native renderers in the library, or that are safe to enable unconditionally because they can't surprise ordinary markdown:
 
 - `EmphasisExtras` — strikethrough `~~`, subscript `~`, superscript `^`, underline `++`, highlight `==`
 - `AutoLinks` — bare URL auto-linking
 - `GridTables` — RST-style grid tables
 - `PipeTables` — GFM pipe tables
 - `TaskLists` — `- [x]` checkboxes
+- `CjkFriendlyEmphasis` — parser-only fix for emphasis next to CJK punctuation
+- `YamlFrontMatter` — `---` metadata block at the top of a document is parsed and hidden, not shown as garbled text
+- `EmojiAndSmiley` (shortcodes only) — `:rocket:` renders as 🚀; ASCII smileys (`:)`) are intentionally left as plain text, since silently rewriting them is more surprising than useful
 
-The five opt-in extensions above (`UseFootnotes()` etc.) are thin wrappers around the corresponding Markdig extension; they are defined in `MarkdownExtensions.cs` and re-exported as extension methods on `MarkdownPipelineBuilder`.
+The seven opt-in extensions above (`UseFootnotes()` etc.) are thin wrappers around the corresponding Markdig extension; they are defined in `MarkdownExtensions.cs` and re-exported as extension methods on `MarkdownPipelineBuilder`.
 
 ### Convenience extension methods
 
 For simple use cases, call a single method instead of building the pipeline manually:
 
 ```csharp
-viewer.UseFootnotes();     // pipeline + footnote rendering
-viewer.UseAlertBlocks();   // pipeline + alert block rendering
-viewer.UseAbbreviations(); // pipeline + abbreviation tooltips
-viewer.UseFigures();       // pipeline + figure blocks
-viewer.UseMediaLinks();    // pipeline + YouTube thumbnails
+viewer.UseAbbreviations();  // pipeline + abbreviation tooltips
+viewer.UseAlertBlocks();    // pipeline + alert block rendering
+viewer.UseCitations();      // pipeline + citation rendering
+viewer.UseFigures();        // pipeline + figure blocks
+viewer.UseFootnotes();      // pipeline + footnote rendering
+viewer.UseHardlineBreaks(); // pipeline + hardline breaks
+viewer.UseMediaLinks();     // pipeline + YouTube thumbnails
 ```
 
 Each method calls `UseSupportedExtensions()` plus the requested feature. To combine several opt-in features, build the pipeline explicitly.

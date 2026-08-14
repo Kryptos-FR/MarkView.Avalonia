@@ -21,10 +21,12 @@ public class App : Application
         // Global pipeline — applies to every MarkdownViewer in the app
         MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
             .UseSupportedExtensions()
-            .UseFootnotes()
-            .UseAlertBlocks()
             .UseAbbreviations()
+            .UseAlertBlocks()
+            .UseCitations()
             .UseFigures()
+            .UseFootnotes()
+            .UseHardlineBreaks()
             .UseMediaLinks()
             .Build();
 
