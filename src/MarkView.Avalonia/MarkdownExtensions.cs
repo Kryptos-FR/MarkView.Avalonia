@@ -17,6 +17,7 @@ public static class MarkdownExtensions
     {
         return builder
             .UseAutoLinks()
+            .UseCjkFriendlyEmphasis()
             .UseEmojiAndSmiley(enableSmileys: false)
             .UseEmphasisExtras()
             .UseGridTables()
