@@ -226,13 +226,14 @@ graph TD
 
 ### Combining extensions
 
-All three can be stacked:
+All four can be stacked:
 
 ```csharp
 viewer
     .UseTextMateHighlighting()
     .UseSvg()
-    .UseMermaid();
+    .UseMermaid()
+    .UseMath();
 ```
 
 Extensions are applied in the order they are added to `viewer.Extensions`. Each extension's `Register` method is called once per render pass, before the Markdig pipeline is set up.
