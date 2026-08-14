@@ -15,6 +15,7 @@
 - [Bitmap Image](#bitmap-image)
 - [SVG Image](#svg-image)
 - [Mermaid Diagram](#mermaid-diagram)
+- [Math](#math)
 
 ---
 
@@ -67,6 +68,7 @@ The `EmphasisExtras` Markdig extension unlocks four additional inline styles:
 - [x] Syntax-highlighted code blocks via `MarkView.Avalonia.SyntaxHighlighting`
 - [x] SVG image rendering via `MarkView.Avalonia.Svg`
 - [x] Mermaid diagram rendering via `MarkView.Avalonia.Mermaid`
+- [x] LaTeX math rendering via `MarkView.Avalonia.Math`
 - [x] Tables, blockquotes, task lists
 - [ ] PDF export (planned)
 
@@ -80,6 +82,7 @@ The `EmphasisExtras` Markdig extension unlocks four additional inline styles:
 | `MarkView.Avalonia.SyntaxHighlighting` | Code highlighting | ✅ Published | TextMate grammars |
 | `MarkView.Avalonia.Svg` | SVG images | ✅ Published | Avalonia.Svg |
 | `MarkView.Avalonia.Mermaid` | Mermaid diagrams | ✅ Published | Pure .NET |
+| `MarkView.Avalonia.Math` | LaTeX math | ⚠️ Prerelease dependency | CSharpMath.SkiaSharp |
 
 ---
 
@@ -173,6 +176,23 @@ flowchart LR
     SVG --> Out
     MM --> Out
 ```
+
+---
+
+## Math
+
+LaTeX math is rendered by the `MarkView.Avalonia.Math` extension, via
+[CSharpMath](https://github.com/verybadcat/CSharpMath)'s SkiaSharp renderer — pure .NET, no
+browser or WebView required.
+
+Inline math sits within a sentence, e.g. mass–energy equivalence, $E = mc^2$, or the Pythagorean
+theorem, $a^2 + b^2 = c^2$.
+
+Block math renders as its own centred element:
+
+$$
+\lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n = e = \sum_{k=0}^{\infty} \frac{1}{k!}
+$$
 
 ---
 

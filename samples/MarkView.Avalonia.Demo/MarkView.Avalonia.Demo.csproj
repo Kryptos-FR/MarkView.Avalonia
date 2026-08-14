@@ -18,5 +18,6 @@
     <ProjectReference Include="..\..\src\MarkView.Avalonia.SyntaxHighlighting\MarkView.Avalonia.SyntaxHighlighting.csproj" />
     <ProjectReference Include="..\..\src\MarkView.Avalonia.Svg\MarkView.Avalonia.Svg.csproj" />
     <ProjectReference Include="..\..\src\MarkView.Avalonia.Mermaid\MarkView.Avalonia.Mermaid.csproj" />
+    <ProjectReference Include="..\..\src\MarkView.Avalonia.Math\MarkView.Avalonia.Math.csproj" />
   </ItemGroup>
 </Project>

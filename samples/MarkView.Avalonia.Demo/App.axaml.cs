@@ -26,12 +26,14 @@ public class App : Application
             .UseAbbreviations()
             .UseFigures()
             .UseMediaLinks()
+            .UseMathematics()
             .Build();
 
         // Global extensions — applies to every MarkdownViewer in the app
         MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
         MarkdownViewerDefaults.Extensions.AddSvg();
         MarkdownViewerDefaults.Extensions.AddMermaid();
+        MarkdownViewerDefaults.Extensions.AddMath();
 
         // Global link handler — handles external links for every MarkdownViewer in the app
         MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>(OnLinkClicked);
