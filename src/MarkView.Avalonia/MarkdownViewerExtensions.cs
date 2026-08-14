@@ -80,6 +80,19 @@ public static class MarkdownViewerExtensions
     }
 
     /// <summary>
+    /// Enables hardline-break rendering on the viewer: every soft line break renders as an
+    /// explicit line break instead of collapsing to a space.
+    /// </summary>
+    public static MarkdownViewer UseHardlineBreaks(this MarkdownViewer viewer)
+    {
+        viewer.Pipeline = new MarkdownPipelineBuilder()
+            .UseSupportedExtensions()
+            .UseHardlineBreaks()
+            .Build();
+        return viewer;
+    }
+
+    /// <summary>
     /// Enables YouTube thumbnail embed rendering on the viewer.
     /// </summary>
     public static MarkdownViewer UseMediaLinks(this MarkdownViewer viewer)

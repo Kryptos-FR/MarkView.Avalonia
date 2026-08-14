@@ -72,6 +72,16 @@ public static class MarkdownExtensions
     }
 
     /// <summary>
+    /// Enables Markdig hardline-break parsing: every soft line break within a paragraph renders
+    /// as an explicit line break instead of collapsing to a space.
+    /// Activate on the viewer with <c>viewer.UseHardlineBreaks()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseHardlineBreaks(this MarkdownPipelineBuilder builder)
+    {
+        return builder.UseSoftlineBreakAsHardlineBreak();
+    }
+
+    /// <summary>
     /// Enables Markdig media link parsing. YouTube image-syntax links are rendered
     /// as clickable thumbnail embeds. Activate on the viewer with <c>viewer.UseMediaLinks()</c>.
     /// </summary>

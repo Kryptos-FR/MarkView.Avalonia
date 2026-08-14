@@ -4,6 +4,8 @@
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 
+using Markdig;
+
 using MarkView.Avalonia.Rendering;
 
 using Xunit;
@@ -35,5 +37,17 @@ public class LineBreakTests : RenderTestBase
         Assert.Equal(3, inlines.Count);
         var space = Assert.IsType<Run>(inlines[1]);
         Assert.Equal(" ", space.Text);
+    }
+
+    [AvaloniaFact]
+    public void Soft_break_renders_as_LineBreak_when_hardline_breaks_enabled()
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseHardlineBreaks().Build();
+        var result = Render("line one\nline two", pipeline);
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var inlines = textBlock.Inlines!.ToList();
+        // Run("line one") + LineBreak + Run("line two")
+        Assert.Equal(3, inlines.Count);
+        Assert.IsType<LineBreak>(inlines[1]);
     }
 }

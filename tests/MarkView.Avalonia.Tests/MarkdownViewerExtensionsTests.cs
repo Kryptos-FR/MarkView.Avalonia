@@ -65,6 +65,15 @@ public class MarkdownViewerExtensionsTests
     }
 
     [AvaloniaFact]
+    public void UseHardlineBreaks_sets_pipeline_on_viewer()
+    {
+        var viewer = new MarkdownViewer();
+        var result = viewer.UseHardlineBreaks();
+        Assert.Same(viewer, result);
+        Assert.NotNull(viewer.Pipeline);
+    }
+
+    [AvaloniaFact]
     public void UseFootnotes_renders_footnote_when_markdown_set()
     {
         var viewer = new MarkdownViewer();
