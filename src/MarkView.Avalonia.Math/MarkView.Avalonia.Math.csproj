@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>MarkView.Avalonia.Math</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>MarkView.Avalonia.Math</PackageId>
+    <Description>LaTeX math rendering extension for MarkView.Avalonia.</Description>
+    <PackageTags>avalonia;markdown;latex;math;csharpmath</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
+    <PackageReference Include="CSharpMath.SkiaSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>
