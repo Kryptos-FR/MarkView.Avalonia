@@ -1,0 +1,42 @@
+name: AOT Publish
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        type: string
+        default: windows-latest
+  workflow_dispatch:
+    inputs:
+      os:
+        type: string
+        default: windows-latest
+        description: Runner OS (ubuntu-latest, windows-latest, macos-latest)
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      - name: Determine RID
+        id: rid
+        shell: bash
+        run: |
+          case "${{ inputs.os }}" in
+            windows-latest) rid=win-x64 ;;
+            ubuntu-latest) rid=linux-x64 ;;
+            macos-latest) rid=osx-arm64 ;;
+            *) echo "Unsupported os: ${{ inputs.os }}" >&2; exit 1 ;;
+          esac
+          echo "rid=$rid" >> "$GITHUB_OUTPUT"
+
+      - name: Publish Native AOT
+        run: dotnet publish samples/MarkView.Avalonia.Demo/MarkView.Avalonia.Demo.csproj --configuration Release -r ${{ steps.rid.outputs.rid }} -p:PublishAot=true --self-contained

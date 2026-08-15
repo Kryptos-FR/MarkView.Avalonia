@@ -64,6 +64,34 @@ public class MarkdownExtensionsTests : RenderTestBase
         Assert.Contains(inlines, i => i is MarkdownHyperlink);
     }
 
+    [AvaloniaFact]
+    public void UseSupportedExtensions_hides_yaml_front_matter()
+    {
+        var result = Render("---\ntitle: Test\n---\n# Heading", _pipeline);
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var run = Assert.IsType<Run>(Assert.Single(textBlock.Inlines!));
+        Assert.Equal("Heading", run.Text);
+    }
+
+    [AvaloniaFact]
+    public void UseSupportedExtensions_renders_emoji_shortcode_as_unicode_glyph()
+    {
+        var result = Render("Launch :rocket: now", _pipeline);
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var runs = textBlock.Inlines!.OfType<Run>().ToList();
+        Assert.Contains(runs, r => r.Text == "\U0001F680"); // 🚀
+    }
+
+    [AvaloniaFact]
+    public void UseSupportedExtensions_does_not_convert_ascii_smileys()
+    {
+        // enableSmileys is explicitly false: only named :shortcode: emoji are recognized.
+        var result = Render("Great :) job", _pipeline);
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var run = Assert.IsType<Run>(Assert.Single(textBlock.Inlines!));
+        Assert.Equal("Great :) job", run.Text);
+    }
+
     private static T? FindFirst<T>(Control root) where T : Control
     {
         if (root is T match) return match;

@@ -16,29 +16,14 @@ public static class MarkdownExtensions
     public static MarkdownPipelineBuilder UseSupportedExtensions(this MarkdownPipelineBuilder builder)
     {
         return builder
-            .UseEmphasisExtras()
             .UseAutoLinks()
+            .UseCjkFriendlyEmphasis()
+            .UseEmojiAndSmiley(enableSmileys: false)
+            .UseEmphasisExtras()
             .UseGridTables()
             .UsePipeTables()
-            .UseTaskLists();
-    }
-
-    /// <summary>
-    /// Enables Markdig footnote parsing for use with MarkView.Avalonia's footnote renderers.
-    /// Activate on the viewer with <c>viewer.UseFootnotes()</c>.
-    /// </summary>
-    public static MarkdownPipelineBuilder UseFootnotes(this MarkdownPipelineBuilder builder)
-    {
-        return builder.Use<Markdig.Extensions.Footnotes.FootnoteExtension>();
-    }
-
-    /// <summary>
-    /// Enables Markdig GitHub-style alert block parsing (NOTE, WARNING, TIP, IMPORTANT, CAUTION).
-    /// Activate on the viewer with <c>viewer.UseAlertBlocks()</c>.
-    /// </summary>
-    public static MarkdownPipelineBuilder UseAlertBlocks(this MarkdownPipelineBuilder builder)
-    {
-        return builder.Use<Markdig.Extensions.Alerts.AlertExtension>();
+            .UseTaskLists()
+            .UseYamlFrontMatter();
     }
 
     /// <summary>
@@ -51,12 +36,49 @@ public static class MarkdownExtensions
     }
 
     /// <summary>
+    /// Enables Markdig GitHub-style alert block parsing (NOTE, WARNING, TIP, IMPORTANT, CAUTION).
+    /// Activate on the viewer with <c>viewer.UseAlertBlocks()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseAlertBlocks(this MarkdownPipelineBuilder builder)
+    {
+        return builder.Use<Markdig.Extensions.Alerts.AlertExtension>();
+    }
+
+    /// <summary>
+    /// Enables Markdig citation parsing (<c>""quoted text""</c> renders as an italic citation span).
+    /// Activate on the viewer with <c>viewer.UseCitations()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseCitations(this MarkdownPipelineBuilder builder)
+    {
+        return builder.Use<Markdig.Extensions.Citations.CitationExtension>();
+    }
+
+    /// <summary>
     /// Enables Markdig figure block parsing (^^^ fences with optional caption).
     /// Activate on the viewer with <c>viewer.UseFigures()</c>.
     /// </summary>
     public static MarkdownPipelineBuilder UseFigures(this MarkdownPipelineBuilder builder)
     {
         return builder.Use<Markdig.Extensions.Figures.FigureExtension>();
+    }
+
+    /// <summary>
+    /// Enables Markdig footnote parsing for use with MarkView.Avalonia's footnote renderers.
+    /// Activate on the viewer with <c>viewer.UseFootnotes()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseFootnotes(this MarkdownPipelineBuilder builder)
+    {
+        return builder.Use<Markdig.Extensions.Footnotes.FootnoteExtension>();
+    }
+
+    /// <summary>
+    /// Enables Markdig hardline-break parsing: every soft line break within a paragraph renders
+    /// as an explicit line break instead of collapsing to a space.
+    /// Activate on the viewer with <c>viewer.UseHardlineBreaks()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseHardlineBreaks(this MarkdownPipelineBuilder builder)
+    {
+        return builder.UseSoftlineBreakAsHardlineBreak();
     }
 
     /// <summary>

@@ -20,7 +20,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private const string ExtensionsShowcaseMarkdown = """
         # Opt-In Extensions Showcase
 
-        This page demonstrates the five opt-in extensions added to MarkView.Avalonia.
+        This page demonstrates the seven opt-in extensions added to MarkView.Avalonia.
         All are activated via a combined pipeline in this demo.
 
         ---
@@ -72,6 +72,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         ---
 
+        ## Citations
+
+        Double-quoted text — `""like this""` — renders as an italicized citation span:
+
+        Marshall McLuhan wrote ""the medium is the message"" in *Understanding Media*.
+
+        ---
+
         ## Figures
 
         Figures wrap block content in a borderd, centred container with an optional caption:
@@ -80,6 +88,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ![Avalonia Logo](avares://MarkView.Avalonia.Demo/Assets/avalonia-logo.png =80x80)
 
         ^^^ **Figure 1** — The Avalonia UI logo (embedded avares:// resource).
+
+        ---
+
+        ## Hardline Breaks
+
+        With `UseHardlineBreaks()`, every soft line break renders as an explicit line break
+        instead of collapsing to a space — useful for poetry, addresses, or lyrics:
+
+        Roses are red,
+        Violets are blue,
+        Every line break here
+        renders exactly as typed.
 
         ---
 

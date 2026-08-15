@@ -6,6 +6,7 @@
     <Description>SVG image rendering extension for MarkView.Avalonia.</Description>
     <PackageTags>avalonia;markdown;svg</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Svg.Controls.Skia.Avalonia" />

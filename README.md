@@ -76,10 +76,12 @@ viewer.Pipeline = new MarkdownPipelineBuilder()
 Convenience methods configure a pipeline with a single opt-in feature:
 
 ```csharp
-viewer.UseFootnotes();
-viewer.UseAlertBlocks();
 viewer.UseAbbreviations();
+viewer.UseAlertBlocks();
+viewer.UseCitations();
 viewer.UseFigures();
+viewer.UseFootnotes();
+viewer.UseHardlineBreaks();
 viewer.UseMediaLinks();
 ```
 
@@ -136,6 +138,9 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Pipe tables | GFM-style `\| col \| col \|` |
 | Grid tables | RST-style grid tables |
 | Autolinks | bare `https://…` URLs |
+| Emoji shortcodes | `:rocket:` → 🚀 (ASCII smileys like `:)` are intentionally left as plain text) |
+| CJK-friendly emphasis | parser-only fix for emphasis next to CJK punctuation |
+| YAML front matter | `---` metadata block at the top of a document is parsed and hidden |
 
 ### Opt-in extensions
 
@@ -143,10 +148,12 @@ These require adding `.UseXxx()` to the pipeline (see [Extension Methods](#exten
 
 | Feature | Activation | Syntax |
 |---------|-----------|--------|
-| Footnotes | `UseFootnotes()` | `[^1]` / `[^1]: …` |
-| GitHub alert blocks | `UseAlertBlocks()` | `> [!NOTE]` etc. |
 | Abbreviations | `UseAbbreviations()` | `*[HTML]: …` |
+| GitHub alert blocks | `UseAlertBlocks()` | `> [!NOTE]` etc. |
+| Citations | `UseCitations()` | `""quoted text""` |
 | Figures | `UseFigures()` | `^^^` / `^^^ caption` |
+| Footnotes | `UseFootnotes()` | `[^1]` / `[^1]: …` |
+| Hardline breaks | `UseHardlineBreaks()` | every soft line break renders as a hard break |
 | YouTube embeds | `UseMediaLinks()` | `![title](https://youtu.be/…)` |
 
 ## Extension Packages
