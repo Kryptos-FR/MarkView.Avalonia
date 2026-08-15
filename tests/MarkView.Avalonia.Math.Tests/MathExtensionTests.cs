@@ -4,6 +4,8 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 
+using CSharpMath.Avalonia;
+
 using Markdig;
 
 using MarkView.Avalonia.Mermaid;
@@ -99,8 +101,8 @@ public class MathExtensionTests
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var border = Assert.IsType<Border>(Assert.Single(panel.Children));
         Assert.Contains("markdown-math-block", border.Classes);
-        var image = Assert.IsType<Image>(border.Child);
-        Assert.NotNull(image.Source);
+        var mathView = Assert.IsType<MathView>(border.Child);
+        Assert.Equal("x^2", mathView.LaTeX);
     }
 
     [AvaloniaTheory]
@@ -128,8 +130,8 @@ public class MathExtensionTests
 
         var mathBorder = Assert.IsType<Border>(panel.Children[0]);
         Assert.Contains("markdown-math-block", mathBorder.Classes);
-        var mathImage = Assert.IsType<Image>(mathBorder.Child);
-        Assert.NotNull(mathImage.Source);
+        var mathView = Assert.IsType<MathView>(mathBorder.Child);
+        Assert.Equal("x^2", mathView.LaTeX);
 
         var mermaidBorder = Assert.IsType<Border>(panel.Children[1]);
         Assert.Contains("markdown-mermaid", mermaidBorder.Classes);

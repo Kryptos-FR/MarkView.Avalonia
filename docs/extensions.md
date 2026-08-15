@@ -113,7 +113,8 @@ If rendering fails, the extension falls back to a plain-text block containing th
 **Package:** `MarkView.Avalonia.Math`
 **[README](../src/MarkView.Avalonia.Math/README.md)**
 
-Renders `$...$` (inline) and `$$...$$` (block) LaTeX math via CSharpMath's SkiaSharp renderer.
+Renders `$...$` (inline) and `$$...$$` (block) LaTeX math via CSharpMath's Avalonia renderer — a
+native `Control` drawn with vector primitives, not a rasterized bitmap.
 
 ### Activation
 
@@ -129,13 +130,13 @@ MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
 
 ### Theme awareness
 
-Formulas re-render automatically on light/dark theme switch, matching Mermaid's exact two-hex
-convention (dark `#FAFAFA`, light `#27272A` text).
+Each formula's `TextColor` property updates in place on light/dark theme switch — no re-typeset,
+no rebuild — matching Mermaid's exact two-hex convention (dark `#FAFAFA`, light `#27272A` text).
 
 ### Fallback
 
 Invalid LaTeX renders CSharpMath's own inline error text. Unexpected exceptions fall back to a
-plain-text panel for block math, or leave the last successful render in place for inline math.
+plain-text panel for block math, or plain source text for inline math.
 
 ---
 
