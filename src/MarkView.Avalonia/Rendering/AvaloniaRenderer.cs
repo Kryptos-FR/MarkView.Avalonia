@@ -119,6 +119,9 @@ public class AvaloniaRenderer : RendererBase
         // Block renderers
         ObjectRenderers.Add(new ParagraphRenderer());
         ObjectRenderers.Add(new HeadingRenderer());
+        // YamlFrontMatterBlockRenderer must precede CodeBlockRenderer: YamlFrontMatterBlock extends
+        // CodeBlock and Markdig dispatches to the first renderer whose Accept() matches.
+        ObjectRenderers.Add(new YamlFrontMatterBlockRenderer());
         ObjectRenderers.Add(new CodeBlockRenderer());
         ObjectRenderers.Add(new ListRenderer());
         ObjectRenderers.Add(new ThematicBreakRenderer());

@@ -101,6 +101,17 @@ public class EmphasisTests : RenderTestBase
     }
 
     [AvaloniaFact]
+    public void Citation_text_renders_with_markdown_citation_class()
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseCitations().Build();
+        var result = Render("""He said ""hello there"" to me""", pipeline);
+
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        var span = textBlock.Inlines!.OfType<Span>().Single();
+        Assert.Contains("markdown-citation", span.Classes);
+    }
+
+    [AvaloniaFact]
     public void Inserted_single_plus_falls_through_to_plain_span()
     {
         var span = RenderEmphasisInlineDirect('+', delimiterCount: 1);

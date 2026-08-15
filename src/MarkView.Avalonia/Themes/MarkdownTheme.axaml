@@ -108,6 +108,11 @@
     <Setter Property="Background" Value="{DynamicResource MarkdownMarkedBackground}"/>
   </Style>
 
+  <!-- Citation -->
+  <Style Selector="Span.markdown-citation">
+    <Setter Property="FontStyle" Value="Italic"/>
+  </Style>
+
   <!-- Blockquote -->
   <Style Selector="Border.markdown-blockquote">
     <Setter Property="BorderBrush" Value="#4A9ECC" />

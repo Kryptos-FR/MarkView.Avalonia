@@ -3,7 +3,7 @@
 
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
-using Markdig;
+
 using Xunit;
 
 namespace MarkView.Avalonia.Tests;
@@ -51,6 +51,24 @@ public class MarkdownViewerExtensionsTests
     {
         var viewer = new MarkdownViewer();
         var result = viewer.UseMediaLinks();
+        Assert.Same(viewer, result);
+        Assert.NotNull(viewer.Pipeline);
+    }
+
+    [AvaloniaFact]
+    public void UseCitations_sets_pipeline_on_viewer()
+    {
+        var viewer = new MarkdownViewer();
+        var result = viewer.UseCitations();
+        Assert.Same(viewer, result);
+        Assert.NotNull(viewer.Pipeline);
+    }
+
+    [AvaloniaFact]
+    public void UseHardlineBreaks_sets_pipeline_on_viewer()
+    {
+        var viewer = new MarkdownViewer();
+        var result = viewer.UseHardlineBreaks();
         Assert.Same(viewer, result);
         Assert.NotNull(viewer.Pipeline);
     }
