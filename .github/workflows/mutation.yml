@@ -1,0 +1,39 @@
+name: Mutation Testing
+
+on:
+  workflow_dispatch:
+
+jobs:
+  mutate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-project:
+          - MarkView.Avalonia.Tests
+          - MarkView.Avalonia.Svg.Tests
+          - MarkView.Avalonia.SyntaxHighlighting.Tests
+          - MarkView.Avalonia.Mermaid.Tests
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Restore solution
+        run: dotnet restore
+
+      - name: Run Stryker
+        working-directory: tests/${{ matrix.test-project }}
+        run: dotnet stryker
+
+      - name: Upload mutation report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: mutation-report-${{ matrix.test-project }}
+          path: tests/${{ matrix.test-project }}/StrykerOutput/**/reports/

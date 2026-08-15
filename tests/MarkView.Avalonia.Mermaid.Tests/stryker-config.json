@@ -1,0 +1,15 @@
+{
+  "stryker-config": {
+    "project": "MarkView.Avalonia.Mermaid.csproj",
+    "test-runner": "mtp",
+    "reporters": [
+      "html",
+      "progress"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 60,
+      "break": 0
+    }
+  }
+}
