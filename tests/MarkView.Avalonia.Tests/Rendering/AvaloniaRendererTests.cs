@@ -35,6 +35,14 @@ public class AvaloniaRendererTests
     }
 
     [AvaloniaFact]
+    public void ResolveUrl_pure_fragment_with_BaseUri_is_returned_unchanged()
+    {
+        var renderer = new AvaloniaRenderer { BaseUri = new Uri("https://example.com/docs/page.md") };
+        var result = renderer.ResolveUrl("#heading-1");
+        Assert.Equal("#heading-1", result);
+    }
+
+    [AvaloniaFact]
     public void ImageResizeMode_defaults_to_ScaleDownToFit()
     {
         var renderer = new AvaloniaRenderer();
