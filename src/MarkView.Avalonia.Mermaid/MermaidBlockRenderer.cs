@@ -182,6 +182,9 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
             ("var(--_accent-text)",   Mix(acc, 65, bg)),
         };
 
+        // N sequential O(len) scans. Fine today (small SVG, background thread) — if this
+        // ever shows up in a profile, switch to one Regex.Replace(@"var\(--(_[a-z-]+|bg)\)", ...)
+        // pass with a token→Rgb dictionary lookup instead of per-token StringBuilder.Replace.
         var sb = new StringBuilder(svg);
         foreach (var (token, color) in vars)
             sb.Replace(token, Hex(color));
