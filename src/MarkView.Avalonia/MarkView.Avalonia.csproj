@@ -7,6 +7,7 @@
     <Description>A Markdig-powered markdown viewer control for Avalonia UI.</Description>
     <PackageTags>avalonia;markdown;markdig;viewer;control</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" />

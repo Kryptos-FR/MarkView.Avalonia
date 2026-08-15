@@ -6,6 +6,7 @@
     <Description>Mermaid diagram rendering extension for MarkView.Avalonia.</Description>
     <PackageTags>avalonia;markdown;mermaid;diagram</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
