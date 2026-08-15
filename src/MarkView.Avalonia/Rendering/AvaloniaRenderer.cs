@@ -238,6 +238,9 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     public string ResolveUrl(string url)
     {
+        if (url.StartsWith('#'))
+            return url; // same-document anchor: never resolve against BaseUri
+
         if (BaseUri != null && Uri.TryCreate(url, UriKind.Relative, out _))
         {
             // Separate path from fragment before combining to prevent '#' → '%23' encoding.
