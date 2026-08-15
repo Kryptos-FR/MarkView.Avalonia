@@ -19,7 +19,7 @@ The pipeline controls which Markdig extensions parse the input markdown. Build o
 viewer.Pipeline = new MarkdownPipelineBuilder()
     .UseSupportedExtensions()   // bold, italic, strikethrough, subscript, superscript, underline,
                                 // highlight, task lists, tables, autolinks, emoji shortcodes,
-                                // CJK-friendly emphasis, YAML front matter (hidden)
+                                // Chinese/Japanese/Korean (CJK)-friendly emphasis, YAML front matter (hidden)
     .UseAbbreviations()         // *[HTML]: HyperText Markup Language
     .UseAlertBlocks()           // > [!NOTE] / > [!WARNING] etc.
     .UseCitations()             // ""quoted text""
@@ -37,7 +37,7 @@ viewer.Pipeline = new MarkdownPipelineBuilder()
 - `GridTables` — RST-style grid tables
 - `PipeTables` — GFM pipe tables
 - `TaskLists` — `- [x]` checkboxes
-- `CjkFriendlyEmphasis` — parser-only fix for emphasis next to CJK punctuation
+- `CjkFriendlyEmphasis` — parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation
 - `YamlFrontMatter` — `---` metadata block at the top of a document is parsed and hidden, not shown as garbled text
 - `EmojiAndSmiley` (shortcodes only) — `:rocket:` renders as 🚀; ASCII smileys (`:)`) are intentionally left as plain text, since silently rewriting them is more surprising than useful
 
@@ -165,7 +165,7 @@ Anchors are generated from heading text using GitHub-compatible slug rules (lowe
 `ImageResizeMode` controls how images without an explicit size scale relative to
 the viewer's width:
 
-| Mode | Behavior |
+| Mode | Behaviour |
 |------|----------|
 | `ScaleDownToFit` (default) | Scales down to fit the container width; never enlarges past the image's native resolution. |
 | `Natural` | No scaling — renders at native pixel size. May appear cropped if the image is wider than the viewer, since horizontal scrolling is disabled by default. |

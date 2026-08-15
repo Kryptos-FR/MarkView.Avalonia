@@ -44,7 +44,7 @@ graph TD
 
 ## Supported Diagram Types
 
-The extension targets the diagram types supported by the referenced Mermaider version, including common diagrams such as:
+The extension targets the diagram types supported by the version of Mermaider this package depends on, including common diagrams such as:
 
 - Flowcharts (`graph TD`, `flowchart LR`)
 - Sequence diagrams (`sequenceDiagram`)
@@ -86,10 +86,6 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 ```
 
 `MermaidBlockRenderer` handles all `FencedCodeBlock` nodes. Mermaid blocks are rendered as diagrams; all other fenced blocks are rendered as styled code blocks using any `ICodeHighlighter` registered by the SyntaxHighlighting extension.
-
-## Platform Notes
-
-Mermaider renders diagrams in managed .NET code (no JavaScript runtime). If diagram rendering fails for any reason, this extension automatically falls back to a plain-text `Border` containing the original Mermaid source.
 
 ## How It Works
 

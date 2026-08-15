@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](LICENSE.md)
 [![CI](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml/badge.svg)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
 
-A [Markdig](https://github.com/xoofx/markdig)-powered markdown viewer control for [Avalonia UI](https://avaloniaui.net) v12. Drop `MarkdownViewer` into any Avalonia window or panel to render rich markdown — headings, code blocks, tables, task lists, links, images, and more — using native Avalonia controls with a fully customizable theme.
+A [Markdig](https://github.com/xoofx/markdig)-powered markdown viewer control for [Avalonia UI](https://avaloniaui.net) v12. Drop `MarkdownViewer` into any Avalonia window or panel to render rich markdown — headings, code blocks, tables, task lists, links, images, and more — using native Avalonia controls with a fully customisable theme.
 
 ## Installation
 
@@ -139,12 +139,12 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Grid tables | RST-style grid tables |
 | Autolinks | bare `https://…` URLs |
 | Emoji shortcodes | `:rocket:` → 🚀 (ASCII smileys like `:)` are intentionally left as plain text) |
-| CJK-friendly emphasis | parser-only fix for emphasis next to CJK punctuation |
+| CJK-friendly emphasis | parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation |
 | YAML front matter | `---` metadata block at the top of a document is parsed and hidden |
 
 ### Opt-in extensions
 
-These require adding `.UseXxx()` to the pipeline (see [Extension Methods](#extension-methods) below):
+These require adding `.UseXxx()` to the pipeline (see [Extension Methods](#extension-methods) above):
 
 | Feature | Activation | Syntax |
 |---------|-----------|--------|
@@ -250,7 +250,7 @@ public class MyExtension : IMarkViewExtension
 viewer.Extensions.Add(new MyExtension());
 ```
 
-## Theming / Customization
+## Theming / Customisation
 
 Include `MarkdownTheme.axaml` for default styles. Override any style class in your own `Styles` to customise appearance:
 
@@ -306,13 +306,13 @@ string text = viewer.GetSelectedText();
 await viewer.CopyToClipboardAsync();
 ```
 
-Images and task-list checkboxes are skipped during selection (same behaviour as all reference libraries).
+Images and task-list checkboxes are skipped during selection — see [Known Limitations](#known-limitations) below.
 
 ## Known Limitations
 
 | Limitation | Detail |
 |---|---|
-| Images are non-selectable | Images in inline position are embedded as `InlineUIContainer` — selection skips around them. This is the same behaviour as all reference libraries. |
+| Images are non-selectable | Images in inline position are embedded as `InlineUIContainer` — selection skips around them. |
 | Task checkboxes are non-selectable | Same reason as images. |
 | Anchor scroll is instant | `BringIntoView()` jumps without animation. Smooth scrolling is a future improvement. |
 

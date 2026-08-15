@@ -17,7 +17,7 @@ The demo window contains a top toolbar and a full-screen `MarkdownViewer`. Use t
 
 | View | Content |
 |------|---------|
-| **Feature Showcase** | Core markdown: headings, text formatting, EmphasisExtras, blockquotes, task lists, tables, code blocks (multi-language), bitmap image, SVG image, Mermaid diagram |
+| **Feature Showcase** | Core markdown: headings, text formatting (strikethrough, subscript, superscript, underline, highlight), blockquotes, task lists, tables, code blocks (multi-language), bitmap image, SVG image, Mermaid diagram |
 | **Extensions Showcase** | Opt-in extensions: footnotes, GitHub alert blocks, abbreviations with tooltips, figures with captions, YouTube thumbnail embeds |
 | **README** | The project's own `README.md` loaded from disk (relative to the solution root) |
 
