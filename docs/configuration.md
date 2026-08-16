@@ -10,6 +10,8 @@
 | `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
 | `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. |
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
+| `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
+| `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
 
 ## Markdig Pipeline
 
@@ -159,6 +161,33 @@ viewer.ScrollToAnchor("fn-1");            // matches footnote [^1]
 ```
 
 Anchors are generated from heading text using GitHub-compatible slug rules (lowercase, spaces to hyphens, non-alphanumeric stripped). Headings with identical slugs are disambiguated with a numeric suffix (`-1`, `-2`, …).
+
+## Table of contents
+
+`TableOfContents` exposes the document's headings as a nested tree you can bind
+to your own UI (a side panel, dropdown, breadcrumb strip, etc.) — the library
+does not ship a TOC control itself, since the right presentation varies by app.
+
+```csharp
+foreach (var entry in viewer.TableOfContents)
+{
+    Console.WriteLine($"{new string(' ', (entry.Level - 1) * 2)}{entry.Text}");
+    // entry.Slug matches the anchor id registered for this heading —
+    // pass it to ScrollToAnchor to navigate.
+}
+```
+
+Each `TocEntry` has `Level`, `Text`, `Slug`, and `Children` (nested headings one or
+more levels deeper). `TableOfContentsMaxDepth` (default `6`, i.e. no limit) drops
+headings deeper than the given level, along with their descendants:
+
+```csharp
+viewer.TableOfContentsMaxDepth = 2; // only H1 and H2 headings
+```
+
+`TableOfContents` is recomputed automatically whenever `Markdown`, `Source`, or
+`TableOfContentsMaxDepth` changes. See `samples/MarkView.Avalonia.Demo` for
+example side-panel, dropdown, and top-dock integrations.
 
 ## Image sizing
 
