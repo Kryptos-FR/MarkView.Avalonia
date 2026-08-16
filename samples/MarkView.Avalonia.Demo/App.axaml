@@ -5,5 +5,6 @@
   <Application.Styles>
     <FluentTheme />
     <StyleInclude Source="avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml" />
+    <StyleInclude Source="avares://MarkView.Avalonia.Mermaid/Themes/MermaidTheme.axaml" />
   </Application.Styles>
 </Application>

@@ -14,6 +14,7 @@
     <PackageReference Include="Svg.Controls.Skia.Avalonia" />
   </ItemGroup>
   <ItemGroup>
+    <AvaloniaResource Include="Themes\**" />
     <None Include="README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>
