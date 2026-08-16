@@ -132,14 +132,33 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
     }
 
     /// <summary>
-    /// Builds render options matching the current Avalonia theme variant.
+    /// Builds render options matching the current Avalonia theme variant. Colours come from
+    /// MermaidTheme.axaml's <c>MarkdownMermaid*</c> brush resources so users can override them;
+    /// the literals here are only a fallback for apps that don't include that theme.
     /// </summary>
     private static MermaidRenderOptions GetRenderOptions()
     {
-        var isDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
-        return isDark
-            ? new MermaidRenderOptions { Bg = "#18181B", Fg = "#FAFAFA", Accent = "#60a5fa", Transparent = false }
-            : new MermaidRenderOptions { Bg = "#FFFFFF", Fg = "#27272A", Accent = "#3b82f6", Transparent = false };
+        var app = Application.Current;
+        var isDark = app?.ActualThemeVariant == ThemeVariant.Dark;
+        var theme = app?.ActualThemeVariant ?? ThemeVariant.Light;
+
+        return new MermaidRenderOptions
+        {
+            Bg = ResolveHex(app, theme, "MarkdownMermaidBackground", isDark ? "#18181B" : "#FFFFFF"),
+            Fg = ResolveHex(app, theme, "MarkdownMermaidForeground", isDark ? "#FAFAFA" : "#27272A"),
+            Accent = ResolveHex(app, theme, "MarkdownMermaidAccent", isDark ? "#60A5FA" : "#3B82F6"),
+            Transparent = false,
+        };
+    }
+
+    private static string ResolveHex(Application? app, ThemeVariant theme, string resourceKey, string fallback)
+    {
+        if (app != null && app.TryGetResource(resourceKey, theme, out var resource) && resource is ISolidColorBrush brush)
+        {
+            var c = brush.Color;
+            return $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+        }
+        return fallback;
     }
 
     private readonly record struct Rgb(byte R, byte G, byte B);

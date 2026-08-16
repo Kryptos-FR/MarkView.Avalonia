@@ -279,6 +279,8 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-footnote-group` | Footnote definition list | `StackPanel` |
 | `markdown-footnote-item` | Individual footnote row | `Grid` |
 
+Extension packages may ship their own theme file with additional overridable colours — check the extension's README for its `StyleInclude` path and resource keys.
+
 Example — increase heading size and add a bottom border:
 
 ```xml
