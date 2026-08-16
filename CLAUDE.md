@@ -54,5 +54,6 @@ ImageSizePreprocessor  ("![alt](url =WxH)" normalisation)
 ## Conventions
 
 - CSS-style class names: `markdown-*` (e.g. `markdown-h1`, `markdown-code-block`) — see [docs/theming.md](docs/theming.md) for the full list.
+- Each package that needs overridable colours ships its own `Themes/<Package>Theme.axaml` (`AvaloniaResource` glob in the `.csproj`), included via `StyleInclude` — standalone, does not import `MarkdownTheme.axaml`. Code paths that can't rely on `DynamicResource` (e.g. Mermaid's SVG baked at render time) read the brush via `Application.Current.TryGetResource` and fall back to a hardcoded literal if the theme isn't included.
 - File naming: `<Element>Renderer.cs`, `<Feature>Extension.cs`, `<Feature>Highlighter.cs`. Namespaces mirror folder structure.
 - `InternalsVisibleTo` in `src/MarkView.Avalonia/AssemblyInfo.cs` grants `MarkView.Avalonia.Tests` and `MarkView.Avalonia.Svg` access to internals — extend that list rather than making things `public` just to reach them from a new test/extension project.
