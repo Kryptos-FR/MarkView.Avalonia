@@ -11,7 +11,7 @@
 </Application.Styles>
 ```
 
-The theme uses `DynamicResource` throughout so it responds to Avalonia's `RequestedThemeVariant` changes automatically.
+The theme uses `DynamicResource` throughout so it responds to Avalonia's `RequestedThemeVariant` changes automatically. This include is not purely cosmetic: it also supplies `MarkdownViewer`'s default `ControlTemplate`, which is what provides the `PART_ScrollViewer` that makes the control scrollable — without it, content renders but cannot scroll and `ScrollToAnchor()` silently no-ops.
 
 Extension packages that need their own overridable colours ship a standalone theme file the same way — e.g. `MarkView.Avalonia.Mermaid` includes `MermaidTheme.axaml`:
 
@@ -175,7 +175,7 @@ ancestor:
   <Setter Property="Template">
     <ControlTemplate>
       <ScrollViewer Name="PART_ScrollViewer">
-        <ContentPresenter Content="{TemplateBinding Content}" />
+        <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" />
       </ScrollViewer>
     </ControlTemplate>
   </Setter>
