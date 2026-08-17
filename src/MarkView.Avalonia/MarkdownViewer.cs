@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
@@ -33,6 +34,7 @@ public partial class MarkdownViewer : ContentControl
 
     private Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
     private DocumentSelectionLayer? _selectionLayer;
+    private ScrollViewer? _scrollViewer;
     private bool _isDragging;
     private Point _dragStart;
     private const double DragThreshold = 3.0;
@@ -578,12 +580,18 @@ public partial class MarkdownViewer : ContentControl
         RaiseEvent(e);
     }
 
+    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+    {
+        base.OnApplyTemplate(e);
+        _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+    }
+
     public void ScrollToAnchor(string anchorId)
     {
         if (!_anchors.TryGetValue(anchorId, out var control))
             return;
 
-        if (Content is not ScrollViewer scrollViewer || scrollViewer.Content is not Visual rootPanel)
+        if (_scrollViewer is null || Content is not Visual rootPanel)
         {
             control.BringIntoView();
             return;
@@ -597,6 +605,6 @@ public partial class MarkdownViewer : ContentControl
         }
 
         const double topMargin = 16;
-        scrollViewer.Offset = new Vector(scrollViewer.Offset.X, Math.Max(0, point.Value.Y - topMargin));
+        _scrollViewer.Offset = new Vector(_scrollViewer.Offset.X, Math.Max(0, point.Value.Y - topMargin));
     }
 }
