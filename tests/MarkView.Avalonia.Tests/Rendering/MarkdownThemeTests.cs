@@ -40,4 +40,30 @@ public class MarkdownThemeTests
             .FirstOrDefault(s => (string?)s.Attribute("Property") == "MaxWidth");
         Assert.Null(maxWidthSetter);
     }
+
+    [Fact]
+    public void MarkdownViewer_style_defines_a_template_with_named_PART_ScrollViewer()
+    {
+        var themePath = Path.Combine(FindRepoRoot(), "src", "MarkView.Avalonia", "Themes", "MarkdownTheme.axaml");
+        var doc = XDocument.Load(themePath);
+        XNamespace avalonia = "https://github.com/avaloniaui";
+
+        var style = doc.Descendants(avalonia + "Style")
+            .FirstOrDefault(s => (string?)s.Attribute("Selector") == "mv|MarkdownViewer");
+        Assert.NotNull(style);
+
+        var templateSetter = style!.Elements(avalonia + "Setter")
+            .FirstOrDefault(s => (string?)s.Attribute("Property") == "Template");
+        Assert.NotNull(templateSetter);
+
+        var controlTemplate = templateSetter!.Descendants(avalonia + "ControlTemplate").FirstOrDefault();
+        Assert.NotNull(controlTemplate);
+
+        var scrollViewer = controlTemplate!.Descendants(avalonia + "ScrollViewer").FirstOrDefault();
+        Assert.NotNull(scrollViewer);
+        Assert.Equal("PART_ScrollViewer", (string?)scrollViewer!.Attribute("Name"));
+
+        var contentPresenter = controlTemplate.Descendants(avalonia + "ContentPresenter").FirstOrDefault();
+        Assert.NotNull(contentPresenter);
+    }
 }
