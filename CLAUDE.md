@@ -20,7 +20,7 @@ dotnet test --filter "FullyQualifiedName~MarkdownViewer"   # run a single class/
 - Test runner: xUnit v3 + `Avalonia.Headless.XUnit`. **Any test that constructs an Avalonia object must use `[AvaloniaFact]`/`[AvaloniaTheory]`**, not `[Fact]`/`[Theory]` — even a bare property set on `TextBlock`/`StackPanel`/`Run` touches `AvaloniaPropertyDictionaryPool` and throws `IndexOutOfRangeException` without platform init. Plain `[Fact]` is only safe when a test constructs zero Avalonia objects (e.g. `SlugGeneratorTests`, `TextMateHighlighterTests`).
 - Known upstream flake: `AvaloniaUI/Avalonia#20664` — headless test session cleanup can resume on a different thread, causing sporadic `Dispatcher.VerifyAccess()` failures in `[AvaloniaFact]` tests.
 - Coverage via coverlet (`coverlet.runsettings`), reported by `.github/workflows/coverage.yml`.
-- Test project pattern: inherit `RenderTestBase`, call `Render(markdown)`, and traverse `ScrollViewer → StackPanel → children` with `Assert.IsType<T>()` / `.OfType<T>()`. `TestApp.cs` bootstraps `FluentTheme` + `AvaloniaHeadlessPlatformOptions` — copy it when adding a new test project.
+- Test project pattern: inherit `RenderTestBase`, call `Render(markdown)`, and traverse the returned root `StackPanel → children` with `Assert.IsType<T>()` / `.OfType<T>()`. When testing through a full `MarkdownViewer` instead, `viewer.Content` is the rendered `Grid` directly — traverse `Grid → StackPanel → children`; the `ScrollViewer` (`PART_ScrollViewer`) lives in the control's `ControlTemplate`, not in `Content`, and is only reachable via `OnApplyTemplate`/`GetVisualDescendants()` once the control has a template applied (e.g. the `MarkdownTheme.axaml` include). `TestApp.cs` bootstraps `FluentTheme` + `AvaloniaHeadlessPlatformOptions` — copy it when adding a new test project.
 
 ## Architecture
 
@@ -41,8 +41,10 @@ ImageSizePreprocessor  ("![alt](url =WxH)" normalisation)
   → IMarkViewExtension[].Register(renderer)   ← extension packages plug in here
   → pipeline.Setup(renderer)
   → AvaloniaRenderer.Render(document)
-  → ScrollViewer { StackPanel (root) }
+  → Grid { StackPanel (root), DocumentSelectionLayer }   ← this becomes MarkdownViewer.Content
 ```
+
+`Content` is hosted by `PART_ScrollViewer`, the named part inside `MarkdownViewer`'s default `ControlTemplate` (shipped in `MarkdownTheme.axaml`); `viewer.Content` itself is the `Grid`, not a `ScrollViewer`.
 
 - `AvaloniaRenderer` (`src/MarkView.Avalonia/Rendering/AvaloniaRenderer.cs`) extends Markdig's `RendererBase` and owns a push/pop stack of `IContainer` — either a `BlockContainer` (wraps a `Panel`) or an `InlineContainer` (wraps an `InlineCollection`). Block renderers call `WriteBlock`, inline renderers call `WriteInline`.
 - Block renderers live in `Rendering/Blocks/`, inline renderers in `Rendering/Inlines/`. Registration order in `AvaloniaRenderer.LoadRenderers()` matters when one Markdig type extends another — e.g. `AlertBlockRenderer` must precede `QuoteBlockRenderer` because `AlertBlock` extends `QuoteBlock` and Markdig dispatches to the first renderer whose `Accept()` matches.

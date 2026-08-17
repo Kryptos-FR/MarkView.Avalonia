@@ -171,6 +171,15 @@ the viewer's width:
 | `Natural` | No scaling — renders at native pixel size. May appear cropped if the image is wider than the viewer, since horizontal scrolling is disabled by default. |
 | `Fill` | Always fills the container width, enlarging small images if necessary. |
 
+`Fill` and `ScaleDownToFit` scale images against the nearest width-constraining
+ancestor in the control's template. The default template provides this via
+`PART_ScrollViewer`'s `HorizontalScrollBarVisibility`, which defaults to
+`Disabled` and constrains width without permitting horizontal scroll. Setting
+`ScrollViewer.HorizontalScrollBarVisibility="Auto"` (or `Visible`) directly on
+a `MarkdownViewer` instance — or a custom `Template` that drops
+`PART_ScrollViewer` entirely — removes that constraint; those modes may then
+behave like `Natural`. `Natural` itself is unaffected, since it never scales.
+
 ```csharp
 viewer.ImageResizeMode = MarkView.Avalonia.ImageResizeMode.Natural;
 ```

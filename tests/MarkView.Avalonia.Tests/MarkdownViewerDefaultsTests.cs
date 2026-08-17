@@ -23,8 +23,7 @@ public class MarkdownViewerDefaultsTests
 
         var viewer = new MarkdownViewer { Markdown = "- [ ] item" };
 
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var rootPanel = contentGrid.Children.OfType<StackPanel>().First();
 
         // Built-in default uses UseSupportedExtensions which includes UseTaskLists.
@@ -42,8 +41,7 @@ public class MarkdownViewerDefaultsTests
 
         var viewer = new MarkdownViewer { Markdown = "- [ ] item" };
 
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var rootPanel = contentGrid.Children.OfType<StackPanel>().First();
 
         // Without UseTaskLists, no task marker is rendered — task list item renders as plain text.
@@ -65,8 +63,7 @@ public class MarkdownViewerDefaultsTests
             Markdown = "- [ ] item"
         };
 
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var rootPanel = contentGrid.Children.OfType<StackPanel>().First();
 
         // Instance pipeline (no task lists) wins over global — no task marker rendered.

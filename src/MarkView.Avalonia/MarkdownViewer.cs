@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
@@ -33,6 +34,7 @@ public partial class MarkdownViewer : ContentControl
 
     private Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
     private DocumentSelectionLayer? _selectionLayer;
+    private ScrollViewer? _scrollViewer;
     private bool _isDragging;
     private Point _dragStart;
     private const double DragThreshold = 3.0;
@@ -299,7 +301,13 @@ public partial class MarkdownViewer : ContentControl
         contentGrid.AddHandler(InputElement.PointerReleasedEvent,
             OnContentPointerReleased, RoutingStrategies.Tunnel);
 
-        Content = new ScrollViewer { Content = contentGrid };
+        Content = contentGrid;
+
+        // Every new render is treated as a fresh document — reset scroll position to the
+        // top, since PART_ScrollViewer now persists across renders (it lives in the
+        // template, not rebuilt per-render) and would otherwise keep its old offset.
+        if (_scrollViewer is not null)
+            _scrollViewer.Offset = default;
     }
 
     // ── Block registration ────────────────────────────────────────────────────
@@ -392,7 +400,7 @@ public partial class MarkdownViewer : ContentControl
         }
     }
 
-    private void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid)
+    private static void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid)
     {
         // TableRenderer adds cells in row-major order (rowIndex / colIndex ascending),
         // so iterating Children directly avoids the O(N log N) SortedDictionary sort.
@@ -578,18 +586,30 @@ public partial class MarkdownViewer : ContentControl
         RaiseEvent(e);
     }
 
+    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+    {
+        base.OnApplyTemplate(e);
+        _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+    }
+
     public void ScrollToAnchor(string anchorId)
     {
         if (!_anchors.TryGetValue(anchorId, out var control))
             return;
 
-        if (Content is not ScrollViewer scrollViewer || scrollViewer.Content is not Visual rootPanel)
+        if (_scrollViewer is null)
         {
             control.BringIntoView();
             return;
         }
 
-        var point = control.TranslatePoint(new Point(0, 0), rootPanel);
+        // Translating to the ScrollViewer itself (rather than to Content) gives a
+        // viewport-relative point that already accounts for Padding — Padding is applied
+        // as the ContentPresenter's Margin *inside* the ScrollViewer, so Content's origin
+        // is offset from the scrollable extent's origin by Padding.Top. Adding the current
+        // Offset.Y back converts the viewport-relative point to absolute content-space
+        // coordinates, which is what the new Offset value must be expressed in.
+        var point = control.TranslatePoint(new Point(0, 0), _scrollViewer);
         if (point is null)
         {
             control.BringIntoView();
@@ -597,7 +617,7 @@ public partial class MarkdownViewer : ContentControl
         }
 
         const double topMargin = 16;
-        scrollViewer.Offset = new Vector(scrollViewer.Offset.X, Math.Max(0, point.Value.Y - topMargin));
+        var desiredY = _scrollViewer.Offset.Y + point.Value.Y - topMargin;
+        _scrollViewer.Offset = new Vector(_scrollViewer.Offset.X, Math.Max(0, desiredY));
     }
 }
-

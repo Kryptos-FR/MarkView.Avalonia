@@ -18,8 +18,7 @@ public class MarkdownViewerSourceTests
 
     private static StackPanel GetRootPanel(MarkdownViewer viewer)
     {
-        var sv = Assert.IsType<ScrollViewer>(viewer.Content);
-        var grid = Assert.IsType<Grid>(sv.Content);
+        var grid = Assert.IsType<Grid>(viewer.Content);
         return Assert.IsType<StackPanel>(grid.Children[0]);
     }
 

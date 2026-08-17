@@ -11,7 +11,7 @@
 </Application.Styles>
 ```
 
-The theme uses `DynamicResource` throughout so it responds to Avalonia's `RequestedThemeVariant` changes automatically.
+The theme uses `DynamicResource` throughout so it responds to Avalonia's `RequestedThemeVariant` changes automatically. This include is not purely cosmetic: it also supplies `MarkdownViewer`'s default `ControlTemplate`, which is what provides the `PART_ScrollViewer` that makes the control scrollable — without it, content renders but cannot scroll and `ScrollToAnchor()` silently no-ops.
 
 Extension packages that need their own overridable colours ship a standalone theme file the same way — e.g. `MarkView.Avalonia.Mermaid` includes `MermaidTheme.axaml`:
 
@@ -143,6 +143,42 @@ Diagram colours are baked into the generated SVG at render time, so they aren't 
 ```xml
 <Style Selector="Border.markdown-code-block TextBlock">
   <Setter Property="FontFamily" Value="JetBrains Mono, Cascadia Code, Consolas, Courier New, monospace" />
+</Style>
+```
+
+## Template customisation
+
+`MarkdownViewer`'s default `ControlTemplate` (in `MarkdownTheme.axaml`) wraps
+the rendered document in a named `ScrollViewer`:
+
+```
+Border → ScrollViewer (Name="PART_ScrollViewer") → ContentPresenter
+```
+
+**Lightweight tweaks — no template override needed.** Scrollbar behavior is
+exposed via the same attached `ScrollViewer.*` properties Avalonia's own
+`ListBox` supports, and flows through to `PART_ScrollViewer` automatically:
+
+```xml
+<mv:MarkdownViewer ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+```
+
+**Full override.** Set `Template` to replace the whole structure. `PART_ScrollViewer`
+is optional — a template without it still works, but `ScrollToAnchor()` falls
+back to a plain `BringIntoView()` instead of a precise scroll offset, and
+`ImageResizeMode.Fill`/`ScaleDownToFit` lose their width-clamp guarantee
+unless the replacement template provides an equivalent width-constraining
+ancestor:
+
+```xml
+<Style Selector="mv|MarkdownViewer">
+  <Setter Property="Template">
+    <ControlTemplate>
+      <ScrollViewer Name="PART_ScrollViewer">
+        <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" />
+      </ScrollViewer>
+    </ControlTemplate>
+  </Setter>
 </Style>
 ```
 
