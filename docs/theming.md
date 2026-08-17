@@ -146,6 +146,42 @@ Diagram colours are baked into the generated SVG at render time, so they aren't 
 </Style>
 ```
 
+## Template customisation
+
+`MarkdownViewer`'s default `ControlTemplate` (in `MarkdownTheme.axaml`) wraps
+the rendered document in a named `ScrollViewer`:
+
+```
+Border → ScrollViewer (Name="PART_ScrollViewer") → ContentPresenter
+```
+
+**Lightweight tweaks — no template override needed.** Scrollbar behavior is
+exposed via the same attached `ScrollViewer.*` properties Avalonia's own
+`ListBox` supports, and flows through to `PART_ScrollViewer` automatically:
+
+```xml
+<mv:MarkdownViewer ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+```
+
+**Full override.** Set `Template` to replace the whole structure. `PART_ScrollViewer`
+is optional — a template without it still works, but `ScrollToAnchor()` falls
+back to a plain `BringIntoView()` instead of a precise scroll offset, and
+`ImageResizeMode.Fill`/`ScaleDownToFit` lose their width-clamp guarantee
+unless the replacement template provides an equivalent width-constraining
+ancestor:
+
+```xml
+<Style Selector="mv|MarkdownViewer">
+  <Setter Property="Template">
+    <ControlTemplate>
+      <ScrollViewer Name="PART_ScrollViewer">
+        <ContentPresenter Content="{TemplateBinding Content}" />
+      </ScrollViewer>
+    </ControlTemplate>
+  </Setter>
+</Style>
+```
+
 ## Live theme switching
 
 When the user switches between `Light` and `Dark` theme variants:
