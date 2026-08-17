@@ -46,7 +46,8 @@
     </ResourceDictionary>
   </Styles.Resources>
 
-  <Style Selector="mv|MarkdownViewer">
+  <!-- Use :is() so subclasses of MarkdownViewer also get the default template (and thus PART_ScrollViewer) -->
+  <Style Selector=":is(mv|MarkdownViewer)">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Template">
       <ControlTemplate>

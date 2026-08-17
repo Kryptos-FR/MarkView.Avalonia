@@ -7,6 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Headless.XUnit;
 using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Xunit;
 
@@ -67,6 +68,58 @@ public class MarkdownViewerTemplateTests
 
         var exception = Record.Exception(() => viewer.ScrollToAnchor("target-heading"));
         Assert.Null(exception);
+    }
+
+    [AvaloniaFact]
+    public void RenderMarkdown_resets_PART_ScrollViewer_offset_to_top_on_new_document()
+    {
+        var viewer = new MarkdownViewer();
+        viewer.Styles.Add(MarkdownThemeInclude());
+        viewer.Markdown = string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Paragraph {i}"))
+            + "\n\n## Target Heading\n\n"
+            + string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Trailing paragraph {i}"));
+
+        var window = new Window { Width = 400, Height = 200, Content = viewer };
+        window.Show();
+
+        viewer.ScrollToAnchor("target-heading");
+        var scrollViewer = viewer.GetVisualDescendants().OfType<ScrollViewer>().Single();
+        Assert.True(scrollViewer.Offset.Y > 0);
+
+        viewer.Markdown = "# New Document\n\nBrand new content.";
+
+        Assert.Equal(0, scrollViewer.Offset.Y);
+        Assert.Equal(0, scrollViewer.Offset.X);
+    }
+
+    [AvaloniaFact]
+    public void ScrollToAnchor_lands_at_top_margin_when_viewer_has_non_default_padding()
+    {
+        // Regression test: Padding is applied as PART_ContentPresenter's Margin *inside*
+        // PART_ScrollViewer, so Content's origin is offset from the scrollable extent's
+        // origin by Padding.Top. ScrollToAnchor must account for that offset, or it
+        // undershoots by exactly Padding.Top.
+        var viewer = new MarkdownViewer { Padding = new Thickness(0, 100, 0, 0) };
+        viewer.Styles.Add(MarkdownThemeInclude());
+        viewer.Markdown = string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Paragraph {i}"))
+            + "\n\n## Target Heading\n\n"
+            + string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Trailing paragraph {i}"));
+
+        var window = new Window { Width = 400, Height = 200, Content = viewer };
+        window.Show();
+
+        viewer.ScrollToAnchor("target-heading");
+        Dispatcher.UIThread.RunJobs();
+
+        var scrollViewer = viewer.GetVisualDescendants().OfType<ScrollViewer>().Single();
+        var heading = viewer.GetVisualDescendants().OfType<TextBlock>()
+            .Single(tb => tb.Classes.Contains("markdown-h2"));
+
+        // The heading lands ~16px below the viewport top (the intended top margin),
+        // independent of Padding.
+        var headingInViewport = heading.TranslatePoint(new Point(0, 0), scrollViewer);
+        Assert.NotNull(headingInViewport);
+        Assert.Equal(16, headingInViewport.Value.Y, 3);
     }
 
     [AvaloniaFact]

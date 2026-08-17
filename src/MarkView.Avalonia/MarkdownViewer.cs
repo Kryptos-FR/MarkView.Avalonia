@@ -302,6 +302,12 @@ public partial class MarkdownViewer : ContentControl
             OnContentPointerReleased, RoutingStrategies.Tunnel);
 
         Content = contentGrid;
+
+        // Every new render is treated as a fresh document — reset scroll position to the
+        // top, since PART_ScrollViewer now persists across renders (it lives in the
+        // template, not rebuilt per-render) and would otherwise keep its old offset.
+        if (_scrollViewer is not null)
+            _scrollViewer.Offset = default;
     }
 
     // ── Block registration ────────────────────────────────────────────────────
@@ -591,13 +597,19 @@ public partial class MarkdownViewer : ContentControl
         if (!_anchors.TryGetValue(anchorId, out var control))
             return;
 
-        if (_scrollViewer is null || Content is not Visual rootPanel)
+        if (_scrollViewer is null)
         {
             control.BringIntoView();
             return;
         }
 
-        var point = control.TranslatePoint(new Point(0, 0), rootPanel);
+        // Translating to the ScrollViewer itself (rather than to Content) gives a
+        // viewport-relative point that already accounts for Padding — Padding is applied
+        // as the ContentPresenter's Margin *inside* the ScrollViewer, so Content's origin
+        // is offset from the scrollable extent's origin by Padding.Top. Adding the current
+        // Offset.Y back converts the viewport-relative point to absolute content-space
+        // coordinates, which is what the new Offset value must be expressed in.
+        var point = control.TranslatePoint(new Point(0, 0), _scrollViewer);
         if (point is null)
         {
             control.BringIntoView();
@@ -605,6 +617,7 @@ public partial class MarkdownViewer : ContentControl
         }
 
         const double topMargin = 16;
-        _scrollViewer.Offset = new Vector(_scrollViewer.Offset.X, Math.Max(0, point.Value.Y - topMargin));
+        var desiredY = _scrollViewer.Offset.Y + point.Value.Y - topMargin;
+        _scrollViewer.Offset = new Vector(_scrollViewer.Offset.X, Math.Max(0, desiredY));
     }
 }

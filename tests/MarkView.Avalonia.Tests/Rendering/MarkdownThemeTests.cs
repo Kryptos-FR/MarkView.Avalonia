@@ -49,7 +49,7 @@ public class MarkdownThemeTests
         XNamespace avalonia = "https://github.com/avaloniaui";
 
         var style = doc.Descendants(avalonia + "Style")
-            .FirstOrDefault(s => (string?)s.Attribute("Selector") == "mv|MarkdownViewer");
+            .FirstOrDefault(s => (string?)s.Attribute("Selector") == ":is(mv|MarkdownViewer)");
         Assert.NotNull(style);
 
         var templateSetter = style!.Elements(avalonia + "Setter")
