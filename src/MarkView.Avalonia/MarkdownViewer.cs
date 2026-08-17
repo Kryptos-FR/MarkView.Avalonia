@@ -299,7 +299,7 @@ public partial class MarkdownViewer : ContentControl
         contentGrid.AddHandler(InputElement.PointerReleasedEvent,
             OnContentPointerReleased, RoutingStrategies.Tunnel);
 
-        Content = new ScrollViewer { Content = contentGrid };
+        Content = contentGrid;
     }
 
     // ── Block registration ────────────────────────────────────────────────────
@@ -392,7 +392,7 @@ public partial class MarkdownViewer : ContentControl
         }
     }
 
-    private void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid)
+    private static void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid)
     {
         // TableRenderer adds cells in row-major order (rowIndex / colIndex ascending),
         // so iterating Children directly avoids the O(N log N) SortedDictionary sort.
@@ -600,4 +600,3 @@ public partial class MarkdownViewer : ContentControl
         scrollViewer.Offset = new Vector(scrollViewer.Offset.X, Math.Max(0, point.Value.Y - topMargin));
     }
 }
-
