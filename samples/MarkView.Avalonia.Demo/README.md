@@ -11,7 +11,7 @@ dotnet run
 
 ## What the Demo Shows
 
-The demo window contains a top toolbar and a full-screen `MarkdownViewer`. Use the **View** dropdown to switch between three built-in documents; use **Open file…** to load any local `.md` file.
+The demo window contains a page tab strip, a toolbar, and a full-screen content area. Use the **tabs** to switch between five built-in pages; use **Open file…** to load any local `.md` file.
 
 ### Built-in Views
 
@@ -19,6 +19,8 @@ The demo window contains a top toolbar and a full-screen `MarkdownViewer`. Use t
 |------|---------|
 | **Feature Showcase** | Core markdown: headings, text formatting (strikethrough, subscript, superscript, underline, highlight), blockquotes, task lists, tables, code blocks (multi-language), bitmap image, SVG image, Mermaid diagram |
 | **Extensions Showcase** | Opt-in extensions: footnotes, GitHub alert blocks, abbreviations with tooltips, figures with captions, YouTube thumbnail embeds |
+| **Custom Styling** | Same shared `MarkdownViewer` as the pages above, with a `custom-styled` class toggled on it; `App.axaml` scopes a handful of `markdown-*` class overrides to that class, showing that theming can be done per-instance, not only globally |
+| **Color Extension** | A dedicated `ColorExtensionView` control hosting its own `MarkdownViewer`, configured with its own `Pipeline`/`Extensions` instead of `MarkdownViewerDefaults`. Demonstrates writing a complete custom Markdig + MarkView extension (`%[color:red]text%` colour spans) — see `ColorExtension/` and [docs/custom-extensions.md](../../docs/custom-extensions.md) |
 | **README** | The project's own `README.md` loaded from disk (relative to the solution root) |
 
 ### Navigation and History
@@ -33,7 +35,7 @@ The **Light theme** toggle button switches the entire application between Avalon
 
 ## How the Demo Is Configured
 
-All configuration is done once in `App.axaml.cs` and applies globally to every `MarkdownViewer` instance:
+Most configuration is done once in `App.axaml.cs` and applies globally to every `MarkdownViewer` instance. The **Color Extension** page is the exception: its dedicated control sets `Pipeline` and `Extensions` on its own `MarkdownViewer` instance instead, bypassing these app-wide defaults for parsing (see [docs/configuration.md](../../docs/configuration.md#markdig-pipeline) for the precedence rules, and [docs/custom-extensions.md](../../docs/custom-extensions.md) for the extension itself).
 
 ```csharp
 // Global pipeline — includes all opt-in extensions for the full showcase
@@ -63,11 +65,22 @@ The `OnLinkClicked` handler intercepts absolute `file://` links to `.md` / `.mar
 
 ```
 MarkView.Avalonia.Demo/
-├── App.axaml            — Application XAML (styles, resources)
-├── App.axaml.cs         — Startup: global pipeline, extensions, link handler
-├── MainWindow.axaml     — Single-window layout (toolbar + MarkdownViewer)
-├── MainWindow.axaml.cs  — Back/forward buttons, file picker
-├── MainViewModel.cs     — MVVM view model: history stack, built-in content, LoadFile()
+├── App.axaml               — Application XAML (styles, resources, Custom Styling overrides)
+├── App.axaml.cs            — Startup: global pipeline, extensions, link handler
+├── MainWindow.axaml        — Window layout: page tabs, toolbar, MarkdownViewer/ColorExtensionView
+├── MainWindow.axaml.cs     — Back/forward buttons, file picker, outline popup
+├── MainViewModel.cs        — MVVM view model: history stack, built-in content, LoadFile()
+├── Converters/
+│   └── OutlineFilterConverter.cs — Flattens TableOfContents for the outline popup
+├── ColorExtension/
+│   ├── ColorSpanInline.cs        — Markdig leaf inline node
+│   ├── ColorSpanParser.cs        — Markdig inline parser
+│   ├── ColorMarkdownExtension.cs — Markdig IMarkdownExtension + UseColorSpans()
+│   ├── ColorSpanRenderer.cs      — MarkView.Avalonia renderer
+│   ├── ColorSpanExtension.cs     — MarkView.Avalonia IMarkViewExtension
+│   └── ColorExtensionView.axaml(.cs) — Dedicated control with its own Pipeline/Extensions
 └── Assets/
-    └── avalonia-logo.png
+    ├── avalonia-logo.png
+    ├── showcase.md
+    └── color-extension.md        — Tutorial content for the Color Extension page
 ```

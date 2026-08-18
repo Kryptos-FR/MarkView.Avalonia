@@ -1,0 +1,6 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mv="using:MarkView.Avalonia"
+             x:Class="MarkView.Avalonia.Demo.ColorExtension.ColorExtensionView">
+  <mv:MarkdownViewer x:Name="Viewer" Padding="4" />
+</UserControl>
