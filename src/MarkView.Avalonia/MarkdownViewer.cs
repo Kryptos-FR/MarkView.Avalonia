@@ -33,6 +33,7 @@ public partial class MarkdownViewer : ContentControl
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
 
     private Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
+    private List<(int Level, string Text, string Slug)> _headingEntries = [];
     private DocumentSelectionLayer? _selectionLayer;
     private ScrollViewer? _scrollViewer;
     private bool _isDragging;
@@ -74,6 +75,19 @@ public partial class MarkdownViewer : ContentControl
     /// </summary>
     public static readonly StyledProperty<ImageResizeMode> ImageResizeModeProperty =
         AvaloniaProperty.Register<MarkdownViewer, ImageResizeMode>(nameof(ImageResizeMode), ImageResizeMode.ScaleDownToFit);
+
+    /// <summary>
+    /// Defines the <see cref="TableOfContentsMaxDepth"/> property.
+    /// </summary>
+    public static readonly StyledProperty<int> TableOfContentsMaxDepthProperty =
+        AvaloniaProperty.Register<MarkdownViewer, int>(nameof(TableOfContentsMaxDepth), 6);
+
+    /// <summary>
+    /// Defines the <see cref="TableOfContents"/> property.
+    /// </summary>
+    public static readonly DirectProperty<MarkdownViewer, IReadOnlyList<TocEntry>> TableOfContentsProperty =
+        AvaloniaProperty.RegisterDirect<MarkdownViewer, IReadOnlyList<TocEntry>>(
+            nameof(TableOfContents), o => o.TableOfContents);
 
     /// <summary>
     /// Gets or sets the Markdown text to render.
@@ -125,6 +139,27 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets the maximum heading level included in <see cref="TableOfContents"/>.
+    /// Headings deeper than this level, and their descendants, are excluded. Defaults to 6 (no limit).
+    /// </summary>
+    public int TableOfContentsMaxDepth
+    {
+        get => GetValue(TableOfContentsMaxDepthProperty);
+        set => SetValue(TableOfContentsMaxDepthProperty, value);
+    }
+
+    /// <summary>
+    /// Gets the nested heading tree for the current document, filtered by
+    /// <see cref="TableOfContentsMaxDepth"/>. Recomputed after every render. Pass an
+    /// entry's <see cref="TocEntry.Slug"/> to <see cref="ScrollToAnchor"/> to navigate to it.
+    /// </summary>
+    public IReadOnlyList<TocEntry> TableOfContents
+    {
+        get;
+        private set => SetAndRaise(TableOfContentsProperty, ref field, value);
+    } = [];
+
+    /// <summary>
     /// Extensions that customise the renderer before each render pass.
     /// Add entries before setting <see cref="Markdown"/> or assigning
     /// a new <see cref="Pipeline"/>; each extension's
@@ -157,6 +192,7 @@ public partial class MarkdownViewer : ContentControl
         BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         SourceProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnSourceChanged());
         ImageResizeModeProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
     }
 
@@ -241,6 +277,8 @@ public partial class MarkdownViewer : ContentControl
         {
             Content = null;
             _anchors = new(StringComparer.OrdinalIgnoreCase);
+            _headingEntries = [];
+            RebuildTableOfContents();
             _selectionLayer = null;
             return;
         }
@@ -282,6 +320,8 @@ public partial class MarkdownViewer : ContentControl
         renderer.Render(document);
 
         _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);
+        _headingEntries = [.. renderer.HeadingEntries];
+        RebuildTableOfContents();
 
         // Set up document-wide selection layer
         var layer = new DocumentSelectionLayer();
@@ -309,6 +349,9 @@ public partial class MarkdownViewer : ContentControl
         if (_scrollViewer is not null)
             _scrollViewer.Offset = default;
     }
+
+    private void RebuildTableOfContents() =>
+        TableOfContents = TocEntry.BuildTree(_headingEntries, TableOfContentsMaxDepth);
 
     // ── Block registration ────────────────────────────────────────────────────
 
