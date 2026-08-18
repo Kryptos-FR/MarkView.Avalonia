@@ -7,10 +7,51 @@
         Title="MarkView.Avalonia Demo"
         Width="1000" Height="750">
 
+  <Window.Resources>
+    <local:OutlineFilterConverter x:Key="OutlineFilterConverter" />
+  </Window.Resources>
+
   <DockPanel>
     <!-- Top bar -->
     <Border DockPanel.Dock="Top" Padding="12,8">
       <StackPanel Orientation="Horizontal" Spacing="8">
+        <!-- Outline -->
+        <ToggleButton x:Name="OutlineToggle"
+                      Width="32" Height="32" Padding="4">
+          <PathIcon Data="{StaticResource text_bullet_list_tree_regular}" />
+        </ToggleButton>
+        <Popup x:Name="OutlinePopup"
+               IsOpen="{Binding #OutlineToggle.IsChecked, Mode=TwoWay}" IsLightDismissEnabled="True"
+               PlacementTarget="{Binding #OutlineToggle}">
+          <Border Background="{DynamicResource MenuFlyoutPresenterBackground}"
+                  BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
+                  BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
+                  CornerRadius="{DynamicResource OverlayCornerRadius}"
+                  Padding="8" MinWidth="260" MaxWidth="360" MaxHeight="420">
+            <DockPanel>
+              <TextBox x:Name="OutlineFilterBox" DockPanel.Dock="Top"
+                       PlaceholderText="Filter headings" Margin="0,0,0,8" />
+              <ScrollViewer>
+                <ListBox x:Name="OutlineList"
+                         Background="Transparent"
+                         SelectionChanged="OnOutlineSelectionChanged">
+                  <ListBox.ItemsSource>
+                    <MultiBinding Converter="{StaticResource OutlineFilterConverter}">
+                      <Binding ElementName="MarkdownView" Path="TableOfContents" />
+                      <Binding ElementName="OutlineFilterBox" Path="Text" />
+                    </MultiBinding>
+                  </ListBox.ItemsSource>
+                  <ListBox.ItemTemplate>
+                    <DataTemplate DataType="local:OutlineRow">
+                      <TextBlock Text="{Binding Entry.Text}" Margin="{Binding Indent}"
+                                 TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </ScrollViewer>
+            </DockPanel>
+          </Border>
+        </Popup>
         <TextBlock Text="View:" VerticalAlignment="Center" />
         <ComboBox ItemsSource="{Binding Views}"
                   SelectedIndex="{Binding SelectedIndex}"
@@ -36,8 +77,8 @@
 
     <!-- Markdown content -->
     <mv:MarkdownViewer x:Name="MarkdownView"
-                       Source="{Binding Source}"
-                       Markdown="{Binding Markdown}" />
+                       Source="{Binding Source}" Markdown="{Binding Markdown}"
+                       Padding="4" />
   </DockPanel>
 
 </Window>

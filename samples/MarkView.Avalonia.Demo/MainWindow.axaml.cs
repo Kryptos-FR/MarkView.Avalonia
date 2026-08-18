@@ -38,4 +38,16 @@ public partial class MainWindow : Window
                 ((MainViewModel)DataContext!).LoadFile(path);
         }
     }
+
+    private void OnOutlineSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (e.AddedItems is [OutlineRow row])
+        {
+            MarkdownView.ScrollToAnchor(row.Entry.Slug);
+            OutlineToggle.IsChecked = false;
+        }
+
+        // Clear selection so re-clicking the same heading still raises this handler.
+        OutlineList.SelectedItem = null;
+    }
 }
