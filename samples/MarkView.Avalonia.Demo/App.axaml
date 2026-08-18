@@ -1,11 +1,30 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mv="using:MarkView.Avalonia"
              x:Class="MarkView.Avalonia.Demo.App"
              RequestedThemeVariant="Dark">
   <Application.Styles>
     <FluentTheme />
     <StyleInclude Source="avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml" />
     <StyleInclude Source="avares://MarkView.Avalonia.Mermaid/Themes/MermaidTheme.axaml" />
+
+    <!-- "Custom Styling" demo page: scoped override of a few markdown-* classes, proving they
+         can be restyled per-instance without touching the app's global theme. -->
+    <Style Selector="mv|MarkdownViewer.custom-styled TextBlock.markdown-h1">
+      <Setter Property="Foreground" Value="#a855f7" />
+      <Setter Property="FontFamily" Value="Georgia,Times New Roman,serif" />
+    </Style>
+    <Style Selector="mv|MarkdownViewer.custom-styled TextBlock.markdown-h2">
+      <Setter Property="Foreground" Value="#a855f7" />
+      <Setter Property="FontFamily" Value="Georgia,Times New Roman,serif" />
+    </Style>
+    <Style Selector="mv|MarkdownViewer.custom-styled Border.markdown-blockquote">
+      <Setter Property="BorderBrush" Value="#f59e0b" />
+      <Setter Property="Background" Value="#1af59e0b" />
+    </Style>
+    <Style Selector="mv|MarkdownViewer.custom-styled Border.markdown-code-block">
+      <Setter Property="Background" Value="#2d1b4d" />
+    </Style>
   </Application.Styles>
   <Application.Resources>
     <StreamGeometry x:Key="text_bullet_list_tree_regular">

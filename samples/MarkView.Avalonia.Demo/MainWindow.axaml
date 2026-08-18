@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mv="using:MarkView.Avalonia"
         xmlns:local="using:MarkView.Avalonia.Demo"
+        xmlns:ce="using:MarkView.Avalonia.Demo.ColorExtension"
         x:Class="MarkView.Avalonia.Demo.MainWindow"
         x:DataType="local:MainViewModel"
         Title="MarkView.Avalonia Demo"
@@ -12,6 +13,15 @@
   </Window.Resources>
 
   <DockPanel>
+    <!-- Page tabs -->
+    <TabControl DockPanel.Dock="Top" SelectedIndex="{Binding SelectedIndex}">
+      <TabItem Header="Feature Showcase" />
+      <TabItem Header="Extensions Showcase" />
+      <TabItem Header="Custom Styling" />
+      <TabItem Header="Color Extension" />
+      <TabItem Header="README" />
+    </TabControl>
+
     <!-- Top bar -->
     <Border DockPanel.Dock="Top" Padding="12,8">
       <StackPanel Orientation="Horizontal" Spacing="8">
@@ -52,10 +62,6 @@
             </DockPanel>
           </Border>
         </Popup>
-        <TextBlock Text="View:" VerticalAlignment="Center" />
-        <ComboBox ItemsSource="{Binding Views}"
-                  SelectedIndex="{Binding SelectedIndex}"
-                  MinWidth="120" />
         <Button Content="←"
                 Click="OnGoBackClicked"
                 IsEnabled="{Binding CanGoBack}"
@@ -75,10 +81,15 @@
       </StackPanel>
     </Border>
 
-    <!-- Markdown content -->
-    <mv:MarkdownViewer x:Name="MarkdownView"
-                       Source="{Binding Source}" Markdown="{Binding Markdown}"
-                       Padding="4" />
+    <!-- Page content -->
+    <Grid>
+      <mv:MarkdownViewer x:Name="MarkdownView"
+                         Source="{Binding Source}" Markdown="{Binding Markdown}"
+                         Classes.custom-styled="{Binding IsCustomStyled}"
+                         IsVisible="{Binding !IsColorExtensionSelected}"
+                         Padding="4" />
+      <ce:ColorExtensionView IsVisible="{Binding IsColorExtensionSelected}" />
+    </Grid>
   </DockPanel>
 
 </Window>

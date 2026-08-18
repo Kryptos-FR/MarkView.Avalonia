@@ -115,7 +115,29 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ![Big Buck Bunny trailer](https://youtu.be/aqz-KE-bpKQ)
         """;
 
-    private readonly List<(Uri? Source, string? Markdown)> _history = [];
+    private const string CustomStylingMarkdown = """
+        # Custom Styling
+
+        This page is rendered by the same `MarkdownViewer` as the other views. The window applies a
+        style block scoped to `MarkdownViewer.custom-styled` (see `App.axaml`) that overrides a few
+        of the library's `markdown-*` classes for this page only, without touching the global theme.
+
+        ## Heading Two
+
+        Every `markdown-h1` / `markdown-h2` element still carries its usual class; only the setter
+        values differ here.
+
+        > Blockquotes (`markdown-blockquote`) pick up a different accent colour and background on
+        > this page.
+
+        ```text
+        Code blocks (markdown-code-block) get a different background here too.
+        ```
+
+        Switch back to **Feature Showcase** to compare against the default look for the same elements.
+        """;
+
+    private readonly List<(int SelectedIndex, Uri? Source, string? Markdown)> _history = [];
     private int _historyIndex = -1;
     private bool _navigating;
 
@@ -123,8 +145,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string? _markdown;
     private int _selectedIndex;
     private bool _isLightTheme;
-
-    public string[] Views { get; } = ["Feature Showcase", "Extensions Showcase", "README"];
+    private bool _isCustomStyled;
+    private bool _isColorExtensionSelected;
 
     public int SelectedIndex
     {
@@ -144,6 +166,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (!SetField(ref _isLightTheme, value)) return;
             Application.Current!.RequestedThemeVariant = value ? ThemeVariant.Light : ThemeVariant.Dark;
         }
+    }
+
+    public bool IsCustomStyled
+    {
+        get => _isCustomStyled;
+        private set => SetField(ref _isCustomStyled, value);
+    }
+
+    public bool IsColorExtensionSelected
+    {
+        get => _isColorExtensionSelected;
+        private set => SetField(ref _isColorExtensionSelected, value);
     }
 
     public Uri? Source
@@ -175,12 +209,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
         RestoreEntry(_history[_historyIndex]);
     }
 
-    private void RestoreEntry((Uri? Source, string? Markdown) entry)
+    private void RestoreEntry((int SelectedIndex, Uri? Source, string? Markdown) entry)
     {
         _navigating = true;
+        _selectedIndex = entry.SelectedIndex;
         Source = entry.Source;
         Markdown = entry.Markdown;
+        IsCustomStyled = entry.SelectedIndex == 2;
+        IsColorExtensionSelected = entry.SelectedIndex == 3;
         _navigating = false;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedIndex)));
         NotifyNavigation();
     }
 
@@ -190,7 +228,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         // Discard any forward entries
         if (_historyIndex < _history.Count - 1)
             _history.RemoveRange(_historyIndex + 1, _history.Count - _historyIndex - 1);
-        _history.Add((source, markdown));
+        _history.Add((_selectedIndex, source, markdown));
         _historyIndex = _history.Count - 1;
         NotifyNavigation();
     }
@@ -208,6 +246,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void LoadContent()
     {
+        IsCustomStyled = _selectedIndex == 2;
+        IsColorExtensionSelected = _selectedIndex == 3;
+
         switch (_selectedIndex)
         {
             case 0:
@@ -217,6 +258,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
             case 1:
                 Source = null;
                 Markdown = ExtensionsShowcaseMarkdown;
+                break;
+            case 2:
+                Source = null;
+                Markdown = CustomStylingMarkdown;
+                break;
+            case 3:
+                // Content is supplied by the dedicated ColorExtensionView control, not this Markdown/Source pair.
+                Source = null;
+                Markdown = null;
                 break;
             default:
                 Source = ReadmeSource;
