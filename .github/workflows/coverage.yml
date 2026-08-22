@@ -78,5 +78,6 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v3
         if: always() && github.event_name == 'pull_request'
         with:
+          header: coverage
           recreate: true
           path: coveragereport/SummaryGithub.md

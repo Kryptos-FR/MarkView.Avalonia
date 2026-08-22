@@ -76,5 +76,6 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v3
         if: always() && github.event_name == 'pull_request'
         with:
+          header: mutation
           recreate: true
           path: mutation-reports/CombinedMutationReport.md
