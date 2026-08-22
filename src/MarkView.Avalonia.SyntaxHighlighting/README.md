@@ -53,8 +53,9 @@ Available themes (from `TextMateSharp.Grammars.ThemeName`):
 | `Monokai` | `QuietLight` |
 | `SolarizedDark` | `SolarizedLight` |
 | `TomorrowNightBlue` | `Abyss` |
-| `HighContrastLight` | `HighContrastLight` |
+| `HighContrastDark` | `HighContrastLight` |
 | `KimbieDark` | — |
+| `DimmedMonokai` | — |
 
 ## How It Works
 

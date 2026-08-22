@@ -44,7 +44,7 @@ graph TD
 
 ## Supported Diagram Types
 
-The extension targets the diagram types supported by the referenced Mermaider version, including common diagrams such as:
+The extension targets the diagram types supported by the version of Mermaider this package depends on, including common diagrams such as:
 
 - Flowcharts (`graph TD`, `flowchart LR`)
 - Sequence diagrams (`sequenceDiagram`)
@@ -61,12 +61,22 @@ See the [Mermaid documentation](https://mermaid.js.org/intro/) for syntax refere
 
 ## Theme Awareness
 
-Diagrams are rendered with colours matching the active Avalonia theme variant:
+Diagram colours come from `MermaidTheme.axaml`, included the same way as the core package's theme:
 
-| Variant | Background | Foreground | Accent |
-|---------|-----------|-----------|--------|
-| Dark | `#18181B` | `#FAFAFA` | `#60a5fa` |
-| Light | `#FFFFFF` | `#27272A` | `#3b82f6` |
+```xml
+<!-- App.axaml -->
+<StyleInclude Source="avares://MarkView.Avalonia.Mermaid/Themes/MermaidTheme.axaml" />
+```
+
+It defines Dark/Light `SolidColorBrush` resources you can override in your own styles:
+
+| Resource key | Dark | Light |
+|---|---|---|
+| `MarkdownMermaidBackground` | `#18181B` | `#FFFFFF` |
+| `MarkdownMermaidForeground` | `#FAFAFA` | `#27272A` |
+| `MarkdownMermaidAccent` | `#60A5FA` | `#3B82F6` |
+
+If the theme isn't included, the same values are used as a built-in fallback — the extension works standalone.
 
 When the user switches between light and dark, the diagram is automatically re-rendered. The `Border` container stays in place — scroll position is preserved and other document elements are not affected.
 
@@ -86,10 +96,6 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 ```
 
 `MermaidBlockRenderer` handles all `FencedCodeBlock` nodes. Mermaid blocks are rendered as diagrams; all other fenced blocks are rendered as styled code blocks using any `ICodeHighlighter` registered by the SyntaxHighlighting extension.
-
-## Platform Notes
-
-Mermaider renders diagrams in managed .NET code (no JavaScript runtime). If diagram rendering fails for any reason, this extension automatically falls back to a plain-text `Border` containing the original Mermaid source.
 
 ## How It Works
 

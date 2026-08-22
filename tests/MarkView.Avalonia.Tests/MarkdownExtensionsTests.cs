@@ -91,24 +91,4 @@ public class MarkdownExtensionsTests : RenderTestBase
         var run = Assert.IsType<Run>(Assert.Single(textBlock.Inlines!));
         Assert.Equal("Great :) job", run.Text);
     }
-
-    private static T? FindFirst<T>(Control root) where T : Control
-    {
-        if (root is T match) return match;
-        if (root is Panel p) foreach (var child in p.Children) { var f = FindFirst<T>(child); if (f != null) return f; }
-        if (root is ContentControl cc && cc.Content is Control c) return FindFirst<T>(c);
-        if (root is Decorator d && d.Child is Control dc) return FindFirst<T>(dc);
-        if (root is TextBlock tb && tb.Inlines != null)
-        {
-            foreach (var inline in tb.Inlines)
-            {
-                if (inline is InlineUIContainer iuc && iuc.Child is Control iucChild)
-                {
-                    var f = FindFirst<T>(iucChild);
-                    if (f != null) return f;
-                }
-            }
-        }
-        return null;
-    }
 }

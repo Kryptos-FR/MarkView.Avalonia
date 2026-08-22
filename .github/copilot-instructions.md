@@ -33,8 +33,10 @@ Markdown string
   → IMarkViewExtension[].Register(renderer)   ← extensions plug in here
   → pipeline.Setup(renderer)
   → AvaloniaRenderer.Render(document)
-  → ScrollViewer { StackPanel (root) }
+  → Grid { StackPanel (root), DocumentSelectionLayer }   ← this becomes MarkdownViewer.Content
 ```
+
+`Content` is hosted by `PART_ScrollViewer`, the named part inside `MarkdownViewer`'s default `ControlTemplate` (shipped in `MarkdownTheme.axaml`); `viewer.Content` itself is the `Grid`, not a `ScrollViewer`.
 
 - **`AvaloniaRenderer`** extends `RendererBase`; manages a push/pop stack of `IContainer` (either `Panel` or `InlineCollection`).
 - Block renderers live in `Rendering/Blocks/`, inline renderers in `Rendering/Inlines/`.
@@ -78,7 +80,7 @@ Dark/light dictionaries use `DynamicResource`; monospace stack: Cascadia Code �
 ## Testing Patterns
 
 - Inherit `RenderTestBase` and call `Render(markdown)` to get the root `StackPanel`.
-- Traverse the control tree: `ScrollViewer → StackPanel → children`.
+- When testing through a full `MarkdownViewer` instead, traverse `viewer.Content` (a `Grid`) directly: `Grid → StackPanel → children`. The `ScrollViewer` (`PART_ScrollViewer`) lives in the control's `ControlTemplate`, not in `Content` — reach it via `OnApplyTemplate` or `GetVisualDescendants()` once a template (e.g. `MarkdownTheme.axaml`) is applied.
 - Use `Assert.IsType<T>()`, `.OfType<T>()`, `Assert.Single()` for structural assertions.
 - `TestApp.cs` bootstraps `FluentTheme` and `AvaloniaHeadlessPlatformOptions`; copy this pattern for new test projects.
 

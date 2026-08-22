@@ -95,8 +95,7 @@ public class MathExtensionTests
         viewer.Markdown = "$$\nx^2\n$$";
         viewer.UseMath();
 
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var border = Assert.IsType<Border>(Assert.Single(panel.Children));
         Assert.Contains("markdown-math-block", border.Classes);
@@ -123,8 +122,7 @@ public class MathExtensionTests
 
         viewer.Markdown = "$$\nx^2\n$$\n\n```mermaid\ngraph TD;\nA-->B;\n```";
 
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         Assert.Equal(2, panel.Children.Count);
 

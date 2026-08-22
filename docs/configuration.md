@@ -10,6 +10,8 @@
 | `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
 | `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. |
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
+| `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
+| `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
 
 ## Markdig Pipeline
 
@@ -19,7 +21,7 @@ The pipeline controls which Markdig extensions parse the input markdown. Build o
 viewer.Pipeline = new MarkdownPipelineBuilder()
     .UseSupportedExtensions()   // bold, italic, strikethrough, subscript, superscript, underline,
                                 // highlight, task lists, tables, autolinks, emoji shortcodes,
-                                // CJK-friendly emphasis, YAML front matter (hidden)
+                                // Chinese/Japanese/Korean (CJK)-friendly emphasis, YAML front matter (hidden)
     .UseAbbreviations()         // *[HTML]: HyperText Markup Language
     .UseAlertBlocks()           // > [!NOTE] / > [!WARNING] etc.
     .UseCitations()             // ""quoted text""
@@ -37,7 +39,7 @@ viewer.Pipeline = new MarkdownPipelineBuilder()
 - `GridTables` — RST-style grid tables
 - `PipeTables` — GFM pipe tables
 - `TaskLists` — `- [x]` checkboxes
-- `CjkFriendlyEmphasis` — parser-only fix for emphasis next to CJK punctuation
+- `CjkFriendlyEmphasis` — parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation
 - `YamlFrontMatter` — `---` metadata block at the top of a document is parsed and hidden, not shown as garbled text
 - `EmojiAndSmiley` (shortcodes only) — `:rocket:` renders as 🚀; ASCII smileys (`:)`) are intentionally left as plain text, since silently rewriting them is more surprising than useful
 
@@ -160,16 +162,52 @@ viewer.ScrollToAnchor("fn-1");            // matches footnote [^1]
 
 Anchors are generated from heading text using GitHub-compatible slug rules (lowercase, spaces to hyphens, non-alphanumeric stripped). Headings with identical slugs are disambiguated with a numeric suffix (`-1`, `-2`, …).
 
+## Table of contents
+
+`TableOfContents` exposes the document's headings as a nested tree you can bind
+to your own UI (a side panel, dropdown, breadcrumb strip, etc.) — the library
+does not ship a TOC control itself, since the right presentation varies by app.
+
+```csharp
+foreach (var entry in viewer.TableOfContents)
+{
+    Console.WriteLine($"{new string(' ', (entry.Level - 1) * 2)}{entry.Text}");
+    // entry.Slug matches the anchor id registered for this heading —
+    // pass it to ScrollToAnchor to navigate.
+}
+```
+
+Each `TocEntry` has `Level`, `Text`, `Slug`, and `Children` (nested headings one or
+more levels deeper). `TableOfContentsMaxDepth` (default `6`, i.e. no limit) drops
+headings deeper than the given level, along with their descendants:
+
+```csharp
+viewer.TableOfContentsMaxDepth = 2; // only H1 and H2 headings
+```
+
+`TableOfContents` is recomputed automatically whenever `Markdown`, `Source`, or
+`TableOfContentsMaxDepth` changes. See `samples/MarkView.Avalonia.Demo` for
+example side-panel, dropdown, and top-dock integrations.
+
 ## Image sizing
 
 `ImageResizeMode` controls how images without an explicit size scale relative to
 the viewer's width:
 
-| Mode | Behavior |
+| Mode | Behaviour |
 |------|----------|
 | `ScaleDownToFit` (default) | Scales down to fit the container width; never enlarges past the image's native resolution. |
 | `Natural` | No scaling — renders at native pixel size. May appear cropped if the image is wider than the viewer, since horizontal scrolling is disabled by default. |
 | `Fill` | Always fills the container width, enlarging small images if necessary. |
+
+`Fill` and `ScaleDownToFit` scale images against the nearest width-constraining
+ancestor in the control's template. The default template provides this via
+`PART_ScrollViewer`'s `HorizontalScrollBarVisibility`, which defaults to
+`Disabled` and constrains width without permitting horizontal scroll. Setting
+`ScrollViewer.HorizontalScrollBarVisibility="Auto"` (or `Visible`) directly on
+a `MarkdownViewer` instance — or a custom `Template` that drops
+`PART_ScrollViewer` entirely — removes that constraint; those modes may then
+behave like `Natural`. `Natural` itself is unaffected, since it never scales.
 
 ```csharp
 viewer.ImageResizeMode = MarkView.Avalonia.ImageResizeMode.Natural;

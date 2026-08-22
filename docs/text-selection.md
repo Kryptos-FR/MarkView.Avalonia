@@ -40,7 +40,7 @@ All text-bearing block types are registered with the selection layer:
 
 The following are **not selectable**:
 
-- Images (`InlineUIContainer` — same limitation as all reference libraries)
+- Images (`InlineUIContainer`)
 - Task-list checkboxes (`InlineUIContainer`)
 
 ## How it works

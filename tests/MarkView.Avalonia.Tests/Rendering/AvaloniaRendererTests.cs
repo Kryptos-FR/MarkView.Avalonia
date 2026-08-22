@@ -55,4 +55,34 @@ public class AvaloniaRendererTests
         var renderer = new AvaloniaRenderer { ImageResizeMode = ImageResizeMode.Fill };
         Assert.Equal(ImageResizeMode.Fill, renderer.ImageResizeMode);
     }
+
+    [AvaloniaFact]
+    public void HeadingEntries_records_level_text_and_slug_in_document_order()
+    {
+        var pipeline = new Markdig.MarkdownPipelineBuilder().Build();
+        var document = Markdig.Markdown.Parse("# Title\n\n## Sub Heading", pipeline);
+        var renderer = new AvaloniaRenderer();
+        pipeline.Setup(renderer);
+        renderer.Render(document);
+
+        Assert.Equal(
+            new List<(int Level, string Text, string Slug)>
+            {
+                (1, "Title", "title"),
+                (2, "Sub Heading", "sub-heading"),
+            },
+            renderer.HeadingEntries);
+    }
+
+    [AvaloniaFact]
+    public void HeadingEntries_cleared_on_next_render()
+    {
+        var pipeline = new Markdig.MarkdownPipelineBuilder().Build();
+        var renderer = new AvaloniaRenderer();
+        pipeline.Setup(renderer);
+        renderer.Render(Markdig.Markdown.Parse("# First", pipeline));
+        renderer.Render(Markdig.Markdown.Parse("Just a paragraph", pipeline));
+
+        Assert.Empty(renderer.HeadingEntries);
+    }
 }

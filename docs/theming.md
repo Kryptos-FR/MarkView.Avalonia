@@ -11,7 +11,15 @@
 </Application.Styles>
 ```
 
-The theme uses `DynamicResource` throughout so it responds to Avalonia's `RequestedThemeVariant` changes automatically.
+The theme uses `DynamicResource` throughout so it responds to Avalonia's `RequestedThemeVariant` changes automatically. This include is not purely cosmetic: it also supplies `MarkdownViewer`'s default `ControlTemplate`, which is what provides the `PART_ScrollViewer` that makes the control scrollable — without it, content renders but cannot scroll and `ScrollToAnchor()` silently no-ops.
+
+Extension packages that need their own overridable colours ship a standalone theme file the same way — e.g. `MarkView.Avalonia.Mermaid` includes `MermaidTheme.axaml`:
+
+```xml
+<StyleInclude Source="avares://MarkView.Avalonia.Mermaid/Themes/MermaidTheme.axaml" />
+```
+
+Each extension theme is independent — it does not import the core `MarkdownTheme.axaml` — so including one, none, or several has no ordering requirement. If an extension theme isn't included, the extension falls back to built-in default colours rather than failing.
 
 ## Style class reference
 
@@ -91,6 +99,21 @@ Example — colour the NOTE variant:
 | `markdown-footnote-group` | `StackPanel` | Definition list at end of document |
 | `markdown-footnote-item` | `Grid` | Individual footnote row |
 
+### Mermaid (`MarkView.Avalonia.Mermaid`)
+
+| Class | Control | Element |
+|-------|---------|---------|
+| `markdown-mermaid` | `Border` | Rendered diagram container |
+| `markdown-mermaid-fallback` | `Border` | Container shown when a diagram fails to render |
+
+Diagram colours are baked into the generated SVG at render time, so they aren't `DynamicResource`-driven on the `Border` itself. Instead `MermaidTheme.axaml` exposes Dark/Light `SolidColorBrush` resources that `MermaidBlockRenderer` reads when building each diagram:
+
+| Resource key | Dark | Light |
+|---|---|---|
+| `MarkdownMermaidBackground` | `#18181B` | `#FFFFFF` |
+| `MarkdownMermaidForeground` | `#FAFAFA` | `#27272A` |
+| `MarkdownMermaidAccent` | `#60A5FA` | `#3B82F6` |
+
 ## Example customisations
 
 ### Larger headings
@@ -123,11 +146,47 @@ Example — colour the NOTE variant:
 </Style>
 ```
 
+## Template customisation
+
+`MarkdownViewer`'s default `ControlTemplate` (in `MarkdownTheme.axaml`) wraps
+the rendered document in a named `ScrollViewer`:
+
+```
+Border → ScrollViewer (Name="PART_ScrollViewer") → ContentPresenter
+```
+
+**Lightweight tweaks — no template override needed.** Scrollbar behavior is
+exposed via the same attached `ScrollViewer.*` properties Avalonia's own
+`ListBox` supports, and flows through to `PART_ScrollViewer` automatically:
+
+```xml
+<mv:MarkdownViewer ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+```
+
+**Full override.** Set `Template` to replace the whole structure. `PART_ScrollViewer`
+is optional — a template without it still works, but `ScrollToAnchor()` falls
+back to a plain `BringIntoView()` instead of a precise scroll offset, and
+`ImageResizeMode.Fill`/`ScaleDownToFit` lose their width-clamp guarantee
+unless the replacement template provides an equivalent width-constraining
+ancestor:
+
+```xml
+<Style Selector="mv|MarkdownViewer">
+  <Setter Property="Template">
+    <ControlTemplate>
+      <ScrollViewer Name="PART_ScrollViewer">
+        <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" />
+      </ScrollViewer>
+    </ControlTemplate>
+  </Setter>
+</Style>
+```
+
 ## Live theme switching
 
 When the user switches between `Light` and `Dark` theme variants:
 
 - All `DynamicResource` references in `MarkdownTheme.axaml` update automatically.
 - `TextMateCodeBlockRenderer` rebuilds only the `TextBlock.Inlines` for each code block.
-- `MermaidBlockRenderer` re-renders diagrams with updated colour variables.
+- `MermaidBlockRenderer` re-renders diagrams, reading `MarkdownMermaid*` resources for the new variant.
 - The document scroll position is preserved in both cases.

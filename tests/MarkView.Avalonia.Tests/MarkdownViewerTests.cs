@@ -22,8 +22,7 @@ public class MarkdownViewerTests
             Markdown = "# Hello\n\nWorld"
         };
         Assert.NotNull(viewer.Content);
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         Assert.Equal(2, panel.Children.Count);
     }
@@ -33,8 +32,7 @@ public class MarkdownViewerTests
     {
         var viewer = new MarkdownViewer { Markdown = "First" };
         viewer.Markdown = "# Second";
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(panel.Children));
         Assert.Contains("markdown-h1", textBlock.Classes);
@@ -56,8 +54,7 @@ public class MarkdownViewerTests
             BaseUri = new Uri("https://example.com/docs/"),
             Markdown = "![img](image.png)"
         };
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(panel.Children));
         var uiContainer = textBlock.Inlines!.OfType<InlineUIContainer>().Single();
@@ -87,8 +84,7 @@ public class MarkdownViewerTests
             Pipeline = pipeline,
             Markdown = "| A | B |\n|---|---|\n| 1 | 2 |"
         };
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         Assert.DoesNotContain(panel.Children, c => c is Grid);
     }
@@ -101,8 +97,7 @@ public class MarkdownViewerTests
         string? clickedUrl = null;
         viewer.LinkClicked += (_, e) => clickedUrl = e.Url;
 
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(panel.Children));
         var uiContainer = textBlock.Inlines!.OfType<InlineUIContainer>().Single();

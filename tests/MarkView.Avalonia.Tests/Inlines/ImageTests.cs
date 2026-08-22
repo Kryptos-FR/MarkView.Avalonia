@@ -86,8 +86,7 @@ public class ImageTests : RenderTestBase
         var viewer = new MarkdownViewer();
         viewer.Markdown = "![logo](https://example.com/logo.png =200x100)";
 
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var image = FindFirst<Image>(panel);
         Assert.NotNull(image);

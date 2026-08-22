@@ -4,6 +4,10 @@ on:
   workflow_call:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   coverage:
     runs-on: ubuntu-latest
@@ -74,5 +78,6 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v3
         if: always() && github.event_name == 'pull_request'
         with:
+          header: coverage
           recreate: true
           path: coveragereport/SummaryGithub.md

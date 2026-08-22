@@ -36,7 +36,7 @@ public class AvaloniaRenderer : RendererBase
 
     /// <summary>
     /// Controls how images without an explicit "=WxH" size hint are scaled.
-    /// Defaults to <see cref="MarkView.Avalonia.ImageResizeMode.ScaleDownToFit"/>.
+    /// Defaults to <see cref="ImageResizeMode.ScaleDownToFit"/>.
     /// </summary>
     public ImageResizeMode ImageResizeMode { get; set; } = ImageResizeMode.ScaleDownToFit;
 
@@ -57,15 +57,29 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     public void RegisterAnchor(string id, Control control) => _anchors[id] = control;
 
+    private readonly List<(int Level, string Text, string Slug)> _headingEntries = [];
+
+    /// <summary>
+    /// Document-ordered list of headings encountered during the last render pass
+    /// (level, plain text, anchor slug), used to build <see cref="MarkdownViewer.TableOfContents"/>.
+    /// Reset on each render.
+    /// </summary>
+    public IReadOnlyList<(int Level, string Text, string Slug)> HeadingEntries => _headingEntries;
+
+    /// <summary>
+    /// Records a heading's level, plain text, and anchor slug in document order.
+    /// </summary>
+    public void RegisterHeading(int level, string text, string slug) => _headingEntries.Add((level, text, slug));
+
     /// <summary>
     /// Optional syntax highlighter used by <c>TextMateCodeBlockRenderer</c>.
-    /// Set by <see cref="Extensions.IMarkViewExtension.Register"/> implementations.
+    /// Set by <see cref="IMarkViewExtension.Register"/> implementations.
     /// </summary>
     public ICodeHighlighter? CodeHighlighter { get; set; }
 
     /// <summary>
-    /// When <c>true</c>, the next <see cref="Inlines.TaskListRenderer"/> call is skipped
-    /// and this flag is reset to <c>false</c>.  Set by <see cref="Blocks.ListRenderer"/>
+    /// When <c>true</c>, the next <see cref="TaskListRenderer"/> call is skipped
+    /// and this flag is reset to <c>false</c>.  Set by <see cref="ListRenderer"/>
     /// when it has already placed the checkbox in the list-item grid's column 0.
     /// </summary>
     internal bool SkipNextTaskList { get; set; }
@@ -106,6 +120,7 @@ public class AvaloniaRenderer : RendererBase
     public override object Render(MarkdownObject markdownObject)
     {
         _anchors.Clear();
+        _headingEntries.Clear();
         SlugGenerator.Reset();
         Write(markdownObject);
         return RootPanel;

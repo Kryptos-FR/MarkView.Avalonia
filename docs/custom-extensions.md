@@ -181,3 +181,135 @@ public class AdmonitionBlockRenderer : AvaloniaObjectRenderer<AdmonitionBlock>
     }
 }
 ```
+
+## Full example — a complete inline extension (Markdig parser + node + renderer)
+
+The example above renders an `AdmonitionBlock` but doesn't show how that block gets parsed
+in the first place — writing a `MarkView.Avalonia` renderer is only half of a real
+extension. The other half is a Markdig `IMarkdownExtension` that parses your syntax into a
+syntax tree node.
+
+This example implements `%[color:red]text%` inline colour spans end to end. It ships as a
+runnable, documented demo page in `samples/MarkView.Avalonia.Demo/ColorExtension/` — open
+that folder (and `Assets/color-extension.md`, which the page renders) for the full
+tutorial; this section covers the shape of the five pieces involved.
+
+### 1. The syntax tree node
+
+A leaf node holding whatever your parser extracts — here, a colour name and literal text
+content:
+
+```csharp
+public sealed class ColorSpanInline : LeafInline
+{
+    public string Color { get; }
+    public string Content { get; }
+
+    public ColorSpanInline(string color, string content)
+    {
+        Color = color;
+        Content = content;
+    }
+}
+```
+
+### 2. The Markdig parser
+
+Extend `Markdig.Parsers.InlineParser`, set `OpeningCharacters` to the character(s) that
+trigger it, and implement `Match`. Returning `false` leaves the input `slice` untouched and
+lets Markdig fall through to the next parser (plain text) — every built-in inline parser
+follows this same graceful-degradation contract, so a malformed `%[color:...]` just renders
+as literal text instead of breaking the document:
+
+```csharp
+public sealed class ColorSpanParser : InlineParser
+{
+    public ColorSpanParser() => OpeningCharacters = ['%'];
+
+    public override bool Match(InlineProcessor processor, ref StringSlice slice)
+    {
+        // ... match "[color:NAME]", scan ahead for the closing '%' ...
+        // On success:
+        processor.Inline = new ColorSpanInline(color, content)
+        {
+            Span = new SourceSpan(
+                processor.GetSourcePosition(startPosition, out var line, out var column),
+                processor.GetSourcePosition(slice.Start - 1)),
+            Line = line,
+            Column = column,
+        };
+        return true;
+    }
+}
+```
+
+Setting `Span`/`Line`/`Column` via `InlineProcessor.GetSourcePosition` matters beyond
+bookkeeping — `MarkView.Avalonia`'s cross-block text selection (see
+[docs/text-selection.md](text-selection.md)) relies on accurate source spans to map screen
+selections back to document positions.
+
+### 3. Registering the parser — a Markdig `IMarkdownExtension`
+
+This half is pure Markdig and knows nothing about Avalonia:
+
+```csharp
+public sealed class ColorMarkdownExtension : IMarkdownExtension
+{
+    public void Setup(MarkdownPipelineBuilder pipeline) =>
+        pipeline.InlineParsers.AddIfNotAlready<ColorSpanParser>();
+
+    public void Setup(MarkdownPipeline pipeline, IMarkdownRenderer renderer) { }
+}
+
+public static class ColorMarkdownExtensions
+{
+    public static MarkdownPipelineBuilder UseColorSpans(this MarkdownPipelineBuilder builder) =>
+        builder.Use<ColorMarkdownExtension>();
+}
+```
+
+### 4. The renderer + its `IMarkViewExtension`
+
+The `MarkView.Avalonia` half turns the parsed node into a control, following the same
+`AvaloniaObjectRenderer<T>` / `IMarkViewExtension` shape as every example earlier in this
+document:
+
+```csharp
+public sealed class ColorSpanRenderer : AvaloniaObjectRenderer<ColorSpanInline>
+{
+    protected override void Write(AvaloniaRenderer renderer, ColorSpanInline obj)
+    {
+        var run = new Run(obj.Content);
+        if (Color.TryParse(obj.Color, out var color))
+            run.Foreground = new SolidColorBrush(color);
+        renderer.WriteInline(run);
+    }
+}
+
+public sealed class ColorSpanExtension : IMarkViewExtension
+{
+    public void Register(AvaloniaRenderer renderer) =>
+        renderer.ObjectRenderers.Add(new ColorSpanRenderer());
+}
+```
+
+An unparseable colour name is treated the same way as a parse failure anywhere else in this
+document's examples: fall back to a sane default (here, the inherited foreground) rather
+than throwing.
+
+### 5. Wiring both halves together
+
+```csharp
+viewer.Pipeline = new MarkdownPipelineBuilder()
+    .UseSupportedExtensions()
+    .UseColorSpans()
+    .Build();
+viewer.Extensions.Add(new ColorSpanExtension());
+```
+
+Note the asymmetry if you set `Pipeline` on a `MarkdownViewer` instance instead of (or in
+addition to) `MarkdownViewerDefaults.Pipeline`: an instance `Pipeline` fully **replaces**
+the global default — none of `MarkdownViewerDefaults.Pipeline`'s extensions apply unless
+you add them again yourself. `Extensions`, by contrast, is **additive** — an instance's
+`Extensions` list is combined with `MarkdownViewerDefaults.Extensions`, not a replacement
+for it. See [docs/configuration.md](configuration.md) for the full precedence rules.

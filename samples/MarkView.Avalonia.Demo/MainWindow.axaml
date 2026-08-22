@@ -2,19 +2,66 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mv="using:MarkView.Avalonia"
         xmlns:local="using:MarkView.Avalonia.Demo"
+        xmlns:ce="using:MarkView.Avalonia.Demo.ColorExtension"
         x:Class="MarkView.Avalonia.Demo.MainWindow"
         x:DataType="local:MainViewModel"
         Title="MarkView.Avalonia Demo"
         Width="1000" Height="750">
 
+  <Window.Resources>
+    <local:OutlineFilterConverter x:Key="OutlineFilterConverter" />
+  </Window.Resources>
+
   <DockPanel>
+    <!-- Page tabs -->
+    <TabControl DockPanel.Dock="Top" SelectedIndex="{Binding SelectedIndex}">
+      <TabItem Header="Feature Showcase" />
+      <TabItem Header="Extensions Showcase" />
+      <TabItem Header="Custom Styling" />
+      <TabItem Header="Color Extension" />
+      <TabItem Header="README" />
+    </TabControl>
+
     <!-- Top bar -->
     <Border DockPanel.Dock="Top" Padding="12,8">
       <StackPanel Orientation="Horizontal" Spacing="8">
-        <TextBlock Text="View:" VerticalAlignment="Center" />
-        <ComboBox ItemsSource="{Binding Views}"
-                  SelectedIndex="{Binding SelectedIndex}"
-                  MinWidth="120" />
+        <!-- Outline -->
+        <ToggleButton x:Name="OutlineToggle"
+                      Width="32" Height="32" Padding="4">
+          <PathIcon Data="{StaticResource text_bullet_list_tree_regular}" />
+        </ToggleButton>
+        <Popup x:Name="OutlinePopup"
+               IsOpen="{Binding #OutlineToggle.IsChecked, Mode=TwoWay}" IsLightDismissEnabled="True"
+               PlacementTarget="{Binding #OutlineToggle}">
+          <Border Background="{DynamicResource MenuFlyoutPresenterBackground}"
+                  BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
+                  BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
+                  CornerRadius="{DynamicResource OverlayCornerRadius}"
+                  Padding="8" MinWidth="260" MaxWidth="360" MaxHeight="420">
+            <DockPanel>
+              <TextBox x:Name="OutlineFilterBox" DockPanel.Dock="Top"
+                       PlaceholderText="Filter headings" Margin="0,0,0,8" />
+              <ScrollViewer>
+                <ListBox x:Name="OutlineList"
+                         Background="Transparent"
+                         SelectionChanged="OnOutlineSelectionChanged">
+                  <ListBox.ItemsSource>
+                    <MultiBinding Converter="{StaticResource OutlineFilterConverter}">
+                      <Binding ElementName="MarkdownView" Path="TableOfContents" />
+                      <Binding ElementName="OutlineFilterBox" Path="Text" />
+                    </MultiBinding>
+                  </ListBox.ItemsSource>
+                  <ListBox.ItemTemplate>
+                    <DataTemplate DataType="local:OutlineRow">
+                      <TextBlock Text="{Binding Entry.Text}" Margin="{Binding Indent}"
+                                 TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </ScrollViewer>
+            </DockPanel>
+          </Border>
+        </Popup>
         <Button Content="←"
                 Click="OnGoBackClicked"
                 IsEnabled="{Binding CanGoBack}"
@@ -34,10 +81,15 @@
       </StackPanel>
     </Border>
 
-    <!-- Markdown content -->
-    <mv:MarkdownViewer x:Name="MarkdownView"
-                       Source="{Binding Source}"
-                       Markdown="{Binding Markdown}" />
+    <!-- Page content -->
+    <Grid>
+      <mv:MarkdownViewer x:Name="MarkdownView"
+                         Source="{Binding Source}" Markdown="{Binding Markdown}"
+                         Classes.custom-styled="{Binding IsCustomStyled}"
+                         IsVisible="{Binding !IsColorExtensionSelected}"
+                         Padding="4" />
+      <ce:ColorExtensionView IsVisible="{Binding IsColorExtensionSelected}" />
+    </Grid>
   </DockPanel>
 
 </Window>

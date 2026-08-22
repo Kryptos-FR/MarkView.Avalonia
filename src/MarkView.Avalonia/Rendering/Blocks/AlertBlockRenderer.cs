@@ -21,12 +21,12 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         var kindRaw = obj.Kind.ToString();
         var (kindLower, kindUpper) = kindRaw.ToUpperInvariant() switch
         {
-            "NOTE"      => ("note",      "NOTE"),
-            "TIP"       => ("tip",       "TIP"),
-            "WARNING"   => ("warning",   "WARNING"),
+            "NOTE" => ("note", "NOTE"),
+            "TIP" => ("tip", "TIP"),
+            "WARNING" => ("warning", "WARNING"),
             "IMPORTANT" => ("important", "IMPORTANT"),
-            "CAUTION"   => ("caution",   "CAUTION"),
-            var upper   => (kindRaw.ToLowerInvariant(), upper),
+            "CAUTION" => ("caution", "CAUTION"),
+            var upper => (kindRaw.ToLowerInvariant(), upper),
         };
 
         var header = new TextBlock { Text = kindUpper };

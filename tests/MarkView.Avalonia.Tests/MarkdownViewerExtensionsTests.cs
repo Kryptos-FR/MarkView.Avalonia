@@ -80,8 +80,7 @@ public class MarkdownViewerExtensionsTests
         viewer.UseFootnotes();
         viewer.Markdown = "Text[^1]\n\n[^1]: Definition";
 
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         // Footnote group should be the last child
         Assert.True(panel.Children.Count >= 2, "Expected content + footnote group");
@@ -94,8 +93,7 @@ public class MarkdownViewerExtensionsTests
         viewer.UseAlertBlocks();
         viewer.Markdown = "> [!NOTE]\n> Hello";
 
-        var scrollViewer = Assert.IsType<ScrollViewer>(viewer.Content);
-        var contentGrid = Assert.IsType<Grid>(scrollViewer.Content);
+        var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         var border = Assert.IsType<Border>(Assert.Single(panel.Children));
         Assert.Contains("markdown-alert", border.Classes);
