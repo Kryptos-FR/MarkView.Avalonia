@@ -37,3 +37,39 @@ jobs:
         with:
           name: mutation-report-${{ matrix.test-project }}
           path: tests/${{ matrix.test-project }}/StrykerOutput/**/reports/
+
+  aggregate:
+    needs: mutate
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download mutation reports
+        uses: actions/download-artifact@v6
+        with:
+          pattern: mutation-report-*
+          path: mutation-reports
+
+      - name: Merge mutation reports
+        shell: pwsh
+        run: |
+          ./.github/scripts/Merge-MutationReports.ps1 `
+            -ReportsRoot mutation-reports `
+            -OutputPath mutation-reports/CombinedMutationReport.md
+
+      - name: Upload combined mutation report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: combined-mutation-report
+          path: mutation-reports/CombinedMutationReport.md
+
+      - name: Post mutation summary to PR
+        uses: marocchino/sticky-pull-request-comment@v3
+        if: always() && github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: mutation-reports/CombinedMutationReport.md
