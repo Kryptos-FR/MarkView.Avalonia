@@ -4,7 +4,8 @@
     "test-runner": "mtp",
     "reporters": [
       "html",
-      "progress"
+      "progress",
+      "markdown"
     ],
     "thresholds": {
       "high": 80,
