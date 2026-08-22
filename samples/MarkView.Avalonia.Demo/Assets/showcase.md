@@ -82,7 +82,7 @@ The `EmphasisExtras` Markdig extension unlocks four additional inline styles:
 | `MarkView.Avalonia.SyntaxHighlighting` | Code highlighting | ✅ Published | TextMate grammars |
 | `MarkView.Avalonia.Svg` | SVG images | ✅ Published | Avalonia.Svg |
 | `MarkView.Avalonia.Mermaid` | Mermaid diagrams | ✅ Published | Pure .NET |
-| `MarkView.Avalonia.Math` | LaTeX math | ⚠️ Prerelease dependency | CSharpMath.SkiaSharp |
+| `MarkView.Avalonia.Math` | LaTeX math | ✅ Published | CSharpMath.SkiaSharp |
 
 ---
 

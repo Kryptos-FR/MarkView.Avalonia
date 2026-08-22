@@ -10,8 +10,6 @@ LaTeX math rendering extension for [MarkView.Avalonia](https://www.nuget.org/pac
 
 Because `$` is common in ordinary prose (currency amounts, etc.), this parsing is opt-in only — enabling it changes how literal `$` characters are interpreted in your documents.
 
-> **Prerelease dependency:** this package currently pins `CSharpMath.SkiaSharp` to a `1.0.0-pre.1` prerelease build, since it's the version CSharpMath explicitly targets .NET 10 with. **This branch/package must not be merged or released until CSharpMath ships a stable 1.0.0** — re-pin the version at that point.
-
 ## Installation
 
 ```bash

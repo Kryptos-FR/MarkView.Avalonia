@@ -33,8 +33,8 @@ internal static class MathFormulaRenderer
         };
 
         // NOTE: DrawAsStream() has never returned null in empirical testing (even for "" or
-        // whitespace-only input) — this is defensive against a future CSharpMath prerelease
-        // behavior change, not a currently-reachable path.
+        // whitespace-only input) — this is defensive against a future CSharpMath behavior change,
+        // not a currently-reachable path.
         using var stream = painter.DrawAsStream()
             ?? throw new InvalidOperationException("CSharpMath failed to render the formula to a stream.");
         return new Bitmap(stream);
