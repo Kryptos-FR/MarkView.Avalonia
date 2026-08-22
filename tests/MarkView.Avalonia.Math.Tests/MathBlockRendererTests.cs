@@ -4,6 +4,8 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 
+using CSharpMath.Avalonia;
+
 using Markdig;
 
 using MarkView.Avalonia.Rendering;
@@ -34,20 +36,20 @@ public class MathBlockRendererTests
     }
 
     [AvaloniaFact]
-    public void Math_block_border_contains_image()
+    public void Math_block_border_contains_math_view()
     {
         var result = Render("$$\nx^2\n$$");
         var border = Assert.IsType<Border>(Assert.Single(result.Children));
-        Assert.IsType<Image>(border.Child);
+        Assert.IsType<MathView>(border.Child);
     }
 
     [AvaloniaFact]
-    public void Math_block_image_has_non_null_bitmap_source()
+    public void Math_block_math_view_has_expected_latex()
     {
         var result = Render("$$\nx^2\n$$");
         var border = Assert.IsType<Border>(Assert.Single(result.Children));
-        var image = Assert.IsType<Image>(border.Child);
-        Assert.NotNull(image.Source);
+        var mathView = Assert.IsType<MathView>(border.Child);
+        Assert.Equal("x^2", mathView.LaTeX);
     }
 
     [AvaloniaFact]

@@ -9,8 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
-    <PackageReference Include="CSharpMath.SkiaSharp" />
-    <PackageReference Include="SkiaSharp" VersionOverride="4.148.0" />
+    <PackageReference Include="CSharpMath.Avalonia" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="/" />

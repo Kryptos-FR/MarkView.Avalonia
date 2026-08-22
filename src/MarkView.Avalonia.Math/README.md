@@ -6,9 +6,11 @@
 [![CI](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml/badge.svg)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](../../LICENSE.md)
 
-LaTeX math rendering extension for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia). Renders `$...$` (inline) and `$$...$$` (block) math using [CSharpMath](https://github.com/verybadcat/CSharpMath)'s SkiaSharp renderer — pure .NET, no browser, no WebView, no JavaScript runtime.
+LaTeX math rendering extension for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia). Renders `$...$` (inline) and `$$...$$` (block) math using [CSharpMath](https://github.com/verybadcat/CSharpMath)'s Avalonia renderer — a native `Control` drawn with vector primitives directly into Avalonia's `DrawingContext`, pure .NET, no browser, no WebView, no JavaScript runtime.
 
 Because `$` is common in ordinary prose (currency amounts, etc.), this parsing is opt-in only — enabling it changes how literal `$` characters are interpreted in your documents.
+
+> **Prerelease dependency:** this package currently pins `CSharpMath.Avalonia` to a `1.0.0-pre.2` prerelease build, since it's the version CSharpMath explicitly targets Avalonia 12/.NET 10 with. **This branch/package must not be merged or released until CSharpMath ships a stable 1.0.0** — re-pin the version at that point.
 
 ## Installation
 
@@ -53,8 +55,8 @@ $$
 ## Theme Awareness
 
 Formulas are rendered with colours matching the active Avalonia theme variant (dark `#FAFAFA`,
-light `#27272A` text), and are automatically re-rendered when the user switches between light and
-dark.
+light `#27272A` text). Each formula's `TextColor` property updates in place when the user switches
+between light and dark — no re-typeset, no rebuild.
 
 ## Combining with Mermaid
 
@@ -65,8 +67,8 @@ for a Mermaid diagram or a plain code block regardless of registration order.
 ## Error Handling
 
 Invalid LaTeX renders CSharpMath's own inline error text rather than throwing. Unexpected
-rendering failures fall back to a plain-text panel (block math) or leave the last successfully
-rendered formula in place (inline math).
+rendering failures fall back to a plain-text panel (block math) or plain source text (inline
+math).
 
 ## License
 

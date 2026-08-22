@@ -82,7 +82,7 @@ The `EmphasisExtras` Markdig extension unlocks four additional inline styles:
 | `MarkView.Avalonia.SyntaxHighlighting` | Code highlighting | ✅ Published | TextMate grammars |
 | `MarkView.Avalonia.Svg` | SVG images | ✅ Published | Avalonia.Svg |
 | `MarkView.Avalonia.Mermaid` | Mermaid diagrams | ✅ Published | Pure .NET |
-| `MarkView.Avalonia.Math` | LaTeX math | ✅ Published | CSharpMath.SkiaSharp |
+| `MarkView.Avalonia.Math` | LaTeX math | ⚠️ Prerelease dependency | CSharpMath.Avalonia |
 
 ---
 
@@ -182,8 +182,8 @@ flowchart LR
 ## Math
 
 LaTeX math is rendered by the `MarkView.Avalonia.Math` extension, via
-[CSharpMath](https://github.com/verybadcat/CSharpMath)'s SkiaSharp renderer — pure .NET, no
-browser or WebView required.
+[CSharpMath](https://github.com/verybadcat/CSharpMath)'s Avalonia renderer — a native vector
+`Control`, pure .NET, no browser or WebView required.
 
 Inline math sits within a sentence, e.g. mass–energy equivalence, $E = mc^2$, or the Pythagorean
 theorem, $a^2 + b^2 = c^2$.
