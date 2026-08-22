@@ -1,0 +1,16 @@
+{
+  "stryker-config": {
+    "project": "MarkView.Avalonia.SyntaxHighlighting.csproj",
+    "test-runner": "mtp",
+    "reporters": [
+      "html",
+      "progress",
+      "markdown"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 60,
+      "break": 0
+    }
+  }
+}

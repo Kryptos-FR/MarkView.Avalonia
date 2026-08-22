@@ -23,8 +23,15 @@ jobs:
 
   coverage:
     permissions:
+      contents: read
       pull-requests: write
     uses: ./.github/workflows/coverage.yml
+
+  mutation:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/mutation.yml
 
   aot-publish:
     strategy:
