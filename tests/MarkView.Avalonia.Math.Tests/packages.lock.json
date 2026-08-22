@@ -99,15 +99,23 @@
       },
       "CSharpMath": {
         "type": "Transitive",
-        "resolved": "1.0.0-pre.1",
-        "contentHash": "DxNiPY3GTeE873k5CFOz8b7DGn99qeBlX/9fBWMFJMrUMFKJq6Hr7Qf1WfN72kHUt9pzv081co4KOlWtbzzRCg=="
+        "resolved": "0.5.1",
+        "contentHash": "CBAtejk24icPQNJWPjUDGUqklNLpfglpRxQljiezn2MQrxL5cIVuouCVnw6ipU3cft9Tq8YfS6f/JPhSjhFtFA=="
+      },
+      "CSharpMath.Editor": {
+        "type": "Transitive",
+        "resolved": "0.5.1",
+        "contentHash": "q5MFAjI7TO41PtGFNHBFwOw3J3IS7Dnm7aJHEgPxMWE5wl1H5byOo0pJnGwXevjhoSRssGRJH2KCXgn0KbGJFQ==",
+        "dependencies": {
+          "CSharpMath": "0.5.1"
+        }
       },
       "CSharpMath.Rendering": {
         "type": "Transitive",
-        "resolved": "1.0.0-pre.1",
-        "contentHash": "Z7Pywza48XD9ygAtipuMDt+0SjHSUPLOdpT8xpA8QZqQ3j+HmXho54sFNPnRkMl7hIwBVmLbRObeQ1oN2rZJVg==",
+        "resolved": "0.5.1",
+        "contentHash": "H4tctQzgpQmLICON1QAJtfm3/dj4exoxEKTuF9oO5YkHXMANWNfOQKwVtAx6n78hcD6WidwF2v2pH8Z/cOw/gg==",
         "dependencies": {
-          "CSharpMath": "1.0.0-pre.1"
+          "CSharpMath.Editor": "0.5.1"
         }
       },
       "ExCSS": {
@@ -387,8 +395,9 @@
       "markview.avalonia.math": {
         "type": "Project",
         "dependencies": {
-          "CSharpMath.SkiaSharp": "[1.0.0-pre.1, )",
-          "MarkView.Avalonia": "[1.0.0, )"
+          "CSharpMath.SkiaSharp": "[0.5.1, )",
+          "MarkView.Avalonia": "[1.0.0, )",
+          "SkiaSharp": "[4.148.0, )"
         }
       },
       "markview.avalonia.mermaid": {
@@ -421,12 +430,12 @@
       },
       "CSharpMath.SkiaSharp": {
         "type": "CentralTransitive",
-        "requested": "[1.0.0-pre.1, )",
-        "resolved": "1.0.0-pre.1",
-        "contentHash": "iie1WLYYdo7w9vrz1a1qUZoLj1YNpLIVJ+8/wrdY7krqd/el9Elmy+6HioFtId9HDbP6NTHnAtS7xt+HFatfqQ==",
+        "requested": "[0.5.1, )",
+        "resolved": "0.5.1",
+        "contentHash": "3SMI0o2EZi2/GskH6T5s9GDaBq9u0VBd/o8Geqd+FyPxEXCcmzECOZ3PdVdob/YNevl4okOTbqZrHZS2O28/ZQ==",
         "dependencies": {
-          "CSharpMath.Rendering": "1.0.0-pre.1",
-          "SkiaSharp": "3.119.1"
+          "CSharpMath.Rendering": "0.5.1",
+          "SkiaSharp": "2.80.1"
         }
       },
       "Markdig": {
