@@ -16,9 +16,10 @@ jobs:
       matrix:
         test-project:
           - MarkView.Avalonia.Tests
+          - MarkView.Avalonia.Math.Tests
+          - MarkView.Avalonia.Mermaid.Tests
           - MarkView.Avalonia.Svg.Tests
           - MarkView.Avalonia.SyntaxHighlighting.Tests
-          - MarkView.Avalonia.Mermaid.Tests
     steps:
       - uses: actions/checkout@v7
 
