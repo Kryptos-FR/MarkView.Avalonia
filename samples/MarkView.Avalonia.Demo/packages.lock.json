@@ -119,6 +119,27 @@
           "Avalonia.Skia": "12.1.1"
         }
       },
+      "CSharpMath": {
+        "type": "Transitive",
+        "resolved": "0.5.1",
+        "contentHash": "CBAtejk24icPQNJWPjUDGUqklNLpfglpRxQljiezn2MQrxL5cIVuouCVnw6ipU3cft9Tq8YfS6f/JPhSjhFtFA=="
+      },
+      "CSharpMath.Editor": {
+        "type": "Transitive",
+        "resolved": "0.5.1",
+        "contentHash": "q5MFAjI7TO41PtGFNHBFwOw3J3IS7Dnm7aJHEgPxMWE5wl1H5byOo0pJnGwXevjhoSRssGRJH2KCXgn0KbGJFQ==",
+        "dependencies": {
+          "CSharpMath": "0.5.1"
+        }
+      },
+      "CSharpMath.Rendering": {
+        "type": "Transitive",
+        "resolved": "0.5.1",
+        "contentHash": "H4tctQzgpQmLICON1QAJtfm3/dj4exoxEKTuF9oO5YkHXMANWNfOQKwVtAx6n78hcD6WidwF2v2pH8Z/cOw/gg==",
+        "dependencies": {
+          "CSharpMath.Editor": "0.5.1"
+        }
+      },
       "ExCSS": {
         "type": "Transitive",
         "resolved": "4.3.1",
@@ -273,6 +294,14 @@
           "Markdig": "[1.3.2, )"
         }
       },
+      "markview.avalonia.math": {
+        "type": "Project",
+        "dependencies": {
+          "CSharpMath.SkiaSharp": "[0.5.1, )",
+          "MarkView.Avalonia": "[1.0.0, )",
+          "SkiaSharp": "[4.148.0, )"
+        }
+      },
       "markview.avalonia.mermaid": {
         "type": "Project",
         "dependencies": {
@@ -305,6 +334,16 @@
           "Avalonia.BuildServices": "11.3.2",
           "Avalonia.Remote.Protocol": "12.1.1",
           "MicroCom.Runtime": "0.11.6"
+        }
+      },
+      "CSharpMath.SkiaSharp": {
+        "type": "CentralTransitive",
+        "requested": "[0.5.1, )",
+        "resolved": "0.5.1",
+        "contentHash": "3SMI0o2EZi2/GskH6T5s9GDaBq9u0VBd/o8Geqd+FyPxEXCcmzECOZ3PdVdob/YNevl4okOTbqZrHZS2O28/ZQ==",
+        "dependencies": {
+          "CSharpMath.Rendering": "0.5.1",
+          "SkiaSharp": "2.80.1"
         }
       },
       "Markdig": {

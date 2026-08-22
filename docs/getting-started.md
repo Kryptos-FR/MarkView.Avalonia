@@ -14,6 +14,7 @@ Optionally add extension packages for richer rendering:
 dotnet add package MarkView.Avalonia.SyntaxHighlighting  # TextMate code highlighting
 dotnet add package MarkView.Avalonia.Svg                 # SVG image rendering
 dotnet add package MarkView.Avalonia.Mermaid             # Mermaid diagram rendering
+dotnet add package MarkView.Avalonia.Math                # LaTeX math rendering
 ```
 
 ## 1. Include the default theme

@@ -194,6 +194,18 @@ viewer.UseSvg();
 
 The extension inserts `SvgImageLoader` at the front of the image loader chain. Regular raster images continue to load via the built-in HTTP fallback.
 
+### LaTeX Math (`MarkView.Avalonia.Math`)
+
+Renders `$...$` (inline) and `$$...$$` (block) LaTeX math using CSharpMath's SkiaSharp renderer — pure .NET, no browser or WebView required.
+
+```bash
+dotnet add package MarkView.Avalonia.Math
+```
+
+```csharp
+viewer.UseMath();
+```
+
 ### Mermaid Diagrams (`MarkView.Avalonia.Mermaid`)
 
 Renders fenced `mermaid` code blocks as SVG diagrams using the [Mermaider](https://github.com/nullean/mermaider) library (pure .NET, no browser required). Works on all platforms including Linux. Diagrams re-render automatically when the user switches between light and dark themes.
@@ -219,13 +231,14 @@ graph TD
 
 ### Combining extensions
 
-All three can be stacked:
+All four can be stacked:
 
 ```csharp
 viewer
     .UseTextMateHighlighting()
     .UseSvg()
-    .UseMermaid();
+    .UseMermaid()
+    .UseMath();
 ```
 
 Extensions are applied in the order they are added to `viewer.Extensions`. Each extension's `Register` method is called once per render pass, before the Markdig pipeline is set up.

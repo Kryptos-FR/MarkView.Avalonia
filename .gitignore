@@ -482,6 +482,7 @@ $RECYCLE.BIN/
 *.swp
 
 .worktrees
+.superpowers
 
 # Stryker mutation testing output
 StrykerOutput/

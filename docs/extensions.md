@@ -108,12 +108,44 @@ If rendering fails, the extension falls back to a plain-text block containing th
 
 ---
 
-## Using all three together
+## Math
+
+**Package:** `MarkView.Avalonia.Math`
+**[README](../src/MarkView.Avalonia.Math/README.md)**
+
+Renders `$...$` (inline) and `$$...$$` (block) LaTeX math via CSharpMath's SkiaSharp renderer.
+
+### Activation
+
+```csharp
+viewer.UseMath();
+// or globally:
+MarkdownViewerDefaults.Extensions.AddMath();
+MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
+    .UseSupportedExtensions()
+    .UseMathematics()
+    .Build();
+```
+
+### Theme awareness
+
+Formulas re-render automatically on light/dark theme switch, matching Mermaid's exact two-hex
+convention (dark `#FAFAFA`, light `#27272A` text).
+
+### Fallback
+
+Invalid LaTeX renders CSharpMath's own inline error text. Unexpected exceptions fall back to a
+plain-text panel for block math, or leave the last successful render in place for inline math.
+
+---
+
+## Using all four together
 
 ```csharp
 MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
 MarkdownViewerDefaults.Extensions.AddSvg();
 MarkdownViewerDefaults.Extensions.AddMermaid();
+MarkdownViewerDefaults.Extensions.AddMath();
 ```
 
-`MermaidBlockRenderer` is inserted at index 0 of `renderer.ObjectRenderers` and intercepts every `FencedCodeBlock`. Mermaid blocks are rendered as diagrams; all other fenced blocks pass through to `TextMateCodeBlockRenderer` (or the default `CodeBlockRenderer` if the SyntaxHighlighting extension is not active).
+`MermaidBlockRenderer` is inserted immediately before the first renderer that already accepts a `FencedCodeBlock` (rather than always at index 0 — this keeps registration order-independent relative to sibling extensions like `MarkView.Avalonia.Math`'s `MathBlockRenderer`) and intercepts every `FencedCodeBlock`. Mermaid blocks are rendered as diagrams; all other fenced blocks pass through to `TextMateCodeBlockRenderer` (or the default `CodeBlockRenderer` if the SyntaxHighlighting extension is not active).

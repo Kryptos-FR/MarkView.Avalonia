@@ -99,7 +99,7 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 
 ## How It Works
 
-`UseMermaid()` registers a `MermaidExtension` which inserts `MermaidBlockRenderer` at index 0 of `renderer.ObjectRenderers`. Being first in the renderer list, it intercepts every `FencedCodeBlock` before the default `CodeBlockRenderer`.
+`UseMermaid()` registers a `MermaidExtension` which inserts `MermaidBlockRenderer` immediately before the first renderer that already accepts a `FencedCodeBlock` (not always at index 0 — this keeps registration order-independent when a sibling extension such as `MarkView.Avalonia.Math` is also registered), so it intercepts every `FencedCodeBlock` before the default `CodeBlockRenderer`.
 
 For mermaid blocks:
 1. Source lines are extracted from the fenced block.

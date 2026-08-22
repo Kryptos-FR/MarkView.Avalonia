@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Markdig;
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Blocks;
 using Xunit;
 
 namespace MarkView.Avalonia.Mermaid.Tests;
@@ -56,11 +57,14 @@ public class MermaidBlockRendererTests
     }
 
     [AvaloniaFact]
-    public void MermaidExtension_Register_inserts_renderer_at_index_0()
+    public void MermaidExtension_Register_inserts_renderer_before_default_CodeBlockRenderer()
     {
         var renderer = new AvaloniaRenderer();
         new MermaidExtension().Register(renderer);
-        Assert.IsType<MermaidBlockRenderer>(renderer.ObjectRenderers[0]);
+        var renderers = renderer.ObjectRenderers.ToList();
+        var mermaidIndex = renderers.FindIndex(r => r is MermaidBlockRenderer);
+        var codeBlockIndex = renderers.FindIndex(r => r is CodeBlockRenderer);
+        Assert.True(mermaidIndex >= 0 && codeBlockIndex >= 0 && mermaidIndex < codeBlockIndex);
     }
 
     [AvaloniaFact]
