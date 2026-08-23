@@ -1,0 +1,9 @@
+<svg width="128" height="128" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <path d="M24 0C37.2548 0 48 10.7452 48 24V42C48 45.3137 45.3137 48 42 48H24C10.7452 48 0 37.2548 0 24C0 10.7452 10.7452 0 24 0Z" fill="#007DF9"/>
+  <!-- M glyph, plain -->
+  <path d="M9 36V12h7.5l7.5 8.8 7.5-8.8h7.5v24H31.5V22.24L24 31.06 16.5 22.24v13.76z" fill="#F3F1F0"/>
+  <!-- spacer: badge-colored circle sitting on top of the M, between it and the moon -->
+  <circle cx="7.5" cy="24" r="5.2" fill="#007DF9"/>
+  <!-- moon -->
+  <circle cx="7.5" cy="24" r="3.5" fill="#F3F1F0"/>
+</svg>
