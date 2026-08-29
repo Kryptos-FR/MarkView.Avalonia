@@ -37,12 +37,6 @@
           "Microsoft.TestPlatform.TestHost": "18.9.0"
         }
       },
-      "xunit.runner.visualstudio": {
-        "type": "Direct",
-        "requested": "[4.0.0, )",
-        "resolved": "4.0.0",
-        "contentHash": "kzLFyBYUnoidpGOXvpNOfIo8C92gVgVR6X8ncHwhcrDYugiOut5rrhDkr0L3cWHd7J2pKXf6LgaeXoBBDlx1ag=="
-      },
       "xunit.v3": {
         "type": "Direct",
         "requested": "[3.2.2, )",
