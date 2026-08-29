@@ -33,7 +33,7 @@ jobs:
 
       - name: Push lock files
         if: steps.check-lock-files.outcome == 'failure'
-        run:
+        run: |
           if git diff --quiet -- '*packages.lock.json'; then
             echo "Lock files already up to date."
             exit 0
