@@ -1,0 +1,20 @@
+{
+  "codeCoverage": {
+    "Configuration": {
+      "Format": "cobertura",
+      "CodeCoverage": {
+        "ModulePaths": {
+          "Exclude": [".*\\.Tests\\.dll$"]
+        },
+        "Functions": {
+          "Exclude": ["CompiledAvaloniaXaml"]
+        },
+        "Attributes": {
+          "Exclude": [
+            "^System\\.Diagnostics\\.CodeAnalysis\\.ExcludeFromCodeCoverageAttribute$"
+          ]
+        }
+      }
+    }
+  }
+}
