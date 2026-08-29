@@ -215,8 +215,8 @@
       },
       "ShimSkiaSharp": {
         "type": "Transitive",
-        "resolved": "5.2.1",
-        "contentHash": "mUPSMxfW+vjtwDPrbhK3ILQg8D7aud7JO7p2Y5cqPmKf+s2erTyfEWohlVHCjSSDPvpT5L4aKLqnW02JCfGvag=="
+        "resolved": "5.2.3",
+        "contentHash": "BBmIvh70WduWEF8C9HeU12LmHkg6+h2SRwJzey/tmztRk4ttAxhyu9eAD/jlsNGlqquYpoCQyyTx+QynavyfVA=="
       },
       "SkiaSharp": {
         "type": "Transitive",
@@ -254,56 +254,56 @@
       },
       "Svg.Animation": {
         "type": "Transitive",
-        "resolved": "5.2.1",
-        "contentHash": "/WKtsXMKAGIoiNzETQvQQtwoO3V2gEonkxqwrEdiGPSXuTG9Q0c6K34P06HhVXnLaZjjvxja+vOIKVSUucXOug==",
+        "resolved": "5.2.3",
+        "contentHash": "mlbLFKzSVL2wMvDxnlMKLbdbbCbZBjDwSgmCZ7dHE4l0DtVUX5kHixngZlUP8AuBoikzqsXZt4+IXJhbeJjAdA==",
         "dependencies": {
-          "ShimSkiaSharp": "5.2.1",
+          "ShimSkiaSharp": "5.2.3",
           "SkiaSharp": "4.148.0",
-          "Svg.Custom": "5.2.1",
-          "Svg.Model": "5.2.1"
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3"
         }
       },
       "Svg.Custom": {
         "type": "Transitive",
-        "resolved": "5.2.1",
-        "contentHash": "7qAG1I0FGlMwOJk0Js41TmvRJ0eLJPpz8Edd8DOzsotLikUhYGDZZlwXV+6sKvsApfIZEfarH0KwI38T9OHsmw==",
+        "resolved": "5.2.3",
+        "contentHash": "epicuKTb55l7Y6c3f9pdP0RkoifVieS9sWvA9HsppTfYyV7RFZg89+fUA9TTPcuccqi0GUGwiPEi+9b881zlDw==",
         "dependencies": {
           "ExCSS": "4.3.1"
         }
       },
       "Svg.Model": {
         "type": "Transitive",
-        "resolved": "5.2.1",
-        "contentHash": "0+fG1BFw3QoXj+4sxpaXpLDZXz+Snb289epyP3HKjEjUUoWVsErMZb6teo4dVj8KElRJIeXjX6jD1C0B1vLRXw==",
+        "resolved": "5.2.3",
+        "contentHash": "iZInP4/48rIkpFxVJNMmxDDjIBaUcGOHrzancQ3cmneHXrtH4MYkm6bzggL9hCiS2dxfLhk3JCiERoGf8j0MlA==",
         "dependencies": {
-          "ShimSkiaSharp": "5.2.1",
-          "Svg.Custom": "5.2.1"
+          "ShimSkiaSharp": "5.2.3",
+          "Svg.Custom": "5.2.3"
         }
       },
       "Svg.SceneGraph": {
         "type": "Transitive",
-        "resolved": "5.2.1",
-        "contentHash": "vm2QxbPv5MraL7T2+1dh0m8lGQqtW37RK4iOHvBsJQHQzcuDlCR+uX/Oiun77kS2US2OC23zfaIFEYWGwocXLw==",
+        "resolved": "5.2.3",
+        "contentHash": "t9HrB1n499YCvziq+sdapDjMvgY7iSzyldEDalWnoZCP3cncu92gEktBqzhUgo8A+r9mfow2TNf0u5jgV5FvlQ==",
         "dependencies": {
-          "ShimSkiaSharp": "5.2.1",
-          "Svg.Custom": "5.2.1",
-          "Svg.Model": "5.2.1"
+          "ShimSkiaSharp": "5.2.3",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3"
         }
       },
       "Svg.Skia": {
         "type": "Transitive",
-        "resolved": "5.2.1",
-        "contentHash": "es8F7MSeJJgc30Dmi0ZsrPpGQmLTQuS3DCvHcJ9wYlNAt3oHEoEzg5ugX3bwMPFejrPNLNjPpr1VOiMrpFyvIA==",
+        "resolved": "5.2.3",
+        "contentHash": "slGSy5Aje/30Ou2a5aezbGGWLZspBIBYlEzqgtaIVex4FUYAR3mxaYrvMZj1tHy+ESDFCGY7+2FjF6UzqGUZew==",
         "dependencies": {
           "HarfBuzzSharp": "14.2.0",
           "HarfBuzzSharp.NativeAssets.Linux": "14.2.0",
           "HarfBuzzSharp.NativeAssets.Win32": "14.2.0",
           "HarfBuzzSharp.NativeAssets.macOS": "14.2.0",
           "SkiaSharp": "4.148.0",
-          "Svg.Animation": "5.2.1",
-          "Svg.Custom": "5.2.1",
-          "Svg.Model": "5.2.1",
-          "Svg.SceneGraph": "5.2.1"
+          "Svg.Animation": "5.2.3",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3",
+          "Svg.SceneGraph": "5.2.3"
         }
       },
       "xunit.analyzers": {
@@ -385,7 +385,7 @@
         "dependencies": {
           "MarkView.Avalonia": "[1.0.0, )",
           "Mermaider": "[0.12.2, )",
-          "Svg.Controls.Skia.Avalonia": "[12.0.0.15, )"
+          "Svg.Controls.Skia.Avalonia": "[12.0.0.17, )"
         }
       },
       "Avalonia": {
@@ -426,13 +426,13 @@
       },
       "Svg.Controls.Skia.Avalonia": {
         "type": "CentralTransitive",
-        "requested": "[12.0.0.15, )",
-        "resolved": "12.0.0.15",
-        "contentHash": "dpL8LvvKBkVB8oAOgou+aSQEfyWVMWY79UN7EZDcF1PHGoINhBDwGVoBLItA7SEdjpy3d+5LegABYGxeu0Ou1w==",
+        "requested": "[12.0.0.17, )",
+        "resolved": "12.0.0.17",
+        "contentHash": "O+DZp+f+7RVkP1YSF9Q9CubWXj3wrcn9gbCko1IIWUAtBEYySE5v55Z43/tqj9RQKcnq+Sj/ahkRP2Wwixa5lw==",
         "dependencies": {
           "Avalonia.Skia": "12.0.0",
           "SkiaSharp.NativeAssets.Linux": "4.148.0",
-          "Svg.Skia": "5.2.1"
+          "Svg.Skia": "5.2.3"
         }
       }
     }
