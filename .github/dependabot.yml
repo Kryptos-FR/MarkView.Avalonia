@@ -10,3 +10,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # Avalonia.Headless.XUnit isn't compatible with xunit.v3 4.0.0 (AvaloniaUI/Avalonia#22072).
+      # Drop this ignore once Avalonia ships a compatible package.
+      - dependency-name: "xunit.v3"
+        update-types: ["version-update:semver-major"]

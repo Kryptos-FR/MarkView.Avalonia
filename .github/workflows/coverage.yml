@@ -27,12 +27,12 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Test with coverage
-        run: dotnet test --no-build --configuration Release --settings coverlet.runsettings --results-directory TestResults
+        run: dotnet test --no-build --configuration Release --results-directory TestResults --coverage --config-file testconfig.json
 
       - name: Generate report and enforce threshold
         uses: danielpalme/ReportGenerator-GitHub-Action@5
         with:
-          reports: 'TestResults/**/coverage.cobertura.xml'
+          reports: 'TestResults/**/*.cobertura.xml'
           targetdir: coveragereport
           reporttypes: 'Html;MarkdownSummaryGithub'
           customSettings: 'minimumCoverageThresholds:lineCoverage=80'
