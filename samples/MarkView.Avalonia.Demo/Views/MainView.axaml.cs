@@ -2,14 +2,13 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 
-namespace MarkView.Avalonia.Demo;
+namespace MarkView.Avalonia.Demo.Views;
 
-public partial class MainWindow : Window
+public partial class MainView : UserControl
 {
-    public MainWindow()
+    public MainView()
     {
         InitializeComponent();
-        DataContext = new MainViewModel();
     }
 
     private void OnGoBackClicked(object? sender, RoutedEventArgs e) =>
@@ -20,7 +19,11 @@ public partial class MainWindow : Window
 
     private async void OnOpenFileClicked(object? sender, RoutedEventArgs e)
     {
-        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storageProvider is null)
+            return;
+
+        var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "Open Markdown file",
             AllowMultiple = false,
