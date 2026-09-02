@@ -283,6 +283,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
         PushEntry(Source, null);
     }
 
+    public void LoadMarkdownContent(string markdown)
+    {
+        Source = null;
+        Markdown = markdown;
+        PushEntry(null, markdown);
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
