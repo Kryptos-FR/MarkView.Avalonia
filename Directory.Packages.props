@@ -6,6 +6,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <AvaloniaVersion>12.1.1</AvaloniaVersion>
+    <SkiaSharpVersion>4.148.0</SkiaSharpVersion>
   </PropertyGroup>
   <ItemGroup>
     <!-- Core dependencies -->
@@ -14,6 +15,9 @@
     <!-- Plugin dependencies -->
     <PackageVersion Include="CSharpMath.SkiaSharp" Version="0.5.1" />
     <PackageVersion Include="Mermaider" Version="0.12.2" />
+    <PackageVersion Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="$(SkiaSharpVersion)" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.WebAssembly" Version="$(SkiaSharpVersion)" />
     <PackageVersion Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.15" />
     <PackageVersion Include="TextMateSharp" Version="2.0.4" />
     <PackageVersion Include="TextMateSharp.Grammars" Version="2.0.4" />
