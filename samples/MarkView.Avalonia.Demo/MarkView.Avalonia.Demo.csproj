@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <Content Include="..\..\README.md" CopyToOutputDirectory="PreserveNewest" />
-    <AvaloniaResource Include="Assets\**" />
+    <AvaloniaResource Include="Assets/**" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Fonts.Inter" />
@@ -12,10 +12,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
-    <ProjectReference Include="..\..\src\MarkView.Avalonia.SyntaxHighlighting\MarkView.Avalonia.SyntaxHighlighting.csproj" />
-    <ProjectReference Include="..\..\src\MarkView.Avalonia.Svg\MarkView.Avalonia.Svg.csproj" />
-    <ProjectReference Include="..\..\src\MarkView.Avalonia.Mermaid\MarkView.Avalonia.Mermaid.csproj" />
-    <ProjectReference Include="..\..\src\MarkView.Avalonia.Math\MarkView.Avalonia.Math.csproj" />
+    <ProjectReference Include="../../src/MarkView.Avalonia/MarkView.Avalonia.csproj" />
+    <ProjectReference Include="../../src/MarkView.Avalonia.SyntaxHighlighting/MarkView.Avalonia.SyntaxHighlighting.csproj" />
+    <ProjectReference Include="../../src/MarkView.Avalonia.Svg/MarkView.Avalonia.Svg.csproj" />
+    <ProjectReference Include="../../src/MarkView.Avalonia.Mermaid/MarkView.Avalonia.Mermaid.csproj" />
+    <ProjectReference Include="../../src/MarkView.Avalonia.Math/MarkView.Avalonia.Math.csproj" />
   </ItemGroup>
 </Project>
