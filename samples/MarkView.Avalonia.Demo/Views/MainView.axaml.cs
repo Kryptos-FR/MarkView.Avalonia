@@ -29,8 +29,12 @@ public partial class MainView : UserControl
             AllowMultiple = false,
             FileTypeFilter =
             [
-                new FilePickerFileType("Markdown files") { Patterns = ["*.md", "*.markdown"] },
-                new FilePickerFileType("All files")      { Patterns = ["*"] },
+                new FilePickerFileType("Markdown files")
+                {
+                    Patterns = ["*.md", "*.markdown"],
+                    MimeTypes = ["text/markdown", "text/x-markdown"],
+                },
+                FilePickerFileTypes.All,
             ],
         });
 
@@ -38,7 +42,17 @@ public partial class MainView : UserControl
         {
             var path = file.TryGetLocalPath();
             if (path is not null)
+            {
                 ((MainViewModel)DataContext!).LoadFile(path);
+            }
+            else
+            {
+                // No local filesystem path (e.g. browser/WASM storage handles) — read the content directly.
+                using var stream = await file.OpenReadAsync();
+                using var reader = new StreamReader(stream);
+                var markdown = await reader.ReadToEndAsync();
+                ((MainViewModel)DataContext!).LoadMarkdownContent(markdown);
+            }
         }
     }
 
