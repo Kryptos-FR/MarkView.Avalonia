@@ -5,7 +5,7 @@ An interactive showcase application for the [MarkView.Avalonia](../../README.md)
 ## Running the Demo
 
 ```bash
-cd samples/MarkView.Avalonia.Demo
+cd samples/MarkView.Avalonia.Demo.Desktop
 dotnet run
 ```
 
