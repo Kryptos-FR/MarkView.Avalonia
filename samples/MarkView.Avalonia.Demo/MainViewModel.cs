@@ -14,8 +14,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private static readonly Uri ShowcaseSource =
         new("avares://MarkView.Avalonia.Demo/Assets/showcase.md");
 
+#if BROWSER
+    private static readonly Uri ReadmeSource =
+        new("avares://MarkView.Avalonia.Demo/Assets/README.md");
+#else
     private static Uri ReadmeSource =>
         new(Path.Combine(AppContext.BaseDirectory, "README.md"));
+#endif
 
     private const string ExtensionsShowcaseMarkdown = """
         # Opt-In Extensions Showcase
