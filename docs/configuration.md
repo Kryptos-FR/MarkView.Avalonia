@@ -118,6 +118,11 @@ viewer.Source = null;
 the base URI from the source directory. Relative image links in the loaded document
 resolve correctly without any extra configuration.
 
+**Fragment navigation:** if `Source` has a `#fragment`, the viewer scrolls to that
+anchor automatically once the document has rendered — e.g. `new Uri(path + "#installation")`
+behaves like `viewer.Source = new Uri(path); viewer.ScrollToAnchor("installation")`,
+but without needing to wait for rendering to complete first.
+
 ## BaseUri
 
 `BaseUri` is used to resolve relative links in markdown when `Source` is not set
@@ -131,11 +136,24 @@ viewer.Markdown = File.ReadAllText("README.md");
 
 ## LinkClicked event
 
-`LinkClicked` is an Avalonia **routed event** that bubbles up the visual tree. Subscribe on an individual viewer:
+By default, clicking an external link opens it with the platform's `ILauncher`
+(the OS default browser/app on desktop, an intent on mobile, a new tab on
+WebAssembly) — no application code required.
+
+`LinkClicked` is an Avalonia **routed event** that bubbles up the visual tree, raised
+before that default launch happens. Subscribe to override the behavior for specific
+links — set `e.Handled = true` to suppress the default launch:
 
 ```csharp
 viewer.LinkClicked += (_, e) =>
-    Process.Start(new ProcessStartInfo(e.Url) { UseShellExecute = true });
+{
+    if (e.Url.EndsWith(".md"))
+    {
+        // Render the linked document in-place instead of opening it externally.
+        viewer.Source = new Uri(e.Url);
+        e.Handled = true;
+    }
+};
 ```
 
 Or register a class-level handler once at startup to catch all viewers:
@@ -145,11 +163,11 @@ MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>((sender, e) =>
 {
     // e.Url — the target URL (may be relative, e.g. "#section")
     // sender — the MarkdownViewer that was clicked
-    Process.Start(new ProcessStartInfo(e.Url) { UseShellExecute = true });
+    ...
 });
 ```
 
-The event is raised for all hyperlinks, including anchor links (`#heading`). In-document anchor links are handled automatically by the viewer before raising the event — navigation happens regardless of whether you subscribe.
+The event is raised for all hyperlinks, including anchor links (`#heading`). In-document anchor links are handled automatically by the viewer before raising the event — navigation happens regardless of whether you subscribe, and the default external-link launch never runs for them.
 
 ## Anchor navigation
 

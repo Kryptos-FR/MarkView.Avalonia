@@ -41,11 +41,20 @@ viewer.Markdown = markdownText; // relative image paths resolved against BaseUri
 
 ### Handling link clicks
 
+External links open automatically via the platform's launcher (OS browser on desktop,
+an intent on mobile, a new tab on WebAssembly) — no code required. `LinkClicked` is an
+Avalonia **routed event** (bubbles up), raised before that default launch happens;
+subscribe to override it for specific links by setting `e.Handled = true`:
+
 ```csharp
 viewer.LinkClicked += (_, e) =>
 {
     // e.Url contains the clicked URL
-    Process.Start(new ProcessStartInfo(e.Url) { UseShellExecute = true });
+    if (e.Url.EndsWith(".md"))
+    {
+        viewer.Source = new Uri(e.Url); // render in-place instead of opening externally
+        e.Handled = true;
+    }
 };
 ```
 
@@ -54,7 +63,9 @@ viewer.LinkClicked += (_, e) =>
 ```csharp
 // App.axaml.cs — applies to every MarkdownViewer in the application
 MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>((_, e) =>
-    Process.Start(new ProcessStartInfo(e.Url) { UseShellExecute = true }));
+{
+    // ...
+});
 ```
 
 ### Navigating to an anchor

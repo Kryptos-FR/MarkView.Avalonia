@@ -281,9 +281,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
         PushEntry(Source, Markdown);
     }
 
-    public void LoadFile(string filePath)
+    public void LoadFile(string filePath) => LoadFile(new Uri(Path.GetFullPath(filePath)));
+
+    // Accepts a full Uri (rather than a bare path) so a "#fragment" from a clicked link
+    // survives into Source — MarkdownViewer scrolls to it automatically once rendered.
+    public void LoadFile(Uri fileUri)
     {
-        Source = new Uri(Path.GetFullPath(filePath));
+        Source = fileUri;
         Markdown = null;
         PushEntry(Source, null);
     }

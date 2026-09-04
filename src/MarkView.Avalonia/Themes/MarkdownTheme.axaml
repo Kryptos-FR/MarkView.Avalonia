@@ -177,12 +177,6 @@
     <Setter Property="SelectionBrush" Value="{DynamicResource SystemAccentColor}"/>
   </Style>
 
-  <!-- Links -->
-  <Style Selector="mri|MarkdownHyperlink.markdown-link">
-    <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}"/>
-    <Setter Property="TextDecorations" Value="Underline"/>
-  </Style>
-
   <!-- Tables -->
   <Style Selector="Grid.markdown-table">
     <Setter Property="Margin" Value="0,4" />

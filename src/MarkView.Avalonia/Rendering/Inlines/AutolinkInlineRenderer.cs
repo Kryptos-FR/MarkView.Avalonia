@@ -36,12 +36,19 @@ public sealed class AutolinkInlineRenderer : AvaloniaObjectRenderer<AutolinkInli
             Content = contentTextBlock,
         };
 
+        button.Classes.Add("markdown-link");
+
         if (Uri.TryCreate(resolvedUrl, UriKind.Absolute, out var uri))
             button.NavigateUri = uri;
 
-        button.Classes.Add("markdown-link");
-
-        button.Click += (_, _) => renderer.OnLinkClicked(resolvedUrl);
+        // HyperlinkButton reads NavigateUri (and launches it via the platform launcher)
+        // right after its Click event finishes, so clearing it here — once a LinkClicked
+        // subscriber has handled the click itself — suppresses that default launch.
+        button.Click += (_, _) =>
+        {
+            if (renderer.RaiseLinkClicked(resolvedUrl))
+                button.NavigateUri = null;
+        };
 
         renderer.WriteInline(button);
     }
