@@ -9,7 +9,29 @@ updates:
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+    cooldown:
+      semver-major-days: 15
+      semver-minor-days: 7
+      semver-patch-days: 3
+    groups:
+      avalonia:
+        patterns:
+          - "Avalonia"
+          - "Avalonia.*"
+      csharpmath:
+        patterns:
+          - "CSharpMath"
+          - "CSharpMath.*"
+      textmatesharp:
+        patterns:
+          - "TextMateSharp"
+          - "TextMateSharp.*"
+      tests:
+        patterns:
+          - "Microsoft.Testing.Extensions.CodeCoverage"
+          - "Microsoft.NET.Test.Sdk"
+          - "xunit.v3"
     ignore:
       # Avalonia.Headless.XUnit isn't compatible with xunit.v3 4.0.0 (AvaloniaUI/Avalonia#22072).
       # Drop this ignore once Avalonia ships a compatible package.
