@@ -99,13 +99,12 @@ public override void OnFrameworkInitializationCompleted()
     MarkdownViewerDefaults.Extensions.AddSvg();
     MarkdownViewerDefaults.Extensions.AddMermaid();
 
-    // Open links in the system browser
-    MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>((_, e) =>
-        Process.Start(new ProcessStartInfo(e.Url) { UseShellExecute = true }));
-
     // ...
     base.OnFrameworkInitializationCompleted();
 }
 ```
 
-See [configuration.md](configuration.md) for the full set of options.
+External links open automatically via the platform launcher — no extra code needed.
+See [configuration.md](configuration.md) for the full set of options, including how
+to intercept `LinkClicked` to override that behavior (e.g. rendering a linked `.md`
+file in-place instead of opening it externally).

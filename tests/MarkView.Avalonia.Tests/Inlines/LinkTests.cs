@@ -1,11 +1,11 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 
 using MarkView.Avalonia.Rendering;
-using MarkView.Avalonia.Rendering.Inlines;
 
 using Xunit;
 
@@ -14,21 +14,24 @@ namespace MarkView.Avalonia.Tests.Inlines;
 public class LinkTests : RenderTestBase
 {
     [AvaloniaFact]
-    public void Link_renders_as_MarkdownHyperlink_span()
+    public void Link_renders_as_HyperlinkButton_with_correct_uri()
     {
         var result = Render("[click me](https://example.com)");
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
-        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
-        Assert.Equal(new Uri("https://example.com"), hyperlink.NavigateUri);
+        var uiContainer = Assert.IsType<InlineUIContainer>(Assert.Single(textBlock.Inlines!));
+        var button = Assert.IsType<HyperlinkButton>(uiContainer.Child);
+        Assert.Equal(new Uri("https://example.com"), button.NavigateUri);
     }
 
     [AvaloniaFact]
-    public void Link_text_is_a_Run_inside_hyperlink()
+    public void Link_text_is_a_Run_inside_the_button_content()
     {
         var result = Render("[click me](https://example.com)");
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
-        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
-        var run = Assert.IsType<Run>(Assert.Single(hyperlink.Inlines));
+        var uiContainer = Assert.IsType<InlineUIContainer>(Assert.Single(textBlock.Inlines!));
+        var button = Assert.IsType<HyperlinkButton>(uiContainer.Child);
+        var content = Assert.IsType<TextBlock>(button.Content);
+        var run = Assert.IsType<Run>(Assert.Single(content.Inlines!));
         Assert.Equal("click me", run.Text);
     }
 
@@ -37,17 +40,19 @@ public class LinkTests : RenderTestBase
     {
         var result = Render("[click me](https://example.com)");
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
-        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
-        Assert.Contains("markdown-link", hyperlink.Classes);
+        var uiContainer = Assert.IsType<InlineUIContainer>(Assert.Single(textBlock.Inlines!));
+        var button = Assert.IsType<HyperlinkButton>(uiContainer.Child);
+        Assert.Contains("markdown-link", button.Classes);
     }
 
     [AvaloniaFact]
-    public void Link_with_title_stores_Title_on_hyperlink()
+    public void Link_with_title_sets_tooltip_on_button()
     {
         var result = Render("[click me](https://example.com \"My Title\")");
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
-        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
-        Assert.Equal("My Title", hyperlink.Title);
+        var uiContainer = Assert.IsType<InlineUIContainer>(Assert.Single(textBlock.Inlines!));
+        var button = Assert.IsType<HyperlinkButton>(uiContainer.Child);
+        Assert.Equal("My Title", ToolTip.GetTip(button));
     }
 
     [AvaloniaFact]
@@ -65,7 +70,8 @@ public class LinkTests : RenderTestBase
         var result = renderer.RootPanel;
 
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
-        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
-        Assert.Equal(new Uri("https://doc.stride3d.net/4.2/path/to/doc"), hyperlink.NavigateUri);
+        var uiContainer = Assert.IsType<InlineUIContainer>(Assert.Single(textBlock.Inlines!));
+        var button = Assert.IsType<HyperlinkButton>(uiContainer.Child);
+        Assert.Equal(new Uri("https://doc.stride3d.net/4.2/path/to/doc"), button.NavigateUri);
     }
 }

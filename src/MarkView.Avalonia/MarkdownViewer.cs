@@ -10,6 +10,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
+using Avalonia.Threading;
 
 using Markdig;
 
@@ -211,6 +212,8 @@ public partial class MarkdownViewer : ContentControl
             return;
         }
 
+        var fragment = source.Fragment.TrimStart('#');
+
         switch (source.Scheme)
         {
             // avares:// is a ManifestResourceStream — memory-mapped into the loaded assembly,
@@ -221,17 +224,18 @@ public partial class MarkdownViewer : ContentControl
                 using var reader = new StreamReader(stream);
                 _sourceMarkdown = reader.ReadToEnd();
                 RenderMarkdown();
+                ScrollToAnchorAfterRender(fragment);
                 break;
             }
             case "file":
             case "http":
             case "https":
-                _ = LoadFromUriAsync(source);
+                _ = LoadFromUriAsync(source, fragment);
                 break;
         }
     }
 
-    private async Task LoadFromUriAsync(Uri uri)
+    private async Task LoadFromUriAsync(Uri uri, string fragment)
     {
         var cts = new CancellationTokenSource();
         _sourceLoadCts = cts;
@@ -255,11 +259,20 @@ public partial class MarkdownViewer : ContentControl
             {
                 _sourceMarkdown = text;
                 RenderMarkdown();
+                ScrollToAnchorAfterRender(fragment);
             }
         }
         catch (OperationCanceledException) { }
         catch (HttpRequestException) { }
         catch (IOException) { }
+    }
+
+    // Anchor targets are only positioned after the next layout pass, so scrolling
+    // must be deferred past the render that just set Content.
+    private void ScrollToAnchorAfterRender(string fragment)
+    {
+        if (string.IsNullOrEmpty(fragment)) return;
+        Dispatcher.UIThread.Post(() => ScrollToAnchor(fragment), DispatcherPriority.Loaded);
     }
 
     private static Uri? InferBaseUri(Uri? source)
@@ -623,8 +636,10 @@ public partial class MarkdownViewer : ContentControl
         if (e.Url.StartsWith('#'))
         {
             ScrollToAnchor(e.Url[1..]);
+            e.Handled = true;
             return;
         }
+
         e.RoutedEvent = LinkClickedEvent;
         RaiseEvent(e);
     }
