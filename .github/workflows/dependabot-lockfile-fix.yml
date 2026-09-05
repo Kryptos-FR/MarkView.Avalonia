@@ -3,9 +3,20 @@ name: Dependabot Lock File Fix
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    branches:
+      - master
+    paths:
+      - Directory.Packages.props
+      - global.json
+      - "**/*.csproj"
+      - "**/packages.lock.json"
 
 permissions:
   contents: write
+
+concurrency:
+  group: dependabot-lockfile-fix-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   fix-lock-files:
@@ -13,6 +24,8 @@ jobs:
     if: github.actor == 'dependabot[bot]'
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
 
       - uses: actions/setup-dotnet@v6
         with:
