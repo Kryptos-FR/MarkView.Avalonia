@@ -178,9 +178,11 @@
   </Style>
 
   <!-- Links -->
-  <Style Selector="mri|MarkdownHyperlink.markdown-link">
-    <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}"/>
-    <Setter Property="TextDecorations" Value="Underline"/>
+  <Style Selector="HyperlinkButton.markdown-link">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="VerticalAlignment" Value="Bottom"/>
+    <Setter Property="VerticalContentAlignment" Value="Bottom"/>
   </Style>
 
   <!-- Tables -->

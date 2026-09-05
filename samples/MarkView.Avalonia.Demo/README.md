@@ -59,7 +59,7 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>(OnLinkClicked);
 ```
 
-The `OnLinkClicked` handler intercepts absolute `file://` links to `.md` / `.markdown` files and opens them in the viewer instead of the system browser. All other URLs are opened with `Process.Start`.
+The `OnLinkClicked` handler intercepts absolute `file://` links to `.md` / `.markdown` files and opens them in the viewer instead of the system browser. All other URLs are left unhandled, so `MarkdownViewer` opens them itself via the platform launcher.
 
 ## Project Structure
 

@@ -110,6 +110,19 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     public event EventHandler<LinkClickedEventArgs>? LinkClicked;
 
+    /// <summary>
+    /// Raises <see cref="LinkClicked"/> and returns whether a subscriber handled it.
+    /// Callers rendering a <see cref="Avalonia.Controls.HyperlinkButton"/> with
+    /// <c>NavigateUri</c> set should clear it when this returns <c>true</c>, so the
+    /// button's own built-in launch is suppressed in favor of the subscriber's handling.
+    /// </summary>
+    internal bool RaiseLinkClicked(string url)
+    {
+        var e = new LinkClickedEventArgs(url);
+        LinkClicked?.Invoke(this, e);
+        return e.Handled;
+    }
+
     public AvaloniaRenderer()
     {
         RootPanel = new StackPanel { Spacing = 8 };
@@ -271,10 +284,6 @@ public class AvaloniaRenderer : RendererBase
         return url;
     }
 
-    internal void OnLinkClicked(string url)
-    {
-        LinkClicked?.Invoke(this, new LinkClickedEventArgs(url));
-    }
 }
 
 /// <summary>
