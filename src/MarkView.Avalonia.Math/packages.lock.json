@@ -2,24 +2,14 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "CSharpMath.SkiaSharp": {
+      "CSharpMath.Avalonia": {
         "type": "Direct",
-        "requested": "[0.5.1, )",
-        "resolved": "0.5.1",
-        "contentHash": "3SMI0o2EZi2/GskH6T5s9GDaBq9u0VBd/o8Geqd+FyPxEXCcmzECOZ3PdVdob/YNevl4okOTbqZrHZS2O28/ZQ==",
+        "requested": "[1.0.0-pre.2, )",
+        "resolved": "1.0.0-pre.2",
+        "contentHash": "iVGnfKyv5rpupNKXtdstGV9vYWg3zLMkDfkpSkfLRzE6yG9MD5JdqKTJdb0zO2IOeIYodKSmfPavJiM2YZpj3g==",
         "dependencies": {
-          "CSharpMath.Rendering": "0.5.1",
-          "SkiaSharp": "2.80.1"
-        }
-      },
-      "SkiaSharp": {
-        "type": "Direct",
-        "requested": "[4.148.0, )",
-        "resolved": "4.148.0",
-        "contentHash": "t+oZDnzvi0en060BFDTmJ16C0zjsiXRrtOe70luIuIi/exVZtl1obrYh8D+IoHlGtp7bqzEBVncafbAl0ttmPQ==",
-        "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "4.148.0",
-          "SkiaSharp.NativeAssets.macOS": "4.148.0"
+          "Avalonia": "12.0.4",
+          "CSharpMath.Rendering": "1.0.0-pre.2"
         }
       },
       "Avalonia.BuildServices": {
@@ -34,39 +24,21 @@
       },
       "CSharpMath": {
         "type": "Transitive",
-        "resolved": "0.5.1",
-        "contentHash": "CBAtejk24icPQNJWPjUDGUqklNLpfglpRxQljiezn2MQrxL5cIVuouCVnw6ipU3cft9Tq8YfS6f/JPhSjhFtFA=="
-      },
-      "CSharpMath.Editor": {
-        "type": "Transitive",
-        "resolved": "0.5.1",
-        "contentHash": "q5MFAjI7TO41PtGFNHBFwOw3J3IS7Dnm7aJHEgPxMWE5wl1H5byOo0pJnGwXevjhoSRssGRJH2KCXgn0KbGJFQ==",
-        "dependencies": {
-          "CSharpMath": "0.5.1"
-        }
+        "resolved": "1.0.0-pre.2",
+        "contentHash": "bz47Ascj0qrc4vZZgs6H60uHUk1vwe5R/6W9NTQsz2cjBzGcYQoBYjxTFbHly0iPlaQ2RLGcgJYlEgfC5KAf9A=="
       },
       "CSharpMath.Rendering": {
         "type": "Transitive",
-        "resolved": "0.5.1",
-        "contentHash": "H4tctQzgpQmLICON1QAJtfm3/dj4exoxEKTuF9oO5YkHXMANWNfOQKwVtAx6n78hcD6WidwF2v2pH8Z/cOw/gg==",
+        "resolved": "1.0.0-pre.2",
+        "contentHash": "l/+Gzf0Nop2QrFMCsutmYA9iXM/+AjKGHXFCN6y+Y12yqmXZoX/m75rgj5M5y7ZTNmchUj4fRnaa7EEDA+fgJA==",
         "dependencies": {
-          "CSharpMath.Editor": "0.5.1"
+          "CSharpMath": "1.0.0-pre.2"
         }
       },
       "MicroCom.Runtime": {
         "type": "Transitive",
         "resolved": "0.11.6",
         "contentHash": "NdNWGDiZ6eS/Mf/9+QHR91cj1K7Hy+PX9yrHI/zM7xFYuj9IWT2uxtB6sCHjrnxAeLV9fut1R6zHDUGKX6f9lQ=="
-      },
-      "SkiaSharp.NativeAssets.macOS": {
-        "type": "Transitive",
-        "resolved": "4.148.0",
-        "contentHash": "1iESVxlqNNbQUiFODuyQJ/5dYUNYwGzZBUyaKNU3pJRM8zPFUkdMW0UZcZPvd6xwrjn53HYklJyKvetXC6ri+A=="
-      },
-      "SkiaSharp.NativeAssets.Win32": {
-        "type": "Transitive",
-        "resolved": "4.148.0",
-        "contentHash": "LegvQ9zAi9Tmot2YOLv8mcK+g3wbEYfCWUoC5JtyHaN8QrxsaMvfJ8pFPvnEOVuY8qXxs8vVqrO/x42/YaFDRA=="
       },
       "markview.avalonia": {
         "type": "Project",

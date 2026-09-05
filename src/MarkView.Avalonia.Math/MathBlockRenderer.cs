@@ -4,7 +4,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
-using Avalonia.Media;
+
+using CSharpMath.Avalonia;
 
 using Markdig.Extensions.Mathematics;
 
@@ -13,8 +14,8 @@ using MarkView.Avalonia.Rendering;
 namespace MarkView.Avalonia.Math;
 
 /// <summary>
-/// Renders Markdig <see cref="MathBlock"/> nodes (<c>$$...$$</c>) as a centred image
-/// produced by CSharpMath.SkiaSharp.
+/// Renders Markdig <see cref="MathBlock"/> nodes (<c>$$...$$</c>) as a centred
+/// <see cref="MathView"/> produced by CSharpMath.Avalonia.
 /// </summary>
 public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
 {
@@ -22,42 +23,41 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
     {
         var source = ExtractSource(obj);
 
-        var image = new Image
+        try
         {
-            Stretch = Stretch.None,
-            HorizontalAlignment = HorizontalAlignment.Center,
-        };
+            MathFormulaRenderer.EnsureSafeToRender(source);
 
-        var border = new Border { Child = image };
-        border.Classes.Add("markdown-math-block");
+            var mathView = new MathView
+            {
+                FontSize = 16f,
+                DisplayErrorInline = true,
+                TextColor = MathFormulaRenderer.GetThemeTextColor(),
+                LaTeX = source,
+                HorizontalAlignment = HorizontalAlignment.Center,
+            };
 
-        void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e)
-        {
-            if (e.Property.Name != nameof(Application.ActualThemeVariant)) return;
-            ApplyTheme();
+            var border = new Border { Child = mathView };
+            border.Classes.Add("markdown-math-block");
+
+            void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e)
+            {
+                if (e.Property.Name != nameof(Application.ActualThemeVariant)) return;
+                mathView.TextColor = MathFormulaRenderer.GetThemeTextColor();
+            }
+            Application.Current!.PropertyChanged += OnThemeChanged;
+            border.DetachedFromLogicalTree += (_, _) =>
+                Application.Current?.PropertyChanged -= OnThemeChanged;
+
+            renderer.WriteBlock(border);
         }
-        Application.Current!.PropertyChanged += OnThemeChanged;
-        border.DetachedFromLogicalTree += (_, _) =>
-            Application.Current?.PropertyChanged -= OnThemeChanged;
-
-        ApplyTheme();
-        renderer.WriteBlock(border);
-
-        void ApplyTheme()
+        catch (Exception ex)
         {
-            try
-            {
-                image.Source = MathFormulaRenderer.Render(source, MathFormulaRenderer.GetThemeTextColor());
-            }
-            catch (Exception ex)
-            {
-                var panel = new StackPanel { Spacing = 4 };
-                panel.Children.Add(new TextBlock { Text = $"Math render error: {ex.Message}" });
-                panel.Children.Add(new TextBlock { Text = source });
-                border.Child = panel;
-                border.Classes.Clear();
-                border.Classes.Add("markdown-math-fallback");
-            }
+            var panel = new StackPanel { Spacing = 4 };
+            panel.Children.Add(new TextBlock { Text = $"Math render error: {ex.Message}" });
+            panel.Children.Add(new TextBlock { Text = source });
+            var fallback = new Border { Child = panel };
+            fallback.Classes.Add("markdown-math-fallback");
+            renderer.WriteBlock(fallback);
         }
     }
 

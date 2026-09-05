@@ -198,7 +198,7 @@ The extension inserts `SvgImageLoader` at the front of the image loader chain. R
 
 ### LaTeX Math (`MarkView.Avalonia.Math`)
 
-Renders `$...$` (inline) and `$$...$$` (block) LaTeX math using CSharpMath's SkiaSharp renderer — pure .NET, no browser or WebView required.
+Renders `$...$` (inline) and `$$...$$` (block) LaTeX math using CSharpMath's Avalonia renderer — a native vector `Control`, pure .NET, no browser or WebView required.
 
 ```bash
 dotnet add package MarkView.Avalonia.Math
@@ -207,6 +207,8 @@ dotnet add package MarkView.Avalonia.Math
 ```csharp
 viewer.UseMath();
 ```
+
+> **Do not merge/release with this dependency as-is** — currently pins a CSharpMath prerelease (`1.0.0-pre.2`); see the [package README](src/MarkView.Avalonia.Math/README.md) for the merge gate.
 
 ### Mermaid Diagrams (`MarkView.Avalonia.Mermaid`)
 

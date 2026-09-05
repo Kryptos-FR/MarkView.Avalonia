@@ -5,6 +5,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 
+using CSharpMath.Avalonia;
+
 using Markdig;
 
 using MarkView.Avalonia.Rendering;
@@ -32,27 +34,27 @@ public class MathInlineRendererTests
         var result = Render("Einstein said $E=mc^2$ once.");
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var container = textBlock.Inlines!.OfType<InlineUIContainer>().Single();
-        Assert.IsType<Image>(container.Child);
+        Assert.IsType<MathView>(container.Child);
     }
 
     [AvaloniaFact]
-    public void Inline_math_image_has_math_inline_class()
+    public void Inline_math_view_has_math_inline_class()
     {
         var result = Render("$x^2$");
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var container = textBlock.Inlines!.OfType<InlineUIContainer>().Single();
-        var image = Assert.IsType<Image>(container.Child);
-        Assert.Contains("markdown-math-inline", image.Classes);
+        var mathView = Assert.IsType<MathView>(container.Child);
+        Assert.Contains("markdown-math-inline", mathView.Classes);
     }
 
     [AvaloniaFact]
-    public void Inline_math_image_has_non_null_bitmap_source()
+    public void Inline_math_view_has_expected_latex()
     {
         var result = Render("$x^2$");
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var container = textBlock.Inlines!.OfType<InlineUIContainer>().Single();
-        var image = Assert.IsType<Image>(container.Child);
-        Assert.NotNull(image.Source);
+        var mathView = Assert.IsType<MathView>(container.Child);
+        Assert.Equal("x^2", mathView.LaTeX);
     }
 
     [AvaloniaFact]
