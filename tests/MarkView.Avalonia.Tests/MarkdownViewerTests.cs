@@ -5,7 +5,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
-using Avalonia.Interactivity;
+using Avalonia.Input;
+using Avalonia.Input.Raw;
+using Avalonia.VisualTree;
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 using Xunit;
@@ -92,20 +94,38 @@ public class MarkdownViewerTests
     [AvaloniaFact]
     public void External_link_fires_LinkClicked_event()
     {
-        var viewer = new MarkdownViewer { Markdown = "<https://example.com>" };
+        // Raises real PointerPressed/PointerReleased events on viewer.Content directly
+        // (tree-walk routing, matching Avalonia's own MouseTestHelper test pattern) rather
+        // than going through the headless platform's simulated OS input — the latter's
+        // renderer-based hit-testing doesn't descend past ScrollContentPresenter in this
+        // headless setup. This still exercises the real production path: tunnelling
+        // PointerPressed/Released reach MarkdownViewer.OnContentPointerPressed/Released,
+        // which hit-test through DocumentSelectionLayer and MarkdownSelectableTextBlock
+        // exactly as a real click would, then raise the routed LinkClicked event.
+        var viewer = new MarkdownViewer { Markdown = "[click me](https://example.com)" };
+        var window = new Window { Width = 400, Height = 200, Content = viewer };
+        window.Show();
+
+        var textBlock = viewer.GetVisualDescendants().OfType<MarkdownSelectableTextBlock>().Single();
+        var linkRect = textBlock.TextLayout!.HitTestTextRange(0, "click me".Length).First();
+        var pointInBlock = new Point(linkRect.X + linkRect.Width / 2, linkRect.Y + linkRect.Height / 2);
+        var pointInWindow = textBlock.TranslatePoint(pointInBlock, window) ?? default;
+        var contentGrid = (Grid)viewer.Content!;
 
         string? clickedUrl = null;
         viewer.LinkClicked += (_, e) => clickedUrl = e.Url;
 
-        var contentGrid = Assert.IsType<Grid>(viewer.Content);
-        var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
-        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(panel.Children));
-        var uiContainer = textBlock.Inlines!.OfType<InlineUIContainer>().Single();
-        var button = Assert.IsType<HyperlinkButton>(uiContainer.Child);
+        var pointer = new Pointer(Pointer.GetNextFreeId(), PointerType.Mouse, true);
+        ulong timestamp = 1;
+        var pressedProps = new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed);
+        contentGrid.RaiseEvent(new PointerPressedEventArgs(
+            contentGrid, pointer, window, pointInWindow, timestamp++, pressedProps, KeyModifiers.None));
 
-        button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        var releasedProps = new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased);
+        contentGrid.RaiseEvent(new PointerReleasedEventArgs(
+            contentGrid, pointer, window, pointInWindow, timestamp++, releasedProps, KeyModifiers.None, MouseButton.Left));
 
-        Assert.Equal("https://example.com", clickedUrl);
+        Assert.Equal(new Uri("https://example.com"), new Uri(clickedUrl!));
     }
 
     [AvaloniaFact]

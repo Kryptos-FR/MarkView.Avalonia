@@ -110,6 +110,9 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     public event EventHandler<LinkClickedEventArgs>? LinkClicked;
 
+    internal void OnLinkClicked(string url) =>
+        LinkClicked?.Invoke(this, new LinkClickedEventArgs(url));
+
     public AvaloniaRenderer()
     {
         RootPanel = new StackPanel { Spacing = 8 };
@@ -271,10 +274,6 @@ public class AvaloniaRenderer : RendererBase
         return url;
     }
 
-    internal void OnLinkClicked(string url)
-    {
-        LinkClicked?.Invoke(this, new LinkClickedEventArgs(url));
-    }
 }
 
 /// <summary>

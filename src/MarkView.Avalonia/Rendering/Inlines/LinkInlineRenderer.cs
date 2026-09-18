@@ -200,13 +200,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
         var button = new Button { Content = overlayGrid };
         button.Classes.Add("markdown-youtube");
-
-        button.Click += async (_, _) =>
-        {
-            var launcher = TopLevel.GetTopLevel(button)?.Launcher;
-            if (launcher is not null)
-                await launcher.LaunchUriAsync(videoUri);
-        };
+        button.Click += (_, _) => renderer.OnLinkClicked(videoUri.ToString());
 
         CancellationTokenSource? cts = null;
         thumbnail.AttachedToVisualTree += (_, _) =>
