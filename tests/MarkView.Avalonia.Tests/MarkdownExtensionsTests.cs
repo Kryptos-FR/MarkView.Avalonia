@@ -6,6 +6,7 @@ using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Markdig;
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Inlines;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests;
@@ -56,11 +57,11 @@ public class MarkdownExtensionsTests : RenderTestBase
     [AvaloniaFact]
     public void UseSupportedExtensions_enables_autolinks()
     {
-        // UseAutoLinks turns bare URLs into HyperlinkButtons embedded via InlineUIContainer
+        // UseAutoLinks turns bare URLs into MarkdownHyperlink spans
         var result = Render("Visit https://example.com today", _pipeline);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var inlines = textBlock.Inlines!.ToList();
-        Assert.Contains(inlines, i => i is InlineUIContainer { Child: HyperlinkButton });
+        Assert.Contains(inlines, i => i is MarkdownHyperlink);
     }
 
     [AvaloniaFact]

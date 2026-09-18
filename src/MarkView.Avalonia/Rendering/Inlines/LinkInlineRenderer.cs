@@ -13,9 +13,8 @@ using Markdig.Syntax.Inlines;
 namespace MarkView.Avalonia.Rendering.Inlines;
 
 /// <summary>
-/// Renders a Markdig <see cref="LinkInline"/> as a <see cref="HyperlinkButton"/> (matching
-/// <see cref="AutolinkInlineRenderer"/>) or image. YouTube video links (produced by
-/// UseMediaLinks) are rendered as clickable thumbnails.
+/// Renders a Markdig <see cref="LinkInline"/> as a <see cref="MarkdownHyperlink"/> span or image.
+/// YouTube video links (produced by UseMediaLinks) are rendered as clickable thumbnails.
 /// </summary>
 public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {
@@ -43,34 +42,18 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
         var url = renderer.ResolveUrl(obj.Url ?? string.Empty);
 
-        var contentTextBlock = new TextBlock();
-        var button = new HyperlinkButton
+        var hyperlink = new MarkdownHyperlink
         {
-            Content = contentTextBlock,
+            NavigateUri = Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri) ? uri : null,
+            Title = string.IsNullOrEmpty(obj.Title) ? null : obj.Title,
         };
-        button.Classes.Add("markdown-link");
+        hyperlink.Classes.Add("markdown-link");
 
-        if (!string.IsNullOrEmpty(obj.Title))
-            ToolTip.SetTip(button, obj.Title);
-
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            button.NavigateUri = uri;
-
-        // HyperlinkButton reads NavigateUri (and launches it via the platform launcher)
-        // right after its Click event finishes, so clearing it here — once a LinkClicked
-        // subscriber has handled the click (e.g. "#anchor" scrolling, or an app rendering
-        // a linked document in place) — suppresses that default launch.
-        button.Click += (_, _) =>
-        {
-            if (renderer.RaiseLinkClicked(url))
-                button.NavigateUri = null;
-        };
-
-        renderer.Push(contentTextBlock.Inlines!);
+        renderer.Push(hyperlink.Inlines);
         renderer.WriteChildren(obj);
         renderer.Pop();
 
-        renderer.WriteInline(button);
+        renderer.WriteInline(hyperlink);
     }
 
     private static void WriteImage(AvaloniaRenderer renderer, LinkInline obj)
@@ -215,14 +198,9 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         var overlayGrid = new Grid();
         overlayGrid.Classes.Add("markdown-youtube-overlay");
 
-        // Same NavigateUri-driven launch (and LinkClicked override) as regular links/autolinks.
-        var button = new HyperlinkButton { Content = overlayGrid, NavigateUri = videoUri };
+        var button = new Button { Content = overlayGrid };
         button.Classes.Add("markdown-youtube");
-        button.Click += (_, _) =>
-        {
-            if (renderer.RaiseLinkClicked(videoUri.ToString()))
-                button.NavigateUri = null;
-        };
+        button.Click += (_, _) => renderer.OnLinkClicked(videoUri.ToString());
 
         CancellationTokenSource? cts = null;
         thumbnail.AttachedToVisualTree += (_, _) =>

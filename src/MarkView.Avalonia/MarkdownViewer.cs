@@ -575,9 +575,19 @@ public partial class MarkdownViewer : ContentControl
     private void UpdateHyperlinkCursor(Point posInLayer)
     {
         if (_selectionLayer is null) return;
-        Cursor = FindHyperlinkAt(posInLayer) != null
-            ? HandCursor
-            : Cursor.Default;
+        var entry = _selectionLayer.HitTestEntry(posInLayer);
+        if (entry?.TextBlock is not MarkdownSelectableTextBlock mstb) return;
+
+        // Set directly on the hit text block, not on this or on _selectionLayer (which is
+        // IsHitTestVisible=false, so it's never the element Avalonia actually tracks as
+        // hovered). Avalonia only re-pushes the OS cursor when the tracked "cursor element"
+        // itself changes, or when that same element's own Cursor property changes — matching
+        // how a Button's hover style resets on enter/exit. mstb is the real hit-test-visible
+        // control for the whole row, so moving within it (e.g. off a link, same paragraph)
+        // never changes the tracked element; only setting Cursor on mstb itself refreshes it.
+        var origin = mstb.TranslatePoint(new Point(0, 0), _selectionLayer) ?? default;
+        var hyperlink = mstb.HitTestHyperlink(posInLayer - origin);
+        mstb.Cursor = hyperlink != null ? HandCursor : Cursor.Default;
     }
 
     private void TryFireHyperlinkClick(Point posInLayer)
@@ -589,15 +599,6 @@ public partial class MarkdownViewer : ContentControl
         var hyperlink = mstb.HitTestHyperlink(posInLayer - origin);
         if (hyperlink?.NavigateUri != null)
             OnLinkClicked(this, new LinkClickedEventArgs(hyperlink.NavigateUri.ToString()));
-    }
-
-    private MarkdownHyperlink? FindHyperlinkAt(Point posInLayer)
-    {
-        if (_selectionLayer is null) return null;
-        var entry = _selectionLayer.HitTestEntry(posInLayer);
-        if (entry?.TextBlock is not MarkdownSelectableTextBlock mstb) return null;
-        var origin = mstb.TranslatePoint(new Point(0, 0), _selectionLayer) ?? default;
-        return mstb.HitTestHyperlink(posInLayer - origin);
     }
 
     // ── Selection API ─────────────────────────────────────────────────────────
@@ -631,7 +632,7 @@ public partial class MarkdownViewer : ContentControl
 
     // ── Link handling ─────────────────────────────────────────────────────────
 
-    private void OnLinkClicked(object? sender, LinkClickedEventArgs e)
+    private async void OnLinkClicked(object? sender, LinkClickedEventArgs e)
     {
         if (e.Url.StartsWith('#'))
         {
@@ -642,6 +643,15 @@ public partial class MarkdownViewer : ContentControl
 
         e.RoutedEvent = LinkClickedEvent;
         RaiseEvent(e);
+        if (e.Handled) return;
+
+        // No subscriber intercepted the link (e.g. to render a local document in-place) —
+        // the platform launcher is the only cross-platform way to open an external URI
+        // (desktop shell, mobile intent, or browser new-tab).
+        if (!Uri.TryCreate(e.Url, UriKind.Absolute, out var uri)) return;
+        var launcher = TopLevel.GetTopLevel(this)?.Launcher;
+        if (launcher is not null)
+            await launcher.LaunchUriAsync(uri);
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)

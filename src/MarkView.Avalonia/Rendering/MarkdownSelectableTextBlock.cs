@@ -32,7 +32,12 @@ public class MarkdownSelectableTextBlock : TextBlock
         if (TextLayout == null || Inlines == null) return null;
         var adjusted = new Point(point.X - Padding.Left, point.Y - Padding.Top);
         var hitResult = TextLayout.HitTestPoint(adjusted);
-        return FindHyperlinkAtIndex(Inlines, hitResult.TextPosition);
+        if (!hitResult.IsInside) return null;
+
+        // TextPosition is a caret stop (FirstCharacterIndex + TrailingLength), which lands
+        // one character past a link when the pointer is over the trailing half of its last
+        // glyph. FirstCharacterIndex is the character cluster actually under the pointer.
+        return FindHyperlinkAtIndex(Inlines, hitResult.CharacterHit.FirstCharacterIndex);
     }
 
     private static MarkdownHyperlink? FindHyperlinkAtIndex(InlineCollection inlines, int targetIndex)
@@ -41,8 +46,14 @@ public class MarkdownSelectableTextBlock : TextBlock
         foreach (var inline in inlines)
         {
             int length = MeasureInlineLength(inline);
-            if (inline is MarkdownHyperlink h && current <= targetIndex && targetIndex < current + length)
-                return h;
+            if (current <= targetIndex && targetIndex < current + length)
+            {
+                if (inline is MarkdownHyperlink h) return h;
+                // Descend into other spans (Bold, Italic, ...) — a hyperlink nested inside
+                // emphasis sits one level below the direct inline collection.
+                if (inline is Span s) return FindHyperlinkAtIndex(s.Inlines, targetIndex - current);
+                return null;
+            }
             current += length;
         }
         return null;
