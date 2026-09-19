@@ -13,9 +13,4 @@
     <Project Path="tests/MarkView.Avalonia.Mermaid.Tests/MarkView.Avalonia.Mermaid.Tests.csproj" />
     <Project Path="tests/MarkView.Avalonia.Math.Tests/MarkView.Avalonia.Math.Tests.csproj" />
   </Folder>
-  <Folder Name="/samples/">
-    <Project Path="samples/MarkView.Avalonia.Demo/MarkView.Avalonia.Demo.csproj" />
-    <Project Path="samples/MarkView.Avalonia.Demo.Browser/MarkView.Avalonia.Demo.Browser.csproj" />
-    <Project Path="samples/MarkView.Avalonia.Demo.Desktop/MarkView.Avalonia.Demo.Desktop.csproj" />
-  </Folder>
 </Solution>
