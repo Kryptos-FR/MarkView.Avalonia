@@ -15,5 +15,6 @@
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/MarkView.Avalonia.Demo/MarkView.Avalonia.Demo.csproj" />
+    <Project Path="samples/MarkView.Avalonia.Demo.Desktop/MarkView.Avalonia.Demo.Desktop.csproj" />
   </Folder>
 </Solution>

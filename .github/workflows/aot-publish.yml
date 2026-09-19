@@ -39,4 +39,4 @@ jobs:
           echo "rid=$rid" >> "$GITHUB_OUTPUT"
 
       - name: Publish Native AOT
-        run: dotnet publish samples/MarkView.Avalonia.Demo/MarkView.Avalonia.Demo.csproj --configuration Release -r ${{ steps.rid.outputs.rid }} -p:PublishAot=true --self-contained
+        run: dotnet publish samples/MarkView.Avalonia.Demo.Desktop/MarkView.Avalonia.Demo.Desktop.csproj --configuration Release -r ${{ steps.rid.outputs.rid }} -p:PublishAot=true --self-contained
