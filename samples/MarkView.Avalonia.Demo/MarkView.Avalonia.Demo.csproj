@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework></TargetFramework>
+    <TargetFrameworks>net10.0;net10.0-browser</TargetFrameworks>
+  </PropertyGroup>
   <ItemGroup>
-    <Content Include="..\..\README.md" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../README.md" CopyToOutputDirectory="PreserveNewest" Condition="'$(TargetPlatformIdentifier)' != 'browser'" />
+    <AvaloniaResource Include="../../README.md" Link="Assets/README.md" Condition="'$(TargetPlatformIdentifier)' == 'browser'" />
     <AvaloniaResource Include="Assets/**" />
   </ItemGroup>
   <ItemGroup>
