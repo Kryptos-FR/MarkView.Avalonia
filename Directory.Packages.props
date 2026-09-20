@@ -6,7 +6,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <AvaloniaVersion>12.1.1</AvaloniaVersion>
-    <SkiaSharpVersion>4.148.0</SkiaSharpVersion>
+    <SkiaSharpVersion>4.152.0</SkiaSharpVersion>
   </PropertyGroup>
   <ItemGroup>
     <!-- Core dependencies -->
