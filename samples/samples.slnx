@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="../src/MarkView.Avalonia.Math/MarkView.Avalonia.Math.csproj" />
+  <Project Path="../src/MarkView.Avalonia.Mermaid/MarkView.Avalonia.Mermaid.csproj" />
+  <Project Path="../src/MarkView.Avalonia.Svg/MarkView.Avalonia.Svg.csproj" />
+  <Project Path="../src/MarkView.Avalonia.SyntaxHighlighting/MarkView.Avalonia.SyntaxHighlighting.csproj" />
+  <Project Path="../src/MarkView.Avalonia/MarkView.Avalonia.csproj" />
+  <Project Path="MarkView.Avalonia.Demo.Browser/MarkView.Avalonia.Demo.Browser.csproj" />
+  <Project Path="MarkView.Avalonia.Demo.Desktop/MarkView.Avalonia.Demo.Desktop.csproj" />
+  <Project Path="MarkView.Avalonia.Demo/MarkView.Avalonia.Demo.csproj" />
+</Solution>
