@@ -1,0 +1,30 @@
+name: Dependency submission
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  submit-nuget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore
+        run: dotnet restore --locked-mode
+
+      - uses: advanced-security/component-detection-dependency-submission-action@v0.1.6
+        with:
+          detectorsCategories: NuGet
+          directoryExclusionList: 'samples'
