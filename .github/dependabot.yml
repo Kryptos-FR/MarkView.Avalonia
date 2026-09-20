@@ -39,9 +39,9 @@ updates:
         patterns:
           - "Microsoft.Testing.Extensions.CodeCoverage"
           - "Microsoft.NET.Test.Sdk"
-          - "xunit.v3"
+          - "xunit.v3.mtp-v2"
     ignore:
       # Avalonia.Headless.XUnit isn't compatible with xunit.v3 4.0.0 (AvaloniaUI/Avalonia#22072).
       # Drop this ignore once Avalonia ships a compatible package.
-      - dependency-name: "xunit.v3"
+      - dependency-name: "xunit.v3.mtp-v2"
         update-types: ["version-update:semver-major"]
