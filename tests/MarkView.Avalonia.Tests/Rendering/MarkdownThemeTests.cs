@@ -11,17 +11,17 @@ public class MarkdownThemeTests
 {
     /// <summary>
     /// Walks up from the test assembly's output directory to the repo root (identified
-    /// by Directory.Build.props, which exists only at the root) rather than hardcoding a
+    /// by Directory.Packages.props, which exists only at the root) rather than hardcoding a
     /// fixed number of ".." segments, since that count depends on the build configuration
     /// and target framework folder names.
     /// </summary>
     private static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Directory.Build.props")))
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Directory.Packages.props")))
             dir = dir.Parent;
         if (dir is null)
-            throw new InvalidOperationException("Could not locate repo root (Directory.Build.props not found in any ancestor).");
+            throw new InvalidOperationException("Could not locate repo root (Directory.Packages.props not found in any ancestor).");
         return dir.FullName;
     }
 

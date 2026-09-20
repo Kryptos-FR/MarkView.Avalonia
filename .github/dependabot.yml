@@ -31,6 +31,10 @@ updates:
         patterns:
           - "CSharpMath"
           - "CSharpMath.*"
+      skiaSharp:
+        patterns:
+          - "SkiaSharp"
+          - "SkiaSharp.NativeAssets.*"
       textmatesharp:
         patterns:
           - "TextMateSharp"
