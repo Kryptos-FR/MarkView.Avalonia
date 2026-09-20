@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../MarkView.Avalonia.Demo/MarkView.Avalonia.Demo.csproj" />

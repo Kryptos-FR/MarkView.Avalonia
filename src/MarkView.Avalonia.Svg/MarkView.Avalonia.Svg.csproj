@@ -9,6 +9,7 @@
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="SkiaSharp" />
     <PackageReference Include="Svg.Controls.Skia.Avalonia" />
   </ItemGroup>
   <ItemGroup>

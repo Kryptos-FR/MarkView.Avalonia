@@ -5,13 +5,6 @@
     <UseAppHost>true</UseAppHost>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia.Headless.XUnit" />
-    <PackageReference Include="Avalonia.Themes.Fluent" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
-    <PackageReference Include="xunit.v3.mtp-v2" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
   </ItemGroup>
   <ItemGroup>

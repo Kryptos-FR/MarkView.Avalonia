@@ -42,6 +42,12 @@
           "Microsoft.Testing.Platform": "2.4.0"
         }
       },
+      "SkiaSharp.NativeAssets.Linux": {
+        "type": "Direct",
+        "requested": "[4.152.0, )",
+        "resolved": "4.152.0",
+        "contentHash": "B3713AE9SBHD55nMsaPlXY2C+GvsPsG50SxM/7iYayCvR3WqrQfgrSD4w/cJ9azGVrqrD2mx64esAQxVqK16dA=="
+      },
       "xunit.v3.mtp-v2": {
         "type": "Direct",
         "requested": "[3.2.2, )",
@@ -387,6 +393,7 @@
         "dependencies": {
           "MarkView.Avalonia": "[1.0.0, )",
           "Mermaider": "[0.12.2, )",
+          "SkiaSharp": "[4.152.0, )",
           "Svg.Controls.Skia.Avalonia": "[12.0.0.15, )"
         }
       },
@@ -445,12 +452,6 @@
           "SkiaSharp.NativeAssets.Win32": "4.152.0",
           "SkiaSharp.NativeAssets.macOS": "4.152.0"
         }
-      },
-      "SkiaSharp.NativeAssets.Linux": {
-        "type": "CentralTransitive",
-        "requested": "[4.152.0, )",
-        "resolved": "4.148.0",
-        "contentHash": "diba2vLeoKmWVkVTdXYOG14c7+s5FsH/AQZ5UPiFLRwLKgrCQNJPLKw8q60HzfOcJt+t/blv+1xkinqd5ZjX5A=="
       },
       "SkiaSharp.NativeAssets.WebAssembly": {
         "type": "CentralTransitive",
