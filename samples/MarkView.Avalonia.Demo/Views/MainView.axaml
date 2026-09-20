@@ -1,16 +1,17 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mv="using:MarkView.Avalonia"
-        xmlns:local="using:MarkView.Avalonia.Demo"
-        xmlns:ce="using:MarkView.Avalonia.Demo.ColorExtension"
-        x:Class="MarkView.Avalonia.Demo.MainWindow"
-        x:DataType="local:MainViewModel"
-        Title="MarkView.Avalonia Demo"
-        Width="1000" Height="750">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mv="using:MarkView.Avalonia"
+             xmlns:local="using:MarkView.Avalonia.Demo"
+             xmlns:ce="using:MarkView.Avalonia.Demo.ColorExtension"
+             mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="768"
+             x:Class="MarkView.Avalonia.Demo.Views.MainView"
+             x:DataType="local:MainViewModel">
 
-  <Window.Resources>
+  <UserControl.Resources>
     <local:OutlineFilterConverter x:Key="OutlineFilterConverter" />
-  </Window.Resources>
+  </UserControl.Resources>
 
   <DockPanel>
     <!-- Page tabs -->
@@ -92,4 +93,4 @@
     </Grid>
   </DockPanel>
 
-</Window>
+</UserControl>

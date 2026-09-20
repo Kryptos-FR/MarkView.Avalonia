@@ -1,6 +1,6 @@
 using Avalonia;
 
-namespace MarkView.Avalonia.Demo;
+namespace MarkView.Avalonia.Demo.Desktop;
 
 internal sealed class Program
 {
