@@ -44,15 +44,32 @@ jobs:
         if: steps.check-lock-files.outcome == 'failure'
         run: dotnet build --no-restore --configuration Release
 
+      - name: Check lock files (samples)
+        id: check-lock-files-samples
+        run: |
+          dotnet workload install wasm-tools
+          dotnet restore samples/samples.slnx --locked-mode
+        continue-on-error: true
+
+      - name: Regenerate (samples)
+        if: steps.check-lock-files-samples.outcome == 'failure'
+        run: dotnet restore samples/samples.slnx --force-evaluate
+
+      - name: Build (samples)
+        if: steps.check-lock-files-samples.outcome == 'failure'
+        run: dotnet build samples/samples.slnx --no-restore --configuration Release
+
       - name: Push lock files
-        if: steps.check-lock-files.outcome == 'failure'
+        if: >
+          steps.check-lock-files.outcome == 'failure'
+          || steps.check-lock-files-samples.outcome == 'failure'
         run: |
           if git diff --quiet -- '*packages.lock.json'; then
             echo "Lock files already up to date."
             exit 0
           fi
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- '*packages.lock.json'
           git commit -m "fix(build): regenerate packages.lock.json"
           git push
