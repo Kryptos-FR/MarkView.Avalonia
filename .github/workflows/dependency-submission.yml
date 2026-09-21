@@ -1,4 +1,4 @@
-name: Dependency submission
+name: Dependency Submission
 
 on:
   push:
