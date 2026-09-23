@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 
 using Markdig;
+using Markdig.Extensions.Tables;
 using MarkView.Avalonia.Demo.Views;
 
 namespace MarkView.Avalonia.Demo;
@@ -18,7 +19,7 @@ public class App : Application
     {
         // Global pipeline — applies to every MarkdownViewer in the app
         MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
-            .UseSupportedExtensions()
+            .UseSupportedExtensions(new PipeTableOptions { InferColumnWidthsFromSeparator = true })
             .UseAbbreviations()
             .UseAlertBlocks()
             .UseCitations()

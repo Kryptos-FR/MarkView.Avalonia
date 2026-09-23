@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Markdig;
+using Markdig.Extensions.Tables;
 
 namespace MarkView.Avalonia;
 
@@ -13,7 +14,12 @@ public static class MarkdownExtensions
     /// <summary>
     /// Enables all Markdig extensions supported by MarkView.Avalonia.
     /// </summary>
-    public static MarkdownPipelineBuilder UseSupportedExtensions(this MarkdownPipelineBuilder builder)
+    /// <param name="builder">The pipeline builder.</param>
+    /// <param name="pipeTableOptions">
+    /// Options for pipe table parsing, e.g. <see cref="PipeTableOptions.InferColumnWidthsFromSeparator"/>
+    /// to size <see cref="Rendering.Blocks.TableRenderer"/> columns proportionally to the header separator's dash counts.
+    /// </param>
+    public static MarkdownPipelineBuilder UseSupportedExtensions(this MarkdownPipelineBuilder builder, PipeTableOptions? pipeTableOptions = null)
     {
         return builder
             .UseAutoLinks()
@@ -21,7 +27,7 @@ public static class MarkdownExtensions
             .UseEmojiAndSmiley(enableSmileys: false)
             .UseEmphasisExtras()
             .UseGridTables()
-            .UsePipeTables()
+            .UsePipeTables(pipeTableOptions)
             .UseTaskLists()
             .UseYamlFrontMatter();
     }

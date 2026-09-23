@@ -42,12 +42,12 @@ You can also combine them: ***bold and italic***, **`bold code`**, *~~italic str
 
 The `EmphasisExtras` Markdig extension unlocks four additional inline styles:
 
-| Syntax | Result | Description |
-|--------|--------|-----------|
-| `~text~` | H~2~O | Subscript |
-| `^text^` | x^2^ + y^2^ = r^2^ | Superscript |
-| `++text++` | ++inserted++ | Underline (inserted) |
-| `==text==` | ==marked== | Highlighted (marked) |
+| Syntax     | Result        | Description |
+|------------|---------------|-------------|
+| `~text~`   | H~2~O         | Subscript   |
+| `^text^`   | x^2^ + y^2^ = r^2^ | Superscript |
+| `++text++` | ++inserted++  | Underline (inserted) |
+| `==text==` | ==marked==    | Highlighted (marked) |
 
 ---
 
@@ -76,13 +76,13 @@ The `EmphasisExtras` Markdig extension unlocks four additional inline styles:
 
 ## Tables
 
-| Extension Package | Feature | NuGet Status | Notes |
-|---|---|---|---|
-| `MarkView.Avalonia` | Core rendering | ✅ Published | Markdig-based |
-| `MarkView.Avalonia.SyntaxHighlighting` | Code highlighting | ✅ Published | TextMate grammars |
-| `MarkView.Avalonia.Svg` | SVG images | ✅ Published | Avalonia.Svg |
-| `MarkView.Avalonia.Mermaid` | Mermaid diagrams | ✅ Published | Pure .NET |
-| `MarkView.Avalonia.Math` | LaTeX math | ✅ Published | CSharpMath.SkiaSharp |
+| Extension Package                      | Feature            | NuGet Status |                Notes |
+|:---------------------------------------|:-------------------|:------------:|---------------------:|
+| `MarkView.Avalonia`                    | Core rendering     | ✅ Published  |        Markdig-based |
+| `MarkView.Avalonia.SyntaxHighlighting` | Code highlighting  | ✅ Published  |    TextMate grammars |
+| `MarkView.Avalonia.Svg`                | SVG images         | ✅ Published  |         Avalonia.Svg |
+| `MarkView.Avalonia.Mermaid`            | Mermaid diagrams   | ✅ Published  |            Pure .NET |
+| `MarkView.Avalonia.Math`               | LaTeX math         | ✅ Published  | CSharpMath.SkiaSharp |
 
 ---
 
@@ -135,19 +135,19 @@ The images below use relative paths — they resolve against the `BaseUri` that 
 
 Two equivalent syntaxes are supported for specifying image dimensions:
 
-| Form | Syntax | Notes |
-|------|--------|-------|
+| Form         | Syntax               | Notes                                                                             |
+|--------------|----------------------|-----------------------------------------------------------------------------------|
 | Quoted title | `![alt](url "=WxH")` | Valid CommonMark — portable across renderers (others show the title as a tooltip) |
-| Shorthand | `![alt](url =WxH)` | MarkView-only convenience; preprocessed to the quoted form before parsing |
+| Shorthand    | `![alt](url =WxH)`   | MarkView-only convenience; preprocessed to the quoted form before parsing         |
 
 The table below shows the same image at different sizes:
 
-| Syntax | Result |
-|--------|--------|
-| `![alt](url "=40x40")` | ![Avalonia Logo](avalonia-logo.png "=40x40") 40×40 |
-| `![alt](url "=80x80")` | ![Avalonia Logo](avalonia-logo.png "=80x80") 80×80 |
+| Syntax                   | Result                                             |
+|--------------------------|----------------------------------------------------|
+| `![alt](url "=40x40")`   | ![Avalonia Logo](avalonia-logo.png "=40x40") 40×40 |
+| `![alt](url "=80x80")`   | ![Avalonia Logo](avalonia-logo.png "=80x80") 80×80 |
 | `![alt](url "=160x160")` | ![Avalonia Logo](avalonia-logo.png "=160x160") 160×160 |
-| `![alt](url)` (no size) | ![Avalonia Logo](avalonia-logo.png) natural size |
+| `![alt](url)` (no size)  | ![Avalonia Logo](avalonia-logo.png) natural size   |
 
 ---
 
