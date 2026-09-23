@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Markdig;
+using Markdig.Extensions.Tables;
 using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Rendering.Inlines;
 using Xunit;
@@ -52,6 +53,22 @@ public class MarkdownExtensionsTests : RenderTestBase
         var result = Render("| A | B |\n|---|---|\n| 1 | 2 |", _pipeline);
         var grid = Assert.IsType<Grid>(Assert.Single(result.Children));
         Assert.Contains("markdown-table", grid.Classes);
+    }
+
+    [AvaloniaFact]
+    public void UseSupportedExtensions_forwards_pipe_table_options()
+    {
+        var pipeline = new MarkdownPipelineBuilder()
+            .UseSupportedExtensions(new MarkdownExtensionsOptions
+            {
+                PipeTable = new PipeTableOptions { InferColumnWidthsFromSeparator = true },
+            })
+            .Build();
+
+        var result = Render("| A | B |\n|--|------|\n| 1 | 2 |", pipeline);
+        var grid = Assert.IsType<Grid>(Assert.Single(result.Children));
+
+        Assert.True(grid.ColumnDefinitions[1].Width.Value > grid.ColumnDefinitions[0].Width.Value);
     }
 
     [AvaloniaFact]

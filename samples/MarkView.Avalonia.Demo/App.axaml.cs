@@ -19,7 +19,7 @@ public class App : Application
     {
         // Global pipeline — applies to every MarkdownViewer in the app
         MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
-            .UseSupportedExtensions(new PipeTableOptions { InferColumnWidthsFromSeparator = true })
+            .UseSupportedExtensions(new MarkdownExtensionsOptions { PipeTable = new PipeTableOptions { InferColumnWidthsFromSeparator = true } })
             .UseAbbreviations()
             .UseAlertBlocks()
             .UseCitations()
