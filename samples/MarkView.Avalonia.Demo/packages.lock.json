@@ -220,7 +220,7 @@
         "type": "Project",
         "dependencies": {
           "Avalonia": "[12.1.1, )",
-          "Markdig": "[1.3.2, )"
+          "Markdig": "[1.4.0, )"
         }
       },
       "markview.avalonia.math": {
@@ -279,9 +279,9 @@
       },
       "Markdig": {
         "type": "CentralTransitive",
-        "requested": "[1.3.2, )",
-        "resolved": "1.3.2",
-        "contentHash": "fZgOC/3CswUrndjDTac70aQpYdtxbW5+5bRumR7vzvI2HJbkmgKisB1c9oT+GA6v0jB/JDR9BLa9FiPzQmaK6A=="
+        "requested": "[1.4.0, )",
+        "resolved": "1.4.0",
+        "contentHash": "lLhaiI/mNDTNzgLqnmknhf4LjgTqOAyjx5+GNz0X3AxYMxUhmFppF2WVMdER+SDqwhE5wUF1pzs/cuLwFxs7xA=="
       },
       "Mermaider": {
         "type": "CentralTransitive",
@@ -564,7 +564,7 @@
         "type": "Project",
         "dependencies": {
           "Avalonia": "[12.1.1, )",
-          "Markdig": "[1.3.2, )"
+          "Markdig": "[1.4.0, )"
         }
       },
       "markview.avalonia.math": {
@@ -623,9 +623,9 @@
       },
       "Markdig": {
         "type": "CentralTransitive",
-        "requested": "[1.3.2, )",
-        "resolved": "1.3.2",
-        "contentHash": "fZgOC/3CswUrndjDTac70aQpYdtxbW5+5bRumR7vzvI2HJbkmgKisB1c9oT+GA6v0jB/JDR9BLa9FiPzQmaK6A=="
+        "requested": "[1.4.0, )",
+        "resolved": "1.4.0",
+        "contentHash": "lLhaiI/mNDTNzgLqnmknhf4LjgTqOAyjx5+GNz0X3AxYMxUhmFppF2WVMdER+SDqwhE5wUF1pzs/cuLwFxs7xA=="
       },
       "Mermaider": {
         "type": "CentralTransitive",

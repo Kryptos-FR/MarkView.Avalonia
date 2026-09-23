@@ -11,7 +11,7 @@
   <ItemGroup>
     <!-- Core dependencies -->
     <PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
-    <PackageVersion Include="Markdig" Version="1.3.2" />
+    <PackageVersion Include="Markdig" Version="1.4.0" />
     <!-- Plugin dependencies -->
     <PackageVersion Include="CSharpMath.SkiaSharp" Version="0.5.1" />
     <PackageVersion Include="Mermaider" Version="0.12.2" />
