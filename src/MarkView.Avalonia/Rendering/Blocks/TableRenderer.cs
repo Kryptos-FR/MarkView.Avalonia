@@ -22,7 +22,8 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
         // Define columns
         for (int i = 0; i < obj.ColumnDefinitions.Count; i++)
         {
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var width = obj.ColumnDefinitions[i].Width;
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(width > 0 ? width : 1, GridUnitType.Star) });
         }
 
         int rowIndex = 0;

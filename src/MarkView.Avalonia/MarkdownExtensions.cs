@@ -13,7 +13,9 @@ public static class MarkdownExtensions
     /// <summary>
     /// Enables all Markdig extensions supported by MarkView.Avalonia.
     /// </summary>
-    public static MarkdownPipelineBuilder UseSupportedExtensions(this MarkdownPipelineBuilder builder)
+    /// <param name="builder">The pipeline builder.</param>
+    /// <param name="options">Options for the extensions enabled by this method. See <see cref="MarkdownExtensionsOptions"/>.</param>
+    public static MarkdownPipelineBuilder UseSupportedExtensions(this MarkdownPipelineBuilder builder, MarkdownExtensionsOptions? options = null)
     {
         return builder
             .UseAutoLinks()
@@ -21,7 +23,7 @@ public static class MarkdownExtensions
             .UseEmojiAndSmiley(enableSmileys: false)
             .UseEmphasisExtras()
             .UseGridTables()
-            .UsePipeTables()
+            .UsePipeTables(options?.PipeTable)
             .UseTaskLists()
             .UseYamlFrontMatter();
     }
