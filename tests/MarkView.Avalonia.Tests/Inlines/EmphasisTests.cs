@@ -142,4 +142,16 @@ public class EmphasisTests : RenderTestBase
         renderer.Pop();
         return Assert.IsType<Span>(Assert.Single(container.Inlines));
     }
+
+    [AvaloniaTheory]
+    [InlineData("H~2~O", "subs", BaselineAlignment.Subscript)]
+    [InlineData("x^2^", "sups", BaselineAlignment.Superscript)]
+    public void Sub_and_superscript_use_baseline_and_opentype_feature(string markdown, string feature, BaselineAlignment baseline)
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseEmphasisExtras().Build();
+        var text = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(Render(markdown, pipeline).Children));
+
+        var span = text.Inlines!.OfType<Span>().Single(s => s.BaselineAlignment == baseline);
+        Assert.Equal(feature, Assert.Single(span.FontFeatures!).Tag);
+    }
 }

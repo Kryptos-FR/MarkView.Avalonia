@@ -77,4 +77,18 @@ public class TocEntryTests
         var tree = TocEntry.BuildTree([], maxDepth: 6);
         Assert.Empty(tree);
     }
+
+    [Fact]
+    public void BuildTree_keeps_the_root_when_a_zero_level_entry_is_added()
+    {
+        var flat = new List<(int Level, string Text, string Slug)>
+        {
+            (0, "Zero", "zero"),
+            (0, "Zero again", "zero-again"),
+        };
+
+        var tree = TocEntry.BuildTree(flat, maxDepth: 6);
+
+        Assert.Equal(["zero", "zero-again"], tree.Select(e => e.Slug));
+    }
 }

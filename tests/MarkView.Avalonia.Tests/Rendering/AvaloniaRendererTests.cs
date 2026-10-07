@@ -1,7 +1,10 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
+using Markdig;
 using MarkView.Avalonia.Rendering;
 using Xunit;
 
@@ -84,5 +87,58 @@ public class AvaloniaRendererTests
         renderer.Render(Markdig.Markdown.Parse("Just a paragraph", pipeline));
 
         Assert.Empty(renderer.HeadingEntries);
+    }
+
+    [AvaloniaFact]
+    public void ResolveUrl_keeps_fragment_unencoded_when_resolving_against_base()
+    {
+        var renderer = new AvaloniaRenderer { BaseUri = new Uri("https://example.com/docs/") };
+
+        Assert.Equal("https://example.com/docs/guide/page.md#intro", renderer.ResolveUrl("guide/page.md#intro"));
+    }
+
+    [AvaloniaFact]
+    public void ResolveUrl_keeps_percent_encoded_fragment_verbatim()
+    {
+        var renderer = new AvaloniaRenderer { BaseUri = new Uri("https://example.com/docs/") };
+
+        Assert.Equal("https://example.com/docs/page.md#a%20b", renderer.ResolveUrl("page.md#a%20b"));
+    }
+
+    private static StackPanel RenderMarkdown(string markdown)
+    {
+        var pipeline = new MarkdownPipelineBuilder().Build();
+        var renderer = new AvaloniaRenderer();
+        pipeline.Setup(renderer);
+        renderer.Render(Markdown.Parse(markdown, pipeline));
+        return renderer.RootPanel;
+    }
+
+    [AvaloniaFact]
+    public void Indented_code_lines_are_separated_by_line_breaks()
+    {
+        var root = RenderMarkdown("""
+                one
+                two
+            """);
+        var text = Assert.IsType<TextBlock>(Assert.IsType<Border>(Assert.Single(root.Children)).Child);
+
+        var inlines = text.Inlines!.ToList();
+        Assert.Equal(3, inlines.Count);
+        Assert.Equal("one", Assert.IsType<Run>(inlines[0]).Text);
+        Assert.IsType<LineBreak>(inlines[1]);
+        Assert.Equal("two", Assert.IsType<Run>(inlines[2]).Text);
+    }
+
+    [AvaloniaFact]
+    public void Empty_fenced_code_block_has_no_inlines()
+    {
+        var root = RenderMarkdown("""
+            ```
+            ```
+            """);
+        var text = Assert.IsType<TextBlock>(Assert.IsType<Border>(Assert.Single(root.Children)).Child);
+
+        Assert.Empty(text.Inlines!);
     }
 }

@@ -4,6 +4,8 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
+using Avalonia.LogicalTree;
+using Avalonia.Media;
 using Markdig;
 using MarkView.Avalonia.Rendering;
 using Xunit;
@@ -54,5 +56,40 @@ public class FigureTests : RenderTestBase
         var result = Render("^^^\nContent\n^^^", FigurePipeline());
         var border = Assert.IsType<Border>(Assert.Single(result.Children));
         Assert.Contains("markdown-figure", border.Classes);
+    }
+
+    [AvaloniaFact]
+    public void Figure_caption_text_is_rendered_below_the_content()
+    {
+        var root = Render("""
+            ^^^
+            Body text
+            ^^^ The caption
+            """, FigurePipeline());
+
+        var texts = root.GetLogicalDescendants().OfType<MarkdownSelectableTextBlock>()
+            .Select(t => MarkdownSelectableTextBlock.ExtractPlainText(t.Inlines!))
+            .ToArray();
+        Assert.Equal(["Body text", "The caption"], texts);
+    }
+
+    [AvaloniaFact]
+    public void Figure_panel_is_spaced_and_caption_wraps_and_is_bound_to_the_renderer()
+    {
+        var pipeline = FigurePipeline();
+        var renderer = new AvaloniaRenderer();
+        pipeline.Setup(renderer);
+        renderer.Render(Markdown.Parse("""
+            ^^^
+            Body text
+            ^^^ The caption
+            """, pipeline));
+
+        var border = Assert.IsType<Border>(Assert.Single(renderer.RootPanel.Children));
+        var panel = Assert.IsType<StackPanel>(border.Child);
+        Assert.Equal(4, panel.Spacing);
+        var caption = Assert.IsType<MarkdownSelectableTextBlock>(panel.Children[^1]);
+        Assert.Equal(TextWrapping.Wrap, caption.TextWrapping);
+        Assert.Same(renderer, caption.Renderer);
     }
 }

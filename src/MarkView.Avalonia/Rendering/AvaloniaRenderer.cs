@@ -237,6 +237,7 @@ public class AvaloniaRenderer : RendererBase
     public void WriteLeafRawLines(LeafBlock leafBlock)
     {
         if (leafBlock.Lines.Lines == null)
+            // Stryker disable once Statement : a group without line storage has Count 0, so the loop below is a no-op as well
             return;
 
         var lines = leafBlock.Lines;
@@ -262,9 +263,9 @@ public class AvaloniaRenderer : RendererBase
         if (BaseUri != null && Uri.TryCreate(url, UriKind.Relative, out _))
         {
             // Separate path from fragment before combining to prevent '#' → '%23' encoding.
-            var hashIdx = url.IndexOf('#');
-            if (hashIdx >= 0)
+            if (url.Contains('#'))
             {
+                var hashIdx = url.IndexOf('#');
                 var path = url[..hashIdx];
                 var fragment = url[hashIdx..]; // includes the '#'
                 return new Uri(BaseUri, path) + fragment;
