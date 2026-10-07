@@ -83,6 +83,7 @@ public sealed class SvgImageLoader : IImageLoader
     {
         // Format: data:[<mediatype>][;base64],<data>
         var commaIndex = dataUri.IndexOf(',');
+        // Stryker disable once Equality : callers only pass "data:" URIs, so a comma can never be at index 0
         if (commaIndex < 0)
             return [];
 
