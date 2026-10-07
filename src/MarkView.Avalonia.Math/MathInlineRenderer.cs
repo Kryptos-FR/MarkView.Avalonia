@@ -59,11 +59,12 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
             }
             catch (Exception)
             {
-                // From the theme-change callback the inline context can't safely re-enter the
-                // renderer's inline stack — unlike the block renderer's Border, an inline Image
-                // has no room for a fallback panel. The image keeps showing its last successfully
-                // rendered bitmap rather than risk corrupting whatever inline collection is
-                // active at callback time.
+                // The caller decides how to react: the first render writes a plain-text fallback,
+                // while the theme-change callback ignores the failure. That callback can't safely
+                // re-enter the renderer's inline stack — unlike the block renderer's Border, an
+                // inline Image has no room for a fallback panel — so the image keeps showing its
+                // last successfully rendered bitmap rather than risk corrupting whatever inline
+                // collection is active at callback time.
                 return false;
             }
         }

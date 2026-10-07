@@ -46,7 +46,7 @@ public class MathFormulaRendererTests
         MathFormulaRenderer.EnsureSafeToRender(new string('{', 30) + new string('}', 30) + new string('{', 30) + new string('}', 30));
 
     [AvaloniaFact]
-    public void Render_with_malformed_latex_draws_the_error_instead_of_throwing()
+    public void Render_with_malformed_latex_returns_a_bitmap_instead_of_throwing()
     {
         var bitmap = MathFormulaRenderer.Render(@"\frac{", SKColors.Black);
 

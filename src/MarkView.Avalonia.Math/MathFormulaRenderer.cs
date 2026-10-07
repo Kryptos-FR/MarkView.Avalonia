@@ -29,7 +29,6 @@ internal static class MathFormulaRenderer
             LaTeX = latex,
             FontSize = fontSize,
             TextColor = textColor,
-            // Stryker disable once Boolean : CSharpMath renders malformed input identically with or without inline errors
             DisplayErrorInline = true, // bad LaTeX renders its own error text instead of throwing
         };
 
