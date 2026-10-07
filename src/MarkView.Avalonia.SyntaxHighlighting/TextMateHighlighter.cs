@@ -52,6 +52,7 @@ public sealed class TextMateHighlighter : ICodeHighlighter
             return cached;
 
         var scopeName = _options.GetScopeByLanguageId(language);
+        // Stryker disable once block : caches the null result for unsupported languages; without the early return LoadGrammar(null) also yields null, so the result is identical and only the repeated lookup differs
         if (scopeName == null)
         {
             _grammarCache[language] = null;
@@ -86,6 +87,7 @@ public sealed class TextMateHighlighter : ICodeHighlighter
             IBrush? brush = null;
 
             var rules = _theme.Match(token.Scopes);
+            // Stryker disable once equality : colour id 0 is never assigned by TextMateSharp's ColorMap (ids start at 1), so GetColor(0) returns null and the IsNullOrEmpty check below yields the same null brush
             if (rules.Count > 0 && rules[0].foreground > 0)
             {
                 var hex = _theme.GetColor(rules[0].foreground);

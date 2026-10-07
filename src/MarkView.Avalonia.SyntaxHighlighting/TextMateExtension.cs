@@ -35,6 +35,8 @@ public sealed class TextMateExtension : IMarkViewExtension
         renderer.ReplaceOrAdd<CodeBlockRenderer>(new TextMateCodeBlockRenderer());
     }
 
+    // Stryker disable once assignment : lazily caches the highlighter; without the cache every Register() builds its own instance whose highlighting output is identical, only instance reuse differs
     private TextMateHighlighter GetDark() => _darkHighlighter ??= new TextMateHighlighter(_darkTheme);
+    // Stryker disable once assignment : lazily caches the highlighter; without the cache every Register() builds its own instance whose highlighting output is identical, only instance reuse differs
     private TextMateHighlighter GetLight() => _lightHighlighter ??= new TextMateHighlighter(_lightTheme);
 }
