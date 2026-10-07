@@ -73,7 +73,12 @@ jobs:
 
           $projectMin = 70
           $projectFailed = $false
-          foreach ($m in [regex]::Matches($content, '<summary>(?<name>[^<]+?) - (?<pct>\d+(\.\d+)?)%</summary>')) {
+          $projectMatches = [regex]::Matches($content, '<summary>(?<name>[^<]+?) - (?<pct>\d+(\.\d+)?)%</summary>')
+          if ($projectMatches.Count -eq 0) {
+            Write-Output "::error::No per-project coverage rows found in $summaryFile; the report format may have changed"
+            exit 1
+          }
+          foreach ($m in $projectMatches) {
             $pct = [double]$m.Groups['pct'].Value
             if ($pct -lt $projectMin) {
               Write-Output "::error::$($m.Groups['name'].Value) line coverage $pct% is below the required $projectMin%"
