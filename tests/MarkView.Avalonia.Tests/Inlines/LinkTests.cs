@@ -59,19 +59,12 @@ public class LinkTests : RenderTestBase
         Assert.Equal("My Title", hyperlink.Title);
     }
 
-    [AvaloniaFact]
-    public void Link_without_title_has_null_Title()
+    [AvaloniaTheory]
+    [InlineData("[click me](https://example.com)")]
+    [InlineData("[click me](https://example.com \"\")")]
+    public void Link_without_or_with_empty_title_has_null_Title(string markdown)
     {
-        var result = Render("[click me](https://example.com)");
-        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
-        var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
-        Assert.Null(hyperlink.Title);
-    }
-
-    [AvaloniaFact]
-    public void Link_with_empty_title_has_null_Title()
-    {
-        var result = Render("[click me](https://example.com \"\")");
+        var result = Render(markdown);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var hyperlink = Assert.IsType<MarkdownHyperlink>(Assert.Single(textBlock.Inlines!));
         Assert.Null(hyperlink.Title);

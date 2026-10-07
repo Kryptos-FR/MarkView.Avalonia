@@ -70,7 +70,7 @@ public class YoutubeTests : RenderTestBase
         {
             Requests.Add(url);
             Tokens.Add(cancellationToken);
-            return Task.FromResult<IImage?>(null);
+            return new TaskCompletionSource<IImage?>().Task; // stays in flight
         }
     }
 
@@ -78,7 +78,8 @@ public class YoutubeTests : RenderTestBase
     {
         var pipeline = MediaPipeline();
         var renderer = new AvaloniaRenderer();
-        renderer.ImageLoaders.Insert(0, loader);
+        renderer.ImageLoaders.Clear(); // no default loader may reach the network
+        renderer.ImageLoaders.Add(loader);
         pipeline.Setup(renderer);
         renderer.Render(Markdown.Parse(markdown, pipeline));
         return renderer;

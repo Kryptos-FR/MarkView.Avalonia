@@ -78,6 +78,7 @@ public class TocEntryTests
         Assert.Empty(tree);
     }
 
+    // Pins the root-sentinel guard of the public BuildTree for out-of-range levels.
     [Fact]
     public void BuildTree_keeps_the_root_when_a_zero_level_entry_is_added()
     {
