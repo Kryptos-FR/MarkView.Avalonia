@@ -27,9 +27,33 @@ public class MarkdownViewerInteractionTests
         public void Dispose() => Window.Close();
     }
 
-    // A text block only receives pointer input where it paints; the headless text drawing
-    // contributes no hit-testable geometry, so a transparent background makes each block's
-    // whole row hit-testable, as it is under a real renderer.
+    private const string TwoParagraphs = """
+        First paragraph
+
+        Second paragraph
+        """;
+
+    private const string LinkAfterIntro = """
+        Intro
+
+        [link](https://example.com/) tail
+        """;
+
+    private const string LinkThenPlainWords = """
+        Intro
+
+        [link](https://example.com/) plain words
+        """;
+
+    private const string AlphaBeta = """
+        Alpha
+
+        Beta
+        """;
+
+    // Under a real renderer the text runs themselves are hit-testable. The headless text
+    // drawing contributes no hit-testable glyph geometry, so a transparent background stands
+    // in for it and covers each block's whole row; test points must therefore stay on text.
     private static void MakeTextBlocksHitTestable(Window window) =>
         window.Styles.Add(new Style(x => x.OfType<MarkdownSelectableTextBlock>())
         {
@@ -61,7 +85,7 @@ public class MarkdownViewerInteractionTests
     [AvaloniaFact]
     public void Dragging_across_paragraphs_selects_the_spanned_text()
     {
-        using var f = Show("First paragraph\n\nSecond paragraph");
+        using var f = Show(TwoParagraphs);
 
         f.Window.MouseDown(At(f.Window, f.Blocks[0], 3), MouseButton.Left);
         f.Window.MouseMove(At(f.Window, f.Blocks[1], 5), RawInputModifiers.LeftMouseButton);
@@ -74,7 +98,7 @@ public class MarkdownViewerInteractionTests
     [AvaloniaFact]
     public void Click_with_tiny_jitter_on_a_link_raises_LinkClicked_and_selects_nothing()
     {
-        using var f = Show("Intro\n\n[link](https://example.com/) tail");
+        using var f = Show(LinkAfterIntro);
         var urls = new List<string>();
         f.Viewer.LinkClicked += (_, e) => { urls.Add(e.Url); e.Handled = true; };
         var start = At(f.Window, f.Blocks[1], 1);
@@ -90,7 +114,7 @@ public class MarkdownViewerInteractionTests
     [AvaloniaFact]
     public void Dragging_over_a_link_selects_instead_of_clicking()
     {
-        using var f = Show("Intro\n\n[link](https://example.com/) tail");
+        using var f = Show(LinkAfterIntro);
         var clicks = 0;
         f.Viewer.LinkClicked += (_, e) => { clicks++; e.Handled = true; };
 
@@ -106,10 +130,13 @@ public class MarkdownViewerInteractionTests
     [AvaloniaFact]
     public void Moving_exactly_the_drag_threshold_is_still_a_click()
     {
-        using var f = Show("Intro\n\n[link](https://example.com/) tail");
+        using var f = Show(LinkAfterIntro);
         var urls = new List<string>();
         f.Viewer.LinkClicked += (_, e) => { urls.Add(e.Url); e.Handled = true; };
-        var start = At(f.Window, f.Blocks[1], 1);
+        // Integral coordinates keep the 3px move exact in floating point, so the distance equals
+        // the threshold with no rounding error.
+        var caret = At(f.Window, f.Blocks[1], 1);
+        var start = new Point(Math.Floor(caret.X), Math.Floor(caret.Y));
 
         f.Window.MouseDown(start, MouseButton.Left);
         f.Window.MouseMove(start + new Vector(3, 0), RawInputModifiers.LeftMouseButton);
@@ -121,7 +148,7 @@ public class MarkdownViewerInteractionTests
     [AvaloniaFact]
     public void Moving_past_the_drag_threshold_vertically_turns_the_press_into_a_drag()
     {
-        using var f = Show("Intro\n\n[link](https://example.com/) tail");
+        using var f = Show(LinkAfterIntro);
         var clicks = 0;
         f.Viewer.LinkClicked += (_, e) => { clicks++; e.Handled = true; };
         var start = At(f.Window, f.Blocks[1], 1);
@@ -138,7 +165,7 @@ public class MarkdownViewerInteractionTests
     [AvaloniaFact]
     public void Drag_moves_are_handled_but_hover_moves_are_not()
     {
-        using var f = Show("First paragraph\n\nSecond paragraph");
+        using var f = Show(TwoParagraphs);
         var bubbled = 0;
         f.Viewer.AddHandler(InputElement.PointerMovedEvent, (_, _) => bubbled++, RoutingStrategies.Bubble);
 
@@ -153,7 +180,7 @@ public class MarkdownViewerInteractionTests
     [AvaloniaFact]
     public void Right_button_press_keeps_the_current_selection()
     {
-        using var f = Show("Alpha\n\nBeta");
+        using var f = Show(AlphaBeta);
         f.Viewer.SelectAll();
 
         f.Window.MouseDown(At(f.Window, f.Blocks[1], 1), MouseButton.Right);
@@ -165,7 +192,7 @@ public class MarkdownViewerInteractionTests
     [AvaloniaFact]
     public void Hovering_a_link_shows_the_hand_cursor_and_plain_text_resets_it()
     {
-        using var f = Show("Intro\n\n[link](https://example.com/) plain words");
+        using var f = Show(LinkThenPlainWords);
 
         f.Window.MouseMove(At(f.Window, f.Blocks[1], 1));
         Assert.NotSame(Cursor.Default, f.Blocks[1].Cursor);
@@ -178,7 +205,7 @@ public class MarkdownViewerInteractionTests
     [AvaloniaFact]
     public async Task Select_all_and_copy_hotkeys_select_and_copy_the_document()
     {
-        using var f = Show("Alpha\n\nBeta");
+        using var f = Show(AlphaBeta);
         var hotkeys = Application.Current!.PlatformSettings!.HotkeyConfiguration;
         var selectAll = hotkeys.SelectAll.First();
         var copy = hotkeys.Copy.First();
@@ -195,7 +222,7 @@ public class MarkdownViewerInteractionTests
     [AvaloniaFact]
     public void Handled_hotkeys_do_not_bubble_but_other_keys_do()
     {
-        using var f = Show("Alpha\n\nBeta");
+        using var f = Show(AlphaBeta);
         var hotkeys = Application.Current!.PlatformSettings!.HotkeyConfiguration;
         var bubbled = new List<Key>();
         f.Window.AddHandler(InputElement.KeyDownEvent, (_, e) => bubbled.Add(e.Key), RoutingStrategies.Bubble);
@@ -223,10 +250,17 @@ public class MarkdownViewerInteractionTests
     {
         var viewer = new MarkdownViewer();
         viewer.Template = ScrollingViewerTemplate.Create();
-        viewer.Markdown = "[go](#target-heading)\n\n"
-            + string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Paragraph {i}"))
-            + "\n\n## Target Heading\n\n"
-            + string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Trailing paragraph {i}"));
+        var leading = string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Paragraph {i}"));
+        var trailing = string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Trailing paragraph {i}"));
+        viewer.Markdown = $"""
+            [go](#target-heading)
+
+            {leading}
+
+            ## Target Heading
+
+            {trailing}
+            """;
         var window = new Window { Width = 400, Height = 200, Content = viewer };
         MakeTextBlocksHitTestable(window);
         window.Show();
@@ -257,7 +291,11 @@ public class MarkdownViewerInteractionTests
     {
         var viewer = new MarkdownViewer
         {
-            Markdown = string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Paragraph {i}")) + "\n\n## Target Heading",
+            Markdown = $"""
+                {string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Paragraph {i}"))}
+
+                ## Target Heading
+                """,
         };
         var outer = new ScrollViewer { Content = viewer };
         var window = new Window { Width = 400, Height = 200, Content = outer };

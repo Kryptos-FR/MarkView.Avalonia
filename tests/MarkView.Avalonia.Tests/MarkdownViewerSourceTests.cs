@@ -180,7 +180,7 @@ public class MarkdownViewerSourceTests
 
     private static readonly Uri LongDoc = new("avares://MarkView.Avalonia.Tests/TestAssets/long.md");
 
-    private static (Window Window, ScrollViewer ScrollViewer, MarkdownViewer Viewer) ShowThemedViewer()
+    private static (Window Window, ScrollViewer ScrollViewer, MarkdownViewer Viewer) ShowScrollingViewer()
     {
         var viewer = new MarkdownViewer();
         viewer.Template = ScrollingViewerTemplate.Create();
@@ -199,11 +199,23 @@ public class MarkdownViewerSourceTests
     }
 
     [AvaloniaFact]
-    public void Avares_source_without_fragment_leaves_the_scroll_offset_at_the_top()
+    public void Avares_source_without_fragment_renders_at_the_top_of_a_scrolled_viewer()
     {
-        var (window, scrollViewer, viewer) = ShowThemedViewer();
+        var (window, scrollViewer, viewer) = ShowScrollingViewer();
         try
         {
+            var paragraphs = string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Paragraph {i}"));
+            viewer.Markdown = $"""
+                {paragraphs}
+
+                ## Target Heading
+
+                {paragraphs}
+                """;
+            window.UpdateLayout();
+            viewer.ScrollToAnchor("target-heading");
+            Assert.True(scrollViewer.Offset.Y > 0);
+
             viewer.Source = LongDoc;
             Dispatcher.UIThread.RunJobs();
             window.UpdateLayout();
@@ -222,10 +234,17 @@ public class MarkdownViewerSourceTests
     public async Task File_source_fragment_scrolls_after_async_load()
     {
         var path = Path.Combine(Path.GetTempPath(), $"markview-{Guid.NewGuid():N}.md");
+        var leading = string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"P{i}"));
         await File.WriteAllTextAsync(path,
-            string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"P{i}")) + "\n\n## Deep\n\nEnd",
+            $"""
+            {leading}
+
+            ## Deep
+
+            End
+            """,
             TestContext.Current.CancellationToken);
-        var (window, scrollViewer, viewer) = ShowThemedViewer();
+        var (window, scrollViewer, viewer) = ShowScrollingViewer();
         try
         {
             viewer.Source = new Uri(new Uri(path).AbsoluteUri + "#deep");

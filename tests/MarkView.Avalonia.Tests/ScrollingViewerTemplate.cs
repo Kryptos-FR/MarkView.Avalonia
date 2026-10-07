@@ -10,7 +10,8 @@ namespace MarkView.Avalonia.Tests;
 
 /// <summary>
 /// A minimal <see cref="MarkdownViewer"/> template that hosts the content in a
-/// <c>PART_ScrollViewer</c>, without loading the theme resources.
+/// <c>PART_ScrollViewer</c>, without loading the theme resources. It omits the shipped theme's
+/// Padding-to-Margin binding on the content presenter and the ScrollViewer background binding.
 /// </summary>
 internal static class ScrollingViewerTemplate
 {

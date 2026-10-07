@@ -21,31 +21,63 @@ public class MarkdownViewerSelectionRegistrationTests
     [AvaloniaFact]
     public void Code_block_text_is_selectable()
     {
-        Assert.Equal("code line\nafter", SelectAllText("```\ncode line\n```\n\nafter"));
+        const string markdown = """
+            ```
+            code line
+            ```
+
+            after
+            """;
+
+        Assert.Equal("code line\nafter", SelectAllText(markdown));
     }
 
     [AvaloniaFact]
     public void Quoted_paragraphs_are_selectable()
     {
-        Assert.Equal("quoted\nafter", SelectAllText("> quoted\n\nafter"));
+        const string markdown = """
+            > quoted
+
+            after
+            """;
+
+        Assert.Equal("quoted\nafter", SelectAllText(markdown));
     }
 
     [AvaloniaFact]
     public void List_marker_prefixes_only_the_first_paragraph_of_each_item()
     {
-        Assert.Equal("• one\nmore\n• two", SelectAllText("- one\n\n  more\n- two"));
+        const string markdown = """
+            - one
+
+              more
+            - two
+            """;
+
+        Assert.Equal("• one\nmore\n• two", SelectAllText(markdown));
     }
 
     [AvaloniaFact]
     public void Nested_list_items_keep_their_own_markers()
     {
-        Assert.Equal("1. a\n• b", SelectAllText("1. a\n   - b"));
+        const string markdown = """
+            1. a
+               - b
+            """;
+
+        Assert.Equal("1. a\n• b", SelectAllText(markdown));
     }
 
     [AvaloniaFact]
     public void Table_cells_are_tab_separated_and_rows_newline_separated()
     {
-        Assert.Equal("A\tB\n1\t2", SelectAllText("| A | B |\n|---|---|\n| 1 | 2 |"));
+        const string markdown = """
+            | A | B |
+            |---|---|
+            | 1 | 2 |
+            """;
+
+        Assert.Equal("A\tB\n1\t2", SelectAllText(markdown));
     }
 
     [AvaloniaFact]
@@ -89,11 +121,18 @@ public class MarkdownViewerSelectionRegistrationTests
     [AvaloniaFact]
     public void Task_list_items_are_prefixed_with_their_check_glyph()
     {
-        Assert.Equal("☑  done\n☐  todo", SelectAllText("- [x] done\n- [ ] todo"));
+        const string markdown = """
+            - [x] done
+            - [ ] todo
+            """;
+
+        // The two spaces after each glyph are the current output (glyph, separator, then the
+        // item text's own leading space).
+        Assert.Equal("☑  done\n☐  todo", SelectAllText(markdown));
     }
 
     [AvaloniaFact]
-    public void Table_inside_a_list_item_contributes_its_cells()
+    public void Table_inside_a_list_item_contributes_its_cells_after_the_marker()
     {
         const string markdown = """
             - a
@@ -103,6 +142,13 @@ public class MarkdownViewerSelectionRegistrationTests
               | 1 | 2 |
             """;
 
-        Assert.Equal("• a\nA\nB\n1\n2", SelectAllText(markdown));
+        var text = SelectAllText(markdown);
+
+        // Cell separators inside list items are not asserted: known issue, list content does
+        // not register table/code-block structure.
+        Assert.StartsWith("• a", text);
+        var positions = new[] { "A", "B", "1", "2" }.Select(cell => text.IndexOf(cell, "• a".Length, StringComparison.Ordinal)).ToArray();
+        Assert.All(positions, p => Assert.True(p >= 0));
+        Assert.Equal(positions.Order(), positions);
     }
 }
