@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
@@ -56,7 +57,6 @@ public class MermaidCodeBlockFallbackTests
         Assert.Equal("first", Assert.IsType<Run>(inlines[0]).Text);
         Assert.IsType<LineBreak>(inlines[1]);
         Assert.Equal("second", Assert.IsType<Run>(inlines[2]).Text);
-        Assert.Equal(TextWrapping.NoWrap, text.TextWrapping);
     }
 
     [AvaloniaFact]
@@ -64,7 +64,7 @@ public class MermaidCodeBlockFallbackTests
     {
         var (_, _, text) = Render("```cs\nx\n```", new PrefixHighlighter());
 
-        var runs = text.Inlines!.Cast<Run>().ToList();
+        var runs = text.Inlines!.OfType<Run>().ToList();
         Assert.Equal(["kw", "x"], runs.Select(r => r.Text));
         Assert.Same(Brushes.Red, runs[0].Foreground);
         Assert.False(runs[1].IsSet(TextElement.ForegroundProperty));
@@ -121,5 +121,48 @@ public class MermaidCodeBlockFallbackTests
         {
             window.Close();
         }
+    }
+
+    [AvaloniaFact]
+    public void Code_block_never_wraps_even_when_an_ancestor_style_enables_wrapping()
+    {
+        var (root, _, text) = Render("```text\nfirst\n```");
+        var window = new Window { Content = root };
+        window.Styles.Add(new Style(x => x.OfType<TextBlock>())
+        {
+            Setters = { new Setter(TextBlock.TextWrappingProperty, TextWrapping.Wrap) },
+        });
+        try
+        {
+            window.Show();
+
+            Assert.Equal(TextWrapping.NoWrap, text.TextWrapping);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Unrelated_application_property_change_does_not_rebuild_the_inlines()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, _, text) = Render("```cs\na\n```", new VariantHighlighter());
+        var before = Assert.Single(text.Inlines!);
+        var app = Application.Current!;
+        var savedName = app.Name;
+
+        try
+        {
+            app.Name = "MermaidCodeBlockFallbackTests";
+            await AsyncTestHelpers.PumpAsync();
+        }
+        finally
+        {
+            app.Name = savedName;
+        }
+
+        Assert.Same(before, Assert.Single(text.Inlines!));
     }
 }
