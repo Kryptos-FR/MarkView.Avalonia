@@ -139,6 +139,7 @@ public class ListTests : RenderTestBase
         Assert.Empty(empty.Children.OfType<StackPanel>().Single().Children);
     }
 
+    // Built programmatically: Markdig always supplies a start value for ordered lists, so this covers the fallback only reachable through custom parsers.
     [AvaloniaFact]
     public void Ordered_list_without_a_start_value_numbers_from_one()
     {

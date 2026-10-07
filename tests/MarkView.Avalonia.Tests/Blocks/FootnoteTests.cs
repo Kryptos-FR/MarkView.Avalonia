@@ -14,6 +14,13 @@ namespace MarkView.Avalonia.Tests.Blocks;
 
 public class FootnoteTests : RenderTestBase
 {
+    private const string TwoFootnotes = """
+        A[^x] B[^y]
+
+        [^x]: first
+        [^y]: second
+        """;
+
     private static MarkdownPipeline FootnotePipeline() =>
         new MarkdownPipelineBuilder().UseFootnotes().Build();
 
@@ -95,13 +102,6 @@ public class FootnoteTests : RenderTestBase
         }
         return false;
     }
-
-    private const string TwoFootnotes = """
-        A[^x] B[^y]
-
-        [^x]: first
-        [^y]: second
-        """;
 
     [AvaloniaFact]
     public void Footnote_group_is_preceded_by_a_separator_and_numbers_items_in_order()

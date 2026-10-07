@@ -56,6 +56,7 @@ public class AlertBlockTests : RenderTestBase
     [InlineData("WARNING", "warning")]
     [InlineData("IMPORTANT", "important")]
     [InlineData("CAUTION", "caution")]
+    [InlineData("note", "note")]
     public void Alert_header_shows_upper_case_kind_and_variant_class_uses_lower_case(string kind, string lower)
     {
         var border = Assert.IsType<Border>(Assert.Single(Render($"""
@@ -67,7 +68,7 @@ public class AlertBlockTests : RenderTestBase
         var outer = Assert.IsType<StackPanel>(border.Child);
         Assert.Equal(4, outer.Spacing);
         var header = Assert.IsType<TextBlock>(outer.Children[0]);
-        Assert.Equal(kind, header.Text);
+        Assert.Equal(kind.ToUpperInvariant(), header.Text);
         Assert.Contains("markdown-alert-header", header.Classes);
         var content = Assert.IsType<StackPanel>(outer.Children[1]);
         Assert.Equal(4, content.Spacing);
