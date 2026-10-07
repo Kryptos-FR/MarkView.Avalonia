@@ -27,19 +27,13 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
         }
 
         int rowIndex = 0;
-        foreach (var rowObj in obj)
+        foreach (var row in obj.OfType<TableRow>())
         {
-            if (rowObj is not TableRow row)
-                continue;
-
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             int colIndex = 0;
-            foreach (var cellObj in row)
+            foreach (var cell in row.OfType<TableCell>())
             {
-                if (cellObj is not TableCell cell)
-                    continue;
-
                 var cellPanel = new StackPanel { Spacing = 4 };
 
                 var border = new Border

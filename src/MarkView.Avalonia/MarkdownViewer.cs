@@ -403,10 +403,8 @@ public partial class MarkdownViewer : ContentControl
 
     private void RegisterListItems(DocumentSelectionLayer layer, Panel listPanel)
     {
-        foreach (var child in listPanel.Children)
+        foreach (var itemGrid in listPanel.Children.OfType<Grid>())
         {
-            if (child is not Grid itemGrid) continue;
-
             // Column 0 holds the marker TextBlock (bullet/ordered) or a CheckBox (task list)
             // Column 1 holds the content StackPanel
             TextBlock? markerTb = null;

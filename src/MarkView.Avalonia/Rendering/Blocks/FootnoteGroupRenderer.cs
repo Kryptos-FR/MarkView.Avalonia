@@ -24,10 +24,8 @@ public sealed class FootnoteGroupRenderer : AvaloniaObjectRenderer<FootnoteGroup
         var group = new StackPanel { Spacing = 4 };
         group.Classes.Add("markdown-footnote-group");
 
-        foreach (var item in obj)
+        foreach (var fn in obj.OfType<Footnote>())
         {
-            if (item is not Footnote fn) continue;
-
             var row = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions("Auto,*"),

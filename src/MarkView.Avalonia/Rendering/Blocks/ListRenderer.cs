@@ -27,10 +27,8 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
 
         int index = obj.IsOrdered ? (obj.OrderedStart is null ? 1 : int.TryParse(obj.OrderedStart, out var start) ? start : 1) : 0;
 
-        foreach (var item in obj)
+        foreach (var listItem in obj.OfType<ListItemBlock>())
         {
-            if (item is not ListItemBlock listItem) continue;
-
             var itemGrid = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions("Auto,*"),
