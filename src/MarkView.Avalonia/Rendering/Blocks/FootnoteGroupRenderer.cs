@@ -38,6 +38,7 @@ public sealed class FootnoteGroupRenderer : AvaloniaObjectRenderer<FootnoteGroup
                 Margin = new Thickness(0, 0, 8, 0),
                 VerticalAlignment = VerticalAlignment.Top,
             };
+            // Stryker disable once Statement : column 0 is Grid's default column
             Grid.SetColumn(label, 0);
             row.Children.Add(label);
 

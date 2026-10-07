@@ -62,8 +62,10 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
                 Grid.SetRow(border, rowIndex);
                 Grid.SetColumn(border, colIndex);
 
+                // Stryker disable once Equality : a span of 1 is Grid's default, so applying it unconditionally renders identically
                 if (cell.ColumnSpan > 1)
                     Grid.SetColumnSpan(border, cell.ColumnSpan);
+                // Stryker disable once Equality : a span of 1 is Grid's default, so applying it unconditionally renders identically
                 if (cell.RowSpan > 1)
                     Grid.SetRowSpan(border, cell.RowSpan);
 

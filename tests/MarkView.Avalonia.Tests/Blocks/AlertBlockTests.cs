@@ -49,4 +49,28 @@ public class AlertBlockTests : RenderTestBase
         Assert.Contains("markdown-alert-content", content.Classes);
         Assert.NotEmpty(content.Children);
     }
+
+    [AvaloniaTheory]
+    [InlineData("NOTE", "note")]
+    [InlineData("TIP", "tip")]
+    [InlineData("WARNING", "warning")]
+    [InlineData("IMPORTANT", "important")]
+    [InlineData("CAUTION", "caution")]
+    public void Alert_header_shows_upper_case_kind_and_variant_class_uses_lower_case(string kind, string lower)
+    {
+        var border = Assert.IsType<Border>(Assert.Single(Render($"""
+            > [!{kind}]
+            > Content
+            """, AlertPipeline()).Children));
+
+        Assert.Equal(["markdown-alert", $"markdown-alert-{lower}"], border.Classes.Where(c => !c.StartsWith(':')).ToArray());
+        var outer = Assert.IsType<StackPanel>(border.Child);
+        Assert.Equal(4, outer.Spacing);
+        var header = Assert.IsType<TextBlock>(outer.Children[0]);
+        Assert.Equal(kind, header.Text);
+        Assert.Contains("markdown-alert-header", header.Classes);
+        var content = Assert.IsType<StackPanel>(outer.Children[1]);
+        Assert.Equal(4, content.Spacing);
+        Assert.Contains("markdown-alert-content", content.Classes);
+    }
 }

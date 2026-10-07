@@ -19,6 +19,7 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         // obj.Kind is a StringSlice — call ToString() once, then use a lookup
         // to avoid two further allocations (ToLowerInvariant + ToUpperInvariant).
         var kindRaw = obj.Kind.ToString();
+        // Stryker disable once String : the fall-through arm computes the same lower/upper pair as every named arm, which only avoids allocating it
         var (kindLower, kindUpper) = kindRaw.ToUpperInvariant() switch
         {
             "NOTE" => ("note", "NOTE"),
