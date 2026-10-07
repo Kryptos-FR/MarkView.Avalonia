@@ -20,8 +20,18 @@ namespace MarkView.Avalonia.Mermaid.Tests;
 
 public class MermaidDiagramRenderingTests
 {
-    private const string Diagram = "```mermaid\ngraph TD\n  A --> B\n```";
-    private const string InvalidDiagram = "```mermaid\nthis is not a diagram\nsecond line\n```";
+    private const string Diagram = """
+        ```mermaid
+        graph TD
+          A --> B
+        ```
+        """;
+    private const string InvalidDiagram = """
+        ```mermaid
+        this is not a diagram
+        second line
+        ```
+        """;
 
     private static StackPanel Render(string markdown)
     {
@@ -75,7 +85,10 @@ public class MermaidDiagramRenderingTests
     public async Task Empty_diagram_is_replaced_by_error_and_empty_source_text()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (border, _) = RenderDiagram("```mermaid\n```");
+        var (border, _) = RenderDiagram("""
+            ```mermaid
+            ```
+            """);
 
         await AsyncTestHelpers.WaitUntilAsync(() => border.Child is StackPanel);
 
@@ -109,11 +122,18 @@ public class MermaidDiagramRenderingTests
         var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
         var scrollViewer = new ScrollViewer { Content = root };
         var window = new Window { Width = windowWidth, Height = 300, Content = scrollViewer };
-        window.Show();
-        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+        try
+        {
+            window.Show();
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
 
-        Assert.Equal(Math.Min(scrollViewer.Viewport.Width, 800), image.MaxWidth);
-        Assert.True(image.MaxWidth > 0);
+            Assert.Equal(Math.Min(scrollViewer.Viewport.Width, 800), image.MaxWidth);
+            Assert.True(image.MaxWidth > 0);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
@@ -124,31 +144,45 @@ public class MermaidDiagramRenderingTests
         var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
         var scrollViewer = new ScrollViewer { Content = root };
         var window = new Window { Width = 600, Height = 300, Content = scrollViewer };
-        window.Show();
+        try
+        {
+            window.Show();
 
-        window.Width = 300;
-        await AsyncTestHelpers.WaitUntilAsync(() => scrollViewer.Viewport.Width <= 300);
+            window.Width = 300;
+            await AsyncTestHelpers.WaitUntilAsync(() => scrollViewer.Viewport.Width <= 300);
 
-        Assert.Equal(scrollViewer.Viewport.Width, image.MaxWidth);
+            Assert.Equal(scrollViewer.Viewport.Width, image.MaxWidth);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
-    public async Task Diagram_removed_from_tree_no_longer_re_renders_on_theme_change()
+    public async Task Detached_diagram_does_not_re_render_on_theme_change()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
         var root = Render(Diagram);
         var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
         var scrollViewer = new ScrollViewer { Content = root };
         var window = new Window { Width = 600, Height = 300, Content = scrollViewer };
-        window.Show();
-        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
-        var before = image.Source;
+        try
+        {
+            window.Show();
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+            var before = image.Source;
 
-        scrollViewer.Content = null;
-        theme.Switch(ThemeVariant.Dark);
-        await AsyncTestHelpers.PumpAsync();
+            scrollViewer.Content = null;
+            theme.Switch(ThemeVariant.Dark);
+            await AsyncTestHelpers.PumpAsync();
 
-        Assert.Same(before, image.Source);
+            Assert.Same(before, image.Source);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
@@ -181,11 +215,18 @@ public class MermaidDiagramRenderingTests
         var root = Render(Diagram);
         var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
         var window = new Window { Width = 600, Height = 300, Content = root };
-        window.Show();
+        try
+        {
+            window.Show();
 
-        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
 
-        Assert.Equal(double.PositiveInfinity, image.MaxWidth);
+            Assert.Equal(double.PositiveInfinity, image.MaxWidth);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
@@ -196,12 +237,19 @@ public class MermaidDiagramRenderingTests
         var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
         var scrollViewer = new ScrollViewer { Width = 0, Content = root };
         var window = new Window { Width = 600, Height = 300, Content = scrollViewer };
-        window.Show();
+        try
+        {
+            window.Show();
 
-        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
 
-        Assert.Equal(0, scrollViewer.Viewport.Width);
-        Assert.Equal(double.PositiveInfinity, image.MaxWidth);
+            Assert.Equal(0, scrollViewer.Viewport.Width);
+            Assert.Equal(double.PositiveInfinity, image.MaxWidth);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
@@ -212,34 +260,48 @@ public class MermaidDiagramRenderingTests
         var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
         var scrollViewer = new ScrollViewer { Content = new Border() };
         var window = new Window { Width = 600, Height = 300, Content = scrollViewer };
-        window.Show();
-        window.UpdateLayout();
-        Assert.True(scrollViewer.Viewport.Width > 0);
+        try
+        {
+            window.Show();
+            window.UpdateLayout();
+            Assert.True(scrollViewer.Viewport.Width > 0);
 
-        scrollViewer.Content = root;
+            scrollViewer.Content = root;
 
-        Assert.Equal(Math.Min(scrollViewer.Viewport.Width, 800), image.MaxWidth);
+            Assert.Equal(Math.Min(scrollViewer.Viewport.Width, 800), image.MaxWidth);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
-    public async Task Diagram_removed_from_tree_no_longer_tracks_viewport_resizes()
+    public async Task Detached_diagram_does_not_track_viewport_resizes()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
         var root = Render(Diagram);
         var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
         var scrollViewer = new ScrollViewer { Content = root };
         var window = new Window { Width = 600, Height = 300, Content = scrollViewer };
-        window.Show();
-        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
-        var widthWhileAttached = image.MaxWidth;
-        Assert.True(widthWhileAttached > 0);
+        try
+        {
+            window.Show();
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+            var widthWhileAttached = image.MaxWidth;
+            Assert.True(widthWhileAttached > 0);
 
-        scrollViewer.Content = new Border();
-        window.Width = 300;
-        window.UpdateLayout();
-        await AsyncTestHelpers.PumpAsync();
+            scrollViewer.Content = new Border();
+            window.Width = 300;
+            window.UpdateLayout();
+            await AsyncTestHelpers.PumpAsync();
 
-        Assert.Equal(widthWhileAttached, image.MaxWidth);
+            Assert.Equal(widthWhileAttached, image.MaxWidth);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
@@ -250,13 +312,19 @@ public class MermaidDiagramRenderingTests
         var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
         var scrollViewer = new ScrollViewer { Content = root };
         var window = new Window { Width = 600, Height = 300, Content = scrollViewer };
+        try
+        {
+            // The render completes on a background thread but its result is only applied once the UI
+            // thread yields, so detaching before the first await cancels it deterministically.
+            window.Show();
+            scrollViewer.Content = null;
+            await AsyncTestHelpers.PumpAsync();
 
-        // The render completes on a background thread but its result is only applied once the UI
-        // thread yields, so detaching before the first await cancels it deterministically.
-        window.Show();
-        scrollViewer.Content = null;
-        await AsyncTestHelpers.PumpAsync();
-
-        Assert.Null(image.Source);
+            Assert.Null(image.Source);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 }

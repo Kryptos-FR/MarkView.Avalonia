@@ -16,8 +16,6 @@ using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 using Mermaider;
 
-using MermaidRenderOptions = Mermaider.Models.RenderOptions;
-
 namespace MarkView.Avalonia.Mermaid;
 
 /// <summary>

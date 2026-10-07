@@ -82,7 +82,7 @@ public class BitmapImageLoaderTests
             () => _loader.LoadAsync("http://localhost/image.png", cts.Token));
     }
 
-    // DecodeDataUri — decoding correctness (headless Bitmap accepts any bytes, so test the decoder directly)
+    // DecodeDataUri â€” decoding correctness (headless Bitmap accepts any bytes, so test the decoder directly)
 
     [Fact]
     public void DecodeDataUri_decodes_base64_payload() =>
@@ -93,8 +93,12 @@ public class BitmapImageLoaderTests
         Assert.Equal(new byte[] { 1, 2, 3 }, BitmapImageLoader.DecodeDataUri("data:image/png;BASE64,AQID"));
 
     [Fact]
-    public void DecodeDataUri_decodes_url_encoded_payload_as_utf8() =>
+    public void DecodeDataUri_decodes_url_encoded_ascii_payload() =>
         Assert.Equal("<svg/>"u8.ToArray(), BitmapImageLoader.DecodeDataUri("data:image/svg+xml,%3Csvg%2F%3E"));
+
+    [Fact]
+    public void DecodeDataUri_decodes_url_encoded_payload_as_utf8() =>
+        Assert.Equal(new byte[] { 0xC3, 0xA9 }, BitmapImageLoader.DecodeDataUri("data:text/plain,%C3%A9"));
 
     [Fact]
     public void DecodeDataUri_without_comma_returns_empty() =>
@@ -104,7 +108,7 @@ public class BitmapImageLoaderTests
     public void DecodeDataUri_with_comma_at_start_decodes_the_payload() =>
         Assert.Equal("abc"u8.ToArray(), BitmapImageLoader.DecodeDataUri(",abc"));
 
-    // LoadAsync — avares resource
+    // LoadAsync â€” avares resource
 
     [AvaloniaFact]
     public async Task LoadAsync_avares_resource_returns_Bitmap()

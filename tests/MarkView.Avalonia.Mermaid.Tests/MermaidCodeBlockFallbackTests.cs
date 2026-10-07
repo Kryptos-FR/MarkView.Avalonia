@@ -50,7 +50,12 @@ public class MermaidCodeBlockFallbackTests
     [AvaloniaFact]
     public void Multi_line_block_without_highlighter_renders_plain_lines_separated_by_line_breaks()
     {
-        var (_, _, text) = Render("```text\nfirst\nsecond\n```");
+        var (_, _, text) = Render("""
+            ```text
+            first
+            second
+            ```
+            """);
 
         var inlines = text.Inlines!.ToList();
         Assert.Equal(3, inlines.Count);
@@ -62,7 +67,11 @@ public class MermaidCodeBlockFallbackTests
     [AvaloniaFact]
     public void Highlighter_tokens_become_runs_and_only_coloured_tokens_set_foreground()
     {
-        var (_, _, text) = Render("```cs\nx\n```", new PrefixHighlighter());
+        var (_, _, text) = Render("""
+            ```cs
+            x
+            ```
+            """, new PrefixHighlighter());
 
         var runs = text.Inlines!.OfType<Run>().ToList();
         Assert.Equal(["kw", "x"], runs.Select(r => r.Text));
@@ -73,7 +82,11 @@ public class MermaidCodeBlockFallbackTests
     [AvaloniaFact]
     public void Fence_without_info_string_gets_no_language_class()
     {
-        var (_, border, _) = Render("```\ncode\n```");
+        var (_, border, _) = Render("""
+            ```
+            code
+            ```
+            """);
 
         Assert.DoesNotContain(border.Classes, c => c.StartsWith("language-", StringComparison.Ordinal));
         Assert.Contains("markdown-code-block", border.Classes);
@@ -82,7 +95,10 @@ public class MermaidCodeBlockFallbackTests
     [AvaloniaFact]
     public void Empty_fence_renders_an_empty_code_block()
     {
-        var (_, border, text) = Render("```cs\n```");
+        var (_, border, text) = Render("""
+            ```cs
+            ```
+            """);
 
         Assert.Contains("markdown-code-block", border.Classes);
         Assert.True(text.Inlines is null || text.Inlines.Count == 0);
@@ -92,7 +108,12 @@ public class MermaidCodeBlockFallbackTests
     public void Theme_aware_highlighter_uses_current_variant_and_rebuilds_in_place_on_theme_change()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (_, _, text) = Render("```cs\na\nb\n```", new VariantHighlighter());
+        var (_, _, text) = Render("""
+            ```cs
+            a
+            b
+            ```
+            """, new VariantHighlighter());
         Assert.All(text.Inlines!.OfType<Run>(), r => Assert.Same(Brushes.Black, r.Foreground));
 
         theme.Switch(ThemeVariant.Dark);
@@ -105,7 +126,11 @@ public class MermaidCodeBlockFallbackTests
     public async Task Code_block_removed_from_tree_stops_following_theme_changes()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (root, _, text) = Render("```cs\na\n```", new VariantHighlighter());
+        var (root, _, text) = Render("""
+            ```cs
+            a
+            ```
+            """, new VariantHighlighter());
         var window = new Window { Content = root };
         try
         {
@@ -126,7 +151,11 @@ public class MermaidCodeBlockFallbackTests
     [AvaloniaFact]
     public void Code_block_never_wraps_even_when_an_ancestor_style_enables_wrapping()
     {
-        var (root, _, text) = Render("```text\nfirst\n```");
+        var (root, _, text) = Render("""
+            ```text
+            first
+            ```
+            """);
         var window = new Window { Content = root };
         window.Styles.Add(new Style(x => x.OfType<TextBlock>())
         {
@@ -148,7 +177,11 @@ public class MermaidCodeBlockFallbackTests
     public async Task Unrelated_application_property_change_does_not_rebuild_the_inlines()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (_, _, text) = Render("```cs\na\n```", new VariantHighlighter());
+        var (_, _, text) = Render("""
+            ```cs
+            a
+            ```
+            """, new VariantHighlighter());
         var before = Assert.Single(text.Inlines!);
         var app = Application.Current!;
         var savedName = app.Name;

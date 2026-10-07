@@ -52,7 +52,7 @@ public sealed class TextMateHighlighter : ICodeHighlighter
             return cached;
 
         var scopeName = _options.GetScopeByLanguageId(language);
-        // Stryker disable once block : caches the null result for unsupported languages; without the early return LoadGrammar(null) also yields null, so the result is identical and only the repeated lookup differs
+        // Stryker disable once block : LoadGrammar(null) returns null and the next line caches it, so result and caching are identical; only one extra LoadGrammar call differs
         if (scopeName == null)
         {
             _grammarCache[language] = null;
