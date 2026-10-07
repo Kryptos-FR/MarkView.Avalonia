@@ -61,18 +61,26 @@ jobs:
             Write-Output "Overall line coverage: $lineCoverage%"
             
             $minThreshold = 80
-            if ($lineCoverage -lt 60) {
-              Write-Error "Line coverage $lineCoverage% is below warning threshold of 60%"
+            if ($lineCoverage -lt $minThreshold) {
+              Write-Error "Line coverage $lineCoverage% is below the required $minThreshold%"
               exit 1
-            } elseif ($lineCoverage -lt $minThreshold) {
-              Write-Warning "Line coverage $lineCoverage% is below target threshold of $minThreshold%"
-            } else {
-              Write-Output "✓ Line coverage meets target threshold of $minThreshold%"
             }
+            Write-Output "✓ Line coverage meets the required $minThreshold%"
           } else {
             Write-Error "Could not parse line coverage from summary"
             exit 1
           }
+
+          $projectMin = 70
+          $projectFailed = $false
+          foreach ($m in [regex]::Matches($content, '<summary>(?<name>[^<]+?) - (?<pct>\d+(\.\d+)?)%</summary>')) {
+            $pct = [double]$m.Groups['pct'].Value
+            if ($pct -lt $projectMin) {
+              Write-Output "::error::$($m.Groups['name'].Value) line coverage $pct% is below the required $projectMin%"
+              $projectFailed = $true
+            }
+          }
+          if ($projectFailed) { exit 1 }
 
       - name: Post coverage summary to PR
         uses: marocchino/sticky-pull-request-comment@v3

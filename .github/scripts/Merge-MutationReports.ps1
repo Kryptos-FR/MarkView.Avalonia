@@ -9,7 +9,11 @@ param(
     [string]$ReportsRoot,
 
     [Parameter(Mandatory = $true)]
-    [string]$OutputPath
+    [string]$OutputPath,
+
+    [double]$MinimumScore = 0,
+    [double]$WarningScore = 0,
+    [double]$ProjectWarningScore = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -129,3 +133,20 @@ if ($outputDir -and -not (Test-Path $outputDir)) {
 
 Set-Content -Path $OutputPath -Value $sb.ToString() -NoNewline
 Write-Output "Combined mutation report written to: $OutputPath"
+
+$failed = $false
+if ($overallDetectedPlusUndetected -gt 0) {
+    $overallScore = 100.0 * $totals.TotalDetected / $overallDetectedPlusUndetected
+    if ($overallScore -lt $MinimumScore) {
+        Write-Output ("::error::Overall mutation score {0:N2}% is below the required {1}%" -f $overallScore, $MinimumScore)
+        $failed = $true
+    } elseif ($overallScore -lt $WarningScore) {
+        Write-Output ("::warning::Overall mutation score {0:N2}% is below the target {1}%" -f $overallScore, $WarningScore)
+    }
+}
+foreach ($project in $projects) {
+    if ($project.FinalScore -ne 'N/A' -and [double]$project.FinalScore -lt $ProjectWarningScore) {
+        Write-Output ("::warning::{0} mutation score {1}% is below the target {2}%" -f $project.Name, $project.FinalScore, $ProjectWarningScore)
+    }
+}
+if ($failed) { exit 1 }
