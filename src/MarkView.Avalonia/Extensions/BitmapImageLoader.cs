@@ -62,7 +62,7 @@ internal sealed class BitmapImageLoader : IImageLoader
         catch (IOException) { return null; }
     }
 
-    private static byte[] DecodeDataUri(string dataUri)
+    internal static byte[] DecodeDataUri(string dataUri)
     {
         var commaIndex = dataUri.IndexOf(',');
         if (commaIndex < 0) return [];

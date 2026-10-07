@@ -58,14 +58,21 @@ internal sealed class LoopbackHttpServer : IDisposable
                 return;
             }
 
-            if (_routes.TryGetValue(context.Request.Url!.AbsolutePath, out var respond))
+            try
             {
-                respond(context.Response);
+                if (_routes.TryGetValue(context.Request.Url!.AbsolutePath, out var respond))
+                {
+                    respond(context.Response);
+                }
+                else
+                {
+                    context.Response.StatusCode = 404;
+                    context.Response.Close();
+                }
             }
-            else
+            catch (Exception ex) when (ex is HttpListenerException or IOException or ObjectDisposedException)
             {
-                context.Response.StatusCode = 404;
-                context.Response.Close();
+                // The client disconnected or the server was disposed mid-request; keep serving.
             }
         }
     }

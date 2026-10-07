@@ -41,7 +41,7 @@ public sealed class SvgImageLoaderRemoteTests : IDisposable
     [AvaloniaFact]
     public async Task Remote_svg_is_loaded_into_an_SvgImage()
     {
-        var image = await _loader.LoadAsync(_server.Url("icon.svg"));
+        var image = await _loader.LoadAsync(_server.Url("icon.svg"), TestContext.Current.CancellationToken);
 
         var svg = Assert.IsType<SvgImage>(image);
         Assert.NotNull(svg.Source);
@@ -53,6 +53,6 @@ public sealed class SvgImageLoaderRemoteTests : IDisposable
     [InlineData("truncated.svg")]
     public async Task Remote_failures_return_null_so_the_bitmap_loader_can_try(string path)
     {
-        Assert.Null(await _loader.LoadAsync(_server.Url(path)));
+        Assert.Null(await _loader.LoadAsync(_server.Url(path), TestContext.Current.CancellationToken));
     }
 }
