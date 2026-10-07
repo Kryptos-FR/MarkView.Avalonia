@@ -8,4 +8,7 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
     <PackageReference Include="xunit.v3.mtp-v2" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\**\*.cs" LinkBase="Shared" />
+  </ItemGroup>
 </Project>
