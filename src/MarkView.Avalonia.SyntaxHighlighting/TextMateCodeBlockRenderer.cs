@@ -56,15 +56,12 @@ public sealed class TextMateCodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock
         // theme changes — the Border and its position in the document stay untouched.
         if (renderer.CodeHighlighter is IThemeAwareCodeHighlighter themeAware)
         {
-            void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e)
+            ThemeTracking.ReapplyOnThemeChange(border, () =>
             {
-                if (e.Property.Name != nameof(Application.ActualThemeVariant)) return;
                 var newIsDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
                 textBlock.Inlines!.Clear();
                 BuildInlines(textBlock, themeAware, language, newIsDark, lineTexts);
-            }
-            Application.Current!.PropertyChanged += OnThemeChanged;
-            border.DetachedFromLogicalTree += (_, _) => Application.Current?.PropertyChanged -= OnThemeChanged;
+            });
         }
 
         renderer.WriteBlock(border);

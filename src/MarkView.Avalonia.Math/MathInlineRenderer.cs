@@ -1,7 +1,6 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Media;
@@ -31,22 +30,11 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
             // stack — we're still inside the synchronous initial Write() call here, so writing a
             // plain-text fallback instead is safe (unlike from the later theme-change callback,
             // which must never re-enter the stack — see the comment inside TryApplyTheme below).
-            // We deliberately haven't subscribed to theme-change notifications yet at this point:
-            // the discarded image is never attached to the visual tree, so DetachedFromLogicalTree
-            // would never fire and an earlier subscription would leak the handler on
-            // Application.Current forever.
             renderer.WriteInline(new Run(source));
             return;
         }
 
-        void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e)
-        {
-            if (e.Property.Name != nameof(Application.ActualThemeVariant)) return;
-            TryApplyTheme();
-        }
-        Application.Current!.PropertyChanged += OnThemeChanged;
-        image.DetachedFromLogicalTree += (_, _) =>
-            Application.Current?.PropertyChanged -= OnThemeChanged;
+        ThemeTracking.ReapplyOnThemeChange(image, () => TryApplyTheme());
 
         renderer.WriteInline(image);
 

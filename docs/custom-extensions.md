@@ -77,6 +77,44 @@ public class MyCodeBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 `renderer.WriteInline(inline)` adds an inline to the current `InlineCollection`.  
 `renderer.Push(container)` / `renderer.Pop()` manage the render stack.
 
+### Content that depends on the theme
+
+Controls styled through `DynamicResource` follow light/dark switches on their own. Content whose
+colours are baked in at render time — bitmaps, SVG, per-token brushes — has to be rebuilt instead.
+Build it once, then hand the rebuild to `ThemeTracking.ReapplyOnThemeChange`:
+
+```csharp
+using Avalonia;
+using Avalonia.Styling;
+using MarkView.Avalonia.Rendering;
+
+public class ChartBlockRenderer : AvaloniaObjectRenderer<ChartBlock>
+{
+    protected override void Write(AvaloniaRenderer renderer, ChartBlock obj)
+    {
+        var image = new Image();
+        var border = new Border { Child = image };
+
+        void Bake() => image.Source = MyChart.Render(obj,
+            isDark: Application.Current?.ActualThemeVariant == ThemeVariant.Dark);
+
+        Bake();
+        ThemeTracking.ReapplyOnThemeChange(border, Bake);
+        renderer.WriteBlock(border);
+    }
+}
+```
+
+The callback runs when the theme changes while the element is shown, and when the element is
+attached again after a switch that happened while it was detached (e.g. on an inactive tab). It
+listens to the element's own inherited theme, so a document that is never shown, or is replaced
+by a re-render, is garbage-collected normally. Subscribing to `Application.Current` events
+directly instead keeps every rendered document alive for the lifetime of the application.
+
+Pass an element that stays in the document for as long as the content should follow the theme —
+here the `Border`, not the `Image`, so that a renderer swapping the image for an error fallback
+keeps tracking the theme.
+
 ## Writing a custom image loader
 
 Implement `IImageLoader`:
