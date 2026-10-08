@@ -39,7 +39,7 @@ jobs:
 
       - name: Upload HTML coverage report
         uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: coverage-report
           path: coveragereport/
@@ -89,7 +89,7 @@ jobs:
 
       - name: Post coverage summary to PR
         uses: marocchino/sticky-pull-request-comment@v3
-        if: always() && github.event_name == 'pull_request'
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
         with:
           header: coverage
           recreate: true

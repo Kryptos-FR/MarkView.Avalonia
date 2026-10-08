@@ -11,6 +11,13 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels that pull request's previous run, so a superseded
+# run can never post its coverage/mutation comment after the current one. Pushes to main
+# and tags get a group of their own and are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   build:
     strategy:
