@@ -334,14 +334,12 @@ string text = viewer.GetSelectedText();
 await viewer.CopyToClipboardAsync();
 ```
 
-Images and task-list checkboxes are skipped during selection — see [Known Limitations](#known-limitations) below.
+A selection that spans an image copies the image's alt text in its place. See [Text Selection](docs/text-selection.md) for details.
 
 ## Known Limitations
 
 | Limitation | Detail |
 |---|---|
-| Images are non-selectable | Images in inline position are embedded as `InlineUIContainer` — selection skips around them. |
-| Task checkboxes are non-selectable | Same reason as images. |
 | Anchor scroll is instant | `BringIntoView()` jumps without animation. Smooth scrolling is a future improvement. |
 
 ## License

@@ -38,9 +38,11 @@ All text-bearing block types are registered with the selection layer:
 - Table cells (tab-separated when copying)
 - Footnote definitions
 
+Images inside these blocks (including linked images and YouTube thumbnails) are highlighted with the surrounding text and copied as their alt text; an image without alt text contributes nothing to the copied text. Inline math formulas are highlighted the same way but contribute nothing to the copied text.
+
 The following are **not selectable**:
 
-- Images (`InlineUIContainer`)
+- Mermaid diagrams and display math blocks (`$$…$$`)
 
 ## How it works
 
@@ -49,3 +51,5 @@ The following are **not selectable**:
 On `PointerMoved`, the layer calls `TextBlock.TextLayout.HitTestPoint` + `TranslatePoint` for each registered text block to find the nearest character offset, then redraws the selection highlight rectangles using `HitTestTextRange`.
 
 On copy, `GetSelectedText()` extracts the substring from each text block's registered text and joins them with newlines (tabs between table cells, a space after a list marker). A list item's marker is registered as its own text block, so it is highlighted with the item and selection offsets inside the item text line up with what is rendered.
+
+An image embedded in a text block (`InlineUIContainer`) occupies one character position in its `TextLayout`, so it is registered as a U+FFFC placeholder that keeps selection offsets aligned with the layout. On copy, each placeholder is replaced by the embedded control's copy text — the image's alt text.

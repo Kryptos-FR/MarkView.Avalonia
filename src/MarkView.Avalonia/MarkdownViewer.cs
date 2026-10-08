@@ -399,7 +399,8 @@ public partial class MarkdownViewer : ContentControl
             switch (child)
             {
                 case MarkdownSelectableTextBlock tb:
-                    Register(layer, tb, MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!), "\n", ref marker);
+                    var text = MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!, out var embeddedText);
+                    Register(layer, tb, text, "\n", ref marker, embeddedText);
                     break;
                 case Border { Child: TextBlock codeTb } border
                     when border.Classes.Contains("markdown-code-block"):
@@ -447,14 +448,14 @@ public partial class MarkdownViewer : ContentControl
     }
 
     private static void Register(DocumentSelectionLayer layer, TextBlock textBlock, string text,
-        string separator, ref TextBlock? marker)
+        string separator, ref TextBlock? marker, IReadOnlyDictionary<int, string>? embeddedText = null)
     {
         if (marker is not null)
         {
             layer.Register(new IndexEntry(marker, marker.Text!, " "));
             marker = null;
         }
-        layer.Register(new IndexEntry(textBlock, text, separator));
+        layer.Register(new IndexEntry(textBlock, text, separator, embeddedText));
     }
 
     private static void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid, ref TextBlock? marker)
@@ -472,33 +473,57 @@ public partial class MarkdownViewer : ContentControl
             var tb = FindFirstTextBlock(cell);
             if (tb is null) continue;
 
-            var text = cell.Child is Panel p ? ExtractPanelText(p) : string.Empty;
+            Dictionary<int, string>? embeddedText = null;
+            var text = cell.Child is Panel p ? ExtractPanelText(p, out embeddedText) : string.Empty;
             // Separator: "\n" if this is the last cell in its row, "\t" otherwise.
             bool isLastInRow = i == cells.Count - 1
                 || Grid.GetRow(cells[i + 1]) != Grid.GetRow(cell);
-            Register(layer, tb, text, isLastInRow ? "\n" : "\t", ref marker);
+            Register(layer, tb, text, isLastInRow ? "\n" : "\t", ref marker, embeddedText);
         }
     }
 
-    /// <summary>Extracts plain text from a panel, joining child texts with a space.</summary>
-    private static string ExtractPanelText(Panel panel)
+    /// <summary>
+    /// Extracts plain text from a panel, joining child texts with a space. <paramref name="embeddedText"/>
+    /// maps the position of each embedded control to its copy text, as in
+    /// <c>MarkdownSelectableTextBlock.ExtractPlainText</c>.
+    /// </summary>
+    private static string ExtractPanelText(Panel panel, out Dictionary<int, string>? embeddedText)
     {
         var sb = new StringBuilder();
+        embeddedText = null;
         foreach (var child in panel.Children)
         {
             switch (child)
             {
                 case MarkdownSelectableTextBlock tb:
-                    var t = MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!);
-                    if (!string.IsNullOrEmpty(t)) { if (sb.Length > 0) sb.Append(' '); sb.Append(t); }
+                    var t = MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!, out var tbEmbeddedText);
+                    AppendSpaced(sb, t, tbEmbeddedText, ref embeddedText);
                     break;
                 case Panel nested:
-                    var nt = ExtractPanelText(nested);
-                    if (!string.IsNullOrEmpty(nt)) { if (sb.Length > 0) sb.Append(' '); sb.Append(nt); }
+                    var nt = ExtractPanelText(nested, out var nestedEmbeddedText);
+                    AppendSpaced(sb, nt, nestedEmbeddedText, ref embeddedText);
                     break;
             }
         }
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Appends non-empty <paramref name="text"/> to <paramref name="sb"/>, space-separated from what
+    /// precedes it, and shifts its embedded-control positions into <paramref name="embeddedText"/>.
+    /// </summary>
+    private static void AppendSpaced(StringBuilder sb, string text, Dictionary<int, string>? textEmbeddedText,
+        ref Dictionary<int, string>? embeddedText)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+        if (sb.Length > 0) sb.Append(' ');
+        if (textEmbeddedText is not null)
+        {
+            embeddedText ??= [];
+            foreach (var (position, copyText) in textEmbeddedText)
+                embeddedText[sb.Length + position] = copyText;
+        }
+        sb.Append(text);
     }
 
     /// <summary>Returns the first <see cref="TextBlock"/> found in a control subtree.</summary>

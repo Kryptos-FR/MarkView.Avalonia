@@ -180,4 +180,56 @@ public class MarkdownViewerSelectionRegistrationTests
 
         Assert.Equal("• A\tB\n1\t2", SelectAllText(markdown));
     }
+
+    [AvaloniaFact]
+    public void Inline_image_is_copied_as_its_alt_text()
+    {
+        Assert.Equal("before a picture after", SelectAllText("before ![a picture](x.png) after"));
+    }
+
+    [AvaloniaFact]
+    public void Image_without_alt_text_copies_nothing_in_its_place()
+    {
+        Assert.Equal("a  b", SelectAllText("a ![](x.png) b"));
+    }
+
+    [AvaloniaFact]
+    public void Linked_image_is_copied_as_its_alt_text()
+    {
+        Assert.Equal("badge", SelectAllText("[![badge](b.png)](https://example.com)"));
+    }
+
+    [AvaloniaFact]
+    public void YouTube_thumbnail_is_copied_as_its_alt_text()
+    {
+        Assert.Equal("demo video", SelectAllText("![demo video](https://www.youtube.com/watch?v=dQw4w9WgXcQ)"));
+    }
+
+    [AvaloniaFact]
+    public void Image_in_a_table_cell_is_copied_as_its_alt_text()
+    {
+        const string markdown = """
+            | A |
+            |---|
+            | x ![pic](p.png) y |
+            """;
+
+        Assert.Equal("A\nx pic y", SelectAllText(markdown));
+    }
+
+    [AvaloniaFact]
+    public void Image_in_the_second_paragraph_of_a_grid_table_cell_is_copied_as_its_alt_text()
+    {
+        const string markdown = """
+            +-------------------+---+
+            | one               | x |
+            |                   |   |
+            | two ![pic](p.png) |   |
+            +-------------------+---+
+            """;
+
+        var text = SelectAllText(markdown, new MarkdownPipelineBuilder().UseGridTables().Build());
+
+        Assert.Equal("one two pic\tx", text);
+    }
 }

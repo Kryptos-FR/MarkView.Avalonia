@@ -19,6 +19,13 @@ internal sealed class IndexEntry
     public string Separator { get; }
 
     /// <summary>
+    /// Text copied in place of each embedded control (e.g. an image's alt text), keyed by its
+    /// position in <see cref="PlainText"/>, which holds U+FFFC there to stay aligned with the
+    /// <see cref="TextBlock.TextLayout"/> offsets. <c>null</c> when the entry embeds no control.
+    /// </summary>
+    public IReadOnlyDictionary<int, string>? EmbeddedText { get; }
+
+    /// <summary>
     /// Absolute start offset in the document's flat char space.
     /// Stamped by <see cref="DocumentSelectionLayer.Register"/> at registration time.
     /// </summary>
@@ -33,10 +40,12 @@ internal sealed class IndexEntry
     /// </summary>
     public Rect? CachedBounds { get; internal set; }
 
-    public IndexEntry(TextBlock textBlock, string plainText, string separator = "\n")
+    public IndexEntry(TextBlock textBlock, string plainText, string separator = "\n",
+        IReadOnlyDictionary<int, string>? embeddedText = null)
     {
         TextBlock = textBlock;
         PlainText = plainText;
         Separator = separator;
+        EmbeddedText = embeddedText;
     }
 }

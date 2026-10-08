@@ -258,6 +258,31 @@ public class SelectionLayerRenderingTests
         Assert.Equal("ha\nBe", f.Layer.GetSelectedText());
     }
 
+    // "a " = 0..2, image at 2, ' ' at 3, "bcd" = 4..7
+    private const string InlineImage = "a ![pic](x.png) bcd";
+
+    [AvaloniaFact]
+    public void Dragging_across_text_after_an_inline_image_selects_exactly_that_text()
+    {
+        using var f = Show(InlineImage);
+
+        f.Layer.OnPointerPressed(CaretPoint(f.Layer, f.Blocks[0], 4));
+        f.Layer.OnPointerMoved(CaretPoint(f.Layer, f.Blocks[0], 7));
+
+        Assert.Equal("bcd", f.Layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Dragging_across_an_inline_image_copies_its_alt_text()
+    {
+        using var f = Show(InlineImage);
+
+        f.Layer.OnPointerPressed(CaretPoint(f.Layer, f.Blocks[0], 1));
+        f.Layer.OnPointerMoved(CaretPoint(f.Layer, f.Blocks[0], 5));
+
+        Assert.Equal(" pic b", f.Layer.GetSelectedText());
+    }
+
     // "•" = 0..1, ' ' at 1, "one" = 2..5, '\n' at 5, "•" = 6..7, ' ' at 7, "two" = 8..11
     private const string BulletList = """
         - one

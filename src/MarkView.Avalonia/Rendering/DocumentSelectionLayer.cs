@@ -21,6 +21,16 @@ internal sealed class DocumentSelectionLayer : Control
     private static readonly ImmutableSolidColorBrush SelectionBrush =
         new(Colors.CornflowerBlue, 0.35);
 
+    /// <summary>
+    /// Text copied in place of an embedded control (e.g. an image's alt text) when a selection spans it.
+    /// </summary>
+    internal static readonly AttachedProperty<string?> CopyTextProperty =
+        AvaloniaProperty.RegisterAttached<DocumentSelectionLayer, Control, string?>("CopyText");
+
+    internal static string? GetCopyText(Control control) => control.GetValue(CopyTextProperty);
+
+    internal static void SetCopyText(Control control, string? value) => control.SetValue(CopyTextProperty, value);
+
     private readonly List<IndexEntry> _entries = [];
     private int _totalLength;
 
@@ -102,13 +112,32 @@ internal sealed class DocumentSelectionLayer : Control
             int localStart = Math.Max(0, selStart - entry.AbsStart);
             int localEnd = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
             if (localEnd > localStart)
-                sb.Append(entry.PlainText.AsSpan(localStart, localEnd - localStart));
+                AppendText(sb, entry, localStart, localEnd);
 
             // Append separator if selection extends into or past the separator gap
             if (selEnd > entry.AbsEnd && entry.Separator.Length > 0)
                 sb.Append(entry.Separator);
         }
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Appends <paramref name="entry"/>'s text between the local offsets, substituting each
+    /// embedded control with its copy text.
+    /// </summary>
+    private static void AppendText(System.Text.StringBuilder sb, IndexEntry entry, int start, int end)
+    {
+        if (entry.EmbeddedText is not { } embedded)
+        {
+            sb.Append(entry.PlainText.AsSpan(start, end - start));
+            return;
+        }
+
+        for (int i = start; i < end; i++)
+        {
+            if (embedded.TryGetValue(i, out var text)) sb.Append(text);
+            else sb.Append(entry.PlainText[i]);
+        }
     }
 
     /// <summary>Copies selected text to the clipboard.</summary>
