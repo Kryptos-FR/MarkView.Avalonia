@@ -11,10 +11,12 @@ MarkView.Avalonia is a Markdig-powered markdown viewer control for Avalonia UI v
 ```bash
 dotnet restore --locked-mode        # CI uses locked NuGet lock files — regenerate with `dotnet restore --force-evaluate` if a PackageVersion changes
 dotnet build
-dotnet test                                                # run all tests (headless Avalonia)
-dotnet test --filter "FullyQualifiedName~MarkdownViewer"   # run a single class/method
+dotnet test                                                                              # run all tests (headless Avalonia)
+dotnet test --project tests/MarkView.Avalonia.Tests --filter-class "*.MarkdownViewer*"   # run matching classes
+dotnet test --project tests/MarkView.Avalonia.Tests --filter-method "*Avares_source*"    # run matching methods
 ```
 
+- `dotnet test` runs in Microsoft.Testing.Platform mode with the xUnit v3 runner: filter with `--filter-class` / `--filter-method` / `--filter-namespace` (`*` wildcards at either end). VSTest-style `--filter "FullyQualifiedName~X"` and MSBuild switches such as `-nodeReuse:false` are forwarded to the test host, which then reports "Zero tests ran" (exit code 5) — set `MSBUILDDISABLENODEREUSE=1` in the environment instead.
 - Target framework: net10.0, nullable enabled, implicit usings (`Directory.Build.props`).
 - Package versions are centrally managed in `Directory.Packages.props` — add new deps there, not inline `Version=` attributes in `.csproj`.
 - Test runner: xUnit v3 + `Avalonia.Headless.XUnit`. **Any test that constructs an Avalonia object must use `[AvaloniaFact]`/`[AvaloniaTheory]`**, not `[Fact]`/`[Theory]` — even a bare property set on `TextBlock`/`StackPanel`/`Run` touches `AvaloniaPropertyDictionaryPool` and throws `IndexOutOfRangeException` without platform init. Plain `[Fact]` is only safe when a test constructs zero Avalonia objects (e.g. `SlugGeneratorTests`, `TextMateHighlighterTests`).
