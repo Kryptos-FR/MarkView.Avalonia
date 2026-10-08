@@ -258,6 +258,72 @@ public class SelectionLayerRenderingTests
         Assert.Equal("ha\nBe", f.Layer.GetSelectedText());
     }
 
+    // "•" = 0..1, ' ' at 1, "one" = 2..5, '\n' at 5, "•" = 6..7, ' ' at 7, "two" = 8..11
+    private const string BulletList = """
+        - one
+        - two
+        """;
+
+    private static TextBlock[] Markers(Fixture f) =>
+        f.Window.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("markdown-list-marker")).ToArray();
+
+    [AvaloniaFact]
+    public void Dragging_across_list_item_text_selects_that_text_without_the_marker()
+    {
+        using var f = Show(BulletList);
+
+        f.Layer.OnPointerPressed(CaretPoint(f.Layer, f.Blocks[0], 0));
+        f.Layer.OnPointerMoved(CaretPoint(f.Layer, f.Blocks[0], 3));
+
+        Assert.Equal("one", f.Layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Dragging_into_the_next_list_item_includes_its_marker()
+    {
+        using var f = Show(BulletList);
+
+        f.Layer.OnPointerPressed(CaretPoint(f.Layer, f.Blocks[0], 1));
+        f.Layer.OnPointerMoved(CaretPoint(f.Layer, f.Blocks[1], 2));
+
+        Assert.Equal("ne\n• tw", f.Layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Render_highlights_list_item_text_at_its_own_position_not_shifted_by_the_marker()
+    {
+        using var f = Show(BulletList);
+        f.Layer.SetSelectionForTest(3, 5); // "ne" in "• one"
+
+        var rect = Assert.Single(RecordHighlights(f.Layer));
+
+        Assert.Equal(ExpectedHighlight(f.Layer, f.Blocks[0], 1, 2), rect);
+    }
+
+    [AvaloniaFact]
+    public void Render_highlights_the_list_marker_and_the_item_text_separately()
+    {
+        using var f = Show(BulletList);
+        f.Layer.SetSelectionForTest(0, 5); // "• one"
+
+        var rects = RecordHighlights(f.Layer);
+
+        Assert.Equal(
+            [ExpectedHighlight(f.Layer, Markers(f)[0], 0, 1), ExpectedHighlight(f.Layer, f.Blocks[0], 0, 3)],
+            rects);
+    }
+
+    [AvaloniaFact]
+    public void Dragging_from_a_list_marker_selects_the_marker()
+    {
+        using var f = Show(BulletList);
+
+        f.Layer.OnPointerPressed(CaretPoint(f.Layer, Markers(f)[1], 0));
+        f.Layer.OnPointerMoved(CaretPoint(f.Layer, f.Blocks[1], 3));
+
+        Assert.Equal("• two", f.Layer.GetSelectedText());
+    }
+
     [AvaloniaFact]
     public async Task CopyToClipboardAsync_copies_selection_and_skips_empty_selection()
     {

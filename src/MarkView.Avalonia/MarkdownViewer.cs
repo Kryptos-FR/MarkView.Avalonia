@@ -370,16 +370,17 @@ public partial class MarkdownViewer : ContentControl
 
     private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel)
     {
-        string? marker = null;
+        TextBlock? marker = null;
         RegisterBlocks(layer, panel, ref marker);
     }
 
     /// <summary>
     /// Registers every selectable block under <paramref name="panel"/> in document order.
     /// A non-null <paramref name="marker"/> (the enclosing list item's bullet, number or
-    /// check glyph) prefixes the first registered entry, then is cleared.
+    /// check glyph) is registered as its own entry just before the first registered entry,
+    /// then is cleared, so a list item without selectable content contributes no marker.
     /// </summary>
-    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, ref string? marker)
+    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, ref TextBlock? marker)
     {
         foreach (var child in panel.Children)
         {
@@ -428,23 +429,23 @@ public partial class MarkdownViewer : ContentControl
             }
             if (contentPanel is null) continue;
 
-            var marker = string.IsNullOrEmpty(markerTb?.Text) ? null : markerTb.Text;
+            var marker = string.IsNullOrEmpty(markerTb?.Text) ? null : markerTb;
             RegisterBlocks(layer, contentPanel, ref marker);
         }
     }
 
     private static void Register(DocumentSelectionLayer layer, TextBlock textBlock, string text,
-        string separator, ref string? marker)
+        string separator, ref TextBlock? marker)
     {
         if (marker is not null)
         {
-            text = marker + " " + text;
+            layer.Register(new IndexEntry(marker, marker.Text!, " "));
             marker = null;
         }
         layer.Register(new IndexEntry(textBlock, text, separator));
     }
 
-    private static void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid, ref string? marker)
+    private static void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid, ref TextBlock? marker)
     {
         // TableRenderer adds cells in row-major order (rowIndex / colIndex ascending),
         // so iterating Children directly avoids the O(N log N) SortedDictionary sort.

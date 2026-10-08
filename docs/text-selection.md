@@ -48,4 +48,4 @@ The following are **not selectable**:
 
 On `PointerMoved`, the layer calls `TextBlock.TextLayout.HitTestPoint` + `TranslatePoint` for each registered text block to find the nearest character offset, then redraws the selection highlight rectangles using `HitTestTextRange`.
 
-On copy, `GetSelectedText()` extracts the substring from each text block's registered text and joins them with newlines (or tabs for table cells).
+On copy, `GetSelectedText()` extracts the substring from each text block's registered text and joins them with newlines (tabs between table cells, a space after a list marker). A list item's marker is registered as its own text block, so it is highlighted with the item and selection offsets inside the item text line up with what is rendered.
