@@ -37,35 +37,63 @@ public class TextMateThemeSwitchTests
         return (renderer.RootPanel, Assert.IsType<TextBlock>(border.Child));
     }
 
+    // Only the brushes the highlighter set: a token without one inherits the TextBlock
+    // foreground, which follows the theme on its own once the block is in a window.
     private static string[] Colours(TextBlock text) =>
-        text.Inlines!.OfType<Run>().Select(r => r.Foreground?.ToString() ?? "").ToArray();
+        text.Inlines!.OfType<Run>()
+            .Select(r => r.IsSet(TextElement.ForegroundProperty) ? r.Foreground!.ToString()! : "")
+            .ToArray();
 
-    [AvaloniaFact]
-    public void Initial_render_uses_the_current_theme_variant()
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Initial_render_uses_the_current_theme_variant(bool dark)
     {
-        string[] light, dark;
-        using (new ThemeScope(ThemeVariant.Light)) light = Colours(Render().Text);
-        using (new ThemeScope(ThemeVariant.Dark)) dark = Colours(Render().Text);
+        using var theme = new ThemeScope(dark ? ThemeVariant.Dark : ThemeVariant.Light);
+        var expected = new TextMateHighlighter(dark ? ThemeName.DarkPlus : ThemeName.LightPlus)
+            .Highlight("public class Foo { }".AsMemory(), "csharp")!
+            .Select(t => t.Foreground?.ToString() ?? "");
 
-        Assert.NotEqual(light, dark);
+        Assert.Equal(expected, Colours(Render().Text));
     }
 
     [AvaloniaFact]
     public void Theme_switch_recolours_tokens_in_place()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (_, text) = Render();
-        var light = Colours(text);
-        var inlineCount = text.Inlines!.Count;
+        var (root, text) = Render();
+        var window = new Window { Content = root };
+        try
+        {
+            window.Show();
+            var light = Colours(text);
+            var inlineCount = text.Inlines!.Count;
 
-        theme.Switch(ThemeVariant.Dark);
+            theme.Switch(ThemeVariant.Dark);
 
-        Assert.Equal(inlineCount, text.Inlines!.Count);
-        Assert.NotEqual(light, Colours(text));
+            Assert.Equal(inlineCount, text.Inlines!.Count);
+            Assert.NotEqual(light, Colours(text));
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
-    public async Task Code_block_removed_from_tree_stops_following_theme_changes()
+    public void Never_attached_code_block_does_not_follow_theme_changes()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, text) = Render();
+        var light = Colours(text);
+
+        theme.Switch(ThemeVariant.Dark);
+
+        Assert.Equal(light, Colours(text));
+    }
+
+    [AvaloniaFact]
+    public async Task Code_block_detached_during_a_theme_switch_recolours_on_reattach()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
         var (root, text) = Render();
@@ -78,8 +106,10 @@ public class TextMateThemeSwitchTests
             window.Content = null;
             theme.Switch(ThemeVariant.Dark);
             await AsyncTestHelpers.PumpAsync();
-
             Assert.Equal(light, Colours(text));
+
+            window.Content = root;
+            Assert.NotEqual(light, Colours(text));
         }
         finally
         {

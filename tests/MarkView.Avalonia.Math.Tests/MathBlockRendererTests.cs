@@ -77,15 +77,37 @@ public class MathBlockRendererTests
     public void Theme_switch_re_bakes_the_formula_image()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(FormulaMarkdown);
+        var image = BlockImage(root);
+        var window = new Window { Content = root };
+        try
+        {
+            window.Show();
+            var lightBitmap = image.Source;
+            Assert.Equal(Stretch.None, image.Stretch);
+            Assert.Equal(HorizontalAlignment.Center, image.HorizontalAlignment);
+
+            theme.Switch(ThemeVariant.Dark);
+
+            Assert.NotNull(image.Source);
+            Assert.NotSame(lightBitmap, image.Source);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Never_attached_block_does_not_re_bake_on_theme_change()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
         var image = BlockImage(Render(FormulaMarkdown));
-        var lightBitmap = image.Source;
-        Assert.Equal(Stretch.None, image.Stretch);
-        Assert.Equal(HorizontalAlignment.Center, image.HorizontalAlignment);
+        var before = image.Source;
 
         theme.Switch(ThemeVariant.Dark);
 
-        Assert.NotNull(image.Source);
-        Assert.NotSame(lightBitmap, image.Source);
+        Assert.Same(before, image.Source);
     }
 
     [AvaloniaFact]
@@ -119,7 +141,7 @@ public class MathBlockRendererTests
     }
 
     [AvaloniaFact]
-    public async Task Block_removed_from_tree_stops_re_baking_on_theme_change()
+    public async Task Block_detached_during_a_theme_switch_re_bakes_on_reattach()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
         var root = Render(FormulaMarkdown);
@@ -133,8 +155,10 @@ public class MathBlockRendererTests
             window.Content = null;
             theme.Switch(ThemeVariant.Dark);
             await AsyncTestHelpers.PumpAsync();
-
             Assert.Same(before, image.Source);
+
+            window.Content = root;
+            Assert.NotSame(before, image.Source);
         }
         finally
         {

@@ -108,22 +108,46 @@ public class MermaidCodeBlockFallbackTests
     public void Theme_aware_highlighter_uses_current_variant_and_rebuilds_in_place_on_theme_change()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (_, _, text) = Render("""
+        var (root, _, text) = Render("""
             ```cs
             a
             b
             ```
             """, new VariantHighlighter());
-        Assert.All(text.Inlines!.OfType<Run>(), r => Assert.Same(Brushes.Black, r.Foreground));
+        var window = new Window { Content = root };
+        try
+        {
+            window.Show();
+            Assert.All(text.Inlines!.OfType<Run>(), r => Assert.Same(Brushes.Black, r.Foreground));
 
-        theme.Switch(ThemeVariant.Dark);
+            theme.Switch(ThemeVariant.Dark);
 
-        Assert.Equal(3, text.Inlines!.Count);
-        Assert.All(text.Inlines!.OfType<Run>(), r => Assert.Same(Brushes.White, r.Foreground));
+            Assert.Equal(3, text.Inlines!.Count);
+            Assert.All(text.Inlines!.OfType<Run>(), r => Assert.Same(Brushes.White, r.Foreground));
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
-    public async Task Code_block_removed_from_tree_stops_following_theme_changes()
+    public void Never_attached_code_block_does_not_follow_theme_changes()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, _, text) = Render("""
+            ```cs
+            a
+            ```
+            """, new VariantHighlighter());
+
+        theme.Switch(ThemeVariant.Dark);
+
+        Assert.Same(Brushes.Black, Assert.IsType<Run>(Assert.Single(text.Inlines!)).Foreground);
+    }
+
+    [AvaloniaFact]
+    public async Task Code_block_detached_during_a_theme_switch_rebuilds_on_reattach()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
         var (root, _, text) = Render("""
@@ -139,8 +163,10 @@ public class MermaidCodeBlockFallbackTests
             window.Content = null;
             theme.Switch(ThemeVariant.Dark);
             await AsyncTestHelpers.PumpAsync();
-
             Assert.Same(Brushes.Black, Assert.IsType<Run>(Assert.Single(text.Inlines!)).Foreground);
+
+            window.Content = root;
+            Assert.Same(Brushes.White, Assert.IsType<Run>(Assert.Single(text.Inlines!)).Foreground);
         }
         finally
         {

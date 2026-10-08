@@ -77,13 +77,35 @@ public class MathInlineRendererTests
     public void Theme_switch_re_bakes_inline_formula()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render("$x^2$");
+        var image = InlineImage(root);
+        var window = new Window { Content = root };
+        try
+        {
+            window.Show();
+            var lightBitmap = image.Source;
+            Assert.Equal(Stretch.None, image.Stretch);
+
+            theme.Switch(ThemeVariant.Dark);
+
+            Assert.NotSame(lightBitmap, image.Source);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Never_attached_inline_formula_does_not_re_bake_on_theme_change()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
         var image = InlineImage(Render("$x^2$"));
-        var lightBitmap = image.Source;
-        Assert.Equal(Stretch.None, image.Stretch);
+        var before = image.Source;
 
         theme.Switch(ThemeVariant.Dark);
 
-        Assert.NotSame(lightBitmap, image.Source);
+        Assert.Same(before, image.Source);
     }
 
     [AvaloniaFact]
@@ -105,7 +127,7 @@ public class MathInlineRendererTests
     }
 
     [AvaloniaFact]
-    public async Task Inline_formula_removed_from_tree_stops_re_baking()
+    public async Task Inline_formula_detached_during_a_theme_switch_re_bakes_on_reattach()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
         var root = Render("$x^2$");
@@ -119,8 +141,10 @@ public class MathInlineRendererTests
             window.Content = null;
             theme.Switch(ThemeVariant.Dark);
             await AsyncTestHelpers.PumpAsync();
-
             Assert.Same(before, image.Source);
+
+            window.Content = root;
+            Assert.NotSame(before, image.Source);
         }
         finally
         {

@@ -43,9 +43,14 @@ public class MermaidDiagramRenderingTests
         return renderer.RootPanel;
     }
 
+    // A render that fails immediately (empty or invalid source) can complete before Write returns,
+    // so the border may already hold the fallback panel instead of the image.
+    private static Border RenderBorder(string markdown) =>
+        Assert.IsType<Border>(Assert.Single(Render(markdown).Children));
+
     private static (Border Border, Image Image) RenderDiagram(string markdown = Diagram)
     {
-        var border = Assert.IsType<Border>(Assert.Single(Render(markdown).Children));
+        var border = RenderBorder(markdown);
         return (border, Assert.IsType<Image>(border.Child));
     }
 
@@ -68,7 +73,7 @@ public class MermaidDiagramRenderingTests
     public async Task Invalid_diagram_is_replaced_by_error_and_source_text()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (border, _) = RenderDiagram(InvalidDiagram);
+        var border = RenderBorder(InvalidDiagram);
 
         await AsyncTestHelpers.WaitUntilAsync(() => border.Child is StackPanel);
 
@@ -85,7 +90,7 @@ public class MermaidDiagramRenderingTests
     public async Task Empty_diagram_is_replaced_by_error_and_empty_source_text()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (border, _) = RenderDiagram("""
+        var border = RenderBorder("""
             ```mermaid
             ```
             """);
@@ -102,14 +107,68 @@ public class MermaidDiagramRenderingTests
     public async Task Theme_switch_re_renders_the_diagram()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram);
+        var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        var window = new Window { Content = root };
+        try
+        {
+            window.Show();
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+            var lightSource = image.Source;
+
+            theme.Switch(ThemeVariant.Dark);
+
+            await AsyncTestHelpers.WaitUntilAsync(() => !ReferenceEquals(image.Source, lightSource));
+            Assert.IsType<SvgImage>(image.Source);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Theme_switch_during_a_render_discards_the_superseded_result()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram);
+        var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        var sources = new List<IImage?>();
+        image.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == Image.SourceProperty) sources.Add(image.Source);
+        };
+        var window = new Window { Content = root };
+        try
+        {
+            // The light render's result is only applied once the UI thread yields, so the switch
+            // below happens while it is still in flight.
+            window.Show();
+            theme.Switch(ThemeVariant.Dark);
+
+            await AsyncTestHelpers.WaitUntilAsync(() => sources.Count > 0);
+            await AsyncTestHelpers.PumpAsync();
+
+            Assert.IsType<SvgImage>(Assert.Single(sources));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Never_attached_diagram_does_not_re_render_on_theme_change()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
         var (_, image) = RenderDiagram();
         await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
-        var lightSource = image.Source;
+        var before = image.Source;
 
         theme.Switch(ThemeVariant.Dark);
+        await AsyncTestHelpers.PumpAsync();
 
-        await AsyncTestHelpers.WaitUntilAsync(() => !ReferenceEquals(image.Source, lightSource));
-        Assert.IsType<SvgImage>(image.Source);
+        Assert.Same(before, image.Source);
     }
 
     [AvaloniaTheory]
@@ -160,7 +219,7 @@ public class MermaidDiagramRenderingTests
     }
 
     [AvaloniaFact]
-    public async Task Detached_diagram_does_not_re_render_on_theme_change()
+    public async Task Diagram_detached_during_a_theme_switch_re_renders_on_reattach()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
         var root = Render(Diagram);
@@ -176,8 +235,10 @@ public class MermaidDiagramRenderingTests
             scrollViewer.Content = null;
             theme.Switch(ThemeVariant.Dark);
             await AsyncTestHelpers.PumpAsync();
-
             Assert.Same(before, image.Source);
+
+            scrollViewer.Content = root;
+            await AsyncTestHelpers.WaitUntilAsync(() => !ReferenceEquals(image.Source, before));
         }
         finally
         {
@@ -305,7 +366,29 @@ public class MermaidDiagramRenderingTests
     }
 
     [AvaloniaFact]
-    public async Task Diagram_removed_from_tree_while_rendering_never_receives_its_image()
+    public async Task Never_attached_diagram_is_not_kept_alive_by_the_application()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (weakRoot, weakImage) = RenderUnreferenced();
+        await AsyncTestHelpers.WaitUntilAsync(() => weakImage.Target is Image { Source: not null });
+
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        Assert.False(weakRoot.IsAlive);
+    }
+
+    // Kept out of line so no local in the test method roots the rendered tree.
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static (WeakReference Root, WeakReference Image) RenderUnreferenced()
+    {
+        var root = Render(Diagram);
+        return (new WeakReference(root), new WeakReference(((Border)root.Children[0]).Child));
+    }
+
+    [AvaloniaFact]
+    public async Task Diagram_removed_from_tree_while_rendering_shows_its_image_when_reattached()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
         var root = Render(Diagram);
@@ -315,12 +398,14 @@ public class MermaidDiagramRenderingTests
         try
         {
             // The render completes on a background thread but its result is only applied once the UI
-            // thread yields, so detaching before the first await cancels it deterministically.
+            // thread yields, so detaching here happens while the render is still in flight.
             window.Show();
             scrollViewer.Content = null;
-            await AsyncTestHelpers.PumpAsync();
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
 
-            Assert.Null(image.Source);
+            scrollViewer.Content = root;
+
+            Assert.IsType<SvgImage>(image.Source);
         }
         finally
         {

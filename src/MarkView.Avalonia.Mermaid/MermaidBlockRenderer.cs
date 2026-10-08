@@ -49,15 +49,9 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
 
         CancellationTokenSource? cts = null;
 
-        // Re-render when the user switches light/dark theme.
-        // Standard Avalonia controls update automatically via DynamicResource, but
-        // the Mermaid SVG has colours baked in at render time so it must be rebuilt.
-        void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e)
-        {
-            if (e.Property.Name != nameof(Application.ActualThemeVariant)) return;
-            _ = ApplyThemeAsync();
-        }
-        Application.Current!.PropertyChanged += OnThemeChanged;
+        // The Mermaid SVG has colours baked in at render time, so it must be rebuilt
+        // when the user switches light/dark theme.
+        ThemeTracking.ReapplyOnThemeChange(border, () => _ = ApplyThemeAsync());
 
         // A ScrollViewer passes infinite available width to its children.
         // Constrain MaxWidth to the viewport width, updating on resize.
@@ -67,13 +61,7 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
             if (sv is null) return;
 
             sv.SizeChanged += OnSizeChanged;
-            image.DetachedFromLogicalTree += (_, _) =>
-            {
-                sv.SizeChanged -= OnSizeChanged;
-                Application.Current?.PropertyChanged -= OnThemeChanged;
-                cts?.Cancel();
-                cts?.Dispose();
-            };
+            image.DetachedFromLogicalTree += (_, _) => sv.SizeChanged -= OnSizeChanged;
             Update();
 
             void Update()
@@ -90,10 +78,11 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
 
         // Heavy work (MermaidRenderer.RenderSvg + SvgSource.LoadFromStream via SkiaSharp)
         // is offloaded to a background thread so the UI thread is never blocked.
-        // A CancellationTokenSource allows rapid theme switches to cancel in-flight renders.
+        // A CancellationTokenSource lets a theme switch supersede an in-flight render.
         async Task ApplyThemeAsync()
         {
             cts?.Cancel();
+            // Stryker disable once Statement : a CancellationTokenSource without timers or linked tokens holds no resources
             cts?.Dispose();
             var localCts = cts = new CancellationTokenSource();
             var token = localCts.Token;
@@ -176,15 +165,12 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
         // theme changes — the Border and its position in the document stay untouched.
         if (renderer.CodeHighlighter is IThemeAwareCodeHighlighter themeAware)
         {
-            void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e)
+            ThemeTracking.ReapplyOnThemeChange(border, () =>
             {
-                if (e.Property.Name != nameof(Application.ActualThemeVariant)) return;
                 var newIsDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
                 textBlock.Inlines!.Clear();
                 BuildInlines(textBlock, themeAware, language, newIsDark, lineTexts);
-            }
-            Application.Current!.PropertyChanged += OnThemeChanged;
-            border.DetachedFromLogicalTree += (_, _) => Application.Current?.PropertyChanged -= OnThemeChanged;
+            });
         }
 
         renderer.WriteBlock(border);

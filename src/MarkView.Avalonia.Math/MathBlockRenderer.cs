@@ -1,7 +1,6 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -31,14 +30,7 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
         var border = new Border { Child = image };
         border.Classes.Add("markdown-math-block");
 
-        void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e)
-        {
-            if (e.Property.Name != nameof(Application.ActualThemeVariant)) return;
-            ApplyTheme();
-        }
-        Application.Current!.PropertyChanged += OnThemeChanged;
-        border.DetachedFromLogicalTree += (_, _) =>
-            Application.Current?.PropertyChanged -= OnThemeChanged;
+        ThemeTracking.ReapplyOnThemeChange(border, ApplyTheme);
 
         ApplyTheme();
         renderer.WriteBlock(border);
