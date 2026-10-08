@@ -43,9 +43,14 @@ public class MermaidDiagramRenderingTests
         return renderer.RootPanel;
     }
 
+    // A render that fails immediately (empty or invalid source) can complete before Write returns,
+    // so the border may already hold the fallback panel instead of the image.
+    private static Border RenderBorder(string markdown) =>
+        Assert.IsType<Border>(Assert.Single(Render(markdown).Children));
+
     private static (Border Border, Image Image) RenderDiagram(string markdown = Diagram)
     {
-        var border = Assert.IsType<Border>(Assert.Single(Render(markdown).Children));
+        var border = RenderBorder(markdown);
         return (border, Assert.IsType<Image>(border.Child));
     }
 
@@ -68,7 +73,7 @@ public class MermaidDiagramRenderingTests
     public async Task Invalid_diagram_is_replaced_by_error_and_source_text()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (border, _) = RenderDiagram(InvalidDiagram);
+        var border = RenderBorder(InvalidDiagram);
 
         await AsyncTestHelpers.WaitUntilAsync(() => border.Child is StackPanel);
 
@@ -85,7 +90,7 @@ public class MermaidDiagramRenderingTests
     public async Task Empty_diagram_is_replaced_by_error_and_empty_source_text()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (border, _) = RenderDiagram("""
+        var border = RenderBorder("""
             ```mermaid
             ```
             """);
