@@ -380,44 +380,55 @@ public partial class MarkdownViewer : ContentControl
 
     // ── Block registration ────────────────────────────────────────────────────
 
-    private void RegisterBlocks(DocumentSelectionLayer layer, Panel panel)
+    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel)
+    {
+        TextBlock? marker = null;
+        RegisterBlocks(layer, panel, ref marker);
+    }
+
+    /// <summary>
+    /// Registers every selectable block under <paramref name="panel"/> in document order.
+    /// A non-null <paramref name="marker"/> (the enclosing list item's bullet, number or
+    /// check glyph) is registered as its own entry just before the first registered entry,
+    /// then is cleared, so a list item without selectable content contributes no marker.
+    /// </summary>
+    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, ref TextBlock? marker)
     {
         foreach (var child in panel.Children)
         {
             switch (child)
             {
                 case MarkdownSelectableTextBlock tb:
-                    layer.Register(new IndexEntry(tb,
-                        MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!), "\n"));
+                    Register(layer, tb, MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!), "\n", ref marker);
                     break;
                 case Border { Child: TextBlock codeTb } border
                     when border.Classes.Contains("markdown-code-block"):
-                    layer.Register(new IndexEntry(codeTb,
+                    Register(layer, codeTb,
                         codeTb.Inlines != null
                             ? MarkdownSelectableTextBlock.ExtractPlainText(codeTb.Inlines)
-                            : codeTb.Text ?? string.Empty, "\n"));
+                            : codeTb.Text ?? string.Empty, "\n", ref marker);
                     break;
                 case Panel listPanel when listPanel.Classes.Contains("markdown-list"):
                     RegisterListItems(layer, listPanel);
                     break;
                 case Grid tableGrid when tableGrid.Classes.Contains("markdown-table"):
-                    RegisterTableRows(layer, tableGrid);
+                    RegisterTableRows(layer, tableGrid, ref marker);
                     break;
                 case Border { Child: Panel borderPanel }:
-                    RegisterBlocks(layer, borderPanel);
+                    RegisterBlocks(layer, borderPanel, ref marker);
                     break;
                 case Panel nested:
-                    RegisterBlocks(layer, nested);
+                    RegisterBlocks(layer, nested, ref marker);
                     break;
             }
         }
     }
 
-    private void RegisterListItems(DocumentSelectionLayer layer, Panel listPanel)
+    private static void RegisterListItems(DocumentSelectionLayer layer, Panel listPanel)
     {
         foreach (var itemGrid in listPanel.Children.OfType<Grid>())
         {
-            // Column 0 holds the marker TextBlock (bullet/ordered) or a CheckBox (task list)
+            // Column 0 holds the marker TextBlock (bullet, number or task-list check glyph)
             // Column 1 holds the content StackPanel
             TextBlock? markerTb = null;
             Panel? contentPanel = null;
@@ -428,45 +439,25 @@ public partial class MarkdownViewer : ContentControl
                 else if (gridChild is Panel pnl && Grid.GetColumn(pnl) == 1)
                     contentPanel = pnl;
             }
-            var markerText = markerTb?.Text ?? string.Empty;
             if (contentPanel is null) continue;
 
-            bool markerApplied = false;
-            RegisterListContent(layer, contentPanel, markerText, ref markerApplied);
+            var marker = string.IsNullOrEmpty(markerTb?.Text) ? null : markerTb;
+            RegisterBlocks(layer, contentPanel, ref marker);
         }
     }
 
-    private void RegisterListContent(DocumentSelectionLayer layer, Panel panel,
-        string marker, ref bool markerApplied)
+    private static void Register(DocumentSelectionLayer layer, TextBlock textBlock, string text,
+        string separator, ref TextBlock? marker)
     {
-        foreach (var child in panel.Children)
+        if (marker is not null)
         {
-            switch (child)
-            {
-                case MarkdownSelectableTextBlock tb:
-                    var text = MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!);
-                    if (!markerApplied && !string.IsNullOrEmpty(marker))
-                    {
-                        text = marker + " " + text;
-                        markerApplied = true;
-                    }
-                    layer.Register(new IndexEntry(tb, text, "\n"));
-                    break;
-                // Nested list — recurse with its own markers
-                case Panel nestedList when nestedList.Classes.Contains("markdown-list"):
-                    RegisterListItems(layer, nestedList);
-                    break;
-                case Border { Child: Panel borderPanel }:
-                    RegisterListContent(layer, borderPanel, marker, ref markerApplied);
-                    break;
-                case Panel nested:
-                    RegisterListContent(layer, nested, marker, ref markerApplied);
-                    break;
-            }
+            layer.Register(new IndexEntry(marker, marker.Text!, " "));
+            marker = null;
         }
+        layer.Register(new IndexEntry(textBlock, text, separator));
     }
 
-    private static void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid)
+    private static void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid, ref TextBlock? marker)
     {
         // TableRenderer adds cells in row-major order (rowIndex / colIndex ascending),
         // so iterating Children directly avoids the O(N log N) SortedDictionary sort.
@@ -485,7 +476,7 @@ public partial class MarkdownViewer : ContentControl
             // Separator: "\n" if this is the last cell in its row, "\t" otherwise.
             bool isLastInRow = i == cells.Count - 1
                 || Grid.GetRow(cells[i + 1]) != Grid.GetRow(cell);
-            layer.Register(new IndexEntry(tb, text, isLastInRow ? "\n" : "\t"));
+            Register(layer, tb, text, isLastInRow ? "\n" : "\t", ref marker);
         }
     }
 

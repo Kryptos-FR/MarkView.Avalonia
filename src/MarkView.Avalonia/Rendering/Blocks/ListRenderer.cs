@@ -7,6 +7,7 @@ using Avalonia.Layout;
 
 using Markdig.Extensions.TaskLists;
 using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Blocks;
 
@@ -41,6 +42,11 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
             if (isTaskItem)
             {
                 var taskList = (TaskList)((ParagraphBlock)listItem[0]).Inline!.FirstChild!;
+                // Markdig leaves the space that follows "[x]" in the next literal; the marker
+                // column's margin already separates the glyph from the text.
+                if (taskList.NextSibling is LiteralInline literal)
+                    literal.Content.TrimStart();
+
                 var marker = new TextBlock
                 {
                     Text = taskList.Checked ? "\u2611" : "\u2610",
