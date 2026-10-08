@@ -187,6 +187,7 @@ internal sealed class DocumentSelectionLayer : Control
 
             // A block control is a single position: its top half is before it, its bottom half after.
             if (entry.TextBlock is not { } textBlock)
+                // Stryker disable once Equality : which side the exact middle falls on is arbitrary
                 return entry.AbsStart + (localPos.Value.Y < entry.Element.Bounds.Height / 2 ? 0 : 1);
 
             var textPos = new Point(localPos.Value.X - textBlock.Padding.Left,

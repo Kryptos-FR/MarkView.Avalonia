@@ -233,6 +233,45 @@ public class MarkdownViewerSelectionRegistrationTests
         Assert.Equal("one two pic\tx", text);
     }
 
+    [AvaloniaFact]
+    public void Images_in_two_paragraphs_of_a_grid_table_cell_are_both_copied_as_their_alt_text()
+    {
+        const string markdown = """
+            +--------------+---+
+            | ![a](a.png)  | x |
+            |              |   |
+            | ![b](b.png)  |   |
+            +--------------+---+
+            """;
+
+        var text = SelectAllText(markdown, new MarkdownPipelineBuilder().UseGridTables().Build());
+
+        Assert.Equal("a b\tx", text);
+    }
+
+    [AvaloniaFact]
+    public void Grid_table_cell_block_without_text_adds_no_separator()
+    {
+        // The second paragraph holds only an ignored HTML inline, so it renders no text.
+        const string markdown = """
+            +---------------+---+
+            | one           | x |
+            |               |   |
+            | <span></span> |   |
+            +---------------+---+
+            """;
+
+        var text = SelectAllText(markdown, new MarkdownPipelineBuilder().UseGridTables().Build());
+
+        Assert.Equal("one\tx", text);
+    }
+
+    [AvaloniaFact]
+    public void Two_images_in_one_paragraph_are_both_copied_as_their_alt_text()
+    {
+        Assert.Equal("a and b", SelectAllText("![a](a.png) and ![b](b.png)"));
+    }
+
     private static string SelectAllTextWithCopyableBreaks(string markdown)
     {
         var viewer = new MarkdownViewer();

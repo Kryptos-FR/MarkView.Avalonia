@@ -40,6 +40,17 @@ public class MathSelectionTests
     }
 
     [AvaloniaFact]
+    public void Empty_display_math_is_copied_as_empty_delimiters()
+    {
+        const string markdown = """
+            $$
+            $$
+            """;
+
+        Assert.Equal("$$\n\n$$", SelectAllText(markdown));
+    }
+
+    [AvaloniaFact]
     public void Display_math_that_fails_to_render_is_still_copied_as_its_source()
     {
         var nested = new string('{', 60) + "x" + new string('}', 60); // exceeds the brace-nesting limit
