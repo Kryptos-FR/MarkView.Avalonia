@@ -52,6 +52,7 @@ public sealed class TextMateHighlighter : ICodeHighlighter
             return cached;
 
         var scopeName = _options.GetScopeByLanguageId(language);
+        // Stryker disable once block : LoadGrammar(null) returns null and the next line caches it, so result and caching are identical; only one extra LoadGrammar call differs
         if (scopeName == null)
         {
             _grammarCache[language] = null;
@@ -86,7 +87,7 @@ public sealed class TextMateHighlighter : ICodeHighlighter
             IBrush? brush = null;
 
             var rules = _theme.Match(token.Scopes);
-            if (rules.Count > 0 && rules[0].foreground > 0)
+            if (rules.Count > 0 && rules[0].foreground != 0)
             {
                 var hex = _theme.GetColor(rules[0].foreground);
                 if (!string.IsNullOrEmpty(hex))

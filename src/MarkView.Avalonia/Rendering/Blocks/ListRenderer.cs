@@ -25,12 +25,10 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
         else
             listPanel.Classes.Add("markdown-list-tight");
 
-        int index = obj.IsOrdered ? (obj.OrderedStart is null ? 1 : int.TryParse(obj.OrderedStart, out var start) ? start : 1) : 0;
+        int index = int.TryParse(obj.OrderedStart, out var start) ? start : 1;
 
-        foreach (var item in obj)
+        foreach (var listItem in obj.OfType<ListItemBlock>())
         {
-            if (item is not ListItemBlock listItem) continue;
-
             var itemGrid = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions("Auto,*"),
@@ -51,6 +49,7 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
                 };
                 marker.Classes.Add("markdown-list-marker");
                 marker.Classes.Add("markdown-task-list");
+                // Stryker disable once Statement : column 0 is Grid's default column
                 Grid.SetColumn(marker, 0);
                 itemGrid.Children.Add(marker);
             }
@@ -64,6 +63,7 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
                     VerticalAlignment = VerticalAlignment.Top,
                 };
                 marker.Classes.Add("markdown-list-marker");
+                // Stryker disable once Statement : column 0 is Grid's default column
                 Grid.SetColumn(marker, 0);
                 itemGrid.Children.Add(marker);
             }

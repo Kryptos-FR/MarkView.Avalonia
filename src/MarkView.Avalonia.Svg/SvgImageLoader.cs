@@ -74,16 +74,15 @@ public sealed class SvgImageLoader : IImageLoader
         {
             throw;
         }
-        catch (HttpRequestException) { return null; }
-        catch (IOException) { return null; }
-        catch (XmlException) { return null; }
+        // Stryker disable once Block : removing the body leaves an empty catch, and Stryker substitutes the default return value (null) for the missing return, which is exactly what the body returns
+        catch (Exception e) when (e is HttpRequestException or IOException or XmlException) { return null; }
     }
 
     private static byte[] DecodeDataUri(string dataUri)
     {
         // Format: data:[<mediatype>][;base64],<data>
         var commaIndex = dataUri.IndexOf(',');
-        if (commaIndex < 0)
+        if (commaIndex == -1)
             return [];
 
         // Use AsSpan to test the header without allocating a substring

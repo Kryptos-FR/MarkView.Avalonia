@@ -19,6 +19,7 @@ public class SvgImageLoaderTests
     [InlineData("data:image/png;base64,abc", false)]
     [InlineData("https://example.com/icon.SVG", true)]   // case-insensitive extension
     [InlineData("relative/path/image.svg", true)]
+    [InlineData("", false)]
     public void CanLoad_returns_expected_value(string url, bool expected)
     {
         var loader = new SvgImageLoader();
@@ -99,6 +100,32 @@ public class SvgImageLoaderTests
         var result = await loader.LoadAsync(dataUri);
 
         Assert.Null(result);
+    }
+
+    [AvaloniaFact]
+    public async Task LoadAsync_data_uri_with_uppercase_base64_marker_is_decoded()
+    {
+        var base64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"2\" height=\"2\"/>"));
+
+        var image = await new SvgImageLoader().LoadAsync($"data:image/svg+xml;BASE64,{base64}");
+
+        Assert.NotNull(Assert.IsType<SvgImage>(image).Source);
+    }
+
+    [AvaloniaFact]
+    public async Task LoadAsync_data_uri_without_payload_returns_null()
+    {
+        Assert.Null(await new SvgImageLoader().LoadAsync("data:image/svg+xml"));
+    }
+
+    [AvaloniaFact]
+    public async Task LoadAsync_cancelled_data_uri_load_propagates_cancellation()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            new SvgImageLoader().LoadAsync("data:image/svg+xml;base64,PHN2Zy8+", cts.Token));
     }
 
     private sealed class DummyLoader : IImageLoader

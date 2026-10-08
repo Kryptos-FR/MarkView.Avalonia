@@ -3,7 +3,11 @@
 
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.LogicalTree;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Tests.Shared;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests;
@@ -170,5 +174,87 @@ public class MarkdownViewerSourceTests
         var viewer = new MarkdownViewer { Source = AvaresTestDoc };
 
         Assert.NotNull(viewer.Content);
+    }
+
+    // ── Long document: base URI and fragments ─────────────────────────────────
+
+    private static readonly Uri LongDoc = new("avares://MarkView.Avalonia.Tests/TestAssets/long.md");
+
+    private static (Window Window, ScrollViewer ScrollViewer, MarkdownViewer Viewer) ShowScrollingViewer()
+    {
+        var viewer = new MarkdownViewer();
+        viewer.Template = ScrollingViewerTemplate.Create();
+        var window = new Window { Width = 400, Height = 200, Content = viewer };
+        window.Show();
+        return (window, viewer.GetVisualDescendants().OfType<ScrollViewer>().Single(), viewer);
+    }
+
+    [AvaloniaFact]
+    public void Source_infers_base_uri_from_the_document_folder()
+    {
+        var viewer = new MarkdownViewer { Source = LongDoc };
+
+        var image = GetRootPanel(viewer).GetLogicalDescendants().OfType<Image>().Single();
+        Assert.Equal("avares://MarkView.Avalonia.Tests/TestAssets/images/logo.png", image.Tag?.ToString());
+    }
+
+    [AvaloniaFact]
+    public void Avares_source_without_fragment_renders_at_the_top_of_a_scrolled_viewer()
+    {
+        var (window, scrollViewer, viewer) = ShowScrollingViewer();
+        try
+        {
+            var paragraphs = string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Paragraph {i}"));
+            viewer.Markdown = $"""
+                {paragraphs}
+
+                ## Target Heading
+
+                {paragraphs}
+                """;
+            window.UpdateLayout();
+            viewer.ScrollToAnchor("target-heading");
+            Assert.True(scrollViewer.Offset.Y > 0);
+
+            viewer.Source = LongDoc;
+            Dispatcher.UIThread.RunJobs();
+            window.UpdateLayout();
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.Equal("Target Heading", Assert.Single(viewer.TableOfContents).Text);
+            Assert.Equal(0, scrollViewer.Offset.Y);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task File_source_fragment_scrolls_after_async_load()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"markview-{Guid.NewGuid():N}.md");
+        var leading = string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"P{i}"));
+        await File.WriteAllTextAsync(path,
+            $"""
+            {leading}
+
+            ## Deep
+
+            End
+            """,
+            TestContext.Current.CancellationToken);
+        var (window, scrollViewer, viewer) = ShowScrollingViewer();
+        try
+        {
+            viewer.Source = new Uri(new Uri(path).AbsoluteUri + "#deep");
+
+            await AsyncTestHelpers.WaitUntilAsync(() => scrollViewer.Offset.Y > 0);
+        }
+        finally
+        {
+            window.Close();
+            File.Delete(path);
+        }
     }
 }

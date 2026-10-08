@@ -48,7 +48,7 @@ internal static class MathFormulaRenderer
     /// input before it ever reaches CSharpMath, so the existing (catchable) fallback path handles
     /// it instead.
     /// </summary>
-    private static void EnsureSafeToRender(string latex)
+    internal static void EnsureSafeToRender(string latex)
     {
         if (latex.Length > MaxLatexLength)
             throw new InvalidOperationException($"LaTeX source exceeds the {MaxLatexLength}-character safety limit.");
@@ -56,7 +56,7 @@ internal static class MathFormulaRenderer
         int depth = 0, maxDepth = 0;
         foreach (var c in latex)
         {
-            if (c == '{') { depth++; if (depth > maxDepth) maxDepth = depth; }
+            if (c == '{') { depth++; maxDepth = System.Math.Max(maxDepth, depth); }
             else if (c == '}') { depth--; }
         }
         if (maxDepth > MaxBraceNestingDepth)

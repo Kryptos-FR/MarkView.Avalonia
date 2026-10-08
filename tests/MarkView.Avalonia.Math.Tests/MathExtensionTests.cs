@@ -2,12 +2,15 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 
 using Markdig;
+using Markdig.Extensions.Mathematics;
 
 using MarkView.Avalonia.Mermaid;
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Blocks;
 
 using Xunit;
 
@@ -134,5 +137,59 @@ public class MathExtensionTests
         var mermaidBorder = Assert.IsType<Border>(panel.Children[1]);
         Assert.Contains("markdown-mermaid", mermaidBorder.Classes);
         Assert.IsType<Image>(mermaidBorder.Child);
+    }
+
+    private sealed class OtherMathRenderer : AvaloniaObjectRenderer<MathBlock>
+    {
+        protected override void Write(AvaloniaRenderer renderer, MathBlock obj) { }
+    }
+
+    [AvaloniaFact]
+    public void Register_inserts_block_renderer_directly_before_the_first_MathBlock_acceptor()
+    {
+        var renderer = new AvaloniaRenderer();
+        var codeBlockIndex = renderer.ObjectRenderers.FindIndex(r => r is CodeBlockRenderer);
+        Assert.True(codeBlockIndex > 0);
+
+        new MathExtension().Register(renderer);
+
+        Assert.Equal(codeBlockIndex, renderer.ObjectRenderers.FindIndex(r => r is MathBlockRenderer));
+        Assert.IsType<CodeBlockRenderer>(renderer.ObjectRenderers[codeBlockIndex + 1]);
+    }
+
+    [AvaloniaFact]
+    public void Register_inserts_before_an_earlier_registered_MathBlock_acceptor()
+    {
+        var renderer = new AvaloniaRenderer();
+        renderer.ObjectRenderers.Insert(0, new OtherMathRenderer());
+
+        new MathExtension().Register(renderer);
+
+        Assert.IsType<MathBlockRenderer>(renderer.ObjectRenderers[0]);
+    }
+
+    [AvaloniaFact]
+    public void Register_appends_when_no_renderer_accepts_MathBlock()
+    {
+        var renderer = new AvaloniaRenderer();
+        renderer.ObjectRenderers.RemoveAll(r => r is CodeBlockRenderer);
+
+        new MathExtension().Register(renderer);
+
+        Assert.IsType<MathBlockRenderer>(renderer.ObjectRenderers[^2]);
+        Assert.IsType<MathInlineRenderer>(renderer.ObjectRenderers[^1]);
+    }
+
+    [AvaloniaFact]
+    public void UseMath_renders_inline_formulas_as_images()
+    {
+        var viewer = new MarkdownViewer();
+        viewer.UseMath();
+        viewer.Markdown = "Energy $E=mc^2$ here";
+
+        var panel = Assert.IsType<StackPanel>(Assert.IsType<Grid>(viewer.Content).Children[0]);
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(panel.Children));
+        var image = Assert.IsType<Image>(textBlock.Inlines!.OfType<InlineUIContainer>().Single().Child);
+        Assert.Contains("markdown-math-inline", image.Classes);
     }
 }

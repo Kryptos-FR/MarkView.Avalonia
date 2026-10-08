@@ -54,4 +54,23 @@ public class TextMateHighlighterTests
         // At least one token should have a non-null brush
         Assert.Contains(result!, t => t.Foreground != null);
     }
+
+    [Fact]
+    public void Highlight_tokens_cover_the_line_exactly_without_empty_tokens()
+    {
+        const string line = "var x = 1; // done";
+        var tokens = new TextMateHighlighter(ThemeName.DarkPlus).Highlight(line.AsMemory(), "csharp")!;
+
+        Assert.All(tokens, t => Assert.NotEmpty(t.Text));
+        Assert.Equal(line, string.Concat(tokens.Select(t => t.Text)));
+    }
+
+    [Fact]
+    public void Highlight_empty_line_returns_no_tokens()
+    {
+        var tokens = new TextMateHighlighter(ThemeName.DarkPlus).Highlight(ReadOnlyMemory<char>.Empty, "csharp");
+
+        Assert.NotNull(tokens);
+        Assert.Empty(tokens);
+    }
 }

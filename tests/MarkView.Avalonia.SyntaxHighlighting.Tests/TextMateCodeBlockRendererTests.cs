@@ -4,9 +4,12 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.Styling;
 using Markdig;
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Blocks;
 using TextMateSharp.Grammars;
 using Xunit;
 
@@ -118,5 +121,125 @@ public class TextMateCodeBlockRendererTests
         var lightColours = light.Select(t => t.Foreground?.ToString()).ToList();
         Assert.False(darkColours.SequenceEqual(lightColours),
             "Expected dark and light themes to produce at least one different token colour.");
+    }
+
+    private static (Border Border, TextBlock Text) SingleCodeBlock(StackPanel root)
+    {
+        var border = Assert.IsType<Border>(Assert.Single(root.Children));
+        return (border, Assert.IsType<TextBlock>(border.Child));
+    }
+
+    [AvaloniaFact]
+    public void Fenced_block_gets_language_class_and_no_wrapping()
+    {
+        var (border, text) = SingleCodeBlock(Render("""
+        ```csharp
+        var x = 1;
+        ```
+        """));
+
+        Assert.Contains("language-csharp", border.Classes);
+        Assert.Equal(TextWrapping.NoWrap, text.TextWrapping);
+    }
+
+    [AvaloniaFact]
+    public void Code_block_keeps_no_wrapping_against_a_wrapping_style()
+    {
+        var root = Render("""
+            ```csharp
+            var x = 1;
+            ```
+            """);
+        var (_, text) = SingleCodeBlock(root);
+        var probe = new TextBlock();
+        var window = new Window { Content = new StackPanel { Children = { root, probe } } };
+        window.Styles.Add(new Style(x => x.OfType<TextBlock>())
+        {
+            Setters = { new Setter(TextBlock.TextWrappingProperty, TextWrapping.Wrap) },
+        });
+        try
+        {
+            window.Show();
+
+            Assert.Equal(TextWrapping.Wrap, probe.TextWrapping);
+            Assert.Equal(TextWrapping.NoWrap, text.TextWrapping);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Indented_code_block_gets_no_language_class()
+    {
+        var (border, _) = SingleCodeBlock(Render("    var x = 1;"));
+
+        Assert.Contains("markdown-code-block", border.Classes);
+        Assert.DoesNotContain(border.Classes, c => c.StartsWith("language-", StringComparison.Ordinal));
+    }
+
+    [AvaloniaFact]
+    public void Empty_fenced_block_renders_without_inlines()
+    {
+        var (border, text) = SingleCodeBlock(Render("""
+        ```csharp
+        ```
+        """));
+
+        Assert.Contains("markdown-code-block", border.Classes);
+        Assert.True(text.Inlines is null || text.Inlines.Count == 0);
+    }
+
+    [AvaloniaFact]
+    public void Lines_are_separated_by_exactly_one_line_break()
+    {
+        var (_, text) = SingleCodeBlock(Render("""
+        ```csharp
+        int a;
+        int b;
+        ```
+        """));
+
+        var inlines = text.Inlines!.ToList();
+        Assert.IsNotType<LineBreak>(inlines[0]);
+        Assert.Single(inlines.OfType<LineBreak>());
+        Assert.IsNotType<LineBreak>(inlines[^1]);
+    }
+
+    [AvaloniaFact]
+    public void Tokens_without_colour_leave_run_foreground_unset()
+    {
+        var pipeline = new MarkdownPipelineBuilder().Build();
+        var renderer = new AvaloniaRenderer();
+        new TextMateExtension().Register(renderer);
+        renderer.CodeHighlighter = new NoColourHighlighter();
+        pipeline.Setup(renderer);
+        renderer.Render(Markdown.Parse("""
+            ```csharp
+            x
+            ```
+            """, pipeline));
+
+        var (_, text) = SingleCodeBlock(renderer.RootPanel);
+        var run = Assert.IsType<Run>(Assert.Single(text.Inlines!));
+        Assert.False(run.IsSet(TextElement.ForegroundProperty));
+    }
+
+    private sealed class NoColourHighlighter : ICodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            [(line.ToString(), null)];
+    }
+
+    [AvaloniaFact]
+    public void Register_replaces_the_default_code_block_renderer()
+    {
+        var renderer = new AvaloniaRenderer();
+
+        new TextMateExtension().Register(renderer);
+
+        Assert.DoesNotContain(renderer.ObjectRenderers, r => r is CodeBlockRenderer);
+        Assert.Single(renderer.ObjectRenderers.OfType<TextMateCodeBlockRenderer>());
     }
 }

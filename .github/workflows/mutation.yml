@@ -64,7 +64,10 @@ jobs:
         run: |
           ./.github/scripts/Merge-MutationReports.ps1 `
             -ReportsRoot mutation-reports `
-            -OutputPath mutation-reports/CombinedMutationReport.md
+            -OutputPath mutation-reports/CombinedMutationReport.md `
+            -MinimumScore 70 `
+            -WarningScore 70 `
+            -ProjectWarningScore 60
 
       - name: Upload combined mutation report
         uses: actions/upload-artifact@v7

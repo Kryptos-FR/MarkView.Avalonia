@@ -7,7 +7,7 @@
           "Exclude": [".*\\.Tests\\.dll$"]
         },
         "Functions": {
-          "Exclude": ["CompiledAvaloniaXaml"]
+          "Exclude": ["CompiledAvaloniaXaml", "^System\\.Text\\.RegularExpressions\\.Generated\\..*"]
         },
         "Attributes": {
           "Exclude": [

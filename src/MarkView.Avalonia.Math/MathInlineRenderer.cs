@@ -25,12 +25,12 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
         var image = new Image { Stretch = Stretch.None };
         image.Classes.Add("markdown-math-inline");
 
-        if (!ApplyTheme(isFirstRender: true))
+        if (!TryApplyTheme())
         {
             // First render failed before the image was ever written to the renderer's inline
             // stack — we're still inside the synchronous initial Write() call here, so writing a
             // plain-text fallback instead is safe (unlike from the later theme-change callback,
-            // which must never re-enter the stack — see the comment inside ApplyTheme below).
+            // which must never re-enter the stack — see the comment inside TryApplyTheme below).
             // We deliberately haven't subscribed to theme-change notifications yet at this point:
             // the discarded image is never attached to the visual tree, so DetachedFromLogicalTree
             // would never fire and an earlier subscription would leak the handler on
@@ -42,7 +42,7 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
         void OnThemeChanged(object? s, AvaloniaPropertyChangedEventArgs e)
         {
             if (e.Property.Name != nameof(Application.ActualThemeVariant)) return;
-            ApplyTheme(isFirstRender: false);
+            TryApplyTheme();
         }
         Application.Current!.PropertyChanged += OnThemeChanged;
         image.DetachedFromLogicalTree += (_, _) =>
@@ -50,7 +50,7 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
 
         renderer.WriteInline(image);
 
-        bool ApplyTheme(bool isFirstRender)
+        bool TryApplyTheme()
         {
             try
             {
@@ -59,14 +59,12 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
             }
             catch (Exception)
             {
-                if (!isFirstRender)
-                {
-                    // Inline context can't safely re-enter the renderer's inline stack from this
-                    // async/theme-change callback — unlike the block renderer's Border, an inline
-                    // Image has no room for a fallback panel. Leave the image showing its last
-                    // successfully rendered bitmap rather than risk corrupting whatever inline
-                    // collection is active at callback time.
-                }
+                // The caller decides how to react: the first render writes a plain-text fallback,
+                // while the theme-change callback ignores the failure. That callback can't safely
+                // re-enter the renderer's inline stack — unlike the block renderer's Border, an
+                // inline Image has no room for a fallback panel — so the image keeps showing its
+                // last successfully rendered bitmap rather than risk corrupting whatever inline
+                // collection is active at callback time.
                 return false;
             }
         }

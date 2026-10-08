@@ -24,10 +24,8 @@ public sealed class FootnoteGroupRenderer : AvaloniaObjectRenderer<FootnoteGroup
         var group = new StackPanel { Spacing = 4 };
         group.Classes.Add("markdown-footnote-group");
 
-        foreach (var item in obj)
+        foreach (var fn in obj.OfType<Footnote>())
         {
-            if (item is not Footnote fn) continue;
-
             var row = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions("Auto,*"),
@@ -40,6 +38,7 @@ public sealed class FootnoteGroupRenderer : AvaloniaObjectRenderer<FootnoteGroup
                 Margin = new Thickness(0, 0, 8, 0),
                 VerticalAlignment = VerticalAlignment.Top,
             };
+            // Stryker disable once Statement : column 0 is Grid's default column
             Grid.SetColumn(label, 0);
             row.Children.Add(label);
 
