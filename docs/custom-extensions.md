@@ -115,6 +115,26 @@ Pass an element that stays in the document for as long as the content should fol
 here the `Border`, not the `Image`, so that a renderer swapping the image for an error fallback
 keeps tracking the theme.
 
+### Content that is not text
+
+Document-wide [text selection](text-selection.md) only knows how to copy text. Give a non-text
+control the text a selection should copy in its place with the `MarkdownSelection.CopyText`
+attached property:
+
+```csharp
+var border = new Border { Child = image };
+MarkdownSelection.SetCopyText(border, obj.Lines.ToString());   // copy the chart's source
+renderer.WriteBlock(border);
+```
+
+- A control written with `WriteBlock` is selectable only when it has copy text. It is then
+  highlighted and copied as a whole; dragging past its vertical middle includes it in the selection.
+- A control written with `WriteInline(Control)` is always highlighted with the surrounding text,
+  and copied as its copy text, or as nothing when it has none.
+
+As with theme tracking, set it on the element that stays in the document (the `Border`), so an
+error fallback that replaces the border's content is still copied.
+
 ## Writing a custom image loader
 
 Implement `IImageLoader`:

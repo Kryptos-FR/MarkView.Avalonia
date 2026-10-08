@@ -334,7 +334,7 @@ string text = viewer.GetSelectedText();
 await viewer.CopyToClipboardAsync();
 ```
 
-A selection that spans an image copies the image's alt text in its place. See [Text Selection](docs/text-selection.md) for details.
+A selection that spans an image copies the image's alt text in its place; math formulas and Mermaid diagrams copy their source. See [Text Selection](docs/text-selection.md) for details.
 
 ## Known Limitations
 

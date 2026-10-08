@@ -7,14 +7,21 @@ using Avalonia.Controls;
 namespace MarkView.Avalonia.Rendering;
 
 /// <summary>
-/// Associates a <see cref="TextBlock"/> in the rendered document with its plain text,
+/// Associates a selectable element in the rendered document with its plain text,
 /// its absolute start offset in the flat document char space, and the separator that
 /// follows this entry in reading order (tab between table cells, newline between blocks).
+/// The element is either a <see cref="TextBlock"/> or a non-text block control that is
+/// selected as a whole (see <see cref="ForBlockControl"/>).
 /// Registered with <see cref="DocumentSelectionLayer"/> in document order.
 /// </summary>
 internal sealed class IndexEntry
 {
-    public TextBlock TextBlock { get; }
+    /// <summary>The control whose bounds the entry occupies.</summary>
+    public Control Element { get; }
+
+    /// <summary>The text block laying out <see cref="PlainText"/>; <c>null</c> for a block control.</summary>
+    public TextBlock? TextBlock { get; }
+
     public string PlainText { get; }
     public string Separator { get; }
 
@@ -42,10 +49,25 @@ internal sealed class IndexEntry
 
     public IndexEntry(TextBlock textBlock, string plainText, string separator = "\n",
         IReadOnlyDictionary<int, string>? embeddedText = null)
+        : this(textBlock, textBlock, plainText, separator, embeddedText)
     {
+    }
+
+    private IndexEntry(Control element, TextBlock? textBlock, string plainText, string separator,
+        IReadOnlyDictionary<int, string>? embeddedText)
+    {
+        Element = element;
         TextBlock = textBlock;
         PlainText = plainText;
         Separator = separator;
         EmbeddedText = embeddedText;
     }
+
+    /// <summary>
+    /// Creates an entry for a non-text block control: a single position, highlighted as a
+    /// whole and copied as <paramref name="copyText"/>.
+    /// </summary>
+    public static IndexEntry ForBlockControl(Control control, string copyText, string separator = "\n") =>
+        new(control, null, MarkdownSelectableTextBlock.ObjectReplacementCharacter.ToString(), separator,
+            new Dictionary<int, string> { [0] = copyText });
 }

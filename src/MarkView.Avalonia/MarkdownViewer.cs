@@ -398,16 +398,21 @@ public partial class MarkdownViewer : ContentControl
         {
             switch (child)
             {
+                // A control a renderer gave copy text to (a formula, a diagram) is selected as a whole,
+                // whatever it contains.
+                case Control blockControl when MarkdownSelection.GetCopyText(blockControl) is { } copyText:
+                    Register(layer, IndexEntry.ForBlockControl(blockControl, copyText), ref marker);
+                    break;
                 case MarkdownSelectableTextBlock tb:
                     var text = MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!, out var embeddedText);
-                    Register(layer, tb, text, "\n", ref marker, embeddedText);
+                    Register(layer, new IndexEntry(tb, text, "\n", embeddedText), ref marker);
                     break;
                 case Border { Child: TextBlock codeTb } border
                     when border.Classes.Contains("markdown-code-block"):
-                    Register(layer, codeTb,
+                    Register(layer, new IndexEntry(codeTb,
                         codeTb.Inlines != null
                             ? MarkdownSelectableTextBlock.ExtractPlainText(codeTb.Inlines)
-                            : codeTb.Text ?? string.Empty, "\n", ref marker);
+                            : codeTb.Text ?? string.Empty), ref marker);
                     break;
                 case Panel listPanel when listPanel.Classes.Contains("markdown-list"):
                     RegisterListItems(layer, listPanel);
@@ -447,15 +452,14 @@ public partial class MarkdownViewer : ContentControl
         }
     }
 
-    private static void Register(DocumentSelectionLayer layer, TextBlock textBlock, string text,
-        string separator, ref TextBlock? marker, IReadOnlyDictionary<int, string>? embeddedText = null)
+    private static void Register(DocumentSelectionLayer layer, IndexEntry entry, ref TextBlock? marker)
     {
         if (marker is not null)
         {
             layer.Register(new IndexEntry(marker, marker.Text!, " "));
             marker = null;
         }
-        layer.Register(new IndexEntry(textBlock, text, separator, embeddedText));
+        layer.Register(entry);
     }
 
     private static void RegisterTableRows(DocumentSelectionLayer layer, Grid tableGrid, ref TextBlock? marker)
@@ -478,7 +482,7 @@ public partial class MarkdownViewer : ContentControl
             // Separator: "\n" if this is the last cell in its row, "\t" otherwise.
             bool isLastInRow = i == cells.Count - 1
                 || Grid.GetRow(cells[i + 1]) != Grid.GetRow(cell);
-            Register(layer, tb, text, isLastInRow ? "\n" : "\t", ref marker, embeddedText);
+            Register(layer, new IndexEntry(tb, text, isLastInRow ? "\n" : "\t", embeddedText), ref marker);
         }
     }
 

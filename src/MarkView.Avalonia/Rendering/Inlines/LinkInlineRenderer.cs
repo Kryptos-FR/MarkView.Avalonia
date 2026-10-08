@@ -67,7 +67,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
         if (!string.IsNullOrEmpty(altText))
             ToolTip.SetTip(image, altText);
-        DocumentSelectionLayer.SetCopyText(image, altText);
+        MarkdownSelection.SetCopyText(image, altText);
 
         // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor).
         if (!string.IsNullOrEmpty(obj.Title))
@@ -206,7 +206,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         var button = new Button { Content = overlayGrid };
         button.Classes.Add("markdown-youtube");
         button.Click += (_, _) => renderer.OnLinkClicked(videoUri.ToString());
-        DocumentSelectionLayer.SetCopyText(button, ExtractAltText(obj));
+        MarkdownSelection.SetCopyText(button, ExtractAltText(obj));
 
         CancellationTokenSource? cts = null;
         thumbnail.AttachedToVisualTree += (_, _) =>

@@ -21,16 +21,6 @@ internal sealed class DocumentSelectionLayer : Control
     private static readonly ImmutableSolidColorBrush SelectionBrush =
         new(Colors.CornflowerBlue, 0.35);
 
-    /// <summary>
-    /// Text copied in place of an embedded control (e.g. an image's alt text) when a selection spans it.
-    /// </summary>
-    internal static readonly AttachedProperty<string?> CopyTextProperty =
-        AvaloniaProperty.RegisterAttached<DocumentSelectionLayer, Control, string?>("CopyText");
-
-    internal static string? GetCopyText(Control control) => control.GetValue(CopyTextProperty);
-
-    internal static void SetCopyText(Control control, string? value) => control.SetValue(CopyTextProperty, value);
-
     private readonly List<IndexEntry> _entries = [];
     private int _totalLength;
 
@@ -195,16 +185,20 @@ internal sealed class DocumentSelectionLayer : Control
             var localPos = ToLocalPos(entry, posInLayer);
             if (localPos is null) continue;
 
-            var textPos = new Point(localPos.Value.X - entry.TextBlock.Padding.Left,
-                                    localPos.Value.Y - entry.TextBlock.Padding.Top);
-            var hit = entry.TextBlock.TextLayout.HitTestPoint(textPos);
+            // A block control is a single position: its top half is before it, its bottom half after.
+            if (entry.TextBlock is not { } textBlock)
+                return entry.AbsStart + (localPos.Value.Y < entry.Element.Bounds.Height / 2 ? 0 : 1);
+
+            var textPos = new Point(localPos.Value.X - textBlock.Padding.Left,
+                                    localPos.Value.Y - textBlock.Padding.Top);
+            var hit = textBlock.TextLayout.HitTestPoint(textPos);
             return entry.AbsStart + hit.TextPosition;
         }
         return null;
     }
 
     /// <summary>
-    /// Returns the <see cref="IndexEntry"/> whose TextBlock bounds contain
+    /// Returns the <see cref="IndexEntry"/> whose element bounds contain
     /// <paramref name="posInLayer"/>, or null. Used for hyperlink hit-testing.
     /// </summary>
     public IndexEntry? HitTestEntry(Point posInLayer)
@@ -236,17 +230,22 @@ internal sealed class DocumentSelectionLayer : Control
 
             var origin = entry.CachedBounds is { } b
                 ? b.TopLeft
-                : entry.TextBlock.TranslatePoint(new Point(0, 0), this);
+                : entry.Element.TranslatePoint(new Point(0, 0), this);
             if (origin is null) continue;
 
-            var textOrigin = origin.Value + new Vector(entry.TextBlock.Padding.Left,
-                                                         entry.TextBlock.Padding.Top);
+            if (entry.TextBlock is not { } textBlock)
+            {
+                context.DrawRectangle(SelectionBrush, null, new Rect(origin.Value, entry.Element.Bounds.Size));
+                continue;
+            }
+
+            var textOrigin = origin.Value + new Vector(textBlock.Padding.Left, textBlock.Padding.Top);
             int localStart = Math.Max(0, selStart - entry.AbsStart);
             int localEnd = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
             int length = localEnd - localStart;
             if (length <= 0) continue;
 
-            foreach (var rect in entry.TextBlock.TextLayout.HitTestTextRange(localStart, length))
+            foreach (var rect in textBlock.TextLayout.HitTestTextRange(localStart, length))
                 context.DrawRectangle(SelectionBrush, null, rect.Translate(textOrigin));
         }
     }
@@ -263,8 +262,8 @@ internal sealed class DocumentSelectionLayer : Control
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Returns <paramref name="posInLayer"/> in the entry's TextBlock local coordinate space,
-    /// or null if the point is outside the TextBlock's bounds.
+    /// Returns <paramref name="posInLayer"/> in the entry's element local coordinate space,
+    /// or null if the point is outside the element's bounds.
     /// Caches the bounding <see cref="Rect"/> on <see cref="IndexEntry.CachedBounds"/> so
     /// subsequent calls avoid a full visual-tree <c>TranslatePoint</c> walk.
     /// </summary>
@@ -277,9 +276,9 @@ internal sealed class DocumentSelectionLayer : Control
         }
         else
         {
-            var origin = entry.TextBlock.TranslatePoint(new Point(0, 0), this);
+            var origin = entry.Element.TranslatePoint(new Point(0, 0), this);
             if (origin is null) return null;
-            bounds = new Rect(origin.Value, entry.TextBlock.Bounds.Size);
+            bounds = new Rect(origin.Value, entry.Element.Bounds.Size);
             entry.CachedBounds = bounds;
         }
 

@@ -232,4 +232,33 @@ public class MarkdownViewerSelectionRegistrationTests
 
         Assert.Equal("one two pic\tx", text);
     }
+
+    private static string SelectAllTextWithCopyableBreaks(string markdown)
+    {
+        var viewer = new MarkdownViewer();
+        viewer.Extensions.Add(new CopyableBreakExtension());
+        viewer.Markdown = markdown;
+        viewer.SelectAll();
+        return viewer.GetSelectedText();
+    }
+
+    [AvaloniaFact]
+    public void Block_control_with_copy_text_is_copied_between_its_neighbours()
+    {
+        const string markdown = """
+            before
+
+            ---
+
+            after
+            """;
+
+        Assert.Equal("before\n<break>\nafter", SelectAllTextWithCopyableBreaks(markdown));
+    }
+
+    [AvaloniaFact]
+    public void Block_control_with_copy_text_opening_a_list_item_is_prefixed_with_the_marker()
+    {
+        Assert.Equal("• <break>", SelectAllTextWithCopyableBreaks("- ***"));
+    }
 }

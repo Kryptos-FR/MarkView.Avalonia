@@ -25,7 +25,7 @@ public class MarkdownSelectableTextBlock : TextBlock
     /// U+FFFC, written in place of an embedded control so plain-text offsets match
     /// the single position <see cref="TextBlock.TextLayout"/> gives it.
     /// </summary>
-    private const char ObjectReplacementCharacter = '\uFFFC';
+    internal const char ObjectReplacementCharacter = '\uFFFC';
 
     internal AvaloniaRenderer? Renderer { get; set; }
 
@@ -117,7 +117,7 @@ public class MarkdownSelectableTextBlock : TextBlock
                 case Span s: AppendInlines(sb, s.Inlines, ref embeddedText); break;
                 case InlineUIContainer container:
                     (embeddedText ??= [])[sb.Length] =
-                        container.Child is { } child ? DocumentSelectionLayer.GetCopyText(child) ?? string.Empty : string.Empty;
+                        container.Child is { } child ? MarkdownSelection.GetCopyText(child) ?? string.Empty : string.Empty;
                     sb.Append(ObjectReplacementCharacter);
                     break;
             }

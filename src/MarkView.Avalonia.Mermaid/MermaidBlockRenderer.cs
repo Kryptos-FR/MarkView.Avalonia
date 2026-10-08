@@ -46,6 +46,7 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
 
         var border = new Border { Child = image };
         border.Classes.Add("markdown-mermaid");
+        MarkdownSelection.SetCopyText(border, $"```mermaid\n{source}\n```");
 
         CancellationTokenSource? cts = null;
 

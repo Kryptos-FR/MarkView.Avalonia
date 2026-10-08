@@ -38,11 +38,16 @@ All text-bearing block types are registered with the selection layer:
 - Table cells (tab-separated when copying)
 - Footnote definitions
 
-Images inside these blocks (including linked images and YouTube thumbnails) are highlighted with the surrounding text and copied as their alt text; an image without alt text contributes nothing to the copied text. Inline math formulas are highlighted the same way but contribute nothing to the copied text.
+Non-text content is copied as a text equivalent:
 
-The following are **not selectable**:
+| Content | Highlighted | Copied as |
+|---------|-------------|-----------|
+| Image (including linked images and YouTube thumbnails) | With the surrounding text | Its alt text; nothing when it has none |
+| Inline math (`MarkView.Avalonia.Math`) | With the surrounding text | Its source between `$` delimiters |
+| Display math (`MarkView.Avalonia.Math`) | As a whole block | Its source between `$$` lines |
+| Mermaid diagram (`MarkView.Avalonia.Mermaid`) | As a whole block | Its source in a ```` ```mermaid ```` fence |
 
-- Mermaid diagrams and display math blocks (`$$…$$`)
+Custom renderers opt their own non-text controls in through the `MarkdownSelection.CopyText` attached property — see [Content that is not text](custom-extensions.md#content-that-is-not-text).
 
 ## How it works
 
@@ -52,4 +57,4 @@ On `PointerMoved`, the layer calls `TextBlock.TextLayout.HitTestPoint` + `Transl
 
 On copy, `GetSelectedText()` extracts the substring from each text block's registered text and joins them with newlines (tabs between table cells, a space after a list marker). A list item's marker is registered as its own text block, so it is highlighted with the item and selection offsets inside the item text line up with what is rendered.
 
-An image embedded in a text block (`InlineUIContainer`) occupies one character position in its `TextLayout`, so it is registered as a U+FFFC placeholder that keeps selection offsets aligned with the layout. On copy, each placeholder is replaced by the embedded control's copy text — the image's alt text.
+A control embedded in a text block (`InlineUIContainer`) occupies one character position in its `TextLayout`, so it is registered as a U+FFFC placeholder that keeps selection offsets aligned with the layout. A block control with copy text is registered as an entry of its own, one placeholder long, whose bounds are hit-tested and highlighted as a whole. On copy, each placeholder is replaced by the control's `MarkdownSelection.CopyText`.
