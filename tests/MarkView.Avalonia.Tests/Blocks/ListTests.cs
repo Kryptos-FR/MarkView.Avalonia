@@ -126,6 +126,20 @@ public class ListTests : RenderTestBase
     }
 
     [AvaloniaFact]
+    public void Task_item_text_does_not_start_with_the_space_after_the_check_glyph()
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseTaskLists().Build();
+        var list = Assert.IsType<StackPanel>(Assert.Single(Render("""
+            - [x] done
+            - [ ] *todo*
+            """, pipeline).Children));
+
+        var texts = list.Children.Cast<Grid>()
+            .Select(g => g.Children.OfType<StackPanel>().Single().Children.OfType<MarkdownSelectableTextBlock>().Single());
+        Assert.Equal(["done", "todo"], texts.Select(t => MarkdownSelectableTextBlock.ExtractPlainText(t.Inlines!)));
+    }
+
+    [AvaloniaFact]
     public void Empty_list_item_renders_its_marker_with_an_empty_content_panel()
     {
         var list = Assert.IsType<StackPanel>(Assert.Single(Render("""

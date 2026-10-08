@@ -126,13 +126,11 @@ public class MarkdownViewerSelectionRegistrationTests
             - [ ] todo
             """;
 
-        // The two spaces after each glyph are the current output (glyph, separator, then the
-        // item text's own leading space): known issue (#106).
-        Assert.Equal("☑  done\n☐  todo", SelectAllText(markdown));
+        Assert.Equal("☑ done\n☐ todo", SelectAllText(markdown));
     }
 
     [AvaloniaFact]
-    public void Table_inside_a_list_item_contributes_its_cells_after_the_marker()
+    public void Table_inside_a_list_item_is_tab_separated_after_the_marker()
     {
         const string markdown = """
             - a
@@ -142,13 +140,44 @@ public class MarkdownViewerSelectionRegistrationTests
               | 1 | 2 |
             """;
 
-        var text = SelectAllText(markdown);
+        Assert.Equal("• a\nA\tB\n1\t2", SelectAllText(markdown));
+    }
 
-        // Cell separators inside list items are not asserted: known issue (#106), list content
-        // does not register table/code-block structure.
-        Assert.StartsWith("• a", text);
-        var positions = new[] { "A", "B", "1", "2" }.Select(cell => text.IndexOf(cell, "• a".Length, StringComparison.Ordinal)).ToArray();
-        Assert.All(positions, p => Assert.True(p >= 0));
-        Assert.Equal(positions.Order(), positions);
+    [AvaloniaFact]
+    public void Code_block_inside_a_list_item_is_selectable()
+    {
+        const string markdown = """
+            - step one
+
+              ```
+              dotnet build
+              ```
+            """;
+
+        Assert.Equal("• step one\ndotnet build", SelectAllText(markdown));
+    }
+
+    [AvaloniaFact]
+    public void Code_block_opening_a_list_item_is_prefixed_with_the_marker()
+    {
+        const string markdown = """
+            - ```
+              dotnet build
+              ```
+            """;
+
+        Assert.Equal("• dotnet build", SelectAllText(markdown));
+    }
+
+    [AvaloniaFact]
+    public void Table_opening_a_list_item_prefixes_its_first_cell_with_the_marker()
+    {
+        const string markdown = """
+            - | A | B |
+              |---|---|
+              | 1 | 2 |
+            """;
+
+        Assert.Equal("• A\tB\n1\t2", SelectAllText(markdown));
     }
 }
