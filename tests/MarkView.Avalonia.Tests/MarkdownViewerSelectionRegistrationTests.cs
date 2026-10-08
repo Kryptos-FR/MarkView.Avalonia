@@ -127,7 +127,7 @@ public class MarkdownViewerSelectionRegistrationTests
             """;
 
         // The two spaces after each glyph are the current output (glyph, separator, then the
-        // item text's own leading space).
+        // item text's own leading space): known issue (#106).
         Assert.Equal("☑  done\n☐  todo", SelectAllText(markdown));
     }
 
@@ -144,8 +144,8 @@ public class MarkdownViewerSelectionRegistrationTests
 
         var text = SelectAllText(markdown);
 
-        // Cell separators inside list items are not asserted: known issue, list content does
-        // not register table/code-block structure.
+        // Cell separators inside list items are not asserted: known issue (#106), list content
+        // does not register table/code-block structure.
         Assert.StartsWith("• a", text);
         var positions = new[] { "A", "B", "1", "2" }.Select(cell => text.IndexOf(cell, "• a".Length, StringComparison.Ordinal)).ToArray();
         Assert.All(positions, p => Assert.True(p >= 0));
