@@ -37,17 +37,24 @@ public class TextMateThemeSwitchTests
         return (renderer.RootPanel, Assert.IsType<TextBlock>(border.Child));
     }
 
+    // Only the brushes the highlighter set: a token without one inherits the TextBlock
+    // foreground, which follows the theme on its own once the block is in a window.
     private static string[] Colours(TextBlock text) =>
-        text.Inlines!.OfType<Run>().Select(r => r.Foreground?.ToString() ?? "").ToArray();
+        text.Inlines!.OfType<Run>()
+            .Select(r => r.IsSet(TextElement.ForegroundProperty) ? r.Foreground!.ToString()! : "")
+            .ToArray();
 
-    [AvaloniaFact]
-    public void Initial_render_uses_the_current_theme_variant()
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Initial_render_uses_the_current_theme_variant(bool dark)
     {
-        string[] light, dark;
-        using (new ThemeScope(ThemeVariant.Light)) light = Colours(Render().Text);
-        using (new ThemeScope(ThemeVariant.Dark)) dark = Colours(Render().Text);
+        using var theme = new ThemeScope(dark ? ThemeVariant.Dark : ThemeVariant.Light);
+        var expected = new TextMateHighlighter(dark ? ThemeName.DarkPlus : ThemeName.LightPlus)
+            .Highlight("public class Foo { }".AsMemory(), "csharp")!
+            .Select(t => t.Foreground?.ToString() ?? "");
 
-        Assert.NotEqual(light, dark);
+        Assert.Equal(expected, Colours(Render().Text));
     }
 
     [AvaloniaFact]

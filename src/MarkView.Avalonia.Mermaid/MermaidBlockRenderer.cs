@@ -82,6 +82,7 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
         async Task ApplyThemeAsync()
         {
             cts?.Cancel();
+            // Stryker disable once Statement : a CancellationTokenSource without timers or linked tokens holds no resources
             cts?.Dispose();
             var localCts = cts = new CancellationTokenSource();
             var token = localCts.Token;

@@ -123,6 +123,36 @@ public class MermaidDiagramRenderingTests
     }
 
     [AvaloniaFact]
+    public async Task Theme_switch_during_a_render_discards_the_superseded_result()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram);
+        var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        var sources = new List<IImage?>();
+        image.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == Image.SourceProperty) sources.Add(image.Source);
+        };
+        var window = new Window { Content = root };
+        try
+        {
+            // The light render's result is only applied once the UI thread yields, so the switch
+            // below happens while it is still in flight.
+            window.Show();
+            theme.Switch(ThemeVariant.Dark);
+
+            await AsyncTestHelpers.WaitUntilAsync(() => sources.Count > 0);
+            await AsyncTestHelpers.PumpAsync();
+
+            Assert.IsType<SvgImage>(Assert.Single(sources));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Never_attached_diagram_does_not_re_render_on_theme_change()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
