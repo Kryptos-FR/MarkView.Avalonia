@@ -325,6 +325,21 @@ public class SelectionLayerRenderingTests
     }
 
     [AvaloniaFact]
+    public void Task_list_check_glyph_is_selectable_and_highlighted()
+    {
+        using var f = Show("- [x] done");
+        var glyph = Assert.Single(Markers(f));
+
+        f.Layer.OnPointerPressed(CaretPoint(f.Layer, glyph, 0));
+        f.Layer.OnPointerMoved(CaretPoint(f.Layer, f.Blocks[0], 4));
+
+        Assert.Equal("☑ done", f.Layer.GetSelectedText());
+        Assert.Equal(
+            [ExpectedHighlight(f.Layer, glyph, 0, 1), ExpectedHighlight(f.Layer, f.Blocks[0], 0, 4)],
+            RecordHighlights(f.Layer));
+    }
+
+    [AvaloniaFact]
     public async Task CopyToClipboardAsync_copies_selection_and_skips_empty_selection()
     {
         using var f = Show();
