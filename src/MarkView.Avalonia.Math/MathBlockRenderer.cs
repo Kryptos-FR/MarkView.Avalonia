@@ -29,6 +29,7 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
 
         var border = new Border { Child = image };
         border.Classes.Add("markdown-math-block");
+        MarkdownSelection.SetCopyText(border, $"$$\n{source}\n$$");
 
         ThemeTracking.ReapplyOnThemeChange(border, ApplyTheme);
 

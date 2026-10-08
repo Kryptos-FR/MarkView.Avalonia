@@ -23,6 +23,7 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
 
         var image = new Image { Stretch = Stretch.None };
         image.Classes.Add("markdown-math-inline");
+        MarkdownSelection.SetCopyText(image, $"${source}$");
 
         if (!TryApplyTheme())
         {

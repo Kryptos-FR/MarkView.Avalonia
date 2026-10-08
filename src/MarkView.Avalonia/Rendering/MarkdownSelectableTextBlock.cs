@@ -21,6 +21,12 @@ namespace MarkView.Avalonia.Rendering;
 [ExcludeFromCodeCoverage]
 public class MarkdownSelectableTextBlock : TextBlock
 {
+    /// <summary>
+    /// U+FFFC, written in place of an embedded control so plain-text offsets match
+    /// the single position <see cref="TextBlock.TextLayout"/> gives it.
+    /// </summary>
+    internal const char ObjectReplacementCharacter = '\uFFFC';
+
     internal AvaloniaRenderer? Renderer { get; set; }
 
     /// <summary>
@@ -75,22 +81,32 @@ public class MarkdownSelectableTextBlock : TextBlock
 
     /// <summary>
     /// Extracts plain text from an <see cref="InlineCollection"/>, recursing into spans.
-    /// Used at registration time to populate <see cref="DocumentBlock.PlainText"/>.
+    /// Used at registration time to populate <see cref="IndexEntry.PlainText"/>.
     /// Returns the existing <see cref="Run.Text"/> string directly when there is exactly
     /// one <see cref="Run"/> (the common case), avoiding a <see cref="StringBuilder"/> allocation.
     /// </summary>
-    internal static string ExtractPlainText(InlineCollection inlines)
+    internal static string ExtractPlainText(InlineCollection inlines) => ExtractPlainText(inlines, out _);
+
+    /// <summary>
+    /// Extracts plain text like <see cref="ExtractPlainText(InlineCollection)"/>. Each embedded control
+    /// (<see cref="InlineUIContainer"/>) is written as U+FFFC, the single position
+    /// <see cref="TextBlock.TextLayout"/> gives it, and <paramref name="embeddedText"/> maps that
+    /// position to the control's copy text (<c>null</c> when there is no embedded control).
+    /// </summary>
+    internal static string ExtractPlainText(InlineCollection inlines, out Dictionary<int, string>? embeddedText)
     {
+        embeddedText = null;
+
         // Fast path: single Run → return the string reference directly, no allocation
         if (inlines.Count == 1 && inlines[0] is Run singleRun)
             return singleRun.Text ?? string.Empty;
 
         var sb = new StringBuilder();
-        AppendInlines(sb, inlines);
+        AppendInlines(sb, inlines, ref embeddedText);
         return sb.ToString();
     }
 
-    private static void AppendInlines(StringBuilder sb, InlineCollection inlines)
+    private static void AppendInlines(StringBuilder sb, InlineCollection inlines, ref Dictionary<int, string>? embeddedText)
     {
         foreach (var inline in inlines)
         {
@@ -98,7 +114,12 @@ public class MarkdownSelectableTextBlock : TextBlock
             {
                 case Run r: sb.Append(r.Text); break;
                 case LineBreak: sb.Append(Environment.NewLine); break;
-                case Span s: AppendInlines(sb, s.Inlines); break;
+                case Span s: AppendInlines(sb, s.Inlines, ref embeddedText); break;
+                case InlineUIContainer container:
+                    (embeddedText ??= [])[sb.Length] =
+                        container.Child is { } child ? MarkdownSelection.GetCopyText(child) ?? string.Empty : string.Empty;
+                    sb.Append(ObjectReplacementCharacter);
+                    break;
             }
         }
     }

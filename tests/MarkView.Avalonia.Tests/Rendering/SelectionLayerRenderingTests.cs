@@ -8,6 +8,7 @@ using Avalonia.Input.Platform;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 
+using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 
 using Xunit;
@@ -22,9 +23,12 @@ public class SelectionLayerRenderingTests
         public void Dispose() => Window.Close();
     }
 
-    private static Fixture Show(string markdown = "Alpha\n\nBeta\n\nGamma")
+    private static Fixture Show(string markdown = "Alpha\n\nBeta\n\nGamma", params IMarkViewExtension[] extensions)
     {
-        var viewer = new MarkdownViewer { Markdown = markdown };
+        var viewer = new MarkdownViewer();
+        foreach (var extension in extensions)
+            viewer.Extensions.Add(extension);
+        viewer.Markdown = markdown;
         var window = new Window { Width = 400, Height = 300, Content = viewer };
         window.Show();
         try
@@ -256,6 +260,77 @@ public class SelectionLayerRenderingTests
         f.Layer.OnPointerMoved(CaretPoint(f.Layer, f.Blocks[1], 2));
 
         Assert.Equal("ha\nBe", f.Layer.GetSelectedText());
+    }
+
+    // "a " = 0..2, image at 2, ' ' at 3, "bcd" = 4..7
+    private const string InlineImage = "a ![pic](x.png) bcd";
+
+    [AvaloniaFact]
+    public void Dragging_across_text_after_an_inline_image_selects_exactly_that_text()
+    {
+        using var f = Show(InlineImage);
+
+        f.Layer.OnPointerPressed(CaretPoint(f.Layer, f.Blocks[0], 4));
+        f.Layer.OnPointerMoved(CaretPoint(f.Layer, f.Blocks[0], 7));
+
+        Assert.Equal("bcd", f.Layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Dragging_across_an_inline_image_copies_its_alt_text()
+    {
+        using var f = Show(InlineImage);
+
+        f.Layer.OnPointerPressed(CaretPoint(f.Layer, f.Blocks[0], 1));
+        f.Layer.OnPointerMoved(CaretPoint(f.Layer, f.Blocks[0], 5));
+
+        Assert.Equal(" pic b", f.Layer.GetSelectedText());
+    }
+
+    // "Alpha" = 0..5, '\n' at 5, break = 6..7, '\n' at 7, "Gamma" = 8..13
+    private const string CopyableBreak = "Alpha\n\n---\n\nGamma";
+
+    private static Border BreakBorder(Fixture f) =>
+        f.Window.GetVisualDescendants().OfType<Border>().Single(b => MarkdownSelection.GetCopyText(b) is not null);
+
+    private static Point PointInBlock(Visual relativeTo, Control block, double heightFraction)
+    {
+        var origin = block.TranslatePoint(new Point(0, 0), relativeTo)!.Value;
+        return new Point(origin.X + 5, origin.Y + block.Bounds.Height * heightFraction);
+    }
+
+    [AvaloniaFact]
+    public void Dragging_past_the_middle_of_a_copyable_block_selects_it()
+    {
+        using var f = Show(CopyableBreak, new CopyableBreakExtension());
+
+        f.Layer.OnPointerPressed(CaretPoint(f.Layer, f.Blocks[0], 2));
+        f.Layer.OnPointerMoved(PointInBlock(f.Layer, BreakBorder(f), 0.75));
+
+        Assert.Equal("pha\n<break>", f.Layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Dragging_into_the_top_half_of_a_copyable_block_stops_before_it()
+    {
+        using var f = Show(CopyableBreak, new CopyableBreakExtension());
+
+        f.Layer.OnPointerPressed(CaretPoint(f.Layer, f.Blocks[0], 2));
+        f.Layer.OnPointerMoved(PointInBlock(f.Layer, BreakBorder(f), 0.25));
+
+        Assert.Equal("pha\n", f.Layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Render_highlights_the_whole_copyable_block()
+    {
+        using var f = Show(CopyableBreak, new CopyableBreakExtension());
+        f.Layer.SetSelectionForTest(6, 7);
+
+        var rect = Assert.Single(RecordHighlights(f.Layer));
+
+        var border = BreakBorder(f);
+        Assert.Equal(new Rect(border.TranslatePoint(new Point(0, 0), f.Layer)!.Value, border.Bounds.Size), rect);
     }
 
     // "•" = 0..1, ' ' at 1, "one" = 2..5, '\n' at 5, "•" = 6..7, ' ' at 7, "two" = 8..11

@@ -59,11 +59,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
     private static void WriteImage(AvaloniaRenderer renderer, LinkInline obj)
     {
         var url = renderer.ResolveUrl(obj.Url ?? string.Empty);
-
-        var sb = new System.Text.StringBuilder();
-        foreach (var c in obj)
-            if (c is LiteralInline literal) sb.Append(literal.Content.AsSpan());
-        var altText = sb.ToString();
+        var altText = ExtractAltText(obj);
 
         var image = new Image();
         ApplyResizeMode(image, renderer.ImageResizeMode);
@@ -71,6 +67,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
         if (!string.IsNullOrEmpty(altText))
             ToolTip.SetTip(image, altText);
+        MarkdownSelection.SetCopyText(image, altText);
 
         // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor).
         if (!string.IsNullOrEmpty(obj.Title))
@@ -108,6 +105,14 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         image.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
 
         renderer.WriteInline(image);
+    }
+
+    private static string ExtractAltText(LinkInline obj)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var c in obj)
+            if (c is LiteralInline literal) sb.Append(literal.Content.AsSpan());
+        return sb.ToString();
     }
 
     private static void ApplyResizeMode(Image image, ImageResizeMode mode)
@@ -201,6 +206,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         var button = new Button { Content = overlayGrid };
         button.Classes.Add("markdown-youtube");
         button.Click += (_, _) => renderer.OnLinkClicked(videoUri.ToString());
+        MarkdownSelection.SetCopyText(button, ExtractAltText(obj));
 
         CancellationTokenSource? cts = null;
         thumbnail.AttachedToVisualTree += (_, _) =>

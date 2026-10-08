@@ -102,13 +102,32 @@ internal sealed class DocumentSelectionLayer : Control
             int localStart = Math.Max(0, selStart - entry.AbsStart);
             int localEnd = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
             if (localEnd > localStart)
-                sb.Append(entry.PlainText.AsSpan(localStart, localEnd - localStart));
+                AppendText(sb, entry, localStart, localEnd);
 
             // Append separator if selection extends into or past the separator gap
             if (selEnd > entry.AbsEnd && entry.Separator.Length > 0)
                 sb.Append(entry.Separator);
         }
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Appends <paramref name="entry"/>'s text between the local offsets, substituting each
+    /// embedded control with its copy text.
+    /// </summary>
+    private static void AppendText(System.Text.StringBuilder sb, IndexEntry entry, int start, int end)
+    {
+        if (entry.EmbeddedText is not { } embedded)
+        {
+            sb.Append(entry.PlainText.AsSpan(start, end - start));
+            return;
+        }
+
+        for (int i = start; i < end; i++)
+        {
+            if (embedded.TryGetValue(i, out var text)) sb.Append(text);
+            else sb.Append(entry.PlainText[i]);
+        }
     }
 
     /// <summary>Copies selected text to the clipboard.</summary>
@@ -166,16 +185,21 @@ internal sealed class DocumentSelectionLayer : Control
             var localPos = ToLocalPos(entry, posInLayer);
             if (localPos is null) continue;
 
-            var textPos = new Point(localPos.Value.X - entry.TextBlock.Padding.Left,
-                                    localPos.Value.Y - entry.TextBlock.Padding.Top);
-            var hit = entry.TextBlock.TextLayout.HitTestPoint(textPos);
+            // A block control is a single position: its top half is before it, its bottom half after.
+            if (entry.TextBlock is not { } textBlock)
+                // Stryker disable once Equality : which side the exact middle falls on is arbitrary
+                return entry.AbsStart + (localPos.Value.Y < entry.Element.Bounds.Height / 2 ? 0 : 1);
+
+            var textPos = new Point(localPos.Value.X - textBlock.Padding.Left,
+                                    localPos.Value.Y - textBlock.Padding.Top);
+            var hit = textBlock.TextLayout.HitTestPoint(textPos);
             return entry.AbsStart + hit.TextPosition;
         }
         return null;
     }
 
     /// <summary>
-    /// Returns the <see cref="IndexEntry"/> whose TextBlock bounds contain
+    /// Returns the <see cref="IndexEntry"/> whose element bounds contain
     /// <paramref name="posInLayer"/>, or null. Used for hyperlink hit-testing.
     /// </summary>
     public IndexEntry? HitTestEntry(Point posInLayer)
@@ -207,17 +231,22 @@ internal sealed class DocumentSelectionLayer : Control
 
             var origin = entry.CachedBounds is { } b
                 ? b.TopLeft
-                : entry.TextBlock.TranslatePoint(new Point(0, 0), this);
+                : entry.Element.TranslatePoint(new Point(0, 0), this);
             if (origin is null) continue;
 
-            var textOrigin = origin.Value + new Vector(entry.TextBlock.Padding.Left,
-                                                         entry.TextBlock.Padding.Top);
+            if (entry.TextBlock is not { } textBlock)
+            {
+                context.DrawRectangle(SelectionBrush, null, new Rect(origin.Value, entry.Element.Bounds.Size));
+                continue;
+            }
+
+            var textOrigin = origin.Value + new Vector(textBlock.Padding.Left, textBlock.Padding.Top);
             int localStart = Math.Max(0, selStart - entry.AbsStart);
             int localEnd = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
             int length = localEnd - localStart;
             if (length <= 0) continue;
 
-            foreach (var rect in entry.TextBlock.TextLayout.HitTestTextRange(localStart, length))
+            foreach (var rect in textBlock.TextLayout.HitTestTextRange(localStart, length))
                 context.DrawRectangle(SelectionBrush, null, rect.Translate(textOrigin));
         }
     }
@@ -234,8 +263,8 @@ internal sealed class DocumentSelectionLayer : Control
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Returns <paramref name="posInLayer"/> in the entry's TextBlock local coordinate space,
-    /// or null if the point is outside the TextBlock's bounds.
+    /// Returns <paramref name="posInLayer"/> in the entry's element local coordinate space,
+    /// or null if the point is outside the element's bounds.
     /// Caches the bounding <see cref="Rect"/> on <see cref="IndexEntry.CachedBounds"/> so
     /// subsequent calls avoid a full visual-tree <c>TranslatePoint</c> walk.
     /// </summary>
@@ -248,9 +277,9 @@ internal sealed class DocumentSelectionLayer : Control
         }
         else
         {
-            var origin = entry.TextBlock.TranslatePoint(new Point(0, 0), this);
+            var origin = entry.Element.TranslatePoint(new Point(0, 0), this);
             if (origin is null) return null;
-            bounds = new Rect(origin.Value, entry.TextBlock.Bounds.Size);
+            bounds = new Rect(origin.Value, entry.Element.Bounds.Size);
             entry.CachedBounds = bounds;
         }
 
