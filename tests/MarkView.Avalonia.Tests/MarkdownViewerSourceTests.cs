@@ -231,6 +231,26 @@ public class MarkdownViewerSourceTests
     }
 
     [AvaloniaFact]
+    public void Avares_source_fragment_loads_the_document_and_scrolls_to_the_anchor()
+    {
+        var (window, scrollViewer, viewer) = ShowScrollingViewer();
+        try
+        {
+            viewer.Source = new Uri(LongDoc.AbsoluteUri + "#target-heading");
+            Dispatcher.UIThread.RunJobs();
+            window.UpdateLayout();
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.Equal("Target Heading", Assert.Single(viewer.TableOfContents).Text);
+            Assert.True(scrollViewer.Offset.Y > 0);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task File_source_fragment_scrolls_after_async_load()
     {
         var path = Path.Combine(Path.GetTempPath(), $"markview-{Guid.NewGuid():N}.md");

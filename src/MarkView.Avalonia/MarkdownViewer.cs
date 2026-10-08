@@ -120,6 +120,9 @@ public partial class MarkdownViewer : ContentControl
     /// <summary>
     /// Gets or sets a URI that points to a Markdown document to load and render.
     /// Supports <c>avares://</c> embedded resources, <c>file://</c>, and <c>http/https</c> schemes.
+    /// A <c>#fragment</c> scrolls to the matching anchor once the document has rendered; for
+    /// <c>avares://</c> the fragment starts at the first <c>#</c>, so asset paths containing
+    /// <c>#</c> are not supported.
     /// When both <see cref="Source"/> and <see cref="Markdown"/> are set,
     /// <see cref="Source"/> takes precedence.
     /// </summary>
@@ -220,6 +223,15 @@ public partial class MarkdownViewer : ContentControl
             // effectively zero I/O cost. No async API exists; synchronous read is appropriate.
             case "avares":
             {
+                // Avalonia parses avares:// with GenericUriParserOptions.NoFragment, which keeps
+                // "#fragment" in the resource path; split it off the original string instead.
+                var hashIndex = source.OriginalString.IndexOf('#');
+                if (hashIndex >= 0)
+                {
+                    fragment = source.OriginalString[(hashIndex + 1)..];
+                    source = new Uri(source.OriginalString[..hashIndex]);
+                }
+
                 using var stream = AssetLoader.Open(source);
                 using var reader = new StreamReader(stream);
                 _sourceMarkdown = reader.ReadToEnd();

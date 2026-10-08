@@ -123,6 +123,10 @@ anchor automatically once the document has rendered — e.g. `new Uri(path + "#i
 behaves like `viewer.Source = new Uri(path); viewer.ScrollToAnchor("installation")`,
 but without needing to wait for rendering to complete first.
 
+For `avares://` sources, everything after the first `#` is treated as the fragment, so an
+embedded asset whose path contains `#` (e.g. `Docs/C#.md`) cannot be loaded through `Source`.
+Rename the asset or load it yourself with `AssetLoader.Open` and assign the text to `Markdown`.
+
 ## BaseUri
 
 `BaseUri` is used to resolve relative links in markdown when `Source` is not set
