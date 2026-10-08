@@ -39,14 +39,14 @@ jobs:
 
       - name: Upload mutation report
         uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: mutation-report-${{ matrix.test-project }}
           path: tests/${{ matrix.test-project }}/StrykerOutput/**/reports/
 
   aggregate:
     needs: mutate
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -71,14 +71,14 @@ jobs:
 
       - name: Upload combined mutation report
         uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: combined-mutation-report
           path: mutation-reports/CombinedMutationReport.md
 
       - name: Post mutation summary to PR
         uses: marocchino/sticky-pull-request-comment@v3
-        if: always() && github.event_name == 'pull_request'
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
         with:
           header: mutation
           recreate: true
