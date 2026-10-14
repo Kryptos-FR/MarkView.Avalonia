@@ -122,6 +122,116 @@ public class ThemeTrackingTests
     }
 
     [AvaloniaFact]
+    public void Theme_switch_while_hidden_reapplies_once_shown()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var tracked = new Tracked();
+        var host = new Border { Child = tracked.Element };
+        var window = new Window { Content = host };
+        try
+        {
+            window.Show();
+            host.IsVisible = false;
+            window.UpdateLayout();
+
+            theme.Switch(ThemeVariant.Dark);
+            window.UpdateLayout();
+            Assert.Empty(tracked.Applied);
+
+            host.IsVisible = true;
+            window.UpdateLayout();
+            Assert.Equal([ThemeVariant.Dark], tracked.Applied);
+
+            window.UpdateLayout();
+            Assert.Equal([ThemeVariant.Dark], tracked.Applied);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Theme_switch_during_each_hidden_period_reapplies_once_shown()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var tracked = new Tracked();
+        var host = new Border { Child = tracked.Element };
+        var window = new Window { Content = host };
+        try
+        {
+            window.Show();
+
+            // Like toggling the theme from another tab, coming back, then doing it again.
+            foreach (var variant in new[] { ThemeVariant.Dark, ThemeVariant.Light })
+            {
+                host.IsVisible = false;
+                window.UpdateLayout();
+                theme.Switch(variant);
+                window.UpdateLayout();
+
+                host.IsVisible = true;
+                window.UpdateLayout();
+            }
+
+            Assert.Equal([ThemeVariant.Dark, ThemeVariant.Light], tracked.Applied);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Switching_back_while_hidden_does_not_reapply_once_shown()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var tracked = new Tracked();
+        var window = new Window { Content = tracked.Element };
+        try
+        {
+            window.Show();
+            tracked.Element.IsVisible = false;
+
+            theme.Switch(ThemeVariant.Dark);
+            theme.Switch(ThemeVariant.Light);
+            tracked.Element.IsVisible = true;
+            window.UpdateLayout();
+
+            Assert.Empty(tracked.Applied);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Hidden_element_moved_to_a_visible_host_reapplies_once()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var tracked = new Tracked();
+        var host = new Border { Child = tracked.Element, IsVisible = false };
+        var window = new Window { Content = host };
+        try
+        {
+            window.Show();
+            theme.Switch(ThemeVariant.Dark);
+            Assert.Empty(tracked.Applied);
+
+            host.Child = null;
+            window.Content = tracked.Element;
+            window.UpdateLayout();
+
+            Assert.Equal([ThemeVariant.Dark], tracked.Applied);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void Never_attached_element_is_not_kept_alive()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
