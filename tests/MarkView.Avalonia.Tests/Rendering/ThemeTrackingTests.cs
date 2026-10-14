@@ -152,6 +152,37 @@ public class ThemeTrackingTests
     }
 
     [AvaloniaFact]
+    public void Theme_switch_during_each_hidden_period_reapplies_once_shown()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var tracked = new Tracked();
+        var host = new Border { Child = tracked.Element };
+        var window = new Window { Content = host };
+        try
+        {
+            window.Show();
+
+            // Like toggling the theme from another tab, coming back, then doing it again.
+            foreach (var variant in new[] { ThemeVariant.Dark, ThemeVariant.Light })
+            {
+                host.IsVisible = false;
+                window.UpdateLayout();
+                theme.Switch(variant);
+                window.UpdateLayout();
+
+                host.IsVisible = true;
+                window.UpdateLayout();
+            }
+
+            Assert.Equal([ThemeVariant.Dark, ThemeVariant.Light], tracked.Applied);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void Switching_back_while_hidden_does_not_reapply_once_shown()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
