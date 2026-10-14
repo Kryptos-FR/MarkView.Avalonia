@@ -128,6 +128,35 @@ public class MermaidDiagramRenderingTests
     }
 
     [AvaloniaFact]
+    public async Task Switching_back_to_a_theme_reuses_its_rendered_image()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram);
+        var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        var window = new Window { Content = root };
+        try
+        {
+            window.Show();
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+            var lightSource = image.Source;
+
+            theme.Switch(ThemeVariant.Dark);
+            await AsyncTestHelpers.WaitUntilAsync(() => !ReferenceEquals(image.Source, lightSource));
+            var darkSource = image.Source;
+
+            theme.Switch(ThemeVariant.Light);
+            Assert.Same(lightSource, image.Source);
+
+            theme.Switch(ThemeVariant.Dark);
+            Assert.Same(darkSource, image.Source);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Theme_switch_during_a_render_discards_the_superseded_result()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
