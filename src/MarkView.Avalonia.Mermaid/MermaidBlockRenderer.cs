@@ -50,14 +50,24 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
         MarkdownSelection.SetCopyText(border, $"```mermaid\n{source}\n```");
 
         CancellationTokenSource? cts = null;
+        var started = false;
 
         // Rendered images by the colours baked into them, so switching back to a theme
         // already shown reuses its image instead of rendering and parsing the SVG again.
         var rendered = new Dictionary<(string? Bg, string? Fg, string? Accent), SvgImage>();
 
         // The Mermaid SVG has colours baked in at render time, so it must be rebuilt
-        // when the user switches light/dark theme.
-        ThemeTracking.ReapplyOnThemeChange(border, () => _ = ApplyThemeAsync());
+        // when the user switches light/dark theme. A diagram not rendered yet picks up
+        // the theme in effect when it first renders.
+        ThemeTracking.ReapplyOnThemeChange(border, () =>
+        {
+            if (started) _ = ApplyThemeAsync();
+        });
+
+        // Rendering waits until the diagram first comes within a screen of the viewport, so
+        // diagrams further down a long document cost nothing while it loads. This matters
+        // most in the browser, where Task.Run below shares the UI thread.
+        border.EffectiveViewportChanged += OnEffectiveViewportChanged;
 
         // A ScrollViewer passes infinite available width to its children.
         // Constrain MaxWidth to the viewport width, updating on resize.
@@ -80,10 +90,18 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
         };
 
         renderer.WriteBlock(border);
-        _ = ApplyThemeAsync();
+
+        void OnEffectiveViewportChanged(object? sender, EffectiveViewportChangedEventArgs e)
+        {
+            if (!IsNearViewport(border.Bounds.Size, e.EffectiveViewport)) return;
+            border.EffectiveViewportChanged -= OnEffectiveViewportChanged;
+            started = true;
+            _ = ApplyThemeAsync();
+        }
 
         // Heavy work (MermaidRenderer.RenderSvg + SvgSource.LoadFromStream via SkiaSharp)
-        // is offloaded to a background thread so the UI thread is never blocked.
+        // is offloaded to a background thread so the UI thread is not blocked on platforms
+        // with threads; single-threaded WebAssembly still runs it on the UI thread.
         // A CancellationTokenSource lets a theme switch supersede an in-flight render.
         async Task ApplyThemeAsync()
         {
@@ -128,6 +146,16 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
                 }
             }
         }
+    }
+
+    // The viewport is in the element's own coordinates; it is widened by its own height so a
+    // diagram starts rendering a screen before it scrolls into view. Edges count as touching,
+    // since a diagram not rendered yet may have no height at all.
+    private static bool IsNearViewport(Size size, Rect viewport)
+    {
+        var area = viewport.Inflate(new Thickness(0, viewport.Height));
+        return size.Width >= area.Left && area.Right >= 0
+            && size.Height >= area.Top && area.Bottom >= 0;
     }
 
     private static string ExtractSource(FencedCodeBlock block)
