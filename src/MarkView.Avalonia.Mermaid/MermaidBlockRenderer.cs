@@ -51,6 +51,10 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
 
         CancellationTokenSource? cts = null;
 
+        // Rendered images by the colours baked into them, so switching back to a theme
+        // already shown reuses its image instead of rendering and parsing the SVG again.
+        var rendered = new Dictionary<(string? Bg, string? Fg, string? Accent), SvgImage>();
+
         // The Mermaid SVG has colours baked in at render time, so it must be rebuilt
         // when the user switches light/dark theme.
         ThemeTracking.ReapplyOnThemeChange(border, () => _ = ApplyThemeAsync());
@@ -90,6 +94,12 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
             var token = localCts.Token;
 
             var opts = MermaidSvgTheme.GetRenderOptions();
+            var colours = (opts.Bg, opts.Fg, opts.Accent);
+            if (rendered.TryGetValue(colours, out var cached))
+            {
+                image.Source = cached;
+                return;
+            }
 
             try
             {
@@ -102,7 +112,7 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
                 }, token);
 
                 if (!token.IsCancellationRequested)
-                    image.Source = new SvgImage { Source = svgSource };
+                    image.Source = rendered[colours] = new SvgImage { Source = svgSource };
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)
