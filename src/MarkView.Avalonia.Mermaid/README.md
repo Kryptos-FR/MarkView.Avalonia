@@ -108,7 +108,7 @@ For mermaid blocks:
 4. The SVG is loaded into an `SvgImage` and displayed in an `Image` control.
 5. `MaxWidth` is constrained to the `ScrollViewer` viewport and updated on resize.
 
-For non-mermaid blocks, rendering is delegated to the standard code block path (with theme-aware in-place `TextBlock.Inlines` rebuild if a `IThemeAwareCodeHighlighter` is registered).
+For non-mermaid blocks, rendering is delegated to the standard code block path (colours are updated in place on a theme switch when the registered highlighter is an `IThemeAwareCodeHighlighter` or `IDualThemeCodeHighlighter`).
 
 ## License
 

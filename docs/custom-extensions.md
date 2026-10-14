@@ -194,6 +194,8 @@ public class MyHighlighter : ICodeHighlighter
 
 `IThemeAwareCodeHighlighter` adds `HighlightVariant(line, language, isDark)` — called in-place when the user switches themes, allowing code blocks to update colours without a full document re-render.
 
+`IDualThemeCodeHighlighter` goes further: `HighlightBoth(line, language)` tokenises a line once and returns each token's colour for both variants, so a theme switch only recolours the existing text instead of highlighting it again and rebuilding it.
+
 Register on the renderer:
 
 ```csharp

@@ -129,6 +129,8 @@ public class MyHighlighter : IThemeAwareCodeHighlighter
 }
 ```
 
+`IThemeAwareCodeHighlighter` rebuilds a code block's text on every theme switch. To recolour the existing text instead, which is much cheaper on large documents, implement `IDualThemeCodeHighlighter`: its `HighlightBoth(line, language)` tokenises a line once and returns each token's dark and light colours. The built-in TextMate highlighter works this way.
+
 ## License
 
 [MIT](../../LICENSE.md) © Nicolas Musset

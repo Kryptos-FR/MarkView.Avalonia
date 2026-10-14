@@ -11,17 +11,16 @@ namespace MarkView.Avalonia.SyntaxHighlighting;
 
 /// <summary>
 /// Wires <see cref="DualThemeTextMateHighlighter"/> and <see cref="TextMateCodeBlockRenderer"/>
-/// into an <see cref="AvaloniaRenderer"/>. Two <see cref="TextMateHighlighter"/> instances are
-/// created lazily — one for dark themes and one for light — and exposed as an
-/// <see cref="IThemeAwareCodeHighlighter"/> so code block renderers can update token colours
+/// into an <see cref="AvaloniaRenderer"/>. The highlighter is created lazily, holds the dark and
+/// the light theme over one shared set of grammars, and is exposed as an
+/// <see cref="IDualThemeCodeHighlighter"/> so code block renderers can update token colours
 /// in-place when the theme changes without rebuilding the entire document.
 /// </summary>
 public sealed class TextMateExtension : IMarkViewExtension
 {
     private readonly ThemeName _darkTheme;
     private readonly ThemeName _lightTheme;
-    private TextMateHighlighter? _darkHighlighter;
-    private TextMateHighlighter? _lightHighlighter;
+    private DualThemeTextMateHighlighter? _highlighter;
 
     public TextMateExtension(ThemeName darkTheme = ThemeName.DarkPlus, ThemeName lightTheme = ThemeName.LightPlus)
     {
@@ -31,12 +30,10 @@ public sealed class TextMateExtension : IMarkViewExtension
 
     public void Register(AvaloniaRenderer renderer)
     {
-        renderer.CodeHighlighter = new DualThemeTextMateHighlighter(GetDark(), GetLight());
+        renderer.CodeHighlighter = GetHighlighter();
         renderer.ReplaceOrAdd<CodeBlockRenderer>(new TextMateCodeBlockRenderer());
     }
 
     // Stryker disable once assignment : lazily caches the highlighter; without the cache every Register() builds its own instance whose highlighting output is identical, only instance reuse differs
-    private TextMateHighlighter GetDark() => _darkHighlighter ??= new TextMateHighlighter(_darkTheme);
-    // Stryker disable once assignment : lazily caches the highlighter; without the cache every Register() builds its own instance whose highlighting output is identical, only instance reuse differs
-    private TextMateHighlighter GetLight() => _lightHighlighter ??= new TextMateHighlighter(_lightTheme);
+    private DualThemeTextMateHighlighter GetHighlighter() => _highlighter ??= new DualThemeTextMateHighlighter(_darkTheme, _lightTheme);
 }
