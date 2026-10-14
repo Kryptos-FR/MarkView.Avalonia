@@ -54,11 +54,39 @@ public class MermaidDiagramRenderingTests
         return (border, Assert.IsType<Image>(border.Child));
     }
 
+    // A diagram renders once it is laid out near the viewport, so tests that need its result show it.
+    private sealed class Shown : IDisposable
+    {
+        public Shown(Control content)
+        {
+            Window = new Window { Width = 600, Height = 300, Content = content };
+            Window.Show();
+        }
+
+        public Window Window { get; }
+
+        public void Dispose() => Window.Close();
+    }
+
+    private static (Border Border, Image Image, Shown Shown) ShowDiagram(string markdown = Diagram)
+    {
+        var root = Render(markdown);
+        var border = Assert.IsType<Border>(Assert.Single(root.Children));
+        return (border, Assert.IsType<Image>(border.Child), new Shown(root));
+    }
+
+    private static (Border Border, Shown Shown) ShowBorder(string markdown)
+    {
+        var root = Render(markdown);
+        return (Assert.IsType<Border>(Assert.Single(root.Children)), new Shown(root));
+    }
+
     [AvaloniaFact]
     public async Task Valid_diagram_is_rendered_to_an_svg_image()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (border, image) = RenderDiagram();
+        var (border, image, shown) = ShowDiagram();
+        using var _ = shown;
 
         await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
 
@@ -73,7 +101,8 @@ public class MermaidDiagramRenderingTests
     public async Task Invalid_diagram_is_replaced_by_error_and_source_text()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var border = RenderBorder(InvalidDiagram);
+        var (border, shown) = ShowBorder(InvalidDiagram);
+        using var _ = shown;
 
         await AsyncTestHelpers.WaitUntilAsync(() => border.Child is StackPanel);
 
@@ -90,10 +119,11 @@ public class MermaidDiagramRenderingTests
     public async Task Empty_diagram_is_replaced_by_error_and_empty_source_text()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var border = RenderBorder("""
+        var (border, shown) = ShowBorder("""
             ```mermaid
             ```
             """);
+        using var _ = shown;
 
         await AsyncTestHelpers.WaitUntilAsync(() => border.Child is StackPanel);
 
@@ -187,17 +217,33 @@ public class MermaidDiagramRenderingTests
     }
 
     [AvaloniaFact]
-    public async Task Never_attached_diagram_does_not_re_render_on_theme_change()
+    public async Task Never_attached_diagram_is_not_rendered()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
         var (_, image) = RenderDiagram();
-        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
-        var before = image.Source;
 
         theme.Switch(ThemeVariant.Dark);
         await AsyncTestHelpers.PumpAsync();
 
-        Assert.Same(before, image.Source);
+        Assert.Null(image.Source);
+    }
+
+    [AvaloniaFact]
+    public async Task Diagram_below_the_fold_renders_once_scrolled_near()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram);
+        var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        root.Children.Insert(0, new Border { Height = 5000 });
+        var scrollViewer = new ScrollViewer { Content = root };
+        using var shown = new Shown(scrollViewer);
+
+        await AsyncTestHelpers.PumpAsync();
+        Assert.Null(image.Source);
+
+        scrollViewer.Offset = new Vector(0, 4500);
+        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+        Assert.IsType<SvgImage>(image.Source);
     }
 
     [AvaloniaTheory]
@@ -279,7 +325,8 @@ public class MermaidDiagramRenderingTests
     public async Task Unrelated_application_property_change_does_not_re_render()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (_, image) = RenderDiagram();
+        var (_, image, shown) = ShowDiagram();
+        using var _ = shown;
         await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
         var before = image.Source;
         var app = Application.Current!;
@@ -398,8 +445,8 @@ public class MermaidDiagramRenderingTests
     public async Task Never_attached_diagram_is_not_kept_alive_by_the_application()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var (weakRoot, weakImage) = RenderUnreferenced();
-        await AsyncTestHelpers.WaitUntilAsync(() => weakImage.Target is Image { Source: not null });
+        var weakRoot = RenderUnreferenced();
+        await AsyncTestHelpers.PumpAsync();
 
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -410,11 +457,7 @@ public class MermaidDiagramRenderingTests
 
     // Kept out of line so no local in the test method roots the rendered tree.
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-    private static (WeakReference Root, WeakReference Image) RenderUnreferenced()
-    {
-        var root = Render(Diagram);
-        return (new WeakReference(root), new WeakReference(((Border)root.Children[0]).Child));
-    }
+    private static WeakReference RenderUnreferenced() => new(Render(Diagram));
 
     [AvaloniaFact]
     public async Task Diagram_removed_from_tree_while_rendering_shows_its_image_when_reattached()
