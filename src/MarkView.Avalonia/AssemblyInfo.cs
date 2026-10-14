@@ -2,3 +2,5 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("MarkView.Avalonia.Tests")]
 [assembly: InternalsVisibleTo("MarkView.Avalonia.Svg")]
+[assembly: InternalsVisibleTo("MarkView.Avalonia.SyntaxHighlighting")]
+[assembly: InternalsVisibleTo("MarkView.Avalonia.Mermaid")]

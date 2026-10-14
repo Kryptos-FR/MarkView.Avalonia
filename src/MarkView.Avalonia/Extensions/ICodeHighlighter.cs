@@ -25,3 +25,13 @@ public interface IThemeAwareCodeHighlighter : ICodeHighlighter
 {
     IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark);
 }
+
+/// <summary>
+/// Extends <see cref="IThemeAwareCodeHighlighter"/> by tokenising a line once and returning the
+/// colour of every token for both variants, so a theme switch can recolour the existing runs
+/// without tokenising the code again or rebuilding the text.
+/// </summary>
+public interface IDualThemeCodeHighlighter : IThemeAwareCodeHighlighter
+{
+    IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language);
+}

@@ -14,6 +14,7 @@ using Avalonia.VisualTree;
 using Markdig.Syntax;
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Blocks;
 using Mermaider;
 
 namespace MarkView.Avalonia.Mermaid;
@@ -144,69 +145,8 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
         if (!string.IsNullOrEmpty(language))
             border.Classes.Add($"language-{language}");
 
-        if (obj.Lines.Lines == null)
-        {
-            renderer.WriteBlock(border);
-            return;
-        }
-
-        // Materialise source lines once so they can be reused on theme change.
-        // AsMemory() references the Markdig source buffer directly — no per-line allocation.
-        var lineTexts = new List<ReadOnlyMemory<char>>(obj.Lines.Count);
-        for (int i = 0; i < obj.Lines.Count; i++)
-        {
-            var slice = obj.Lines.Lines[i].Slice;
-            lineTexts.Add(slice.Text.AsMemory(slice.Start, slice.Length));
-        }
-
-        var isDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
-        BuildInlines(textBlock, renderer.CodeHighlighter, language, isDark, lineTexts);
-
-        // If the highlighter is theme-aware, rebuild only TextBlock.Inlines when the
-        // theme changes — the Border and its position in the document stay untouched.
-        if (renderer.CodeHighlighter is IThemeAwareCodeHighlighter themeAware)
-        {
-            ThemeTracking.ReapplyOnThemeChange(border, () =>
-            {
-                var newIsDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
-                textBlock.Inlines!.Clear();
-                BuildInlines(textBlock, themeAware, language, newIsDark, lineTexts);
-            });
-        }
+        HighlightedCode.Write(border, textBlock, obj, language, renderer.CodeHighlighter);
 
         renderer.WriteBlock(border);
-    }
-
-    private static void BuildInlines(
-        TextBlock textBlock,
-        ICodeHighlighter? highlighter,
-        string? language,
-        bool isDark,
-        IReadOnlyList<ReadOnlyMemory<char>> lineTexts)
-    {
-        for (int i = 0; i < lineTexts.Count; i++)
-        {
-            if (i > 0) textBlock.Inlines!.Add(new LineBreak());
-
-            var lineText = lineTexts[i];
-            var tokens = highlighter is IThemeAwareCodeHighlighter th
-                ? th.HighlightVariant(lineText, language, isDark)
-                : highlighter?.Highlight(lineText, language);
-
-            if (tokens != null)
-            {
-                foreach (var (text, foreground) in tokens)
-                {
-                    var run = new Run(text);
-                    if (foreground != null)
-                        run.Foreground = foreground;
-                    textBlock.Inlines!.Add(run);
-                }
-            }
-            else
-            {
-                textBlock.Inlines!.Add(new Run(lineText.ToString()));
-            }
-        }
     }
 }

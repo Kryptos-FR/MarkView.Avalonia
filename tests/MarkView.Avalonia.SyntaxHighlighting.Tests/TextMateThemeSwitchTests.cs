@@ -68,10 +68,12 @@ public class TextMateThemeSwitchTests
             window.Show();
             var light = Colours(text);
             var inlineCount = text.Inlines!.Count;
+            var firstRun = text.Inlines[0];
 
             theme.Switch(ThemeVariant.Dark);
 
             Assert.Equal(inlineCount, text.Inlines!.Count);
+            Assert.Same(firstRun, text.Inlines[0]);
             Assert.NotEqual(light, Colours(text));
         }
         finally
@@ -142,12 +144,38 @@ public class TextMateThemeSwitchTests
     public void DualTheme_Highlight_follows_the_application_theme(bool dark)
     {
         using var theme = new ThemeScope(dark ? ThemeVariant.Dark : ThemeVariant.Light);
-        var highlighter = new DualThemeTextMateHighlighter(new TextMateHighlighter(ThemeName.DarkPlus), new TextMateHighlighter(ThemeName.LightPlus));
+        var highlighter = new DualThemeTextMateHighlighter(ThemeName.DarkPlus, ThemeName.LightPlus);
         var line = "public class Foo { }".AsMemory();
 
         var viaTheme = highlighter.Highlight(line, "csharp")!.Select(t => t.Foreground?.ToString());
         var explicitVariant = highlighter.HighlightVariant(line, "csharp", dark)!.Select(t => t.Foreground?.ToString());
 
         Assert.Equal(explicitVariant, viaTheme);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DualTheme_HighlightBoth_matches_each_variant(bool dark)
+    {
+        var highlighter = new DualThemeTextMateHighlighter(ThemeName.DarkPlus, ThemeName.LightPlus);
+        var line = "public class Foo { }".AsMemory();
+
+        var both = highlighter.HighlightBoth(line, "csharp")!;
+        var single = highlighter.HighlightVariant(line, "csharp", dark)!;
+
+        Assert.Equal(single.Select(t => t.Text), both.Select(t => t.Text));
+        Assert.Equal(
+            single.Select(t => t.Foreground?.ToString()),
+            both.Select(t => (dark ? t.Dark : t.Light)?.ToString()));
+    }
+
+    [AvaloniaFact]
+    public void DualTheme_HighlightBoth_returns_null_for_unsupported_language()
+    {
+        var highlighter = new DualThemeTextMateHighlighter(ThemeName.DarkPlus, ThemeName.LightPlus);
+
+        Assert.Null(highlighter.HighlightBoth("x".AsMemory(), "no-such-language"));
+        Assert.Null(highlighter.HighlightBoth("x".AsMemory(), null));
     }
 }
