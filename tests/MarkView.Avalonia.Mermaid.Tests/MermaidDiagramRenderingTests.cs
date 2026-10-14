@@ -246,6 +246,25 @@ public class MermaidDiagramRenderingTests
         Assert.IsType<SvgImage>(image.Source);
     }
 
+    [AvaloniaFact]
+    public async Task Theme_switch_does_not_render_a_diagram_below_the_fold()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram + "\n\n" + Diagram);
+        var above = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        var below = Assert.IsType<Image>(((Border)root.Children[1]).Child);
+        root.Children.Insert(1, new Border { Height = 5000 });
+        using var shown = new Shown(new ScrollViewer { Content = root });
+
+        // The diagram in view re-rendering shows the theme switch has been handled.
+        await AsyncTestHelpers.WaitUntilAsync(() => above.Source is not null);
+        var lightImage = above.Source;
+        theme.Switch(ThemeVariant.Dark);
+        await AsyncTestHelpers.WaitUntilAsync(() => above.Source != lightImage);
+
+        Assert.Null(below.Source);
+    }
+
     [AvaloniaTheory]
     [InlineData(1200)]
     [InlineData(400)]
