@@ -78,6 +78,18 @@ public partial class MarkdownViewer : ContentControl
         AvaloniaProperty.Register<MarkdownViewer, ImageResizeMode>(nameof(ImageResizeMode), ImageResizeMode.ScaleDownToFit);
 
     /// <summary>
+    /// Defines the <see cref="ShowCodeBlockLanguage"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> ShowCodeBlockLanguageProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(ShowCodeBlockLanguage), true);
+
+    /// <summary>
+    /// Defines the <see cref="ShowCodeBlockCopyButton"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> ShowCodeBlockCopyButtonProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(ShowCodeBlockCopyButton), true);
+
+    /// <summary>
     /// Defines the <see cref="TableOfContentsMaxDepth"/> property.
     /// </summary>
     public static readonly StyledProperty<int> TableOfContentsMaxDepthProperty =
@@ -143,6 +155,28 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets whether code blocks show their language (the info string of a fenced code
+    /// block, e.g. <c>csharp</c>) in a toolbar above the code. Defaults to <c>true</c>.
+    /// Can be set from a style, e.g. for every viewer of an application.
+    /// </summary>
+    public bool ShowCodeBlockLanguage
+    {
+        get => GetValue(ShowCodeBlockLanguageProperty);
+        set => SetValue(ShowCodeBlockLanguageProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether code blocks show a button in a toolbar above the code that copies
+    /// the code to the clipboard. Defaults to <c>true</c>.
+    /// Can be set from a style, e.g. for every viewer of an application.
+    /// </summary>
+    public bool ShowCodeBlockCopyButton
+    {
+        get => GetValue(ShowCodeBlockCopyButtonProperty);
+        set => SetValue(ShowCodeBlockCopyButtonProperty, value);
+    }
+
+    /// <summary>
     /// Gets or sets the maximum heading level included in <see cref="TableOfContents"/>.
     /// Headings deeper than this level, and their descendants, are excluded. Defaults to 6 (no limit).
     /// </summary>
@@ -196,6 +230,8 @@ public partial class MarkdownViewer : ContentControl
         BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         SourceProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnSourceChanged());
         ImageResizeModeProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        ShowCodeBlockLanguageProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        ShowCodeBlockCopyButtonProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
     }
@@ -319,6 +355,8 @@ public partial class MarkdownViewer : ContentControl
         {
             BaseUri = BaseUri ?? InferBaseUri(Source),
             ImageResizeMode = ImageResizeMode,
+            ShowCodeBlockLanguage = ShowCodeBlockLanguage,
+            ShowCodeBlockCopyButton = ShowCodeBlockCopyButton,
         };
         renderer.LinkClicked += OnLinkClicked;
 

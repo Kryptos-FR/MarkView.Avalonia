@@ -32,6 +32,10 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-h1` … `markdown-h6` | `TextBlock` | Headings |
 | `markdown-paragraph` | `TextBlock` | Paragraphs |
 | `markdown-code-block` | `Border` | Fenced code block container |
+| `markdown-code-container` | `StackPanel` | Wraps a code block and its toolbar (only when the toolbar is shown) |
+| `markdown-code-header` | `Border` | Code block toolbar |
+| `markdown-code-language` | `TextBlock` | Language label in the toolbar |
+| `markdown-code-copy` | `Button` | Copy button in the toolbar; also has the `copied` class for two seconds after a copy |
 | `markdown-code-inline` | `Border` | Inline code container |
 | `markdown-blockquote` | `Border` | Blockquote container |
 | `markdown-list` | `StackPanel` | Ordered / unordered list |
@@ -145,6 +149,42 @@ Diagram colours are baked into the generated SVG at render time, so they aren't 
   <Setter Property="FontFamily" Value="JetBrains Mono, Cascadia Code, Consolas, Courier New, monospace" />
 </Style>
 ```
+
+### Code block toolbar
+
+When a code block shows its [toolbar](configuration.md#code-block-toolbar), the renderer
+writes a `StackPanel.markdown-code-container` holding a `Border.markdown-code-header` and the
+unchanged `Border.markdown-code-block`. The default theme rounds only the outer corners of the
+pair, so if you give `Border.markdown-code-block` your own `CornerRadius` or `Margin`, also
+style `StackPanel.markdown-code-container > Border.markdown-code-block` to keep them joined.
+
+The copy button's icon (a `PathIcon`), tooltip and accessible name come from the theme, so
+they can be replaced or translated:
+
+```xml
+<Style Selector="Button.markdown-code-copy">
+  <Setter Property="ToolTip.Tip" Value="Copier le code" />
+  <Setter Property="AutomationProperties.Name" Value="Copier le code" />
+</Style>
+<Style Selector="Button.markdown-code-copy.copied">
+  <Setter Property="ToolTip.Tip" Value="Copié" />
+</Style>
+<!-- Show the copy button only while the pointer is over the code block -->
+<Style Selector="StackPanel.markdown-code-container Button.markdown-code-copy">
+  <Setter Property="Opacity" Value="0" />
+</Style>
+<Style Selector="StackPanel.markdown-code-container:pointerover Button.markdown-code-copy">
+  <Setter Property="Opacity" Value="1" />
+</Style>
+```
+
+| Resource key | Dark | Light | Use |
+|---|---|---|---|
+| `MarkdownCodeHeaderBackground` | `#2D2D2D` | `#E4E4E4` | Toolbar background |
+| `MarkdownCodeHeaderForeground` | `#A0A0A0` | `#5F5F5F` | Language label and copy icon |
+| `MarkdownCodeCopyButtonHoverBackground` | `#1AFFFFFF` | `#14000000` | Copy button under the pointer |
+| `MarkdownCodeCopyIcon` | | | `StreamGeometry` of the copy icon |
+| `MarkdownCodeCopiedIcon` | | | `StreamGeometry` of the icon shown after a copy |
 
 ## Template customisation
 

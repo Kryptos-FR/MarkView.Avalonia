@@ -43,7 +43,7 @@ public class MermaidCodeBlockFallbackTests
         renderer.CodeHighlighter = highlighter;
         pipeline.Setup(renderer);
         renderer.Render(Markdown.Parse(markdown, pipeline));
-        var border = Assert.IsType<Border>(Assert.Single(renderer.RootPanel.Children));
+        var border = CodeBlockAssert.CodeBorder(Assert.Single(renderer.RootPanel.Children));
         return (renderer.RootPanel, border, Assert.IsType<TextBlock>(border.Child));
     }
 

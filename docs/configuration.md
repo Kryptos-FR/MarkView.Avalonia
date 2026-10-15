@@ -10,6 +10,8 @@
 | `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
 | `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. |
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
+| `ShowCodeBlockLanguage` | `bool` | `true` | Shows the language of a fenced code block (e.g. `csharp`) in a toolbar above the code. See [Code block toolbar](#code-block-toolbar). |
+| `ShowCodeBlockCopyButton` | `bool` | `true` | Shows a button in a toolbar above each code block that copies the code to the clipboard. See [Code block toolbar](#code-block-toolbar). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
 
@@ -257,3 +259,36 @@ fixed cap, add your own style:
   <Setter Property="MaxWidth" Value="800" />
 </Style>
 ```
+
+## Code block toolbar
+
+Code blocks get a small toolbar above the code, with the block's language on the left and a
+copy button on the right. The button copies the code exactly as written in the markdown, and
+switches to a check mark for two seconds once the copy succeeded. Both parts can be turned off
+independently:
+
+```xml
+<mv:MarkdownViewer ShowCodeBlockLanguage="False" ShowCodeBlockCopyButton="True" />
+```
+
+```csharp
+viewer.ShowCodeBlockCopyButton = false;
+```
+
+Or for every viewer of the application, with a normal Avalonia style:
+
+```xml
+<Style Selector="mv|MarkdownViewer">
+  <Setter Property="ShowCodeBlockLanguage" Value="False" />
+  <Setter Property="ShowCodeBlockCopyButton" Value="False" />
+</Style>
+```
+
+The toolbar is only added when it has something to show: a block without a language
+(an indented block, or a fence without an info string) with the copy button turned off is
+rendered exactly as before, with no toolbar. Changing either property re-renders the document.
+
+The toolbar applies to the built-in code block renderer and to the code blocks of the
+`SyntaxHighlighting` and `Mermaid` (non-diagram fences) packages. Mermaid diagrams and math
+blocks have no toolbar. Text selection skips the toolbar, so selecting and copying across a
+code block copies only the code. See [Theming](theming.md#code-block-toolbar) to restyle it.

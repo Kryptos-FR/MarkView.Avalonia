@@ -32,6 +32,6 @@ public sealed class CodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock>
         renderer.WriteLeafRawLines(obj);
         renderer.Pop();
 
-        renderer.WriteBlock(border);
+        CodeBlockToolbar.Write(renderer, border, obj, (obj as FencedCodeBlock)?.Info);
     }
 }

@@ -6,6 +6,7 @@ using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Markdig;
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Tests.Shared;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Rendering;
@@ -121,7 +122,7 @@ public class AvaloniaRendererTests
                 one
                 two
             """);
-        var text = Assert.IsType<TextBlock>(Assert.IsType<Border>(Assert.Single(root.Children)).Child);
+        var text = Assert.IsType<TextBlock>(CodeBlockAssert.CodeBorder(Assert.Single(root.Children)).Child);
 
         var inlines = text.Inlines!.ToList();
         Assert.Equal(3, inlines.Count);
@@ -137,7 +138,7 @@ public class AvaloniaRendererTests
             ```
             ```
             """);
-        var text = Assert.IsType<TextBlock>(Assert.IsType<Border>(Assert.Single(root.Children)).Child);
+        var text = Assert.IsType<TextBlock>(CodeBlockAssert.CodeBorder(Assert.Single(root.Children)).Child);
 
         Assert.Empty(text.Inlines!);
     }
