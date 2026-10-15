@@ -190,7 +190,7 @@ public class FoldableAlertTests : RenderTestBase
         var alert = RenderAlert("> [!TIP] Title\n> line one\n> line two", pipeline);
 
         Assert.Equal("Title", HeaderText(alert.Header));
-        Assert.Equal(["line one\nline two"], ParagraphTexts(alert.Content));
+        Assert.Equal([$"line one{Environment.NewLine}line two"], ParagraphTexts(alert.Content));
     }
 
     [AvaloniaFact]
