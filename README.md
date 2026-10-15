@@ -68,6 +68,27 @@ MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>((_, e) =>
 });
 ```
 
+### Interactive task lists
+
+Set `AreTaskListsInteractive` to make `- [ ]` / `- [x]` items clickable (off by default, so
+read-only viewers keep the static ☐/☑ glyph). The viewer only toggles the checkbox; it never edits
+its own markdown — handle `TaskToggled` to write the change back to your source:
+
+```csharp
+viewer.AreTaskListsInteractive = true;
+viewer.TaskToggled += (_, e) =>
+{
+    // e.SourceStart / e.SourceLength locate the "[ ]" or "[x]" marker in viewer.Markdown
+    var source = viewer.Markdown!;
+    viewer.Markdown = string.Concat(
+        source.AsSpan(0, e.SourceStart),
+        e.IsChecked ? "[x]" : "[ ]",
+        source.AsSpan(e.SourceStart + e.SourceLength));
+};
+```
+
+See [Interactive task lists](docs/configuration.md#interactive-task-lists) for details.
+
 ### Navigating to an anchor
 
 ```csharp
@@ -158,7 +179,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Superscript | `^text^` |
 | Underline (inserted) | `++text++` |
 | Highlight (marked) | `==text==` |
-| Task lists | `- [x] item` |
+| Task lists | `- [x] item` (clickable with `AreTaskListsInteractive`) |
 | Pipe tables | GFM-style `\| col \| col \|` |
 | Grid tables | RST-style grid tables |
 | Autolinks | bare `https://…` URLs |
@@ -312,6 +333,9 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-code-inline` | Inline code | `Border` |
 | `markdown-blockquote` | Blockquotes | `Border` |
 | `markdown-list` | Lists | `StackPanel` |
+| `markdown-list-marker` | List item bullet, number or task-list glyph | `TextBlock` |
+| `markdown-task-list` | Task-list check glyph (☐/☑) | `TextBlock` |
+| `markdown-task-toggle` | Clickable task-list checkbox (`AreTaskListsInteractive`) | `ToggleButton` |
 | `markdown-thematic-break` | Horizontal rules | `Separator` |
 | `markdown-image` | Images | `Image` |
 | `markdown-link` | Hyperlinks | `HyperlinkButton` |

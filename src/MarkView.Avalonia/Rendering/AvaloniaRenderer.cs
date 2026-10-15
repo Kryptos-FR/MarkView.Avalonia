@@ -54,6 +54,13 @@ public class AvaloniaRenderer : RendererBase
     public bool ShowCodeBlockCopyButton { get; set; } = true;
 
     /// <summary>
+    /// When <c>true</c>, task-list items render a clickable checkbox that raises
+    /// <see cref="TaskToggled"/> when toggled; otherwise a static check glyph.
+    /// Defaults to <c>false</c>.
+    /// </summary>
+    public bool AreTaskListsInteractive { get; set; }
+
+    /// <summary>
     /// Generates GitHub-style anchor IDs for headings. Reset on each render pass.
     /// </summary>
     public SlugGenerator SlugGenerator { get; } = new();
@@ -125,6 +132,25 @@ public class AvaloniaRenderer : RendererBase
 
     internal void OnLinkClicked(string url) =>
         LinkClicked?.Invoke(this, new LinkClickedEventArgs(url));
+
+    /// <summary>
+    /// Raised when the user toggles a task-list checkbox (see <see cref="AreTaskListsInteractive"/>).
+    /// Positions refer to the text the rendered document was parsed from.
+    /// </summary>
+    public event EventHandler<TaskToggledEventArgs>? TaskToggled;
+
+    /// <summary>
+    /// Raises <see cref="TaskToggled"/> for the task item whose first paragraph is <paramref name="paragraph"/>.
+    /// </summary>
+    /// <remarks>
+    /// Markdig only tracks an inline's source span with <c>UsePreciseSourceLocation()</c>, but always
+    /// tracks a block's. A task marker always opens its item's first paragraph and is always three
+    /// characters long (<c>[ ]</c>, <c>[x]</c> or <c>[X]</c>), so the paragraph locates it in any pipeline.
+    /// </remarks>
+    internal void OnTaskToggled(ParagraphBlock paragraph, bool isChecked) =>
+        TaskToggled?.Invoke(this, new TaskToggledEventArgs(isChecked, paragraph.Span.Start, TaskMarkerLength, paragraph.Line));
+
+    private const int TaskMarkerLength = 3;
 
     public AvaloniaRenderer()
     {

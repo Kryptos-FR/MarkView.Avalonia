@@ -51,20 +51,24 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
 
             if (isTaskItem)
             {
-                var taskList = (TaskList)((ParagraphBlock)listItem[0]).Inline!.FirstChild!;
+                var taskParagraph = (ParagraphBlock)listItem[0];
+                var taskList = (TaskList)taskParagraph.Inline!.FirstChild!;
                 // Markdig leaves the space that follows "[x]" in the next literal; the marker
                 // column's margin already separates the glyph from the text.
                 if (taskList.NextSibling is LiteralInline literal)
                     literal.Content.TrimStart();
 
-                var marker = new TextBlock
-                {
-                    Text = taskList.Checked ? "\u2611" : "\u2610",
-                    Margin = new Thickness(0, 0, 8, 0),
-                    VerticalAlignment = VerticalAlignment.Top,
-                };
-                marker.Classes.Add("markdown-list-marker");
-                marker.Classes.Add("markdown-task-list");
+                var glyph = new TextBlock { Text = TaskListToggle.Glyph(taskList.Checked) };
+                glyph.Classes.Add("markdown-list-marker");
+                glyph.Classes.Add("markdown-task-list");
+
+                // Interactive: the glyph becomes the content of a toggle; the toggle takes the
+                // marker's place (and layout) in the item grid.
+                Control marker = renderer.AreTaskListsInteractive
+                    ? TaskListToggle.Create(glyph, taskList.Checked, isChecked => renderer.OnTaskToggled(taskParagraph, isChecked))
+                    : glyph;
+                marker.Margin = new Thickness(0, 0, 8, 0);
+                marker.VerticalAlignment = VerticalAlignment.Top;
                 // Stryker disable once Statement : column 0 is Grid's default column
                 Grid.SetColumn(marker, 0);
                 itemGrid.Children.Add(marker);
