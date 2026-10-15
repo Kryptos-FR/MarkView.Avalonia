@@ -8,6 +8,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
@@ -202,6 +203,61 @@ public class MarkdownViewerTaskListTests
 
         Assert.Equal("![](x =100x100)\n\n- [x] one\n- [ ] two\n- [ ] three", viewer.Markdown);
         Assert.Equal([true, false, false], Toggles(viewer).Select(t => t.IsChecked));
+    }
+
+    [AvaloniaFact]
+    public void Writing_a_toggle_back_keeps_the_rendered_document_and_its_scroll_position()
+    {
+        var markdown = string.Concat(Enumerable.Range(0, 60).Select(i => $"- [ ] task {i}\n"));
+        var viewer = new MarkdownViewer { Markdown = markdown, AreTaskListsInteractive = true };
+        var window = new Window { Width = 400, Height = 300, Content = viewer };
+        viewer.Styles.Add(new StyleInclude((Uri?)null)
+        {
+            Source = new Uri("avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml"),
+        });
+        window.Show();
+        try
+        {
+            var scrollViewer = viewer.GetVisualDescendants().OfType<ScrollViewer>().First();
+            scrollViewer.Offset = new Vector(0, 200);
+            var content = viewer.Content;
+            viewer.TaskToggled += (_, e) =>
+            {
+                var source = viewer.Markdown!;
+                viewer.Markdown = string.Concat(
+                    source.AsSpan(0, e.SourceStart),
+                    e.IsChecked ? "[x]" : "[ ]",
+                    source.AsSpan(e.SourceStart + e.SourceLength));
+            };
+
+            Toggles(viewer)[30].IsChecked = true;
+            Toggles(viewer)[31].IsChecked = true;
+            Toggles(viewer)[30].IsChecked = false;
+
+            Assert.Same(content, viewer.Content);
+            Assert.Equal(200, scrollViewer.Offset.Y);
+            Assert.StartsWith("- [ ] task 30\n- [x] task 31\n", viewer.Markdown![viewer.Markdown.IndexOf("- [ ] task 30", StringComparison.Ordinal)..]);
+
+            // Any other text still re-renders, and the toggled states then come from the markdown.
+            viewer.Markdown += "- [ ] extra\n";
+            Assert.NotSame(content, viewer.Content);
+            Assert.True(Toggles(viewer)[31].IsChecked);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Toggles_not_written_back_are_lost_when_another_text_is_assigned()
+    {
+        var viewer = new MarkdownViewer { Markdown = TwoTasks, AreTaskListsInteractive = true };
+
+        Toggles(viewer)[1].IsChecked = true;
+        viewer.Markdown = TwoTasks + "\n";
+
+        Assert.Equal([true, false], Toggles(viewer).Select(t => t.IsChecked));
     }
 
     // ── Pointer, keyboard and selection ───────────────────────────────────────

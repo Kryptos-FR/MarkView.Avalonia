@@ -260,12 +260,11 @@ viewer.TaskToggled += (_, e) =>
 };
 ```
 
-Assigning `Markdown` re-renders the document, like any other change to it, and scrolls back to the
-top. To keep the reader's place, a host can instead save the patched text without assigning it: the
-patch keeps the text's length, so the positions later reported for the other items stay valid.
-The viewer then still holds the old text, so assign the patched one before anything else
-re-renders it (a `Pipeline`, `BaseUri` or `AreTaskListsInteractive` change), or the old states
-come back.
+The viewer applies each toggle to its own copy of the rendered text the same way (`[x]` or `[ ]`).
+When the text assigned back equals that copy, as in the handler above, the document is not
+re-rendered, so the reader keeps their scroll position and keyboard focus. Any other text re-renders
+as usual and scrolls back to the top. A toggle that is never written back is lost at the next
+re-render, for example after assigning a different text or changing `Pipeline`.
 
 Pressing the checkbox and dragging selects text instead of toggling it, and a selection started on
 text can still be dragged across items. When copied, a checkbox contributes its current ☐/☑ glyph.

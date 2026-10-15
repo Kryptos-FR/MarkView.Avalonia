@@ -45,6 +45,10 @@ public partial class MarkdownViewer : ContentControl
     private const double DragThreshold = 3.0;
 
     private string? _sourceMarkdown;
+
+    // The markdown last rendered, with the task toggles made since applied to it; assigning the same
+    // text to Markdown (as a host writing a toggle back does) then needs no re-render.
+    private string? _renderedMarkdown;
     private CancellationTokenSource? _sourceLoadCts;
 
     private static readonly MarkdownPipeline DefaultPipeline =
@@ -267,7 +271,7 @@ public partial class MarkdownViewer : ContentControl
 
     static MarkdownViewer()
     {
-        MarkdownProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        MarkdownProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnMarkdownChanged());
         PipelineProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         SourceProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnSourceChanged());
@@ -374,9 +378,17 @@ public partial class MarkdownViewer : ContentControl
         return lastSlash > 0 ? new Uri(abs[..(lastSlash + 1)]) : null;
     }
 
+    private void OnMarkdownChanged()
+    {
+        if (_sourceMarkdown is null && string.Equals(Markdown, _renderedMarkdown, StringComparison.Ordinal))
+            return;
+        RenderMarkdown();
+    }
+
     private void RenderMarkdown()
     {
         var markdown = _sourceMarkdown ?? Markdown;
+        _renderedMarkdown = markdown;
         if (string.IsNullOrEmpty(markdown))
         {
             Content = null;
@@ -512,6 +524,8 @@ public partial class MarkdownViewer : ContentControl
     private void OnTaskToggled(TaskToggledEventArgs e, List<SourceShift> shifts)
     {
         var (start, line) = ToSourcePosition(shifts, e.SourceStart, e.Line);
+        if (_renderedMarkdown is { } rendered)
+            _renderedMarkdown = string.Concat(rendered.AsSpan(0, start), e.IsChecked ? "[x]" : "[ ]", rendered.AsSpan(start + e.SourceLength));
         RaiseEvent(new TaskToggledEventArgs(e.IsChecked, start, e.SourceLength, line) { RoutedEvent = TaskToggledEvent });
     }
 
