@@ -25,7 +25,7 @@ viewer.Pipeline = new MarkdownPipelineBuilder()
                                 // highlight, task lists, tables, autolinks, emoji shortcodes,
                                 // Chinese/Japanese/Korean (CJK)-friendly emphasis, YAML front matter (hidden)
     .UseAbbreviations()         // *[HTML]: HyperText Markup Language
-    .UseAlertBlocks()           // > [!NOTE] / > [!WARNING] etc., foldable [!NOTE]- / [!NOTE]+, custom titles
+    .UseAlertBlocks()           // > [!NOTE] / > [!WARNING] etc.
     .UseCitations()             // ""quoted text""
     .UseFigures()               // ^^^ figure blocks
     .UseFootnotes()             // [^1] footnotes
@@ -72,7 +72,7 @@ The last six (`UseDefinitionLists()` to `UseGenericAttributes()`) render as foll
 
 ### Alert blocks
 
-`UseAlertBlocks()` enables Markdig's GitHub alerts and extends them with the Obsidian-style first-line extras, which Markdig alone leaves as a plain blockquote:
+MarkView's `UseExtendedAlertBlocks()` enables Markdig's GitHub alerts (as `UseAlertBlocks()` does) and extends them with the Obsidian-style first-line extras, which Markdig alone leaves as a plain blockquote. `viewer.UseAlertBlocks()` turns them on too:
 
 ```markdown
 > [!NOTE]
@@ -91,7 +91,7 @@ The last six (`UseDefinitionLists()` to `UseGenericAttributes()`) render as foll
 - The fold marker (`-` collapsed, `+` expanded) must follow `]` directly; a title must be separated from `]` or the marker by a space or tab. `> [!NOTE]x` is not an alert.
 - Any kind made of ASCII letters is accepted, as in Markdig: `> [!QUESTION]` renders with the neutral alert style plus a `markdown-alert-question` class.
 - The body of a collapsed alert cannot be selected or copied. `ScrollToAnchor` (and so in-document links and table-of-contents navigation) expands the collapsed alerts around a heading before scrolling to it.
-- The extras need MarkView's `UseAlertBlocks()`; a pipeline built with Markdig's own `UseAlertBlocks()`/`UseAdvancedExtensions()` only parses plain alerts. See [Theming](theming.md#alert-blocks) for the style classes.
+- The extras need `UseExtendedAlertBlocks()`; a pipeline built with only Markdig's `UseAlertBlocks()`/`UseAdvancedExtensions()` parses plain alerts. The two can be combined in either order. See [Theming](theming.md#alert-blocks) for the style classes.
 
 ### Convenience extension methods
 

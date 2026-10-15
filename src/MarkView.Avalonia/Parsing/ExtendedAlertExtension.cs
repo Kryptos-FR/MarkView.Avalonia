@@ -11,7 +11,7 @@ namespace MarkView.Avalonia.Parsing;
 /// <summary>
 /// Swaps Markdig's <see cref="AlertInlineParser"/> for <see cref="ExtendedAlertInlineParser"/>, which also
 /// parses foldable alerts and custom alert titles. Added alongside <see cref="AlertExtension"/> by
-/// <see cref="MarkdownExtensions.UseAlertBlocks"/>, in either order: <see cref="AlertExtension"/> finds the
+/// <see cref="MarkdownExtensions.UseExtendedAlertBlocks"/>, in either order: <see cref="AlertExtension"/> finds the
 /// derived parser and keeps it, only applying its <see cref="AlertExtension.AllowNestedAlerts"/> option.
 /// </summary>
 internal sealed class ExtendedAlertExtension : IMarkdownExtension

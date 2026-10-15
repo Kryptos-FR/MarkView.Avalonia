@@ -19,7 +19,7 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// Supports GitHub GFM variants: NOTE, TIP, WARNING, IMPORTANT, CAUTION; any other kind gets the
 /// neutral <c>markdown-alert</c> style plus its own <c>markdown-alert-&lt;kind&gt;</c> class.
 /// BorderBrush per variant is provided by AXAML theme styles (markdown-alert-note, etc.).
-/// With <see cref="MarkdownExtensions.UseAlertBlocks"/>, an alert can also be foldable
+/// With <see cref="MarkdownExtensions.UseExtendedAlertBlocks"/>, an alert can also be foldable
 /// (<c>[!KIND]-</c> / <c>[!KIND]+</c>: class <c>markdown-alert-collapsible</c>, see
 /// <see cref="CollapsibleAlert"/>) and have a custom title (<c>[!KIND] Title</c>) shown instead of the kind.
 /// </summary>

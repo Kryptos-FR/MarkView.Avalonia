@@ -28,7 +28,7 @@ public class FoldableAlertTests : RenderTestBase
     private sealed record RenderedAlert(Border Border, TextBlock Header, StackPanel Content);
 
     private static MarkdownPipeline AlertPipeline() =>
-        new MarkdownPipelineBuilder().UseAlertBlocks().Build();
+        new MarkdownPipelineBuilder().UseExtendedAlertBlocks().Build();
 
     private static RenderedAlert RenderAlert(string markdown, MarkdownPipeline? pipeline = null)
     {
@@ -185,7 +185,7 @@ public class FoldableAlertTests : RenderTestBase
     [AvaloniaFact]
     public void Title_followed_by_hard_line_breaks_splits_at_the_first_one()
     {
-        var pipeline = new MarkdownPipelineBuilder().UseAlertBlocks().UseHardlineBreaks().Build();
+        var pipeline = new MarkdownPipelineBuilder().UseExtendedAlertBlocks().UseHardlineBreaks().Build();
 
         var alert = RenderAlert("> [!TIP] Title\n> line one\n> line two", pipeline);
 
@@ -290,7 +290,7 @@ public class FoldableAlertTests : RenderTestBase
     {
         var builder = new MarkdownPipelineBuilder();
         builder.Extensions.Add(new AlertExtension { AllowNestedAlerts = allowNested });
-        var pipeline = builder.UseAlertBlocks().Build();
+        var pipeline = builder.UseExtendedAlertBlocks().Build();
 
         var root = Render("- > [!NOTE]- Title\n  > Body", pipeline);
 
@@ -302,7 +302,7 @@ public class FoldableAlertTests : RenderTestBase
     {
         var builder = new MarkdownPipelineBuilder();
         builder.Extensions.Add(new AlertExtension { AllowNestedAlerts = true });
-        var pipeline = builder.UseAlertBlocks().Build();
+        var pipeline = builder.UseExtendedAlertBlocks().Build();
 
         var alert = RenderAlert("> [!NOTE]\n> > [!TIP]- Inner\n> > Body", pipeline);
 
@@ -313,12 +313,12 @@ public class FoldableAlertTests : RenderTestBase
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void UseAlertBlocks_installs_a_single_extended_alert_parser_whatever_the_order(bool alertExtensionFirst)
+    public void UseExtendedAlertBlocks_installs_a_single_extended_alert_parser_whatever_the_order(bool alertExtensionFirst)
     {
         var builder = new MarkdownPipelineBuilder();
         if (alertExtensionFirst)
             builder.Extensions.Add(new AlertExtension { AllowNestedAlerts = true });
-        builder.UseAlertBlocks().UseAlertBlocks();
+        builder.UseExtendedAlertBlocks().UseExtendedAlertBlocks();
         if (!alertExtensionFirst)
             builder.Extensions.Find<AlertExtension>()!.AllowNestedAlerts = true;
         builder.Build();

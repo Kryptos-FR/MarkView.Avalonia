@@ -173,7 +173,8 @@ These require adding `.UseXxx()` to the pipeline (see [Extension Methods](#exten
 | Feature | Activation | Syntax |
 |---------|-----------|--------|
 | Abbreviations | `UseAbbreviations()` | `*[HTML]: …` |
-| GitHub alert blocks | `UseAlertBlocks()` | `> [!NOTE]` etc.; Obsidian-style `> [!NOTE] Custom title` and foldable `> [!NOTE]-` (collapsed) / `> [!NOTE]+` (expanded) |
+| GitHub alert blocks | `UseAlertBlocks()` | `> [!NOTE]` etc. |
+| Foldable alerts and custom titles | `UseExtendedAlertBlocks()` (also enabled by `viewer.UseAlertBlocks()`) | Obsidian-style `> [!NOTE] Custom title`, foldable `> [!NOTE]-` (collapsed) / `> [!NOTE]+` (expanded) |
 | Citations | `UseCitations()` | `""quoted text""` |
 | Figures | `UseFigures()` | `^^^` / `^^^ caption` |
 | Footnotes | `UseFootnotes()` | `[^1]` / `[^1]: …` |

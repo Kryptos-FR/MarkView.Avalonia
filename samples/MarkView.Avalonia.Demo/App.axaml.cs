@@ -21,7 +21,7 @@ public class App : Application
         MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
             .UseSupportedExtensions(new MarkdownExtensionsOptions { PipeTable = new PipeTableOptions { InferColumnWidthsFromSeparator = true } })
             .UseAbbreviations()
-            .UseAlertBlocks()
+            .UseExtendedAlertBlocks()
             .UseCitations()
             .UseFigures()
             .UseFootnotes()

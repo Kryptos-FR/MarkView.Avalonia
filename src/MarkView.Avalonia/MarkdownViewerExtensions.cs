@@ -38,7 +38,7 @@ public static class MarkdownViewerExtensions
     {
         viewer.Pipeline = new MarkdownPipelineBuilder()
             .UseSupportedExtensions()
-            .UseAlertBlocks()
+            .UseExtendedAlertBlocks()
             .Build();
         return viewer;
     }
