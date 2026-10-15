@@ -173,7 +173,7 @@ These require adding `.UseXxx()` to the pipeline (see [Extension Methods](#exten
 | Feature | Activation | Syntax |
 |---------|-----------|--------|
 | Abbreviations | `UseAbbreviations()` | `*[HTML]: …` |
-| GitHub alert blocks | `UseAlertBlocks()` | `> [!NOTE]` etc. |
+| GitHub alert blocks | `UseAlertBlocks()` | `> [!NOTE]` etc.; Obsidian-style `> [!NOTE] Custom title` and foldable `> [!NOTE]-` (collapsed) / `> [!NOTE]+` (expanded) |
 | Citations | `UseCitations()` | `""quoted text""` |
 | Figures | `UseFigures()` | `^^^` / `^^^ caption` |
 | Footnotes | `UseFootnotes()` | `[^1]` / `[^1]: …` |
@@ -320,7 +320,9 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-marked` | Highlighted text (`==…==`) | `Span` |
 | `markdown-alert` | Alert block container | `Border` |
 | `markdown-alert-note` … `markdown-alert-caution` | Per-kind border colour | `Border` |
-| `markdown-alert-header` | Alert kind label | `TextBlock` |
+| `markdown-alert-header` | Alert kind label or custom title | `TextBlock` |
+| `markdown-alert-collapsible` | Foldable alert (`:expanded` while open) | `Border` |
+| `markdown-alert-chevron` | Fold indicator in a foldable alert's header | `Run` |
 | `markdown-figure` | Figure container | `Border` |
 | `markdown-figure-caption` | Figure caption | `TextBlock` |
 | `markdown-abbr` | Abbreviation with tooltip | `TextBlock` |

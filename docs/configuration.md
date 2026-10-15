@@ -25,7 +25,7 @@ viewer.Pipeline = new MarkdownPipelineBuilder()
                                 // highlight, task lists, tables, autolinks, emoji shortcodes,
                                 // Chinese/Japanese/Korean (CJK)-friendly emphasis, YAML front matter (hidden)
     .UseAbbreviations()         // *[HTML]: HyperText Markup Language
-    .UseAlertBlocks()           // > [!NOTE] / > [!WARNING] etc.
+    .UseAlertBlocks()           // > [!NOTE] / > [!WARNING] etc., foldable [!NOTE]- / [!NOTE]+, custom titles
     .UseCitations()             // ""quoted text""
     .UseFigures()               // ^^^ figure blocks
     .UseFootnotes()             // [^1] footnotes
@@ -69,6 +69,29 @@ The last six (`UseDefinitionLists()` to `UseGenericAttributes()`) render as foll
 
 - **List extras** number items with letters or roman numerals. The `.` or `)` after the number is kept for every ordered list.
 - **Generic attributes** add each `{.name}` class to the control or inline rendered for that element (heading, paragraph, link, emphasis, container…), so your own styles can target it, for example `TextBlock.markdown-paragraph.note`. Ids and other attributes are ignored. Markdig only parses attributes for the extensions set up before it, so call `UseGenericAttributes()` last.
+
+### Alert blocks
+
+`UseAlertBlocks()` enables Markdig's GitHub alerts and extends them with the Obsidian-style first-line extras, which Markdig alone leaves as a plain blockquote:
+
+```markdown
+> [!NOTE]
+> Plain GitHub alert: the header shows the kind.
+
+> [!TIP] Custom *title*
+> The header shows "Custom title" (inline formatting kept) instead of "TIP".
+
+> [!WARNING]- Collapsed by default
+> Click the header, or focus it and press Enter or Space, to show this body.
+
+> [!IMPORTANT]+
+> Foldable, starts expanded.
+```
+
+- The fold marker (`-` collapsed, `+` expanded) must follow `]` directly; a title must be separated from `]` or the marker by a space or tab. `> [!NOTE]x` is not an alert.
+- Any kind made of ASCII letters is accepted, as in Markdig: `> [!QUESTION]` renders with the neutral alert style plus a `markdown-alert-question` class.
+- The body of a collapsed alert cannot be selected or copied. `ScrollToAnchor` (and so in-document links and table-of-contents navigation) expands the collapsed alerts around a heading before scrolling to it.
+- The extras need MarkView's `UseAlertBlocks()`; a pipeline built with Markdig's own `UseAlertBlocks()`/`UseAdvancedExtensions()` only parses plain alerts. See [Theming](theming.md#alert-blocks) for the style classes.
 
 ### Convenience extension methods
 
@@ -208,6 +231,8 @@ viewer.ScrollToAnchor("fn-1");            // matches footnote [^1]
 ```
 
 Anchors are generated from heading text using GitHub-compatible slug rules (lowercase, spaces to hyphens, non-alphanumeric stripped). Headings with identical slugs are disambiguated with a numeric suffix (`-1`, `-2`, …).
+
+A heading inside a collapsed [foldable alert](#alert-blocks) is still listed in `TableOfContents`; scrolling to its anchor expands the alert first.
 
 ## Table of contents
 

@@ -14,7 +14,9 @@
           <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#2D2D2D</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#A0A0A0</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#1AFFFFFF</SolidColorBrush>
-          <!-- Alert accent colours — dark theme -->
+          <!-- Alert accent colours — dark theme (Default: kinds without their own colours, e.g. [!QUESTION]) -->
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#71717A</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBackground">#1A71717A</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#3B82F6</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#1A3B82F6</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertTipBorder">#22C55E</SolidColorBrush>
@@ -35,7 +37,9 @@
           <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#E4E4E4</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#5F5F5F</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#14000000</SolidColorBrush>
-          <!-- Alert accent colours — light theme -->
+          <!-- Alert accent colours — light theme (Default: kinds without their own colours, e.g. [!QUESTION]) -->
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#71717A</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBackground">#F4F4F5</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#2563EB</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#EFF6FF</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertTipBorder">#16A34A</SolidColorBrush>
@@ -268,8 +272,10 @@
     <Setter Property="BaselineAlignment" Value="Superscript" />
   </Style>
 
-  <!-- Alert blocks — shared layout -->
+  <!-- Alert blocks — shared layout; the colours apply to kinds without a variant style below -->
   <Style Selector="Border.markdown-alert">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownAlertDefaultBorder}" />
+    <Setter Property="Background" Value="{DynamicResource MarkdownAlertDefaultBackground}" />
     <Setter Property="BorderThickness" Value="4,0,0,0" />
     <Setter Property="CornerRadius" Value="0,4,4,0" />
     <Setter Property="Padding" Value="12,8" />
@@ -279,6 +285,18 @@
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="FontSize" Value="13" />
     <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <!-- Foldable alerts ([!KIND]- / [!KIND]+): the header toggles the body; :expanded while it is shown -->
+  <Style Selector="Border.markdown-alert-collapsible TextBlock.markdown-alert-header">
+    <!-- A background makes the whole header row clickable, not just its glyphs -->
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Border.markdown-alert-collapsible:not(:expanded) TextBlock.markdown-alert-header">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="Border.markdown-alert-collapsible TextBlock.markdown-alert-header:focus-visible">
+    <Setter Property="TextDecorations" Value="Underline" />
   </Style>
   <!-- Alert variants — border + background per kind -->
   <Style Selector="Border.markdown-alert-note">
