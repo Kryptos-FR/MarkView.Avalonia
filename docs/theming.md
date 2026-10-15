@@ -103,6 +103,57 @@ Example — colour the NOTE variant:
 | `markdown-footnote-group` | `StackPanel` | Definition list at end of document |
 | `markdown-footnote-item` | `Grid` | Individual footnote row |
 
+### Definition lists
+
+Requires Markdig's `UseDefinitionLists()`.
+
+| Class | Control | Element |
+|-------|---------|---------|
+| `markdown-definition-list` | `StackPanel` | The whole list |
+| `markdown-definition-term` | `TextBlock` | A defined term |
+| `markdown-definition` | `StackPanel` | One definition, indented |
+
+### Custom containers
+
+Requires Markdig's `UseCustomContainers()`.
+
+| Class | Control | Element |
+|-------|---------|---------|
+| `markdown-custom-container` | `Border` | A `:::name` block; it also gets `name` as a class |
+| `markdown-custom-container-title` | `TextBlock` | Text after the name (`:::name Title`) |
+| `markdown-custom-inline` | `Span` | An inline `::text::` |
+
+Example: style `:::warning` containers like the warning alert:
+
+```xml
+<Style Selector="Border.markdown-custom-container.warning">
+  <Setter Property="BorderBrush" Value="{DynamicResource MarkdownAlertWarningBorder}" />
+  <Setter Property="Background" Value="{DynamicResource MarkdownAlertWarningBackground}" />
+</Style>
+```
+
+### Footers
+
+Requires Markdig's `UseFooters()`.
+
+| Class | Control | Element |
+|-------|---------|---------|
+| `markdown-footer` | `StackPanel` | The `^^` footer lines |
+
+### Classes from generic attributes
+
+With Markdig's `UseGenericAttributes()` (called last), `{.name}` after an element adds `name` to the style classes of the control or inline rendered for it, next to its `markdown-*` classes:
+
+```markdown
+Read the docs first. {.note}
+```
+
+```xml
+<Style Selector="TextBlock.markdown-paragraph.note">
+  <Setter Property="FontStyle" Value="Italic" />
+</Style>
+```
+
 ### Mermaid (`MarkView.Avalonia.Mermaid`)
 
 | Class | Control | Element |

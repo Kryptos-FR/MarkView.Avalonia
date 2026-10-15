@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Interactivity;
@@ -130,6 +131,37 @@ public class AvaloniaRenderer : RendererBase
         RootPanel = new StackPanel { Spacing = 8 };
         _stack.Push(new BlockContainer(RootPanel));
         LoadRenderers();
+        ObjectWriteBefore += (_, obj) => _writing.Push(
+            ApplyAttributeClasses ? Markdig.Renderers.Html.HtmlAttributesExtensions.TryGetAttributes(obj)?.Classes : null);
+        ObjectWriteAfter += (_, _) => _writing.Pop();
+    }
+
+    /// <summary>
+    /// When <c>true</c>, the classes Markdig attaches to an element (<c>{.name}</c> with Markdig's
+    /// <c>UseGenericAttributes()</c>) are added to the <see cref="StyledElement.Classes"/> of the
+    /// control or inline rendered for it, so they can be targeted by styles.
+    /// <see cref="MarkdownViewer"/> turns this on when its pipeline uses generic attributes.
+    /// </summary>
+    public bool ApplyAttributeClasses { get; set; }
+
+    // The attribute classes of each object being written, innermost last. An entry is cleared once
+    // given to the first control or inline its object writes.
+    private readonly Stack<List<string>?> _writing = new();
+
+    private void AddAttributeClasses(StyledElement element)
+    {
+        if (!_writing.TryPop(out var classes))
+            return;
+        _writing.Push(null);
+
+        if (classes is null)
+            return;
+        foreach (var name in classes)
+        {
+            // Avalonia reserves names starting with ':' for pseudo-classes.
+            if (name.Length > 0 && name[0] != ':')
+                element.Classes.Add(name);
+        }
     }
 
     public override object Render(MarkdownObject markdownObject)
@@ -163,6 +195,9 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new TableRenderer());
         ObjectRenderers.Add(new FootnoteGroupRenderer());
         ObjectRenderers.Add(new FigureRenderer());
+        ObjectRenderers.Add(new DefinitionListRenderer());
+        ObjectRenderers.Add(new CustomContainerRenderer());
+        ObjectRenderers.Add(new FooterBlockRenderer());
 
         // Inline renderers
         ObjectRenderers.Add(new LiteralInlineRenderer());
@@ -177,6 +212,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new TaskListRenderer());
         ObjectRenderers.Add(new FootnoteLinkRenderer());
         ObjectRenderers.Add(new AbbreviationInlineRenderer());
+        ObjectRenderers.Add(new SmartyPantInlineRenderer());
     }
 
     /// <summary>
@@ -209,7 +245,10 @@ public class AvaloniaRenderer : RendererBase
     public void WriteBlock(Control control)
     {
         if (_stack.Peek() is BlockContainer block)
+        {
+            AddAttributeClasses(control);
             block.Add(control);
+        }
     }
 
     /// <summary>
@@ -218,7 +257,10 @@ public class AvaloniaRenderer : RendererBase
     public void WriteInline(AvaloniaInline inline)
     {
         if (_stack.Peek() is InlineContainer container)
+        {
+            AddAttributeClasses(inline);
             container.Add(inline);
+        }
     }
 
     /// <summary>
@@ -227,7 +269,10 @@ public class AvaloniaRenderer : RendererBase
     public void WriteInline(Control control)
     {
         if (_stack.Peek() is InlineContainer container)
+        {
+            AddAttributeClasses(control);
             container.Add(control);
+        }
     }
 
     /// <summary>

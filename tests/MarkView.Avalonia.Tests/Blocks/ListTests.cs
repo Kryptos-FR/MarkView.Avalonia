@@ -167,4 +167,61 @@ public class ListTests : RenderTestBase
         var panel = Assert.IsType<StackPanel>(Assert.Single(renderer.RootPanel.Children));
         Assert.Equal(["1.", "2."], Markers(panel).Select(m => m.Text));
     }
+
+    [AvaloniaTheory]
+    [InlineData("a. x\nb. y", new[] { "a.", "b." })]
+    [InlineData("A. x\nB. y", new[] { "A.", "B." })]
+    [InlineData("i. x\nii. y\niii. z", new[] { "i.", "ii.", "iii." })]
+    [InlineData("IV. x\nV. y", new[] { "IV.", "V." })]
+    [InlineData("c) x\nd) y", new[] { "c)", "d)" })]
+    public void List_extras_markers_use_letters_and_roman_numerals(string markdown, string[] expected)
+    {
+        var list = Assert.IsType<StackPanel>(Assert.Single(
+            Render(markdown, new MarkdownPipelineBuilder().UseListExtras().Build()).Children));
+
+        Assert.Equal(expected, Markers(list).Select(m => m.Text));
+    }
+
+    [AvaloniaFact]
+    public void Ordered_list_with_parenthesis_delimiter_keeps_it()
+    {
+        var list = Assert.IsType<StackPanel>(Assert.Single(Render("1) a\n2) b").Children));
+
+        Assert.Equal(["1)", "2)"], Markers(list).Select(m => m.Text));
+    }
+
+    [Theory]
+    [InlineData(1, 'a', '.', "a.")]
+    [InlineData(26, 'a', '.', "z.")]
+    [InlineData(27, 'a', '.', "aa.")]
+    [InlineData(52, 'A', '.', "AZ.")]
+    [InlineData(53, 'A', ')', "BA)")]
+    [InlineData(0, 'a', '.', "0.")]
+    [InlineData(4, 'i', '.', "iv.")]
+    [InlineData(9, 'I', '.', "IX.")]
+    [InlineData(14, 'I', '.', "XIV.")]
+    [InlineData(40, 'I', '.', "XL.")]
+    [InlineData(90, 'I', '.', "XC.")]
+    [InlineData(400, 'I', '.', "CD.")]
+    [InlineData(1994, 'I', '.', "MCMXCIV.")]
+    [InlineData(3999, 'I', '.', "MMMCMXCIX.")]
+    [InlineData(4000, 'I', '.', "4000.")]
+    [InlineData(0, 'i', '.', "0.")]
+    [InlineData(12, '1', ')', "12)")]
+    [InlineData(12, '1', '\0', "12.")]
+    public void Ordered_marker_formats_the_number_for_the_bullet_type(int number, char bulletType, char delimiter, string expected)
+    {
+        Assert.Equal(expected, MarkView.Avalonia.Rendering.Blocks.ListRenderer.OrderedMarker(number, bulletType, delimiter));
+    }
+
+    [AvaloniaFact]
+    public void Ordered_markers_share_one_right_aligned_column()
+    {
+        var list = Assert.IsType<StackPanel>(Assert.Single(Render("8. a\n9. b\n10. c").Children));
+
+        Assert.True(Grid.GetIsSharedSizeScope(list));
+        var items = list.Children.Cast<Grid>().ToList();
+        Assert.All(items, item => Assert.Equal("MarkdownListMarker", item.ColumnDefinitions[0].SharedSizeGroup));
+        Assert.All(Markers(list), marker => Assert.Equal(global::Avalonia.Layout.HorizontalAlignment.Right, marker.HorizontalAlignment));
+    }
 }

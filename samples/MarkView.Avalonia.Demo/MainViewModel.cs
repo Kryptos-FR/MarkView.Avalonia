@@ -25,7 +25,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private const string ExtensionsShowcaseMarkdown = """
         # Opt-In Extensions Showcase
 
-        This page demonstrates the seven opt-in extensions added to MarkView.Avalonia.
+        This page demonstrates the opt-in extensions supported by MarkView.Avalonia.
         All are activated via a combined pipeline in this demo.
 
         ---
@@ -96,6 +96,55 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         ---
 
+        ## Definition Lists
+
+        Markdown
+        :   A lightweight markup language with plain-text formatting syntax.
+
+        Avalonia
+        :   A cross-platform UI framework for .NET.
+        :   Also the name of a fictional island, in some stories.
+
+        ---
+
+        ## Custom Containers
+
+        :::warning Before you upgrade
+        Custom containers wrap any blocks. The container's name (`warning` here) becomes a style
+        class, and the text after it becomes the title.
+        :::
+
+        Inline containers ::look like this:: and can be styled through `Span.markdown-custom-inline`.
+
+        ---
+
+        ## Smart Punctuation
+
+        "Double quotes" and 'single quotes' curl, -- becomes an en dash, --- an em dash,
+        ... an ellipsis and <<these>> guillemets.
+
+        ---
+
+        ## Letter and Roman Numeral Lists
+
+        a. First
+        b. Second
+        c. Third
+
+        Roman numerals start a list of their own:
+
+        i. One
+        ii. Two
+        iii. Three
+
+        ---
+
+        ## Style Classes from Attributes
+
+        This paragraph has the `demo-highlight` class, which the demo app styles in `App.axaml`. {.demo-highlight}
+
+        ---
+
         ## Hardline Breaks
 
         With `UseHardlineBreaks()`, every soft line break renders as an explicit line break
@@ -118,6 +167,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Short URLs are also supported:
 
         ![Big Buck Bunny trailer](https://youtu.be/aqz-KE-bpKQ)
+
+        ^^ Footer lines, written with ^^, close a document in smaller, dimmed text.
         """;
 
     private const string CustomStylingMarkdown = """
