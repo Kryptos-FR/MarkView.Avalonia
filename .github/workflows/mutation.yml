@@ -2,7 +2,25 @@ name: Mutation Testing
 
 on:
   workflow_call:
+    inputs:
+      projects:
+        type: string
+        default: '["MarkView.Avalonia.Tests","MarkView.Avalonia.Math.Tests","MarkView.Avalonia.Mermaid.Tests","MarkView.Avalonia.Svg.Tests","MarkView.Avalonia.SyntaxHighlighting.Tests"]'
+        description: JSON array of the test projects to run Stryker in
+      since:
+        type: string
+        default: ''
+        description: If set, only mutate the code changed since this committish (Stryker's --since)
   workflow_dispatch:
+    inputs:
+      projects:
+        type: string
+        default: '["MarkView.Avalonia.Tests","MarkView.Avalonia.Math.Tests","MarkView.Avalonia.Mermaid.Tests","MarkView.Avalonia.Svg.Tests","MarkView.Avalonia.SyntaxHighlighting.Tests"]'
+        description: JSON array of the test projects to run Stryker in
+      since:
+        type: string
+        default: ''
+        description: If set, only mutate the code changed since this committish (e.g. origin/main)
 
 permissions:
   contents: read
@@ -14,14 +32,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-project:
-          - MarkView.Avalonia.Tests
-          - MarkView.Avalonia.Math.Tests
-          - MarkView.Avalonia.Mermaid.Tests
-          - MarkView.Avalonia.Svg.Tests
-          - MarkView.Avalonia.SyntaxHighlighting.Tests
+        test-project: ${{ fromJSON(inputs.projects) }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          # --since diffs against another branch, so it needs the history.
+          fetch-depth: 0
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -33,9 +49,14 @@ jobs:
       - name: Restore solution
         run: dotnet restore --locked-mode
 
+      # With --since, Stryker only tests the mutants in changed files and the mutants that
+      # changed test files cover; any other change inside the test project (lock file, test
+      # assets, stryker-config.json) makes it test the whole project.
       - name: Run Stryker
         working-directory: tests/${{ matrix.test-project }}
-        run: dotnet stryker
+        env:
+          SINCE: ${{ inputs.since }}
+        run: dotnet stryker ${SINCE:+--since:$SINCE}
 
       - name: Upload mutation report
         uses: actions/upload-artifact@v7
@@ -49,6 +70,7 @@ jobs:
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
@@ -61,13 +83,16 @@ jobs:
 
       - name: Merge mutation reports
         shell: pwsh
+        env:
+          SINCE: ${{ inputs.since }}
         run: |
           ./.github/scripts/Merge-MutationReports.ps1 `
             -ReportsRoot mutation-reports `
             -OutputPath mutation-reports/CombinedMutationReport.md `
             -MinimumScore 70 `
             -WarningScore 70 `
-            -ProjectWarningScore 60
+            -ProjectWarningScore 60 `
+            -Since $env:SINCE
 
       - name: Upload combined mutation report
         uses: actions/upload-artifact@v7
@@ -76,9 +101,22 @@ jobs:
           name: combined-mutation-report
           path: mutation-reports/CombinedMutationReport.md
 
+      - name: Write mutation summary
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          if [ -f mutation-reports/CombinedMutationReport.md ]; then
+            cat mutation-reports/CombinedMutationReport.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # A pull request from a fork gets a read-only token and cannot comment; its summary
+      # is on the run page instead.
       - name: Post mutation summary to PR
         uses: marocchino/sticky-pull-request-comment@v3
-        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        if: >
+          !cancelled()
+          && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
         with:
           header: mutation
           recreate: true

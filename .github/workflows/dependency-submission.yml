@@ -1,11 +1,10 @@
 name: Dependency Submission
 
+# Keeps the repository's dependency graph up to date from main. Pull requests don't need it:
+# nothing reviews their dependency snapshot.
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   id-token: write

@@ -1,0 +1,41 @@
+name: PR Labels
+
+# Runs what a CI label asks for at the moment it is added, without restarting the whole CI.
+# Later pushes pick the label up in ci.yml.
+#
+# - `ci-full`: the AOT publish on Windows and macOS (CI already covers Ubuntu) and a full,
+#   non-incremental mutation run of every test project.
+# - `ci-run-on-draft`: nothing here; ci.yml runs the normal suites on the draft's next push.
+#
+# Adding a label needs write access to the repository, so the label is the authorization.
+# These are separate checks: they do not feed ci.yml's Gate.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}-${{ github.event.label.name }}
+  cancel-in-progress: true
+
+jobs:
+  aot-publish:
+    if: github.event.label.name == 'ci-full'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    uses: ./.github/workflows/aot-publish.yml
+    with:
+      os: ${{ matrix.os }}
+
+  mutation:
+    if: github.event.label.name == 'ci-full'
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/mutation.yml
