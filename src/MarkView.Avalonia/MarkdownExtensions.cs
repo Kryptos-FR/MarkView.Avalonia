@@ -40,4 +40,17 @@ public static class MarkdownExtensions
     {
         return builder.UseSoftlineBreakAsHardlineBreak();
     }
+
+    /// <summary>
+    /// Enables Markdig GitHub-style alert block parsing (as <c>UseAlertBlocks()</c> does), plus the
+    /// Obsidian-style extras that Markdig alone leaves as a plain blockquote: foldable alerts
+    /// (<c>&gt; [!NOTE]-</c> starts collapsed, <c>&gt; [!NOTE]+</c> starts expanded) and custom titles
+    /// (<c>&gt; [!TIP] My title</c>). Can be combined with Markdig's <c>UseAlertBlocks()</c> in either order.
+    /// Activate on the viewer with <c>viewer.UseAlertBlocks()</c>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseExtendedAlertBlocks(this MarkdownPipelineBuilder builder)
+    {
+        builder.Extensions.AddIfNotAlready<Parsing.ExtendedAlertExtension>();
+        return builder.Use<Markdig.Extensions.Alerts.AlertExtension>();
+    }
 }

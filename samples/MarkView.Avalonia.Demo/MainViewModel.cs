@@ -60,6 +60,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
         > [!CAUTION]
         > The CAUTION alert advises about risks or negative consequences.
 
+        Obsidian-style extras: a custom title after the kind, and `-` / `+` right after it for a foldable alert that starts collapsed / expanded. Click the header (or focus it and press Enter or Space) to toggle it:
+
+        > [!TIP] Custom titles can use **inline** `markdown`
+        > The title replaces the kind name in the header.
+
+        > [!NOTE]- Click to expand
+        > This alert starts collapsed. Its content is hidden from selection and copy until expanded.
+
+        > [!WARNING]+ Click to collapse
+        > This alert starts expanded.
+
+        > [!QUESTION]
+        > Kinds other than the five GitHub ones get a neutral style.
+
         ---
 
         ## Abbreviations

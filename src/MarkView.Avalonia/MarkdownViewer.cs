@@ -18,6 +18,7 @@ using Markdig.Extensions.SmartyPants;
 
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Rendering.Inlines;
 
 namespace MarkView.Avalonia;
@@ -739,6 +740,10 @@ public partial class MarkdownViewer : ContentControl
     {
         if (!_anchors.TryGetValue(anchorId, out var control))
             return;
+
+        // A heading inside a collapsed alert has no position until the alert is expanded and laid out.
+        if (CollapsibleAlert.ExpandAncestors(control))
+            control.UpdateLayout();
 
         if (_scrollViewer is null)
         {

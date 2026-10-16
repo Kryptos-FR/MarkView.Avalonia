@@ -64,14 +64,28 @@ Subscript, superscript, underline (inserted), bold, italic, and strikethrough us
 
 | Class | Control | Element |
 |-------|---------|---------|
-| `markdown-alert` | `Border` | Alert container |
+| `markdown-alert` | `Border` | Alert container; its colours (`MarkdownAlertDefaultBorder` / `MarkdownAlertDefaultBackground`) apply to kinds without a variant below, e.g. `[!QUESTION]` |
 | `markdown-alert-note` | `Border` | NOTE variant |
 | `markdown-alert-tip` | `Border` | TIP variant |
 | `markdown-alert-important` | `Border` | IMPORTANT variant |
 | `markdown-alert-warning` | `Border` | WARNING variant |
 | `markdown-alert-caution` | `Border` | CAUTION variant |
-| `markdown-alert-header` | `TextBlock` | Alert kind label (e.g. "NOTE") |
+| `markdown-alert-<kind>` | `Border` | Any other kind, lower-cased (e.g. `markdown-alert-question`) |
+| `markdown-alert-header` | `TextBlock` | Alert kind label (e.g. "NOTE"), or the custom title (`> [!TIP] Title`) |
 | `markdown-alert-content` | `StackPanel` | Alert body |
+| `markdown-alert-collapsible` | `Border` | Foldable alert (`> [!NOTE]-` / `> [!NOTE]+`); has the `:expanded` pseudo-class while its body is shown |
+| `markdown-alert-chevron` | `Control` | Fold indicator at the start of a foldable alert's header: a triangle pointing right when collapsed and down when expanded, drawn in the header's `Foreground` and sized by its `FontSize` |
+
+A foldable alert's header is focusable and toggles the body on click, Enter or Space; the body's visibility is set by the control, not by a style. The default theme gives the header a transparent background (so the whole row is clickable), a hand cursor, and an underline when focused from the keyboard:
+
+```xml
+<Style Selector="Border.markdown-alert-collapsible TextBlock.markdown-alert-header">
+  <Setter Property="Background" Value="Transparent" />
+  <Setter Property="Cursor" Value="Hand" />
+</Style>
+<Style Selector="Border.markdown-alert-collapsible:not(:expanded) TextBlock.markdown-alert-header">
+  <Setter Property="Margin" Value="0" />
+</Style>
 
 Example — colour the NOTE variant:
 

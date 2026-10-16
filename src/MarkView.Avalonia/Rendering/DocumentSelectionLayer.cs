@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Input.Platform;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using Avalonia.VisualTree;
 
 namespace MarkView.Avalonia.Rendering;
 
@@ -98,6 +99,7 @@ internal sealed class DocumentSelectionLayer : Control
         {
             if (entry.AbsEndWithSep <= selStart) continue;  // entirely before selection (including separator)
             if (entry.AbsStart >= selEnd) break;              // entirely after selection
+            if (IsHidden(entry)) continue;                    // e.g. the body of a collapsed alert
 
             int localStart = Math.Max(0, selStart - entry.AbsStart);
             int localEnd = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
@@ -177,6 +179,9 @@ internal sealed class DocumentSelectionLayer : Control
     {
         foreach (var entry in _entries)
         {
+            // A hidden entry keeps the bounds of its last layout, which may lie anywhere.
+            if (IsHidden(entry)) continue;
+
             // Entries are in document order (top to bottom). Once cached bounds show
             // we've passed the pointer's Y, no further entry can match.
             if (entry.CachedBounds is { } b && b.Top > posInLayer.Y)
@@ -206,6 +211,8 @@ internal sealed class DocumentSelectionLayer : Control
     {
         foreach (var entry in _entries)
         {
+            if (IsHidden(entry)) continue;
+
             if (entry.CachedBounds is { } b && b.Top > posInLayer.Y)
                 break;
 
@@ -228,6 +235,7 @@ internal sealed class DocumentSelectionLayer : Control
         {
             if (entry.AbsEnd <= selStart) continue;
             if (entry.AbsStart >= selEnd) break;
+            if (IsHidden(entry)) continue;
 
             var origin = entry.CachedBounds is { } b
                 ? b.TopLeft
@@ -261,6 +269,23 @@ internal sealed class DocumentSelectionLayer : Control
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns <c>true</c> when the entry's element, or one of its ancestors in the document, is hidden
+    /// (<see cref="Visual.IsVisible"/> off), as the body of a collapsed alert is. Hidden entries are neither
+    /// hit-tested, highlighted nor copied. Ancestors above the document (the viewer itself, e.g. on an
+    /// inactive tab) are not considered, so a hidden viewer can still copy its selection.
+    /// </summary>
+    private bool IsHidden(IndexEntry entry)
+    {
+        var documentRoot = this.GetVisualParent();
+        for (Visual? visual = entry.Element; visual is not null && visual != documentRoot; visual = visual.GetVisualParent())
+        {
+            if (!visual.IsVisible)
+                return true;
+        }
+        return false;
+    }
 
     /// <summary>
     /// Returns <paramref name="posInLayer"/> in the entry's element local coordinate space,
