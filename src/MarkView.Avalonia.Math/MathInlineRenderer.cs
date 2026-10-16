@@ -7,12 +7,14 @@ using Avalonia.Media;
 
 using Markdig.Extensions.Mathematics;
 
+using MarkView.Avalonia.Math.Parsing;
 using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia.Math;
 
 /// <summary>
-/// Renders Markdig <see cref="MathInline"/> nodes (<c>$...$</c>) as an inline image
+/// Renders Markdig <see cref="MathInline"/> nodes (<c>$...$</c>, and <c>\(...\)</c> or an in-line
+/// <c>\[...\]</c> once <c>UseMathBracketDelimiters()</c> is enabled) as an inline image
 /// produced by CSharpMath.SkiaSharp.
 /// </summary>
 public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
@@ -23,7 +25,12 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
 
         var image = new Image { Stretch = Stretch.None };
         image.Classes.Add("markdown-math-inline");
-        MarkdownSelection.SetCopyText(image, $"${source}$");
+        MarkdownSelection.SetCopyText(image, obj switch
+        {
+            BracketMathInline { IsDisplay: true } => $"\\[{source}\\]",
+            BracketMathInline => $"\\({source}\\)",
+            _ => $"${source}$",
+        });
 
         if (!TryApplyTheme())
         {
