@@ -22,7 +22,14 @@ internal sealed class IndexEntry
     /// <summary>The text block laying out <see cref="PlainText"/>; <c>null</c> for a block control.</summary>
     public TextBlock? TextBlock { get; }
 
-    public string PlainText { get; }
+    // null for a list marker's entry, which reads its text block's text instead.
+    private readonly string? _plainText;
+
+    /// <summary>
+    /// The entry's text. A list marker's entry (see <see cref="ForMarker"/>) reads its text block's
+    /// current text, so a toggled task-list glyph is copied in its new state.
+    /// </summary>
+    public string PlainText => _plainText ?? TextBlock!.Text!;
     public string Separator { get; }
 
     /// <summary>
@@ -53,15 +60,22 @@ internal sealed class IndexEntry
     {
     }
 
-    private IndexEntry(Control element, TextBlock? textBlock, string plainText, string separator,
+    private IndexEntry(Control element, TextBlock? textBlock, string? plainText, string separator,
         IReadOnlyDictionary<int, string>? embeddedText)
     {
         Element = element;
         TextBlock = textBlock;
-        PlainText = plainText;
+        _plainText = plainText;
         Separator = separator;
         EmbeddedText = embeddedText;
     }
+
+    /// <summary>
+    /// Creates an entry for a list item's marker (bullet, number or task-list check glyph), followed by
+    /// a space, whose text is read from <paramref name="marker"/> when needed. The text may change but
+    /// must keep its length, since the offsets of later entries were stamped from it at registration.
+    /// </summary>
+    public static IndexEntry ForMarker(TextBlock marker) => new(marker, marker, null, " ", null);
 
     /// <summary>
     /// Creates an entry for a non-text block control: a single position, highlighted as a

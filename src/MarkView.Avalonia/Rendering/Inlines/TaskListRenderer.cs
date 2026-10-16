@@ -1,7 +1,6 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 
 using Markdig.Extensions.TaskLists;
@@ -9,7 +8,7 @@ using Markdig.Extensions.TaskLists;
 namespace MarkView.Avalonia.Rendering.Inlines;
 
 /// <summary>
-/// Renders a Markdig <see cref="TaskList"/> as a disabled <see cref="CheckBox"/>.
+/// Renders a Markdig <see cref="TaskList"/> outside a list item as an inline check glyph.
 /// </summary>
 public sealed class TaskListRenderer : AvaloniaObjectRenderer<TaskList>
 {

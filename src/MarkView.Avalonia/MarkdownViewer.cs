@@ -45,6 +45,10 @@ public partial class MarkdownViewer : ContentControl
     private const double DragThreshold = 3.0;
 
     private string? _sourceMarkdown;
+
+    // The markdown last rendered, with the task toggles made since applied to it; assigning the same
+    // text to Markdown (as a host writing a toggle back does) then needs no re-render.
+    private string? _renderedMarkdown;
     private CancellationTokenSource? _sourceLoadCts;
 
     private static readonly MarkdownPipeline DefaultPipeline =
@@ -91,6 +95,12 @@ public partial class MarkdownViewer : ContentControl
     /// </summary>
     public static readonly StyledProperty<bool> ShowCodeBlockCopyButtonProperty =
         AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(ShowCodeBlockCopyButton), true);
+
+    /// <summary>
+    /// Defines the <see cref="AreTaskListsInteractive"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> AreTaskListsInteractiveProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(AreTaskListsInteractive));
 
     /// <summary>
     /// Defines the <see cref="TableOfContentsMaxDepth"/> property.
@@ -180,6 +190,18 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets whether task-list items (<c>- [ ]</c> / <c>- [x]</c>) render a checkbox the user can
+    /// toggle, raising <see cref="TaskToggled"/>. When <c>false</c> (the default) they render a static
+    /// check glyph. The viewer never rewrites <see cref="Markdown"/> itself: the host writes the change
+    /// back to its source from the event.
+    /// </summary>
+    public bool AreTaskListsInteractive
+    {
+        get => GetValue(AreTaskListsInteractiveProperty);
+        set => SetValue(AreTaskListsInteractiveProperty, value);
+    }
+
+    /// <summary>
     /// Gets or sets the maximum heading level included in <see cref="TableOfContents"/>.
     /// Headings deeper than this level, and their descendants, are excluded. Defaults to 6 (no limit).
     /// </summary>
@@ -226,15 +248,37 @@ public partial class MarkdownViewer : ContentControl
         remove => RemoveHandler(LinkClickedEvent, value);
     }
 
+    /// <summary>
+    /// Identifies the <see cref="TaskToggled"/> routed event.
+    /// </summary>
+    public static readonly RoutedEvent<TaskToggledEventArgs> TaskToggledEvent =
+        RoutedEvent.Register<MarkdownViewer, TaskToggledEventArgs>(
+            nameof(TaskToggled), RoutingStrategies.Bubble);
+
+    /// <summary>
+    /// Raised when the user toggles a task-list checkbox while <see cref="AreTaskListsInteractive"/>
+    /// is <c>true</c>. The checkbox already shows the new state; the viewer does not change
+    /// <see cref="Markdown"/>. <see cref="TaskToggledEventArgs.SourceStart"/> and
+    /// <see cref="TaskToggledEventArgs.SourceLength"/> locate the item's <c>[ ]</c> / <c>[x]</c> marker
+    /// in the rendered markdown (the <see cref="Markdown"/> string as set, or the text loaded from
+    /// <see cref="Source"/>). Bubbles up the visual tree.
+    /// </summary>
+    public event EventHandler<TaskToggledEventArgs>? TaskToggled
+    {
+        add => AddHandler(TaskToggledEvent, value);
+        remove => RemoveHandler(TaskToggledEvent, value);
+    }
+
     static MarkdownViewer()
     {
-        MarkdownProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        MarkdownProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnMarkdownChanged());
         PipelineProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         SourceProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnSourceChanged());
         ImageResizeModeProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ShowCodeBlockLanguageProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ShowCodeBlockCopyButtonProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        AreTaskListsInteractiveProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
     }
@@ -334,9 +378,17 @@ public partial class MarkdownViewer : ContentControl
         return lastSlash > 0 ? new Uri(abs[..(lastSlash + 1)]) : null;
     }
 
+    private void OnMarkdownChanged()
+    {
+        if (_sourceMarkdown is null && string.Equals(Markdown, _renderedMarkdown, StringComparison.Ordinal))
+            return;
+        RenderMarkdown();
+    }
+
     private void RenderMarkdown()
     {
         var markdown = _sourceMarkdown ?? Markdown;
+        _renderedMarkdown = markdown;
         if (string.IsNullOrEmpty(markdown))
         {
             Content = null;
@@ -348,10 +400,7 @@ public partial class MarkdownViewer : ContentControl
         }
 
         var pipeline = Pipeline ?? MarkdownViewerDefaults.Pipeline ?? DefaultPipeline;
-        var markdownText = ImageSizePreprocessorRegex().Replace(markdown, static m =>
-            m.Groups[1].Success
-                ? m.Value
-                : $"{m.Groups[2].Value}{m.Groups[3].Value} \"={m.Groups[4].Value}\"{m.Groups[5].Value}");
+        var markdownText = PreprocessImageSizes(markdown, out var sourceShifts);
         var document = Markdig.Markdown.Parse(markdownText, pipeline);
 
         var renderer = new AvaloniaRenderer
@@ -360,8 +409,10 @@ public partial class MarkdownViewer : ContentControl
             ImageResizeMode = ImageResizeMode,
             ShowCodeBlockLanguage = ShowCodeBlockLanguage,
             ShowCodeBlockCopyButton = ShowCodeBlockCopyButton,
+            AreTaskListsInteractive = AreTaskListsInteractive,
         };
         renderer.LinkClicked += OnLinkClicked;
+        renderer.TaskToggled += (_, e) => OnTaskToggled(e, sourceShifts);
 
         // Extensions register before pipeline.Setup() so they can swap renderers.
         // Globals first, then per-instance; skip exact-reference duplicates.
@@ -419,6 +470,63 @@ public partial class MarkdownViewer : ContentControl
         // template, not rebuilt per-render) and would otherwise keep its old offset.
         if (_scrollViewer is not null)
             _scrollViewer.Offset = default;
+    }
+
+    // ── Source positions ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Rewrites each "![alt](url =WxH)" size hint as a "=WxH" link title Markdig can parse. Each
+    /// rewrite changes the text's length (and can drop line breaks), so <paramref name="shifts"/>
+    /// records, in order, where each rewrite ends in the returned text and how far positions after
+    /// it have moved, for <see cref="ToSourcePosition"/> to map them back.
+    /// </summary>
+    private static string PreprocessImageSizes(string markdown, out List<SourceShift> shifts)
+    {
+        var recorded = new List<SourceShift>();
+        int offset = 0, lines = 0;
+        var text = ImageSizePreprocessorRegex().Replace(markdown, m =>
+        {
+            if (m.Groups[1].Success)
+                return m.Value;
+            var replacement = $"{m.Groups[2].Value}{m.Groups[3].Value} \"={m.Groups[4].Value}\"{m.Groups[5].Value}";
+            offset += replacement.Length - m.Length;
+            lines += replacement.AsSpan().Count('\n') - m.ValueSpan.Count('\n');
+            // Stryker disable once Arithmetic : only compared against positions outside the image syntax, which any point inside the rewrite tells apart as well as its end
+            recorded.Add(new SourceShift(m.Index + m.Length + offset, offset, lines));
+            return replacement;
+        });
+        shifts = recorded;
+        return text;
+    }
+
+    /// <summary>
+    /// Maps a position (and its line) in the preprocessed text back to the markdown as given. Valid for
+    /// positions outside the rewritten image syntax, such as a task-list marker.
+    /// </summary>
+    private static (int Position, int Line) ToSourcePosition(List<SourceShift> shifts, int position, int line)
+    {
+        // The rewrites before the position are those ending at or before it; the last of them
+        // carries the accumulated shift.
+        for (int i = shifts.Count - 1; i >= 0; i--)
+        {
+            // Stryker disable once Equality : no position that is mapped (a task marker) can sit right where an image ends
+            if (shifts[i].End <= position)
+                return (position - shifts[i].Offset, line - shifts[i].Lines);
+        }
+        return (position, line);
+    }
+
+    /// <param name="End">Where the rewrite ends in the preprocessed text.</param>
+    /// <param name="Offset">Total length change of this and all earlier rewrites.</param>
+    /// <param name="Lines">Total line-count change of this and all earlier rewrites.</param>
+    private readonly record struct SourceShift(int End, int Offset, int Lines);
+
+    private void OnTaskToggled(TaskToggledEventArgs e, List<SourceShift> shifts)
+    {
+        var (start, line) = ToSourcePosition(shifts, e.SourceStart, e.Line);
+        if (_renderedMarkdown is { } rendered)
+            _renderedMarkdown = string.Concat(rendered.AsSpan(0, start), e.IsChecked ? "[x]" : "[ ]", rendered.AsSpan(start + e.SourceLength));
+        RaiseEvent(new TaskToggledEventArgs(e.IsChecked, start, e.SourceLength, line) { RoutedEvent = TaskToggledEvent });
     }
 
     private void RebuildTableOfContents() =>
@@ -480,7 +588,8 @@ public partial class MarkdownViewer : ContentControl
     {
         foreach (var itemGrid in listPanel.Children.OfType<Grid>())
         {
-            // Column 0 holds the marker TextBlock (bullet, number or task-list check glyph)
+            // Column 0 holds the marker TextBlock (bullet, number or task-list check glyph), or
+            // the toggle wrapping the check glyph of an interactive task-list item.
             // Column 1 holds the content StackPanel
             TextBlock? markerTb = null;
             Panel? contentPanel = null;
@@ -488,6 +597,8 @@ public partial class MarkdownViewer : ContentControl
             {
                 if (gridChild is TextBlock tb && Grid.GetColumn(tb) == 0)
                     markerTb = tb;
+                else if (gridChild is ToggleButton { Content: TextBlock glyph } && Grid.GetColumn(gridChild) == 0)
+                    markerTb = glyph;
                 else if (gridChild is Panel pnl && Grid.GetColumn(pnl) == 1)
                     contentPanel = pnl;
             }
@@ -502,7 +613,7 @@ public partial class MarkdownViewer : ContentControl
     {
         if (marker is not null)
         {
-            layer.Register(new IndexEntry(marker, marker.Text!, " "));
+            layer.Register(IndexEntry.ForMarker(marker));
             marker = null;
         }
         layer.Register(entry);

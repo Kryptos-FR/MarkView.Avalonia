@@ -12,6 +12,7 @@
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
 | `ShowCodeBlockLanguage` | `bool` | `true` | Shows the language of a fenced code block (e.g. `csharp`) in a toolbar above the code. See [Code block toolbar](#code-block-toolbar). |
 | `ShowCodeBlockCopyButton` | `bool` | `true` | Shows a button in a toolbar above each code block that copies the code to the clipboard. See [Code block toolbar](#code-block-toolbar). |
+| `AreTaskListsInteractive` | `bool` | `false` | Renders task-list items as checkboxes the user can toggle, raising `TaskToggled`. Setting it re-renders the document. See [Interactive task lists](#interactive-task-lists). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
 
@@ -220,6 +221,53 @@ MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>((sender, e) =>
 ```
 
 The event is raised for all hyperlinks, including anchor links (`#heading`). In-document anchor links are handled automatically by the viewer before raising the event — navigation happens regardless of whether you subscribe, and the default external-link launch never runs for them.
+
+## Interactive task lists
+
+By default, task-list items (`- [ ]` / `- [x]`) render a static ☐/☑ glyph. Set
+`AreTaskListsInteractive` to render a checkbox instead — for note-taking or to-do apps where the
+reader ticks items off:
+
+```xml
+<mv:MarkdownViewer Markdown="{Binding Notes}" AreTaskListsInteractive="True" />
+```
+
+Clicking the checkbox (or pressing Space / Enter while it has keyboard focus) toggles it and raises
+the `TaskToggled` routed event (bubbles up, like `LinkClicked`). **The viewer never edits its own
+markdown**: the checkbox shows the new state, but `Markdown` is unchanged until the host writes
+the change back. `TaskToggledEventArgs` carries what that takes:
+
+| Property | Description |
+|----------|-------------|
+| `IsChecked` | The item's new state. |
+| `SourceStart` | Zero-based index of the marker's `[` in the rendered markdown. |
+| `SourceLength` | Length of the marker — always `3` (`[ ]`, `[x]` or `[X]`). |
+| `Line` | Zero-based line of the marker in the rendered markdown. |
+
+Positions refer to the markdown the viewer rendered: the `Markdown` string exactly as you set it
+(the viewer's internal rewriting of `![alt](url =WxH)` image size hints is already accounted for),
+or the document text loaded from `Source`. Patch the marker and assign the result back:
+
+```csharp
+viewer.TaskToggled += (_, e) =>
+{
+    var source = viewer.Markdown!;
+    viewer.Markdown = string.Concat(
+        source.AsSpan(0, e.SourceStart),
+        e.IsChecked ? "[x]" : "[ ]",
+        source.AsSpan(e.SourceStart + e.SourceLength));
+    // ...and save it to wherever the markdown came from.
+};
+```
+
+The viewer applies each toggle to its own copy of the rendered text the same way (`[x]` or `[ ]`).
+When the text assigned back equals that copy, as in the handler above, the document is not
+re-rendered, so the reader keeps their scroll position and keyboard focus. Any other text re-renders
+as usual and scrolls back to the top. A toggle that is never written back is lost at the next
+re-render, for example after assigning a different text or changing `Pipeline`.
+
+Pressing the checkbox and dragging selects text instead of toggling it, and a selection started on
+text can still be dragged across items. When copied, a checkbox contributes its current ☐/☑ glyph.
 
 ## Anchor navigation
 

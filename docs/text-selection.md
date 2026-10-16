@@ -34,7 +34,7 @@ All text-bearing block types are registered with the selection layer:
 - Headings
 - Code blocks (all text within the block)
 - Blockquotes
-- List items, including their markers (`•`, `1.`, or the `☑`/`☐` task-list glyph) and any code blocks or tables nested inside them
+- List items, including their markers (`•`, `1.`, or the `☑`/`☐` task-list glyph — for a clickable task-list checkbox, its current state) and any code blocks or tables nested inside them
 - Table cells (tab-separated when copying)
 - Footnote definitions
 
