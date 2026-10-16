@@ -23,7 +23,7 @@ internal sealed class AvaloniaTypefaceProvider(
     bool useDocumentFontForAnyFamily) : ITypefaceProvider
 {
     private static readonly AvaloniaTypefaceProvider s_shared = new(ResolveWithFontManager,
-        OperatingSystem.IsBrowser() || SKFontManager.Default.FontFamilyCount == 0);
+        NeedsDocumentFontForAnyFamily(OperatingSystem.IsBrowser(), SKFontManager.Default.FontFamilyCount));
     private static readonly object s_registrationLock = new();
     private static bool s_registered;
 
@@ -53,6 +53,13 @@ internal sealed class AvaloniaTypefaceProvider(
         }
         s_shared.DocumentFont = documentFont;
     }
+
+    /// <summary>
+    /// Whether every font the SVG asks for should be drawn with the document font: in the browser
+    /// SkiaSharp's single font draws every label as boxes, and without any SkiaSharp font nothing is drawn.
+    /// </summary>
+    internal static bool NeedsDocumentFontForAnyFamily(bool isBrowser, int skiaFontFamilyCount) =>
+        isBrowser || skiaFontFamilyCount == 0;
 
     /// <summary>The provider <see cref="Use"/> registers.</summary>
     internal static AvaloniaTypefaceProvider Shared => s_shared;

@@ -199,4 +199,12 @@ public class AvaloniaTypefaceProviderTests
 
         Assert.Null(exception);
     }
+
+    [AvaloniaTheory]
+    [InlineData(true, 1, true)]
+    [InlineData(false, 0, true)]
+    [InlineData(true, 0, true)]
+    [InlineData(false, 1, false)]
+    public void Document_font_replaces_every_family_in_the_browser_or_without_skia_fonts(bool isBrowser, int skiaFontFamilyCount, bool expected) =>
+        Assert.Equal(expected, AvaloniaTypefaceProvider.NeedsDocumentFontForAnyFamily(isBrowser, skiaFontFamilyCount));
 }
