@@ -6,19 +6,30 @@ on:
       os:
         type: string
         default: ubuntu-latest
+      coverage:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       os:
         type: string
         default: ubuntu-latest
         description: Runner OS (ubuntu-latest, windows-latest, macos-latest)
+      coverage:
+        type: boolean
+        default: false
+        description: Measure coverage and enforce the thresholds (Ubuntu only)
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   build:
     runs-on: ${{ inputs.os }}
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
 
@@ -33,4 +44,90 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Test
+        if: ${{ !inputs.coverage }}
         run: dotnet test --no-build --configuration Release
+
+      - name: Test with coverage
+        if: inputs.coverage
+        run: dotnet test --no-build --configuration Release --results-directory TestResults --coverage --config-file testconfig.json
+
+      - name: Generate coverage report
+        if: inputs.coverage
+        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        with:
+          reports: 'TestResults/**/*.cobertura.xml'
+          targetdir: coveragereport
+          reporttypes: 'Html;MarkdownSummaryGithub'
+          customSettings: 'minimumCoverageThresholds:lineCoverage=80'
+
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v7
+        if: ${{ inputs.coverage && !cancelled() }}
+        with:
+          name: coverage-report
+          path: coveragereport/
+
+      - name: Check coverage thresholds
+        if: inputs.coverage
+        shell: pwsh
+        run: |
+          $summaryFile = "coveragereport/SummaryGithub.md"
+          if (-not (Test-Path $summaryFile)) {
+            Write-Error "Summary file not found: $summaryFile"
+            exit 1
+          }
+
+          $content = Get-Content $summaryFile -Raw
+
+          # Extract overall line coverage from "| **Line coverage:** | XX% ..." pattern
+          if ($content -match '\|\s*\*\*Line coverage:\*\*\s*\|\s*(\d+\.?\d*)%') {
+            $lineCoverage = [double]$matches[1]
+            Write-Output "Overall line coverage: $lineCoverage%"
+
+            $minThreshold = 80
+            if ($lineCoverage -lt $minThreshold) {
+              Write-Error "Line coverage $lineCoverage% is below the required $minThreshold%"
+              exit 1
+            }
+            Write-Output "✓ Line coverage meets the required $minThreshold%"
+          } else {
+            Write-Error "Could not parse line coverage from summary"
+            exit 1
+          }
+
+          $projectMin = 70
+          $projectFailed = $false
+          $projectMatches = [regex]::Matches($content, '<summary>(?<name>[^<]+?) - (?<pct>\d+(\.\d+)?)%</summary>')
+          if ($projectMatches.Count -eq 0) {
+            Write-Output "::error::No per-project coverage rows found in $summaryFile; the report format may have changed"
+            exit 1
+          }
+          foreach ($m in $projectMatches) {
+            $pct = [double]$m.Groups['pct'].Value
+            if ($pct -lt $projectMin) {
+              Write-Output "::error::$($m.Groups['name'].Value) line coverage $pct% is below the required $projectMin%"
+              $projectFailed = $true
+            }
+          }
+          if ($projectFailed) { exit 1 }
+
+      - name: Write coverage summary
+        if: ${{ inputs.coverage && !cancelled() }}
+        shell: bash
+        run: |
+          if [ -f coveragereport/SummaryGithub.md ]; then
+            cat coveragereport/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # A pull request from a fork gets a read-only token and cannot comment; its summary
+      # is on the run page instead.
+      - name: Post coverage summary to PR
+        uses: marocchino/sticky-pull-request-comment@v3
+        if: >
+          inputs.coverage && !cancelled()
+          && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          header: coverage
+          recreate: true
+          path: coveragereport/SummaryGithub.md

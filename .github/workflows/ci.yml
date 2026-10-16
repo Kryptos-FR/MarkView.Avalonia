@@ -3,59 +3,207 @@ name: CI
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
+  # Publishing a GitHub release builds the tag and pushes the packages to NuGet.org.
+  release:
+    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 # A new push to a pull request cancels that pull request's previous run, so a superseded
 # run can never post its coverage/mutation comment after the current one. Pushes to main
-# and tags get a group of their own and are never cancelled.
+# and releases get a group of their own and are never cancelled.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
+  # Decides what the rest of the run does. Pull requests only run what their changes need:
+  # - docs-only changes run nothing (Gate still reports);
+  # - drafts only build and test on Ubuntu, unless labelled `ci-run-on-draft`;
+  # - mutation testing only covers the packages the pull request touches, and within them only
+  #   the code it changes (Stryker's `--since`), unless labelled `ci-full`;
+  # - the AOT publish runs on Ubuntu only, unless labelled `ci-full`.
+  # Pushes to main and manual runs run everything in full; releases skip mutation testing,
+  # which already ran in full on main.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      build-os: ${{ steps.plan.outputs.build-os }}
+      aot-os: ${{ steps.plan.outputs.aot-os }}
+      mutation-projects: ${{ steps.plan.outputs.mutation-projects }}
+      mutation-since: ${{ steps.plan.outputs.mutation-since }}
+    steps:
+      - uses: dorny/paths-filter@v4
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            shared:
+              - 'Directory.Build.props'
+              - 'Directory.Packages.props'
+              - 'global.json'
+              - '*.slnx'
+              - 'testconfig.json'
+              - '.config/**'
+              - 'tests/Directory.Build.props'
+              - 'tests/Shared/**'
+              - '.github/workflows/**'
+              - '.github/scripts/**'
+            core:
+              - 'src/MarkView.Avalonia/**'
+              - 'tests/MarkView.Avalonia.Tests/**'
+            math:
+              - 'src/MarkView.Avalonia.Math/**'
+              - 'tests/MarkView.Avalonia.Math.Tests/**'
+            mermaid:
+              - 'src/MarkView.Avalonia.Mermaid/**'
+              - 'tests/MarkView.Avalonia.Mermaid.Tests/**'
+            svg:
+              - 'src/MarkView.Avalonia.Svg/**'
+              - 'tests/MarkView.Avalonia.Svg.Tests/**'
+            syntax:
+              - 'src/MarkView.Avalonia.SyntaxHighlighting/**'
+              - 'tests/MarkView.Avalonia.SyntaxHighlighting.Tests/**'
+            samples:
+              - 'samples/**'
+
+      - name: Plan the run
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          BASE_REF: ${{ github.base_ref }}
+          SHARED: ${{ steps.filter.outputs.shared }}
+          CORE: ${{ steps.filter.outputs.core }}
+          MATH: ${{ steps.filter.outputs.math }}
+          MERMAID: ${{ steps.filter.outputs.mermaid }}
+          SVG: ${{ steps.filter.outputs.svg }}
+          SYNTAX: ${{ steps.filter.outputs.syntax }}
+          SAMPLES: ${{ steps.filter.outputs.samples }}
+        run: |
+          all_os='["ubuntu-latest","windows-latest","macos-latest"]'
+          all_projects='["MarkView.Avalonia.Tests","MarkView.Avalonia.Math.Tests","MarkView.Avalonia.Mermaid.Tests","MarkView.Avalonia.Svg.Tests","MarkView.Avalonia.SyntaxHighlighting.Tests"]'
+          has_label() { echo "$LABELS" | jq -e --arg l "$1" 'index($l) != null' > /dev/null; }
+
+          if [ "$EVENT" != "pull_request" ]; then
+            build_os=$all_os
+            aot_os=$all_os
+            if [ "$EVENT" = "release" ]; then mutation_projects='[]'; else mutation_projects=$all_projects; fi
+            since=''
+          else
+            full=false
+            if has_label ci-full; then full=true; fi
+            heavy=true
+            if [ "$DRAFT" = "true" ] && [ "$full" = false ] && ! has_label ci-run-on-draft; then heavy=false; fi
+
+            code=false
+            for flag in "$SHARED" "$CORE" "$MATH" "$MERMAID" "$SVG" "$SYNTAX"; do
+              if [ "$flag" = "true" ]; then code=true; fi
+            done
+
+            build_os='[]'
+            if [ "$code" = true ]; then
+              if [ "$heavy" = true ]; then build_os=$all_os; else build_os='["ubuntu-latest"]'; fi
+            fi
+
+            aot_os='[]'
+            if [ "$heavy" = true ] && { [ "$code" = true ] || [ "$SAMPLES" = "true" ]; }; then
+              if [ "$full" = true ]; then aot_os=$all_os; else aot_os='["ubuntu-latest"]'; fi
+            fi
+
+            mutation_projects='[]'
+            since=''
+            if [ "$heavy" = true ]; then
+              if [ "$full" = true ] || [ "$SHARED" = "true" ]; then
+                mutation_projects=$all_projects
+              else
+                list=()
+                if [ "$CORE" = "true" ]; then list+=("MarkView.Avalonia.Tests"); fi
+                if [ "$MATH" = "true" ]; then list+=("MarkView.Avalonia.Math.Tests"); fi
+                if [ "$MERMAID" = "true" ]; then list+=("MarkView.Avalonia.Mermaid.Tests"); fi
+                if [ "$SVG" = "true" ]; then list+=("MarkView.Avalonia.Svg.Tests"); fi
+                if [ "$SYNTAX" = "true" ]; then list+=("MarkView.Avalonia.SyntaxHighlighting.Tests"); fi
+                mutation_projects=$(printf '%s\n' "${list[@]}" | jq -R . | jq -cs 'map(select(. != ""))')
+              fi
+              if [ "$full" = false ]; then since="origin/$BASE_REF"; fi
+            fi
+          fi
+
+          {
+            echo "build-os=$build_os"
+            echo "aot-os=$aot_os"
+            echo "mutation-projects=$mutation_projects"
+            echo "mutation-since=$since"
+          } | tee -a "$GITHUB_OUTPUT"
+
   build:
+    needs: changes
+    if: needs.changes.outputs.build-os != '[]'
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: ${{ fromJSON(needs.changes.outputs.build-os) }}
+    permissions:
+      contents: read
+      pull-requests: write
     uses: ./.github/workflows/build.yml
     with:
       os: ${{ matrix.os }}
-
-  coverage:
-    if: github.event_name == 'pull_request'
-    permissions:
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/coverage.yml
-
-  mutation:
-    if: github.event_name == 'pull_request'
-    permissions:
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/mutation.yml
+      coverage: ${{ matrix.os == 'ubuntu-latest' }}
 
   aot-publish:
+    needs: changes
+    if: needs.changes.outputs.aot-os != '[]'
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: ${{ fromJSON(needs.changes.outputs.aot-os) }}
     uses: ./.github/workflows/aot-publish.yml
     with:
       os: ${{ matrix.os }}
 
+  mutation:
+    needs: changes
+    if: needs.changes.outputs.mutation-projects != '[]'
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/mutation.yml
+    with:
+      projects: ${{ needs.changes.outputs.mutation-projects }}
+      since: ${{ needs.changes.outputs.mutation-since }}
+
+  # The only check branch protection needs to require. Skipped jobs (nothing to run for
+  # these changes, or a draft) count as passing; a failed or cancelled one does not.
+  # always() on purpose: a cancelled run must report a red Gate, not a skipped one.
+  gate:
+    name: Gate
+    needs: [changes, build, aot-publish, mutation]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any needed job failed or was cancelled
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.value.result)\t\(.key)"'
+          test "$(echo "$NEEDS" | jq '[.[] | select(.result == "failure" or .result == "cancelled")] | length')" -eq 0
+
   publish:
     needs: [build, aot-publish]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'release'
     permissions:
+      contents: read
       id-token: write
     uses: ./.github/workflows/publish.yml
     with:
-      dry-run: true
+      dry-run: false

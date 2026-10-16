@@ -13,7 +13,10 @@ param(
 
     [double]$MinimumScore = 0,
     [double]$WarningScore = 0,
-    [double]$ProjectWarningScore = 0
+    [double]$ProjectWarningScore = 0,
+
+    # The committish Stryker ran --since, if any: the summary then says the run is incremental.
+    [string]$Since = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -116,10 +119,15 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine()
 [void]$sb.AppendLine('</details>')
 [void]$sb.AppendLine()
+if ($Since) {
+    [void]$sb.AppendLine("> Incremental run (changes since ``$Since``): $overallDetectedPlusUndetected of $($totals.TotalMutants) mutants tested, those in the files this pull request changes and those its changed tests cover. Other files show N/A. Add the ``ci-full`` label for a full run.")
+    [void]$sb.AppendLine()
+}
 [void]$sb.AppendLine('## Mutation score')
 
 foreach ($project in $projects) {
-    [void]$sb.AppendLine("<details><summary>$($project.Name) - $($project.FinalScore)%</summary>")
+    $scoreText = if ($project.FinalScore -eq 'N/A') { 'N/A' } else { "$($project.FinalScore)%" }
+    [void]$sb.AppendLine("<details><summary>$($project.Name) - $scoreText</summary>")
     [void]$sb.AppendLine()
     [void]$sb.AppendLine($project.Table)
     [void]$sb.AppendLine()
