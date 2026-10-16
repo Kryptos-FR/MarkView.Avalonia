@@ -140,7 +140,9 @@ public class GenericAttributesTests
         };
 
         var root = Assert.IsType<StackPanel>(Assert.IsType<Grid>(viewer.Content).Children[0]);
-        var code = Assert.IsType<Border>(Assert.Single(root.Children));
+        var container = Assert.IsType<StackPanel>(Assert.Single(root.Children));
+        Assert.Equal(["markdown-code-container"], Classes(container));
+        var code = Assert.IsType<Border>(container.Children[1]);
         Assert.Equal(["markdown-code-block", "language-csharp"], Classes(code));
     }
 }
