@@ -852,7 +852,7 @@ public partial class MarkdownViewer : ContentControl
         if (!_anchors.TryGetValue(anchorId, out var control))
             return;
 
-        // A heading inside a collapsed alert has no position until the alert is expanded and laid out.
+        // A heading inside a collapsed alert or details element has no position until it is expanded and laid out.
         if (CollapsibleAlert.ExpandAncestors(control))
             control.UpdateLayout();
 

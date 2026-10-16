@@ -335,6 +335,19 @@
     <Setter Property="Foreground" Value="{DynamicResource MarkdownAlertCautionBorder}" />
   </Style>
 
+  <!-- HTML <details> / <summary>: the summary toggles the body; :expanded while it is shown -->
+  <Style Selector="Border.markdown-details">
+    <Setter Property="Margin" Value="0,4" />
+  </Style>
+  <Style Selector="TextBlock.markdown-details-summary">
+    <!-- A background makes the whole summary row clickable, not just its glyphs -->
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="TextBlock.markdown-details-summary:focus-visible">
+    <Setter Property="TextDecorations" Value="Underline" />
+  </Style>
+
   <!-- Abbreviations -->
   <Style Selector="TextBlock.markdown-abbr">
     <Setter Property="TextDecorations" Value="Underline" />

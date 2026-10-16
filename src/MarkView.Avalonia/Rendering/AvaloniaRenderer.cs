@@ -222,6 +222,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new AlertBlockRenderer());
         ObjectRenderers.Add(new QuoteBlockRenderer());
         ObjectRenderers.Add(new HtmlBlockRenderer());
+        ObjectRenderers.Add(new DetailsBlockRenderer());
         ObjectRenderers.Add(new TableRenderer());
         ObjectRenderers.Add(new FootnoteGroupRenderer());
         ObjectRenderers.Add(new FigureRenderer());
