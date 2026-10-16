@@ -58,12 +58,22 @@ jobs:
           SINCE: ${{ inputs.since }}
         run: dotnet stryker ${SINCE:+--since:$SINCE}
 
+      # The reports go into a folder named after the test project, which Merge-MutationReports.ps1
+      # reads the project name from: when only one artifact matches its pattern, download-artifact
+      # extracts it without the artifact-name folder.
+      - name: Collect mutation report
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          mkdir -p "mutation-report/${{ matrix.test-project }}"
+          cp -r tests/${{ matrix.test-project }}/StrykerOutput/*/reports/. "mutation-report/${{ matrix.test-project }}/"
+
       - name: Upload mutation report
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: mutation-report-${{ matrix.test-project }}
-          path: tests/${{ matrix.test-project }}/StrykerOutput/**/reports/
+          path: mutation-report/
 
   aggregate:
     needs: mutate
