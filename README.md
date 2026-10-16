@@ -395,6 +395,14 @@ await viewer.CopyToClipboardAsync();
 
 A selection that spans an image copies the image's alt text in its place; math formulas and Mermaid diagrams copy their source. See [Text Selection](docs/text-selection.md) for details.
 
+## Accessibility
+
+- **Keyboard.** `Tab` / `Shift+Tab` move through the document's links in reading order, with a focus ring, and `Enter` opens the focused link.
+- **Screen readers.** Headings report their level, and lists, tables, quotes, alerts, images and links report their roles.
+- **Contrast.** Default colours meet WCAG 2.2 AA, and a high-contrast palette follows the OS setting.
+
+See [Accessibility](docs/accessibility.md).
+
 ## Known Limitations
 
 | Limitation | Detail |

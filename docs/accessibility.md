@@ -1,6 +1,6 @@
 # Accessibility
 
-`MarkdownViewer` exposes the structure of the rendered document to screen readers, ships default colours that meet WCAG 2.2 AA contrast, and switches to a high-contrast palette when the operating system asks for one.
+`MarkdownViewer` exposes the structure of the rendered document to screen readers, lets keyboard users reach and open every link, ships default colours that meet WCAG 2.2 AA contrast, and switches to a high-contrast palette when the operating system asks for one.
 
 ## Screen readers
 
@@ -11,6 +11,7 @@ Avalonia forwards automation peers to each platform's accessibility API: UI Auto
 | The viewer itself | `Document`, named by `AutomationProperties.Name` or, if that isn't set, by the first heading |
 | `#` … `######` | `Text` with `AutomationProperties.HeadingLevel` 1–6 |
 | Paragraph | `Text` |
+| Link | `Hyperlink`, a child of its paragraph, named by its text and invokable. An image inside a link, such as a badge, is read as its alt text. A link title (`[text](url "title")`) is its help text. |
 | List / list item | `List` / `ListItem`. Bullets are hidden; numbers stay readable, since an ordered list can start at any number. |
 | Table / header cell / body cell | `Table` / `HeaderItem` / `DataItem` |
 | Blockquote, figure | `Group`. A figure is named by its caption. |
@@ -27,12 +28,28 @@ To give the document a name of your own, set `AutomationProperties.Name`:
 <mv:MarkdownViewer AutomationProperties.Name="Release notes" Source="avares://MyApp/notes.md" />
 ```
 
+The paragraph itself is still read as one string, links included.
+
 ### Platform caveats
 
 Avalonia 12.1.3 has the following gaps:
 
 - **Linux.** The AT-SPI bridge does not report heading levels, so headings read as plain text.
 - **Browser (WebAssembly).** Avalonia ships no screen reader support.
+
+## Keyboard
+
+The viewer is one Tab stop, followed by each link and each focusable control in the document (such as a video embed), in reading order.
+
+| Key | Action |
+|---|---|
+| `Tab` | Move to the next link. Past the last one, focus leaves the viewer. |
+| `Shift+Tab` | Move to the previous link, then back to the viewer. Entering the viewer this way lands on its last link. |
+| `Enter` | Open the focused link, as a click does: `#anchor` links scroll to their target, and other links raise `LinkClicked`. |
+
+The focused link scrolls into view, and a 2px ring outlines each line of its text. The ring uses FluentTheme's `SystemControlFocusVisualPrimaryBrush`, or black/white without FluentTheme. Links in hidden content, such as a collapsed block, are skipped.
+
+Links stay inline text, so they wrap and select as before. An invisible stand-in over each link takes the focus instead.
 
 ## Colour contrast
 
