@@ -27,8 +27,6 @@ if (-not $reportFiles) {
     exit 1
 }
 
-$rootFullPath = (Resolve-Path -Path $ReportsRoot).Path
-
 $totals = [ordered]@{
     Killed          = 0
     Survived        = 0
@@ -45,9 +43,8 @@ $totals = [ordered]@{
 $projects = @()
 
 foreach ($file in $reportFiles) {
-    $relativePath = $file.FullName.Substring($rootFullPath.Length).TrimStart('\', '/')
-    $artifactFolder = ($relativePath -split '[\\/]')[0]
-    $projectName = $artifactFolder -replace '^mutation-report-', '' -replace '\.Tests$', ''
+    # Each report sits in a folder named after its test project (see mutation.yml).
+    $projectName = $file.Directory.Name -replace '\.Tests$', ''
 
     $lines = Get-Content -Path $file.FullName
 
