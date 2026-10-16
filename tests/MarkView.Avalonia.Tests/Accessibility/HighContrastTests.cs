@@ -24,10 +24,14 @@ public class HighContrastTests
         Source = new Uri("avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml"),
     };
 
-    private static MarkdownViewer ShowViewer(string markdown, HighContrastMode mode = HighContrastMode.System)
+    // Only tests of the theme's colours load it: Stryker compiles the mutated assembly without
+    // Avalonia's XAML compiler, so loading the theme throws there and hides what a test covers.
+    private static MarkdownViewer ShowViewer(string markdown, HighContrastMode mode = HighContrastMode.System,
+        bool withTheme = false)
     {
         var viewer = new MarkdownViewer { HighContrastMode = mode, Markdown = markdown };
-        viewer.Styles.Add(MarkdownThemeInclude());
+        if (withTheme)
+            viewer.Styles.Add(MarkdownThemeInclude());
         new Window { Width = 400, Height = 300, Content = viewer }.Show();
         return viewer;
     }
@@ -88,7 +92,7 @@ public class HighContrastTests
     {
         var theme = variant == "Light" ? ThemeVariant.Light : ThemeVariant.Dark;
         using var _ = new ThemeScope(theme);
-        var viewer = ShowViewer("[link](https://example.com)");
+        var viewer = ShowViewer("[link](https://example.com)", withTheme: true);
 
         Assert.True(Application.Current!.TryFindResource(accentKey, theme, out var accent));
         Assert.Equal((Color)accent!, LinkColor(viewer));
@@ -100,7 +104,7 @@ public class HighContrastTests
     public void High_contrast_palette_replaces_theme_colours(string variant, string link, string background, string foreground)
     {
         using var _ = new ThemeScope(variant == "Light" ? ThemeVariant.Light : ThemeVariant.Dark);
-        var viewer = ShowViewer("[link](https://example.com)\n\n> [!TIP]\n> Body", HighContrastMode.Enabled);
+        var viewer = ShowViewer("[link](https://example.com)\n\n> [!TIP]\n> Body", HighContrastMode.Enabled, withTheme: true);
         viewer.Pipeline = new Markdig.MarkdownPipelineBuilder().UseAlertBlocks().Build();
 
         Assert.Equal(Color.Parse(link), LinkColor(viewer));

@@ -68,12 +68,17 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         base.OnAttachedToVisualTree(e);
         // Subscribed only while attached, so the platform settings never keep a viewer that
         // was removed from its window alive.
+        // Headless tests can't raise the platform's ColorValuesChanged, and their platform never
+        // asks for high contrast, so nothing they observe depends on the subscription below.
         _platformSettings = this.GetPlatformSettings();
+        // Stryker disable once Equality : see above
         if (_platformSettings is not null)
         {
+            // Stryker disable once Assignment : see above
             _platformSettings.ColorValuesChanged += OnPlatformColorValuesChanged;
             _platformHighContrast = _platformSettings.GetColorValues().ContrastPreference == ColorContrastPreference.High;
         }
+        // Stryker disable once Statement : see above
         UpdateHighContrast();
     }
 
