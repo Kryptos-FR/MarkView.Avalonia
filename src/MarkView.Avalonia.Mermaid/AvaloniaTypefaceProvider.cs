@@ -24,13 +24,12 @@ internal sealed class AvaloniaTypefaceProvider(
 {
     private static readonly AvaloniaTypefaceProvider s_shared = new(ResolveWithFontManager,
         NeedsDocumentFontForAnyFamily(OperatingSystem.IsBrowser(), SKFontManager.Default.FontFamilyCount));
-    private static readonly object s_registrationLock = new();
+    private static readonly Lock s_registrationLock = new();
     private static bool s_registered;
 
     // Font files by the weight and slant they were resolved for, kept as SKData so each request gets
     // its own SKTypeface: the SVG renderer owns, and may dispose, what it is given.
     private readonly ConcurrentDictionary<(FontFamily Family, SKFontStyleWeight Weight, SKFontStyleSlant Slant), (string FamilyName, SKData Data)?> _fonts = new();
-    private volatile FontFamily? _documentFont;
 
     /// <summary>
     /// Makes diagram text use <paramref name="documentFont"/> (the font of the document the diagram
@@ -58,18 +57,13 @@ internal sealed class AvaloniaTypefaceProvider(
     /// Whether every font the SVG asks for should be drawn with the document font: in the browser
     /// SkiaSharp's single font draws every label as boxes, and without any SkiaSharp font nothing is drawn.
     /// </summary>
-    internal static bool NeedsDocumentFontForAnyFamily(bool isBrowser, int skiaFontFamilyCount) =>
-        isBrowser || skiaFontFamilyCount == 0;
+    internal static bool NeedsDocumentFontForAnyFamily(bool isBrowser, int skiaFontFamilyCount) => isBrowser || skiaFontFamilyCount == 0;
 
     /// <summary>The provider <see cref="Use"/> registers.</summary>
     internal static AvaloniaTypefaceProvider Shared => s_shared;
 
     /// <summary>The font of the document diagrams are drawn for, or <c>null</c> to provide none.</summary>
-    public FontFamily? DocumentFont
-    {
-        get => _documentFont;
-        set => _documentFont = value;
-    }
+    public FontFamily? DocumentFont { get; set; }
 
     /// <summary>
     /// Returns the document font when <paramref name="fontFamily"/> (a single family or a CSS list)
