@@ -3,8 +3,8 @@
     <RootNamespace>MarkView.Avalonia.Mermaid</RootNamespace>
     <IsPackable>true</IsPackable>
     <PackageId>MarkView.Avalonia.Mermaid</PackageId>
-    <Description>Mermaid diagram rendering extension for MarkView.Avalonia.</Description>
-    <PackageTags>avalonia;markdown;mermaid;diagram</PackageTags>
+    <Description>Mermaid diagram rendering extension for MarkView.Avalonia, the markdown viewer for Avalonia UI 12.</Description>
+    <PackageTags>avalonia;avalonia12;markdown;mermaid;diagram</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
