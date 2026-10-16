@@ -31,6 +31,12 @@ viewer.Pipeline = new MarkdownPipelineBuilder()
     .UseFootnotes()             // [^1] footnotes
     .UseHardlineBreaks()        // every soft line break renders as a hard break
     .UseMediaLinks()            // YouTube thumbnail embeds
+    .UseDefinitionLists()       // Term + ":   definition"
+    .UseCustomContainers()      // :::name … ::: blocks and ::text:: inlines
+    .UseFooters()               // ^^ footer lines
+    .UseSmartyPants()           // "quotes" -- --- ... << >> → “ ” – — … « »
+    .UseListExtras()            // a. / A. / i. / I. ordered lists
+    .UseGenericAttributes()     // {.name} style classes, must be the last extension
     .Build();
 ```
 
@@ -45,7 +51,24 @@ viewer.Pipeline = new MarkdownPipelineBuilder()
 - `YamlFrontMatter` — `---` metadata block at the top of a document is parsed and hidden, not shown as garbled text
 - `EmojiAndSmiley` (shortcodes only) — `:rocket:` renders as 🚀; ASCII smileys (`:)`) are intentionally left as plain text, since silently rewriting them is more surprising than useful
 
-The seven opt-in extensions above (`UseFootnotes()` etc.) are thin wrappers around the corresponding Markdig extension; they are defined in `MarkdownExtensions.cs` and re-exported as extension methods on `MarkdownPipelineBuilder`.
+The first seven opt-in extensions above (`UseFootnotes()` etc.) are thin wrappers around the corresponding Markdig extension; they are defined in `MarkdownExtensions.cs` and re-exported as extension methods on `MarkdownPipelineBuilder`.
+
+The six after them (`UseDefinitionLists()` to `UseGenericAttributes()`) are Markdig's own methods, rendered natively:
+
+- **Definition lists** render terms as `TextBlock.markdown-definition-term` and each definition as an indented `StackPanel.markdown-definition`.
+- **Custom containers** render as `Border.markdown-custom-container` with the container's name as an extra class, so `:::warning` can be styled with `Border.markdown-custom-container.warning`. Text after the name (`:::warning Read this first`) becomes a `markdown-custom-container-title` header. Inline `::text::` renders as `Span.markdown-custom-inline`.
+- **Footers** render as `StackPanel.markdown-footer`, in smaller, dimmed text by default.
+- **SmartyPants** uses the replacements of the `SmartyPantOptions` passed to `UseSmartyPants()`, decoding HTML entities, so for example French guillemets with non-breaking spaces work:
+
+  ```csharp
+  var smartyPants = new SmartyPantOptions();
+  smartyPants.Mapping[SmartyPantType.LeftDoubleQuote] = "&laquo;&nbsp;";
+  smartyPants.Mapping[SmartyPantType.RightDoubleQuote] = "&nbsp;&raquo;";
+  viewer.Pipeline = new MarkdownPipelineBuilder().UseSupportedExtensions().UseSmartyPants(smartyPants).Build();
+  ```
+
+- **List extras** number items with letters or roman numerals. The `.` or `)` after the number is kept for every ordered list.
+- **Generic attributes** add each `{.name}` class to the control or inline rendered for that element (heading, paragraph, link, emphasis, container…), so your own styles can target it, for example `TextBlock.markdown-paragraph.note`. Ids and other attributes are ignored. Markdig only parses attributes for the extensions set up before it, so call `UseGenericAttributes()` last.
 
 ### Convenience extension methods
 

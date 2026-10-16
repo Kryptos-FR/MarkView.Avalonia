@@ -126,6 +126,13 @@ public class EmphasisTests : RenderTestBase
         Assert.DoesNotContain("markdown-marked", span.Classes);
     }
 
+    [AvaloniaFact]
+    public void Colon_emphasis_that_is_not_a_custom_container_falls_through_to_plain_span()
+    {
+        var span = RenderEmphasisInlineDirect(':', delimiterCount: 2);
+        Assert.DoesNotContain("markdown-custom-inline", span.Classes);
+    }
+
     private static Span RenderEmphasisInlineDirect(char delimiterChar, int delimiterCount)
     {
         var renderer = new AvaloniaRenderer();

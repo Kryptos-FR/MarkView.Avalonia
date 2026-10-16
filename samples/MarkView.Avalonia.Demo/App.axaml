@@ -25,6 +25,17 @@
     <Style Selector="mv|MarkdownViewer.custom-styled Border.markdown-code-block">
       <Setter Property="Background" Value="#2d1b4d" />
     </Style>
+
+    <!-- Extensions showcase: targets the {.demo-highlight} generic attribute and the :::warning
+         custom container. -->
+    <Style Selector="TextBlock.markdown-paragraph.demo-highlight">
+      <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+      <Setter Property="FontStyle" Value="Italic" />
+    </Style>
+    <Style Selector="Border.markdown-custom-container.warning">
+      <Setter Property="BorderBrush" Value="{DynamicResource MarkdownAlertWarningBorder}" />
+      <Setter Property="Background" Value="{DynamicResource MarkdownAlertWarningBackground}" />
+    </Style>
   </Application.Styles>
   <Application.Resources>
     <StreamGeometry x:Key="text_bullet_list_tree_regular">

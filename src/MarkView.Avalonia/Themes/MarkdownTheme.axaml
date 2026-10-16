@@ -338,6 +338,36 @@
     <Setter Property="Margin" Value="0,4,0,0" />
   </Style>
 
+  <!-- Definition lists -->
+  <Style Selector=":is(TextBlock).markdown-definition-term">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,4,0,0" />
+  </Style>
+  <Style Selector="StackPanel.markdown-definition">
+    <Setter Property="Margin" Value="24,0,0,0" />
+  </Style>
+
+  <!-- Custom containers (:::name) -->
+  <Style Selector="Border.markdown-custom-container">
+    <Setter Property="BorderBrush" Value="#40808080" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="Margin" Value="0,4" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-custom-container-title">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <!-- Footers (^^) -->
+  <Style Selector="StackPanel.markdown-footer">
+    <Setter Property="Margin" Value="0,8,0,0" />
+    <Setter Property="Opacity" Value="0.75" />
+  </Style>
+  <Style Selector="StackPanel.markdown-footer :is(TextBlock)">
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
   <!-- YouTube thumbnail embeds -->
   <Style Selector="Button.markdown-youtube">
     <Setter Property="Background" Value="Transparent" />

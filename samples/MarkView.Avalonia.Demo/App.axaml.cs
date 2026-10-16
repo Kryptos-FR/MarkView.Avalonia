@@ -28,6 +28,13 @@ public class App : Application
             .UseHardlineBreaks()
             .UseMediaLinks()
             .UseMathematics()
+            .UseDefinitionLists()
+            .UseCustomContainers()
+            .UseFooters()
+            .UseSmartyPants()
+            .UseListExtras()
+            // Markdig only parses attributes for the extensions set up before it: keep it last.
+            .UseGenericAttributes()
             .Build();
 
         // Global extensions — applies to every MarkdownViewer in the app

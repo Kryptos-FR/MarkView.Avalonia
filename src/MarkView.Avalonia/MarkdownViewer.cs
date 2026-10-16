@@ -13,6 +13,8 @@ using Avalonia.Platform;
 using Avalonia.Threading;
 
 using Markdig;
+using Markdig.Extensions.GenericAttributes;
+using Markdig.Extensions.SmartyPants;
 
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
@@ -380,6 +382,11 @@ public partial class MarkdownViewer : ContentControl
         }
 
         pipeline.Setup(renderer);
+        // Markdig only sets these extensions up for its own HTML renderer.
+        renderer.ApplyAttributeClasses = pipeline.Extensions.Contains<GenericAttributesExtension>();
+        if (pipeline.Extensions.Find<SmartyPantsExtension>() is { } smartyPants
+            && renderer.ObjectRenderers.Find<SmartyPantInlineRenderer>() is { } smartyPantRenderer)
+            smartyPantRenderer.Options = smartyPants.Options;
         renderer.Render(document);
 
         _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);

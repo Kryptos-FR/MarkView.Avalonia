@@ -4,6 +4,7 @@
 using Avalonia.Controls.Documents;
 using Avalonia.Media;
 
+using Markdig.Extensions.CustomContainers;
 using Markdig.Syntax.Inlines;
 
 namespace MarkView.Avalonia.Rendering.Inlines;
@@ -46,6 +47,11 @@ public sealed class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInli
             '"' when obj.DelimiterCount == 2 => new Span
             {
                 Classes = { "markdown-citation" }
+            },
+            // inline custom container (::text::)
+            ':' when obj is CustomContainerInline => new Span
+            {
+                Classes = { "markdown-custom-inline" }
             },
             _ => new Span(),
         };

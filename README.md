@@ -179,6 +179,14 @@ These require adding `.UseXxx()` to the pipeline (see [Extension Methods](#exten
 | Footnotes | `UseFootnotes()` | `[^1]` / `[^1]: …` |
 | Hardline breaks | `UseHardlineBreaks()` | every soft line break renders as a hard break |
 | YouTube embeds | `UseMediaLinks()` | `![title](https://youtu.be/…)` |
+| Definition lists | `UseDefinitionLists()` | `Term` followed by `:   definition` |
+| Custom containers | `UseCustomContainers()` | `:::name` … `:::` blocks, `::text::` inline |
+| Footers | `UseFooters()` | `^^ footer text` |
+| Smart punctuation | `UseSmartyPants()` | `"quotes"`, `--`, `---`, `...`, `<<…>>` become “ ” – — … « » |
+| Letter and roman numeral lists | `UseListExtras()` | `a.`, `A.`, `i.`, `I.` |
+| Style classes from attributes | `UseGenericAttributes()` (call it last) | `{.name}` adds `name` to the element's style classes |
+
+The last six are Markdig's own pipeline methods; MarkView.Avalonia renders what they parse.
 
 ## Extension Packages
 
@@ -319,6 +327,13 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-footnote-ref` | Footnote reference link | `HyperlinkButton` |
 | `markdown-footnote-group` | Footnote definition list | `StackPanel` |
 | `markdown-footnote-item` | Individual footnote row | `Grid` |
+| `markdown-definition-list` | Definition list | `StackPanel` |
+| `markdown-definition-term` | Defined term | `TextBlock` |
+| `markdown-definition` | Definition (indented) | `StackPanel` |
+| `markdown-custom-container` | Custom container (`:::name`, also gets `name` as a class) | `Border` |
+| `markdown-custom-container-title` | Custom container title | `TextBlock` |
+| `markdown-custom-inline` | Inline custom container (`::text::`) | `Span` |
+| `markdown-footer` | Footer (`^^`) | `StackPanel` |
 
 Extension packages may ship their own theme file with additional overridable colours — check the extension's README for its `StyleInclude` path and resource keys.
 
