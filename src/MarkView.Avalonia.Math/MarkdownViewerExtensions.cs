@@ -37,7 +37,7 @@ public static class MarkdownViewerMathExtensions
     {
         viewer.Extensions.AddMath();
         viewer.Pipeline = new MarkdownPipelineBuilder()
-            .UseSupportedExtensions()
+            .UseGitHubExtensions()
             .UseMathematics()
             .Build();
         return viewer;

@@ -32,7 +32,7 @@ Or activate globally at application startup:
 // App.axaml.cs
 MarkdownViewerDefaults.Extensions.AddMath();
 MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
-    .UseSupportedExtensions()
+    .UseGitHubExtensions()
     .UseMathematics()
     .Build();
 ```

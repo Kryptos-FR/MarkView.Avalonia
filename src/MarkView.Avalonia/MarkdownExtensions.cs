@@ -14,7 +14,34 @@ namespace MarkView.Avalonia;
 public static class MarkdownExtensions
 {
     /// <summary>
-    /// Enables all Markdig extensions supported by MarkView.Avalonia.
+    /// Enables the Markdig extensions that make a document render as it does on GitHub: pipe tables,
+    /// task lists, strikethrough (<c>~~text~~</c> and <c>~text~</c>), autolinks, emoji shortcodes,
+    /// alerts (<c>&gt; [!NOTE]</c>), footnotes, CJK-friendly emphasis and hidden YAML front matter.
+    /// This is the pipeline a <see cref="MarkdownViewer"/> uses when none is set. Math and Mermaid
+    /// diagrams come from their own packages (<c>UseMath()</c>, <c>UseMermaid()</c>).
+    /// </summary>
+    /// <param name="builder">The pipeline builder.</param>
+    /// <param name="options">Options for the extensions enabled by this method. See <see cref="MarkdownExtensionsOptions"/>.</param>
+    public static MarkdownPipelineBuilder UseGitHubExtensions(this MarkdownPipelineBuilder builder, MarkdownExtensionsOptions? options = null)
+    {
+        builder.Extensions.AddIfNotAlready<Parsing.GitHubStrikethroughExtension>();
+        return builder
+            .UseAlertBlocks()
+            .UseAutoLinks()
+            .UseCjkFriendlyEmphasis()
+            .UseEmojiAndSmiley(enableSmileys: false)
+            .UseFootnotes()
+            .UsePipeTables(options?.PipeTable)
+            .UseTaskLists()
+            .UseYamlFrontMatter();
+    }
+
+    /// <summary>
+    /// Enables a broader set of Markdig extensions supported by MarkView.Avalonia: pipe and grid tables,
+    /// task lists, all emphasis extras (<c>~~strike~~</c>, <c>~sub~</c>, <c>^sup^</c>, <c>++ins++</c>,
+    /// <c>==mark==</c>), autolinks, emoji shortcodes, CJK-friendly emphasis and hidden YAML front matter.
+    /// Unlike <see cref="UseGitHubExtensions"/>, <c>~text~</c> is subscript, and alerts and footnotes are
+    /// not enabled.
     /// </summary>
     /// <param name="builder">The pipeline builder.</param>
     /// <param name="options">Options for the extensions enabled by this method. See <see cref="MarkdownExtensionsOptions"/>.</param>

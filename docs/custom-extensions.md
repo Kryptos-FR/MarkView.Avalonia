@@ -363,7 +363,7 @@ than throwing.
 
 ```csharp
 viewer.Pipeline = new MarkdownPipelineBuilder()
-    .UseSupportedExtensions()
+    .UseGitHubExtensions()
     .UseColorSpans()
     .Build();
 viewer.Extensions.Add(new ColorSpanExtension());
