@@ -131,8 +131,9 @@ public class AvaloniaRenderer : RendererBase
         RootPanel = new StackPanel { Spacing = 8 };
         _stack.Push(new BlockContainer(RootPanel));
         LoadRenderers();
-        ObjectWriteBefore += (_, obj) => _writing.Push(
-            ApplyAttributeClasses ? Markdig.Renderers.Html.HtmlAttributesExtensions.TryGetAttributes(obj)?.Classes : null);
+        ObjectWriteBefore += (_, obj) => _writing.Push((
+            ApplyAttributeClasses ? Markdig.Renderers.Html.HtmlAttributesExtensions.TryGetAttributes(obj)?.Classes : null,
+            obj is Markdig.Syntax.Inlines.Inline));
         ObjectWriteAfter += (_, _) => _writing.Pop();
     }
 
@@ -144,19 +145,21 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     public bool ApplyAttributeClasses { get; set; }
 
-    // The attribute classes of each object being written, innermost last. An entry is cleared once
-    // given to the first control or inline its object writes.
-    private readonly Stack<List<string>?> _writing = new();
+    // The attribute classes of each object being written, innermost last, and whether that object
+    // is an inline. An entry is cleared once given to the first control or inline its object writes:
+    // a block's classes go to its first block write, so the raw text runs a code block writes into
+    // its own TextBlock first don't take them.
+    private readonly Stack<(List<string>? Classes, bool IsInline)> _writing = new();
 
-    private void AddAttributeClasses(StyledElement element)
+    private void AddAttributeClasses(StyledElement element, bool isInline)
     {
-        if (!_writing.TryPop(out var classes))
-            // Stryker disable once Statement : without the return, the null pushed below is followed by the null-classes return, leaving only an unused null at the bottom of the stack
+        if (!_writing.TryPeek(out var entry) || entry.IsInline != isInline)
             return;
-        _writing.Push(null);
-
+        var classes = entry.Classes;
         if (classes is null)
             return;
+        _writing.Pop();
+        _writing.Push((null, isInline));
         foreach (var name in classes)
         {
             // Avalonia reserves names starting with ':' for pseudo-classes.
@@ -247,7 +250,7 @@ public class AvaloniaRenderer : RendererBase
     {
         if (_stack.Peek() is BlockContainer block)
         {
-            AddAttributeClasses(control);
+            AddAttributeClasses(control, isInline: false);
             block.Add(control);
         }
     }
@@ -259,7 +262,7 @@ public class AvaloniaRenderer : RendererBase
     {
         if (_stack.Peek() is InlineContainer container)
         {
-            AddAttributeClasses(inline);
+            AddAttributeClasses(inline, isInline: true);
             container.Add(inline);
         }
     }
@@ -271,7 +274,7 @@ public class AvaloniaRenderer : RendererBase
     {
         if (_stack.Peek() is InlineContainer container)
         {
-            AddAttributeClasses(control);
+            AddAttributeClasses(control, isInline: true);
             container.Add(control);
         }
     }

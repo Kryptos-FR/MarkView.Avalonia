@@ -92,6 +92,45 @@ public class GenericAttributesTests
     }
 
     [AvaloniaFact]
+    public void Inner_classes_stay_on_the_inner_control()
+    {
+        // The container writes its border after its children.
+        var root = Render("""
+            :::note
+            Inside {.inner}
+            :::
+            """, applyAttributeClasses: true);
+
+        var border = Assert.IsType<Border>(Assert.Single(root.Children));
+        Assert.Equal(["markdown-custom-container", "note"], Classes(border));
+        var paragraph = Assert.Single(Assert.IsType<StackPanel>(border.Child).Children);
+        Assert.Equal(["markdown-paragraph", "inner"], Classes(paragraph));
+    }
+
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Code_block_classes_go_to_the_block_not_to_its_text(bool showToolbar)
+    {
+        // The code's text runs are written before the block itself.
+        var pipeline = new MarkdownPipelineBuilder().UseGenericAttributes().Build();
+        var document = Markdig.Markdown.Parse("```csharp {.sample}\nvar x = 1;\nvar y = 2;\n```\n", pipeline);
+        var renderer = new AvaloniaRenderer
+        {
+            ApplyAttributeClasses = true,
+            ShowCodeBlockLanguage = showToolbar,
+            ShowCodeBlockCopyButton = showToolbar,
+        };
+        pipeline.Setup(renderer);
+        renderer.Render(document);
+
+        var block = Assert.Single(renderer.RootPanel.Children);
+        var code = showToolbar ? Assert.IsType<Border>(Assert.IsType<StackPanel>(block).Children[1]) : Assert.IsType<Border>(block);
+        Assert.Contains("sample", Classes(block));
+        Assert.All(Assert.IsType<TextBlock>(code.Child).Inlines!, run => Assert.Empty(Classes(run)));
+    }
+
+    [AvaloniaFact]
     public void Classes_are_ignored_unless_enabled()
     {
         var root = Render("Text {.note}", applyAttributeClasses: false);
