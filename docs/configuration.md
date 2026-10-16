@@ -51,9 +51,9 @@ viewer.Pipeline = new MarkdownPipelineBuilder()
 - `YamlFrontMatter` — `---` metadata block at the top of a document is parsed and hidden, not shown as garbled text
 - `EmojiAndSmiley` (shortcodes only) — `:rocket:` renders as 🚀; ASCII smileys (`:)`) are intentionally left as plain text, since silently rewriting them is more surprising than useful
 
-The first seven opt-in extensions above (`UseFootnotes()` etc.) are thin wrappers around the corresponding Markdig extension; they are defined in `MarkdownExtensions.cs` and re-exported as extension methods on `MarkdownPipelineBuilder`.
+The opt-in extensions above are Markdig's own pipeline methods, except `UseHardlineBreaks()`, a MarkView.Avalonia shorthand for Markdig's `UseSoftlineBreakAsHardlineBreak()`. Import both `Markdig` and `MarkView.Avalonia` to use them together.
 
-The six after them (`UseDefinitionLists()` to `UseGenericAttributes()`) are Markdig's own methods, rendered natively:
+The last six (`UseDefinitionLists()` to `UseGenericAttributes()`) render as follows:
 
 - **Definition lists** render terms as `TextBlock.markdown-definition-term` and each definition as an indented `StackPanel.markdown-definition`.
 - **Custom containers** render as `Border.markdown-custom-container` with the container's name as an extra class, so `:::warning` can be styled with `Border.markdown-custom-container.warning`. Text after the name (`:::warning Read this first`) becomes a `markdown-custom-container-title` header. Inline `::text::` renders as `Span.markdown-custom-inline`.
