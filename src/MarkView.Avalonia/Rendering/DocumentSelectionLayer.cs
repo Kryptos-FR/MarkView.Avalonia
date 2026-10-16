@@ -51,6 +51,11 @@ internal sealed class DocumentSelectionLayer : Control
         // Invalidate cached bounds so they're recomputed on the next pointer event.
         foreach (var entry in _entries)
             entry.CachedBounds = null;
+
+        // Text can move without the layer itself being laid out again, as when a code block with a
+        // maximum height scrolls inside itself, so the highlight is drawn again where it now is.
+        if (_anchor is not null)
+            InvalidateVisual();
     }
 
     // ── Registration ─────────────────────────────────────────────────────────
@@ -237,18 +242,22 @@ internal sealed class DocumentSelectionLayer : Control
             if (entry.AbsStart >= selEnd) break;
             if (IsHidden(entry)) continue;
 
-            var origin = entry.CachedBounds is { } b
-                ? b.TopLeft
-                : entry.Element.TranslatePoint(new Point(0, 0), this);
-            if (origin is null) continue;
+            if (!EnsureBounds(entry)) continue;
+            var bounds = entry.CachedBounds!.Value;
+
+            // Only the visible part of an entry is highlighted, e.g. not the lines of a code block
+            // scrolled out of its maximum height, which would otherwise paint over its neighbours.
+            using var clip = entry.CachedClip != bounds
+                ? context.PushClip(entry.CachedClip!.Value)
+                : (DrawingContext.PushedState?)null;
 
             if (entry.TextBlock is not { } textBlock)
             {
-                context.DrawRectangle(SelectionBrush, null, new Rect(origin.Value, entry.Element.Bounds.Size));
+                context.DrawRectangle(SelectionBrush, null, bounds);
                 continue;
             }
 
-            var textOrigin = origin.Value + new Vector(textBlock.Padding.Left, textBlock.Padding.Top);
+            var textOrigin = bounds.TopLeft + new Vector(textBlock.Padding.Left, textBlock.Padding.Top);
             int localStart = Math.Max(0, selStart - entry.AbsStart);
             int localEnd = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
             int length = localEnd - localStart;
@@ -289,26 +298,38 @@ internal sealed class DocumentSelectionLayer : Control
 
     /// <summary>
     /// Returns <paramref name="posInLayer"/> in the entry's element local coordinate space,
-    /// or null if the point is outside the element's bounds.
-    /// Caches the bounding <see cref="Rect"/> on <see cref="IndexEntry.CachedBounds"/> so
-    /// subsequent calls avoid a full visual-tree <c>TranslatePoint</c> walk.
+    /// or null if the point is outside the element's visible bounds.
     /// </summary>
     private Point? ToLocalPos(IndexEntry entry, Point posInLayer)
     {
-        Rect bounds;
-        if (entry.CachedBounds is { } cached)
+        if (!EnsureBounds(entry)) return null;
+        if (!entry.CachedClip!.Value.Contains(posInLayer)) return null;
+        return posInLayer - entry.CachedBounds!.Value.TopLeft;
+    }
+
+    /// <summary>
+    /// Fills <see cref="IndexEntry.CachedBounds"/> and <see cref="IndexEntry.CachedClip"/> when
+    /// they are not cached yet, so subsequent calls avoid a full visual-tree <c>TranslatePoint</c>
+    /// walk. Returns <c>false</c> when the entry's element is not in the layer's visual tree.
+    /// </summary>
+    private bool EnsureBounds(IndexEntry entry)
+    {
+        if (entry.CachedBounds is not null) return true;
+
+        var origin = entry.Element.TranslatePoint(new Point(0, 0), this);
+        if (origin is null) return false;
+        var bounds = new Rect(origin.Value, entry.Element.Bounds.Size);
+
+        var clip = bounds;
+        var documentRoot = this.GetVisualParent();
+        for (var visual = entry.Element.GetVisualParent(); visual is not null && visual != documentRoot; visual = visual.GetVisualParent())
         {
-            bounds = cached;
-        }
-        else
-        {
-            var origin = entry.Element.TranslatePoint(new Point(0, 0), this);
-            if (origin is null) return null;
-            bounds = new Rect(origin.Value, entry.Element.Bounds.Size);
-            entry.CachedBounds = bounds;
+            if (visual.ClipToBounds && visual.TranslatePoint(new Point(0, 0), this) is { } visualOrigin)
+                clip = clip.Intersect(new Rect(visualOrigin, visual.Bounds.Size));
         }
 
-        if (!bounds.Contains(posInLayer)) return null;
-        return posInLayer - bounds.TopLeft;
+        entry.CachedBounds = bounds;
+        entry.CachedClip = clip;
+        return true;
     }
 }

@@ -54,6 +54,14 @@ internal sealed class IndexEntry
     /// </summary>
     public Rect? CachedBounds { get; internal set; }
 
+    /// <summary>
+    /// The visible part of <see cref="CachedBounds"/>: what is left once the ancestors inside the
+    /// document that clip their content (e.g. the scroll viewer of a code block with a maximum
+    /// height) have cut it. Equal to <see cref="CachedBounds"/> when nothing clips the entry.
+    /// Populated and invalidated together with it.
+    /// </summary>
+    public Rect? CachedClip { get; internal set; }
+
     public IndexEntry(TextBlock textBlock, string plainText, string separator = "\n",
         IReadOnlyDictionary<int, string>? embeddedText = null)
         : this(textBlock, textBlock, plainText, separator, embeddedText)

@@ -54,6 +54,25 @@ public class AvaloniaRenderer : RendererBase
     public bool ShowCodeBlockCopyButton { get; set; } = true;
 
     /// <summary>
+    /// Whether code blocks show the number of each line in a gutter next to the code. The numbers
+    /// are not part of the code: text selection and the copy button never include them.
+    /// Defaults to <c>false</c>.
+    /// </summary>
+    public bool ShowCodeBlockLineNumbers { get; set; }
+
+    /// <summary>
+    /// Whether code blocks wrap lines longer than the block's width instead of letting them run
+    /// past it. Defaults to <c>false</c>.
+    /// </summary>
+    public bool WrapCodeBlockLines { get; set; }
+
+    /// <summary>
+    /// The maximum height of a code block (toolbar excluded); a taller block scrolls vertically
+    /// inside itself. Defaults to <see cref="double.PositiveInfinity"/> (no limit).
+    /// </summary>
+    public double CodeBlockMaxHeight { get; set; } = double.PositiveInfinity;
+
+    /// <summary>
     /// When <c>true</c>, task-list items render a clickable checkbox that raises
     /// <see cref="TaskToggled"/> when toggled; otherwise a static check glyph.
     /// Defaults to <c>false</c>.

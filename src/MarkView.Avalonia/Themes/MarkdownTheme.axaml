@@ -14,6 +14,8 @@
           <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#2D2D2D</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#A0A0A0</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#1AFFFFFF</SolidColorBrush>
+          <!-- 4.8:1 contrast on MarkdownCodeBlockBackground -->
+          <SolidColorBrush x:Key="MarkdownCodeLineNumberForeground">#8A8A8A</SolidColorBrush>
           <!-- Alert accent colours — dark theme (Default: kinds without their own colours, e.g. [!QUESTION]) -->
           <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#71717A</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertDefaultBackground">#1A71717A</SolidColorBrush>
@@ -37,6 +39,8 @@
           <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#E4E4E4</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#5F5F5F</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#14000000</SolidColorBrush>
+          <!-- 4.9:1 contrast on MarkdownCodeBlockBackground -->
+          <SolidColorBrush x:Key="MarkdownCodeLineNumberForeground">#6A6A6A</SolidColorBrush>
           <!-- Alert accent colours — light theme (Default: kinds without their own colours, e.g. [!QUESTION]) -->
           <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#71717A</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertDefaultBackground">#F4F4F5</SolidColorBrush>
@@ -133,10 +137,16 @@
     <Setter Property="Padding" Value="12,8" />
     <Setter Property="Margin" Value="0,4" />
   </Style>
-  <Style Selector="Border.markdown-code-block > TextBlock">
+  <!-- Descendants, so the line numbers share the code's font (and so its line height) and the
+       code keeps it inside the line-number grid or the max-height scroll viewer -->
+  <Style Selector="Border.markdown-code-block TextBlock">
     <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace" />
     <Setter Property="FontSize" Value="13" />
     <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeBlockForeground}" />
+  </Style>
+  <Style Selector="TextBlock.markdown-code-line-numbers">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeLineNumberForeground}" />
+    <Setter Property="Margin" Value="0,0,16,0" />
   </Style>
 
   <!-- Fenced code blocks rendered as an application's own control (FenceRendererExtension) -->
