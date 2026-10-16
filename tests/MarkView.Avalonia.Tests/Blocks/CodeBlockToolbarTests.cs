@@ -3,11 +3,13 @@
 
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Platform;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Markdig;
@@ -15,6 +17,9 @@ using Markdig.Syntax;
 using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Tests.Shared;
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Blocks;
@@ -162,14 +167,83 @@ public class CodeBlockToolbarTests
     }
 
     [AvaloniaFact]
+    public async Task Copying_again_restarts_the_copied_feedback()
+    {
+        var root = Render("```\ncode\n```");
+        var window = new Window { Content = root };
+        window.Show();
+        try
+        {
+            var button = Assert.IsType<Button>(CopyButton(Wrapped(root).Toolbar));
+            var clock = Stopwatch.StartNew();
+            TimeSpan? removedAt = null;
+            button.Classes.CollectionChanged += (_, _) =>
+            {
+                if (!button.Classes.Contains("copied"))
+                    removedAt ??= clock.Elapsed;
+            };
+
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.Contains("copied", button.Classes);
+
+            // Copy again halfway through the feedback: the first copy's timer must not cut the
+            // second one short.
+            await Task.Delay(CodeBlockToolbar.CopiedFeedbackDuration / 2);
+            Assert.Null(removedAt);
+            var secondCopy = clock.Elapsed;
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.Contains("copied", button.Classes);
+
+            await AsyncTestHelpers.WaitUntilAsync(() => removedAt != null,
+                (int)(CodeBlockToolbar.CopiedFeedbackDuration * 2 + TimeSpan.FromSeconds(5)).TotalMilliseconds);
+            // Small tolerance for the dispatcher's millisecond clock.
+            Assert.True(removedAt >= secondCopy + CodeBlockToolbar.CopiedFeedbackDuration - TimeSpan.FromMilliseconds(50),
+                $"'copied' was removed at {removedAt}, before the second copy's {CodeBlockToolbar.CopiedFeedbackDuration} " +
+                $"(second copy at {secondCopy})");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Copy_button_shows_no_confirmation_when_the_clipboard_refuses_the_code()
+    {
+        var root = Render("```\ncode\n```");
+        var (window, clipboard) = RefusingClipboardProxy.CreateWindow();
+        window.Content = root;
+        window.Show();
+        try
+        {
+            var button = Assert.IsType<Button>(CopyButton(Wrapped(root).Toolbar));
+            var click = new RoutedEventArgs(Button.ClickEvent);
+            button.RaiseEvent(click);
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.True(click.Handled);
+            Assert.True(clipboard.Refused);
+            Assert.DoesNotContain("copied", button.Classes);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void Copy_button_outside_a_window_does_nothing()
     {
         var root = Render("```\ncode\n```");
         var button = Assert.IsType<Button>(CopyButton(Wrapped(root).Toolbar));
 
-        button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        var click = new RoutedEventArgs(Button.ClickEvent);
+        button.RaiseEvent(click);
         Dispatcher.UIThread.RunJobs();
 
+        Assert.True(click.Handled);
         Assert.DoesNotContain("copied", button.Classes);
     }
 
@@ -250,6 +324,54 @@ public class CodeBlockToolbarTests
         finally
         {
             window.Close();
+        }
+    }
+
+    /// <summary>
+    /// A clipboard that refuses every write, the way a browser can, plugged into a headless window
+    /// by forwarding everything else of the window's platform implementation.
+    /// </summary>
+    public class RefusingClipboardProxy : DispatchProxy
+    {
+        public bool Refused { get; private set; }
+
+        public static (Window Window, RefusingClipboardProxy Clipboard) CreateWindow()
+        {
+            var clipboard = Create<IClipboard, RefusingClipboardProxy>();
+            var impl = Create<IWindowImpl, ClipboardOverridingWindowImplProxy>();
+            var overriding = (ClipboardOverridingWindowImplProxy)(object)impl;
+            overriding.Inner = (IWindowImpl)PlatformManager.CreateWindow();
+            overriding.Clipboard = clipboard;
+            return (new Window(impl), (RefusingClipboardProxy)(object)clipboard);
+        }
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod?.Name != nameof(IClipboard.SetDataAsync))
+                throw new NotSupportedException(targetMethod?.Name);
+            Refused = true;
+            return Task.FromException(new UnauthorizedAccessException("Clipboard access refused"));
+        }
+    }
+
+    public class ClipboardOverridingWindowImplProxy : DispatchProxy
+    {
+        public IWindowImpl Inner { get; set; } = null!;
+        public IClipboard Clipboard { get; set; } = null!;
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod!.Name == "TryGetFeature" && Equals(args![0], typeof(IClipboard)))
+                return Clipboard;
+            try
+            {
+                return targetMethod.Invoke(Inner, args);
+            }
+            catch (TargetInvocationException e) when (e.InnerException != null)
+            {
+                ExceptionDispatchInfo.Throw(e.InnerException);
+                throw;
+            }
         }
     }
 }
