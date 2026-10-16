@@ -102,6 +102,10 @@ Diagrams are automatically re-rendered when the user switches between light and 
 | Dark | `#18181B` | `#FAFAFA` | `#60a5fa` |
 | Light | `#FFFFFF` | `#27272A` | `#3b82f6` |
 
+### Fonts
+
+Diagram labels are drawn in the document's font (the viewer's inherited `FontFamily`, as Avalonia resolves it), so fonts embedded in the application, such as Inter with `WithInterFont()`, work on every platform. This matters most in the browser, where SkiaSharp has no fonts of its own besides a monospace fallback.
+
 ### Fallback
 
 If rendering fails, the extension falls back to a plain-text block containing the original Mermaid source.

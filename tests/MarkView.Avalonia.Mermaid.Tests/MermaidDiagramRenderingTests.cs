@@ -3,6 +3,7 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -95,6 +96,22 @@ public class MermaidDiagramRenderingTests
         Assert.Equal(Stretch.Uniform, image.Stretch);
         Assert.Equal(HorizontalAlignment.Left, image.HorizontalAlignment);
         Assert.Contains("markdown-mermaid", border.Classes);
+    }
+
+    [AvaloniaFact]
+    public async Task Diagram_text_uses_the_font_of_the_document()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var font = new FontFamily("Courier New");
+        var root = Render(Diagram);
+        root.SetValue(TextElement.FontFamilyProperty, font);
+        var image = Assert.IsType<Image>(Assert.IsType<Border>(Assert.Single(root.Children)).Child);
+        using var _ = new Shown(root);
+
+        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+
+        Assert.Equal(font, AvaloniaTypefaceProvider.Shared.DocumentFont);
+        Assert.Contains(AvaloniaTypefaceProvider.Shared, SvgSource.s_skiaModel.Settings.TypefaceProviders!);
     }
 
     [AvaloniaFact]

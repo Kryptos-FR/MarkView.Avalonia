@@ -119,6 +119,10 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
                 return;
             }
 
+            // Diagram text is drawn in the document's font, resolved by Avalonia, rather than with
+            // whatever SkiaSharp finds on its own (only a monospace font in the browser).
+            AvaloniaTypefaceProvider.Use(border.GetValue(TextElement.FontFamilyProperty));
+
             try
             {
                 var svgSource = await Task.Run(() =>
