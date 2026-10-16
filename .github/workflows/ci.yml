@@ -184,19 +184,38 @@ jobs:
 
   # The only check branch protection needs to require. Skipped jobs (nothing to run for
   # these changes, or a draft) count as passing; a failed or cancelled one does not.
-  # always() on purpose: a cancelled run must report a red Gate, not a skipped one.
+  # always() on purpose: a cancelled run must report a red Gate, not a skipped one, unless
+  # a newer run of this workflow on the same branch superseded it (the concurrency group
+  # cancels the older run, e.g. when two events start runs on the same commit): that run
+  # reports its own Gate, so this one passes instead of showing red on the pull request.
   gate:
     name: Gate
     needs: [changes, build, aot-publish, mutation]
     if: always()
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
     steps:
       - name: Fail if any needed job failed or was cancelled
         env:
           NEEDS: ${{ toJSON(needs) }}
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          BRANCH: ${{ github.head_ref }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           echo "$NEEDS" | jq -r 'to_entries[] | "\(.value.result)\t\(.key)"'
-          test "$(echo "$NEEDS" | jq '[.[] | select(.result == "failure" or .result == "cancelled")] | length')" -eq 0
+          failed=$(echo "$NEEDS" | jq '[.[] | select(.result == "failure")] | length')
+          cancelled=$(echo "$NEEDS" | jq '[.[] | select(.result == "cancelled")] | length')
+          if [ "$failed" -eq 0 ] && [ "$cancelled" -gt 0 ] && [ "$EVENT" = "pull_request" ]; then
+            newer=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?event=pull_request&branch=$BRANCH&per_page=20" \
+              --jq "[.workflow_runs[] | select(.run_number > $RUN_NUMBER)] | length")
+            if [ "$newer" -gt 0 ]; then
+              echo "Superseded by a newer run on $BRANCH, which reports its own Gate."
+              exit 0
+            fi
+          fi
+          test $((failed + cancelled)) -eq 0
 
   publish:
     needs: [build, aot-publish]
