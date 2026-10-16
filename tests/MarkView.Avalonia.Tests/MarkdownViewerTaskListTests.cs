@@ -10,6 +10,7 @@ using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
+using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 
@@ -250,6 +251,35 @@ public class MarkdownViewerTaskListTests
     }
 
     [AvaloniaFact]
+    public void Writing_each_toggle_back_keeps_the_rendered_document()
+    {
+        // The image size hint shifts every marker after it; [X] is written back as [x] once re-checked.
+        const string markdown = "![](x =100x100)\n\n- [ ] one\n- [X] two\n- [ ] three";
+        var viewer = new MarkdownViewer { Markdown = markdown, AreTaskListsInteractive = true };
+        var content = viewer.Content;
+        viewer.TaskToggled += (_, e) =>
+        {
+            var source = viewer.Markdown!;
+            viewer.Markdown = string.Concat(
+                source.AsSpan(0, e.SourceStart),
+                e.IsChecked ? "[x]" : "[ ]",
+                source.AsSpan(e.SourceStart + e.SourceLength));
+        };
+
+        Toggles(viewer)[0].IsChecked = true;
+        Assert.Same(content, viewer.Content);
+        Toggles(viewer)[1].IsChecked = false;
+        Assert.Same(content, viewer.Content);
+        Toggles(viewer)[1].IsChecked = true;
+        Assert.Same(content, viewer.Content);
+        Toggles(viewer)[2].IsChecked = true;
+
+        Assert.Same(content, viewer.Content);
+        Assert.Equal("![](x =100x100)\n\n- [x] one\n- [x] two\n- [x] three", viewer.Markdown);
+        Assert.Equal([true, true, true], Toggles(viewer).Select(t => t.IsChecked));
+    }
+
+    [AvaloniaFact]
     public void Toggles_not_written_back_are_lost_when_another_text_is_assigned()
     {
         var viewer = new MarkdownViewer { Markdown = TwoTasks, AreTaskListsInteractive = true };
@@ -258,6 +288,49 @@ public class MarkdownViewerTaskListTests
         viewer.Markdown = TwoTasks + "\n";
 
         Assert.Equal([true, false], Toggles(viewer).Select(t => t.IsChecked));
+    }
+
+    // ── Source documents ──────────────────────────────────────────────────────
+
+    // "![](pixel.png =1x1)" followed by two unchecked tasks; read back to get its line endings as checked out.
+    private static readonly Uri TasksDoc = new("avares://MarkView.Avalonia.Tests/TestAssets/tasks.md");
+
+    private static string ReadTasksDoc()
+    {
+        using var reader = new StreamReader(AssetLoader.Open(TasksDoc));
+        return reader.ReadToEnd();
+    }
+
+    [AvaloniaFact]
+    public void TaskToggled_locates_the_marker_in_the_text_loaded_from_Source()
+    {
+        var loaded = ReadTasksDoc();
+        var viewer = new MarkdownViewer { Source = TasksDoc, AreTaskListsInteractive = true };
+        var events = RecordToggles(viewer);
+
+        Toggles(viewer)[1].IsChecked = true;
+
+        var e = Assert.Single(events);
+        var expectedStart = loaded.IndexOf("[ ] second", StringComparison.Ordinal);
+        Assert.Equal(expectedStart, e.SourceStart);
+        Assert.Equal("[ ]", loaded.Substring(e.SourceStart, e.SourceLength));
+        Assert.Equal(loaded.AsSpan(0, expectedStart).Count('\n'), e.Line);
+    }
+
+    [AvaloniaFact]
+    public void Assigning_Markdown_while_Source_is_shown_re_renders_the_Source_document()
+    {
+        // Matching the toggled text is no write-back while a Source document is shown: Markdown is not what is rendered.
+        var loaded = ReadTasksDoc();
+        var viewer = new MarkdownViewer { Source = TasksDoc, AreTaskListsInteractive = true };
+        viewer.TaskToggled += (_, e) => viewer.Markdown = string.Concat(
+            loaded.AsSpan(0, e.SourceStart), "[x]", loaded.AsSpan(e.SourceStart + e.SourceLength));
+        var content = viewer.Content;
+
+        Toggles(viewer)[0].IsChecked = true;
+
+        Assert.NotSame(content, viewer.Content);
+        Assert.Equal([false, false], Toggles(viewer).Select(t => t.IsChecked));
     }
 
     // ── Pointer, keyboard and selection ───────────────────────────────────────
