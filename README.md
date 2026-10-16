@@ -183,7 +183,9 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | CJK-friendly emphasis | parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation |
 | YAML front matter | `---` metadata block at the top of a document is parsed and hidden |
 
-`UseSupportedExtensions()`, the previous default, enables the same features except alerts and footnotes, and adds subscript (`~text~`), superscript (`^text^`), underline (`++text++`), highlight (`==text==`) and grid tables. See [Markdig Pipeline](docs/configuration.md#markdig-pipeline).
+`UseSupportedExtensions()`, the previous default, enables the same features except alerts and footnotes, and adds subscript (`~text~`), superscript (`^text^`), underline (`++text++`), highlight (`==text==`) and grid tables.
+
+**Subscript is not available on top of `UseGitHubExtensions()`:** there `~text~` is always strikethrough, as on GitHub, even with `UseEmphasisExtras()`. For subscript, build the pipeline from `UseSupportedExtensions()` and add `UseAlertBlocks()` / `UseFootnotes()` if needed. See [Markdig Pipeline](docs/configuration.md#markdig-pipeline).
 
 ### Opt-in extensions
 
@@ -193,7 +195,7 @@ These require adding `.UseXxx()` to the pipeline (see [Extension Methods](#exten
 |---------|-----------|--------|
 | Abbreviations | `UseAbbreviations()` | `*[HTML]: …` |
 | Foldable alerts and custom titles | `UseExtendedAlertBlocks()` (also enabled by `viewer.UseAlertBlocks()`) | Obsidian-style `> [!NOTE] Custom title`, foldable `> [!NOTE]-` (collapsed) / `> [!NOTE]+` (expanded) |
-| Superscript, underline, highlight | `UseEmphasisExtras()` | `^text^`, `++text++`, `==text==` (on top of the default pipeline, `~text~` stays strikethrough) |
+| Superscript, underline, highlight | `UseEmphasisExtras()` | `^text^`, `++text++`, `==text==` |
 | Grid tables | `UseGridTables()` | RST-style grid tables |
 | Citations | `UseCitations()` | `""quoted text""` |
 | Figures | `UseFigures()` | `^^^` / `^^^ caption` |
