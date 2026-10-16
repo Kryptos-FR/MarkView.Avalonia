@@ -204,11 +204,13 @@ public class ListTests : RenderTestBase
     [InlineData(90, 'I', '.', "XC.")]
     [InlineData(400, 'I', '.', "CD.")]
     [InlineData(1994, 'I', '.', "MCMXCIV.")]
+    [InlineData(1666, 'I', '.', "MDCLXVI.")]
     [InlineData(3999, 'I', '.', "MMMCMXCIX.")]
     [InlineData(4000, 'I', '.', "4000.")]
     [InlineData(0, 'i', '.', "0.")]
     [InlineData(12, '1', ')', "12)")]
     [InlineData(12, '1', '\0', "12.")]
+    [InlineData(5, 'x', '.', "5.")]
     public void Ordered_marker_formats_the_number_for_the_bullet_type(int number, char bulletType, char delimiter, string expected)
     {
         Assert.Equal(expected, MarkView.Avalonia.Rendering.Blocks.ListRenderer.OrderedMarker(number, bulletType, delimiter));

@@ -54,6 +54,29 @@ public class GenericAttributesTests
     }
 
     [AvaloniaFact]
+    public void Image_classes_are_added_to_the_image_control()
+    {
+        var root = Render("![logo](logo.png){.icon}", applyAttributeClasses: true);
+
+        var paragraph = Assert.IsAssignableFrom<TextBlock>(Assert.Single(root.Children));
+        var container = Assert.IsType<InlineUIContainer>(Assert.Single(paragraph.Inlines!));
+        var image = Assert.IsType<Image>(container.Child);
+        Assert.Equal(["markdown-image", "icon"], Classes(image));
+    }
+
+    [AvaloniaFact]
+    public void Block_written_outside_any_markdown_object_gets_no_classes()
+    {
+        var renderer = new AvaloniaRenderer { ApplyAttributeClasses = true };
+        var border = new Border();
+
+        renderer.WriteBlock(border);
+
+        Assert.Same(border, Assert.Single(renderer.RootPanel.Children));
+        Assert.Empty(Classes(border));
+    }
+
+    [AvaloniaFact]
     public void Classes_go_to_the_outer_control_only()
     {
         var root = Render("""

@@ -26,4 +26,13 @@ public class FooterTests : RenderTestBase
         var paragraph = Assert.IsAssignableFrom<TextBlock>(Assert.Single(footer.Children));
         Assert.Contains("markdown-paragraph", paragraph.Classes);
     }
+
+    [AvaloniaFact]
+    public void Footer_panel_spaces_its_blocks()
+    {
+        var result = Render("^^ Footer text", new MarkdownPipelineBuilder().UseFooters().Build());
+
+        var footer = Assert.IsType<StackPanel>(Assert.Single(result.Children));
+        Assert.Equal(4, footer.Spacing);
+    }
 }

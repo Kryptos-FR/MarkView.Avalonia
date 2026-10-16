@@ -3,6 +3,7 @@
 
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Media;
 using Avalonia.Headless.XUnit;
 using Markdig;
 using MarkView.Avalonia.Rendering;
@@ -98,5 +99,25 @@ public class CustomContainerTests : RenderTestBase
         var span = Assert.IsType<Span>(paragraph.Inlines![1]);
         Assert.Contains("markdown-custom-inline", span.Classes);
         Assert.Equal("marked", Assert.IsType<Run>(Assert.Single(span.Inlines)).Text);
+    }
+
+    [AvaloniaFact]
+    public void Container_spaces_its_blocks_and_wraps_its_title_bound_to_the_renderer()
+    {
+        var pipeline = ContainerPipeline();
+        var renderer = new AvaloniaRenderer();
+        pipeline.Setup(renderer);
+        renderer.Render(Markdown.Parse("""
+            :::tip Read this first
+            Body
+            :::
+            """, pipeline));
+
+        var border = Assert.IsType<Border>(Assert.Single(renderer.RootPanel.Children));
+        var content = Assert.IsType<StackPanel>(border.Child);
+        Assert.Equal(8, content.Spacing);
+        var title = Assert.IsType<MarkdownSelectableTextBlock>(content.Children[0]);
+        Assert.Equal(TextWrapping.Wrap, title.TextWrapping);
+        Assert.Same(renderer, title.Renderer);
     }
 }

@@ -151,6 +151,7 @@ public class AvaloniaRenderer : RendererBase
     private void AddAttributeClasses(StyledElement element)
     {
         if (!_writing.TryPop(out var classes))
+            // Stryker disable once Statement : without the return, the null pushed below is followed by the null-classes return, leaving only an unused null at the bottom of the stack
             return;
         _writing.Push(null);
 

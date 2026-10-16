@@ -3,6 +3,7 @@
 
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Media;
 using Avalonia.Headless.XUnit;
 using Markdig;
 using MarkView.Avalonia.Rendering;
@@ -116,5 +117,24 @@ public class DefinitionListTests : RenderTestBase
         Assert.Equal(4, list.Children.Count);
         Assert.Equal("Second", Text(list.Children[2]));
         Assert.Equal("Two", Text(Assert.Single(Assert.IsType<StackPanel>(list.Children[3]).Children)));
+    }
+
+    [AvaloniaFact]
+    public void Definition_list_spaces_its_entries_and_wraps_terms_bound_to_the_renderer()
+    {
+        var pipeline = DefinitionListPipeline();
+        var renderer = new AvaloniaRenderer();
+        pipeline.Setup(renderer);
+        renderer.Render(Markdown.Parse("""
+            Term
+            :   Definition
+            """, pipeline));
+
+        var list = Assert.IsType<StackPanel>(Assert.Single(renderer.RootPanel.Children));
+        Assert.Equal(4, list.Spacing);
+        var term = Assert.IsType<MarkdownSelectableTextBlock>(list.Children[0]);
+        Assert.Equal(TextWrapping.Wrap, term.TextWrapping);
+        Assert.Same(renderer, term.Renderer);
+        Assert.Equal(8, Assert.IsType<StackPanel>(list.Children[1]).Spacing);
     }
 }
