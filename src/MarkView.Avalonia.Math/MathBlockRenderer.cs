@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -26,6 +27,8 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
             Stretch = Stretch.None,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
+        // Screen readers read the TeX source, as they do a formula's alt text on the web.
+        AutomationProperties.SetName(image, source);
 
         var border = new Border { Child = image };
         border.Classes.Add("markdown-math-block");

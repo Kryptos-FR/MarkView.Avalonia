@@ -1,6 +1,8 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -18,6 +20,7 @@ public sealed class FigureRenderer : AvaloniaObjectRenderer<Figure>
     protected override void Write(AvaloniaRenderer renderer, Figure obj)
     {
         var contentPanel = new StackPanel { Spacing = 4 };
+        MarkdownSelectableTextBlock? firstCaption = null;
 
         foreach (var child in obj)
         {
@@ -33,6 +36,7 @@ public sealed class FigureRenderer : AvaloniaObjectRenderer<Figure>
                 renderer.WriteLeafInline(caption);
                 renderer.Pop();
                 contentPanel.Children.Add(captionBlock);
+                firstCaption ??= captionBlock;
             }
             else
             {
@@ -48,6 +52,9 @@ public sealed class FigureRenderer : AvaloniaObjectRenderer<Figure>
             HorizontalAlignment = HorizontalAlignment.Center,
         };
         border.Classes.Add("markdown-figure");
+        AutomationRoles.Set(border, AutomationControlType.Group);
+        if (firstCaption is not null)
+            AutomationProperties.SetLabeledBy(border, firstCaption);
 
         renderer.WriteBlock(border);
     }

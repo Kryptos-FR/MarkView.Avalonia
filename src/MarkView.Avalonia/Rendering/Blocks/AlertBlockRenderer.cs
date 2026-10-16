@@ -1,6 +1,8 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 
@@ -62,6 +64,10 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         var border = new Border { Child = outer };
         border.Classes.Add("markdown-alert");
         border.Classes.Add($"markdown-alert-{kindLower}");
+        // A group named by its visible title, so the alert kind is announced as text, not
+        // left to colour alone.
+        AutomationRoles.Set(border, AutomationControlType.Group);
+        AutomationProperties.SetLabeledBy(border, header);
 
         AlertChevron? chevron = null;
         if (fold != AlertFold.None)

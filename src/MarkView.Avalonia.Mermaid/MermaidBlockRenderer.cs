@@ -4,6 +4,7 @@
 using System.Text;
 
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Layout;
@@ -44,6 +45,8 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
             Stretch = Stretch.Uniform,
             HorizontalAlignment = HorizontalAlignment.Left,
         };
+        // The diagram's source is its only text equivalent.
+        AutomationProperties.SetName(image, source);
 
         var border = new Border { Child = image };
         border.Classes.Add("markdown-mermaid");

@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Media;
@@ -23,6 +24,7 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
 
         var image = new Image { Stretch = Stretch.None };
         image.Classes.Add("markdown-math-inline");
+        AutomationProperties.SetName(image, source);
         MarkdownSelection.SetCopyText(image, $"${source}$");
 
         if (!TryApplyTheme())

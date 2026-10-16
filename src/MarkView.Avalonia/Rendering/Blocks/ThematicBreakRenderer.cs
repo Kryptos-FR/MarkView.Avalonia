@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 
 using Markdig.Syntax;
@@ -13,6 +14,7 @@ public sealed class ThematicBreakRenderer : AvaloniaObjectRenderer<ThematicBreak
     {
         var separator = new Separator();
         separator.Classes.Add("markdown-thematic-break");
+        AutomationRoles.Set(separator, AutomationControlType.Separator);
         renderer.WriteBlock(separator);
     }
 }

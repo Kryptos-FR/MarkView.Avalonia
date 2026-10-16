@@ -21,6 +21,23 @@ Extension packages that need their own overridable colours ship a standalone the
 
 Each extension theme is independent — it does not import the core `MarkdownTheme.axaml` — so including one, none, or several has no ordering requirement. If an extension theme isn't included, the extension falls back to built-in default colours rather than failing.
 
+## Colour resources
+
+`MarkdownTheme.axaml` defines its colours as Dark/Light `SolidColorBrush` resources, so you can retint the document without restyling it. Redefine any key in your own `ThemeDictionaries`:
+
+| Resource key | Used for |
+|---|---|
+| `MarkdownCodeBlockBackground` / `MarkdownCodeBlockForeground` | Fenced code blocks |
+| `MarkdownCodeInlineBackground` / `MarkdownCodeInlineForeground` | Inline code |
+| `MarkdownLinkForeground` | Links and footnote references; defaults to FluentTheme's `SystemAccentColorDark2` (Light) / `SystemAccentColorLight2` (Dark) |
+| `MarkdownBlockquoteBorder` | Blockquote bar |
+| `MarkdownTableBorder` | Table cell borders |
+| `MarkdownMarkedBackground` | `==marked==` text |
+| `MarkdownAlert{Note,Tip,Important,Warning,Caution}{Border,Background}` | Alert bar, title and background |
+| `MarkdownHighContrast*` | The high-contrast palette, see [Accessibility](accessibility.md#high-contrast) |
+
+The defaults meet WCAG 2.2 AA contrast; see [Accessibility](accessibility.md#colour-contrast).
+
 ## Style class reference
 
 Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name. Override any selector in your own `Styles` block to customise appearance.

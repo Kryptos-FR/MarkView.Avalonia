@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Text;
 
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Layout;
 
@@ -22,6 +23,7 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
         // Every item's marker column takes the width of the widest marker ("iii." next to "i."),
         // so the items' text lines up.
         Grid.SetIsSharedSizeScope(listPanel, true);
+        AutomationRoles.Set(listPanel, AutomationControlType.List);
         listPanel.Classes.Add("markdown-list");
         if (obj.IsOrdered)
             listPanel.Classes.Add("markdown-list-ordered");
@@ -44,6 +46,7 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
                     new ColumnDefinition(1, GridUnitType.Star),
                 },
             };
+            AutomationRoles.Set(itemGrid, AutomationControlType.ListItem);
 
             bool isTaskItem = listItem.Count > 0
                 && listItem[0] is ParagraphBlock para
@@ -84,6 +87,10 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
                     VerticalAlignment = VerticalAlignment.Top,
                 };
                 marker.Classes.Add("markdown-list-marker");
+                // The list item role already says it's a bullet point; a number is kept, since
+                // an ordered list can start anywhere and the reader can't infer it.
+                if (!obj.IsOrdered)
+                    AutomationRoles.Hide(marker);
                 // Stryker disable once Statement : column 0 is Grid's default column
                 Grid.SetColumn(marker, 0);
                 itemGrid.Children.Add(marker);
