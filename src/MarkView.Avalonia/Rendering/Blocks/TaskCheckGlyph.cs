@@ -51,31 +51,40 @@ internal sealed class TaskCheckGlyph : TextBlock
 
     protected override void RenderTextLayout(DrawingContext context, Point origin)
     {
-        if (Foreground is not { } brush)
-            return;
+        // Without a foreground, the pens have no brush and nothing is drawn.
+        var brush = Foreground;
+        var shape = GetShape(origin);
+        context.DrawRectangle(null, new Pen(brush, shape.Thickness), shape.Outline, shape.CornerRadius, shape.CornerRadius);
+        if (IsChecked)
+        {
+            // Stryker disable once Boolean : with no brush, a filled tick draws the same as an unfilled one
+            var tick = new PolylineGeometry(shape.Tick, isFilled: false);
+            context.DrawGeometry(null, new Pen(brush, shape.Thickness * 1.5, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), tick);
+        }
+    }
 
+    /// <summary>
+    /// Where the box and its tick go when the text layout is drawn at <paramref name="origin"/>.
+    /// </summary>
+    internal CheckShape GetShape(Point origin)
+    {
         var size = BoxSize;
         var thickness = Math.Max(1, Math.Round(FontSize / 14));
-        var baseline = TextLayout.TextLines.Count > 0 ? TextLayout.TextLines[0].Baseline : TextLayout.Baseline;
         var width = Bounds.Width - Padding.Left - Padding.Right;
         var left = origin.X + Math.Max(0, (width - size) / 2);
-        var top = origin.Y + Math.Max(0, baseline - FontSize * CenterAboveBaselineRatio - size / 2);
+        var top = origin.Y + TextLayout.Baseline - FontSize * CenterAboveBaselineRatio - size / 2;
 
-        // Inset by half the pen so the stroke stays inside the box.
-        var box = new Rect(left, top, size, size).Deflate(thickness / 2);
-        var radius = size * 0.2;
-        context.DrawRectangle(null, new Pen(brush, thickness), box, radius, radius);
-
-        if (!IsChecked)
-            return;
-
-        var tick = new PolylineGeometry(
+        return new CheckShape(
+            // Inset by half the pen so the stroke stays inside the box.
+            new Rect(left, top, size, size).Deflate(thickness / 2),
+            size * 0.2,
+            thickness,
             [
                 new Point(left + size * 0.24, top + size * 0.52),
                 new Point(left + size * 0.43, top + size * 0.70),
                 new Point(left + size * 0.76, top + size * 0.32),
-            ],
-            isFilled: false);
-        context.DrawGeometry(null, new Pen(brush, thickness * 1.5, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), tick);
+            ]);
     }
+
+    internal readonly record struct CheckShape(Rect Outline, double CornerRadius, double Thickness, Point[] Tick);
 }

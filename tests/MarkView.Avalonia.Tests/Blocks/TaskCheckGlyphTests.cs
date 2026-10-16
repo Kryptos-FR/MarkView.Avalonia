@@ -83,30 +83,71 @@ public class TaskCheckGlyphTests
     }
 
     [AvaloniaFact]
-    public void Is_at_least_as_wide_as_the_box_and_its_padding()
+    public void Is_as_wide_as_the_box_and_its_padding_when_the_text_is_narrower()
     {
         // The box is 0.8 em: 22 px at 28 px.
-        var glyph = Laid(false, padding: new Thickness(3, 0, 5, 0));
-        Assert.True(glyph.DesiredSize.Width >= 22 + 3 + 5);
+        var glyph = new TaskCheckGlyph(false) { FontSize = 28, Padding = new Thickness(3, 0, 5, 0) };
+        glyph.Text = "";
+        glyph.Measure(Size.Infinity);
+        Assert.Equal(22 + 3 + 5, glyph.DesiredSize.Width);
     }
 
     [AvaloniaFact]
-    public void Unchecked_draws_a_rounded_box_in_the_foreground_centred_on_the_lowercase_middle()
+    public void Is_as_wide_as_the_text_and_its_padding_when_the_text_is_wider()
+    {
+        var reference = new TextBlock { FontSize = 28, Padding = new Thickness(3, 0, 5, 0), Text = "☐☐☐☐" };
+        reference.Measure(Size.Infinity);
+        var glyph = new TaskCheckGlyph(false) { FontSize = 28, Padding = new Thickness(3, 0, 5, 0) };
+        glyph.Text = "☐☐☐☐";
+        glyph.Measure(Size.Infinity);
+
+        Assert.True(reference.DesiredSize.Width > 22 + 3 + 5);
+        Assert.Equal(reference.DesiredSize.Width, glyph.DesiredSize.Width);
+    }
+
+    [AvaloniaFact]
+    public void Box_is_centred_on_the_lowercase_middle_and_inset_by_half_the_pen()
+    {
+        var glyph = Laid(false, padding: new Thickness(4, 6, 2, 0));
+        var shape = glyph.GetShape(new Point(4, 6));
+
+        // 28 px: a 22 px box, a 2 px pen, a 4.4 px corner radius.
+        var left = 4 + (glyph.Bounds.Width - 4 - 2 - 22) / 2;
+        var top = 6 + glyph.TextLayout.Baseline - 28 * 0.3 - 11;
+        Assert.Equal(2, shape.Thickness);
+        Assert.Equal(22 * 0.2, shape.CornerRadius, 6);
+        Assert.Equal(new Rect(left + 1, top + 1, 20, 20), shape.Outline);
+        Assert.Equal(
+            [
+                new Point(left + 22 * 0.24, top + 22 * 0.52),
+                new Point(left + 22 * 0.43, top + 22 * 0.70),
+                new Point(left + 22 * 0.76, top + 22 * 0.32),
+            ],
+            shape.Tick);
+    }
+
+    [AvaloniaFact]
+    public void Box_starts_at_the_origin_when_arranged_narrower_than_it()
+    {
+        var glyph = Laid(false);
+        glyph.Arrange(new Rect(0, 0, 10, glyph.DesiredSize.Height));
+        Assert.Equal(1, glyph.GetShape(default).Outline.X);
+    }
+
+    [AvaloniaFact]
+    public void Unchecked_draws_only_the_box_with_the_foreground_pen()
     {
         var glyph = Laid(false);
         var drawing = Assert.Single(Draw(glyph));
 
         Assert.Null(drawing.Brush);
         Assert.Same(Brushes.Black, drawing.Pen!.Brush);
-        Assert.Equal(2, drawing.Pen.Thickness);  // 28 / 14
-
-        var left = (glyph.Bounds.Width - 22) / 2;
-        var top = glyph.TextLayout.TextLines[0].Baseline - 28 * 0.3 - 11;
-        AssertBounds(new Rect(left + 1, top + 1, 20, 20), drawing.Geometry!);
+        Assert.Equal(2, drawing.Pen.Thickness);
+        AssertBounds(glyph.GetShape(default).Outline, drawing.Geometry!);
     }
 
     [AvaloniaFact]
-    public void Checked_also_draws_a_round_tick_inside_the_box()
+    public void Checked_also_draws_the_tick_with_a_thicker_round_pen()
     {
         var glyph = Laid(true);
         var drawings = Draw(glyph);
@@ -119,28 +160,15 @@ public class TaskCheckGlyphTests
         Assert.Equal(PenLineCap.Round, tick.Pen.LineCap);
         Assert.Equal(PenLineJoin.Round, tick.Pen.LineJoin);
 
-        var left = (glyph.Bounds.Width - 22) / 2;
-        var top = glyph.TextLayout.TextLines[0].Baseline - 28 * 0.3 - 11;
-        // The tick runs from (0.24, 0.52) down to (0.43, 0.70), then up to (0.76, 0.32), in box units.
-        AssertBounds(new Rect(new Point(left + 22 * 0.24, top + 22 * 0.32), new Point(left + 22 * 0.76, top + 22 * 0.70)), tick.Geometry!);
-    }
-
-    [AvaloniaFact]
-    public void Box_is_offset_by_the_padding()
-    {
-        var glyph = Laid(false, fontSize: 28, padding: new Thickness(4, 6, 0, 0));
-        var box = Assert.Single(Draw(glyph)).Geometry!;
-
-        var left = 4 + (glyph.Bounds.Width - 4 - 22) / 2;
-        var top = 6 + Math.Max(0, glyph.TextLayout.TextLines[0].Baseline - 28 * 0.3 - 11);
-        AssertBounds(new Rect(left + 1, top + 1, 20, 20), box);
+        var points = glyph.GetShape(default).Tick;
+        AssertBounds(new Rect(new Point(points[0].X, points[2].Y), new Point(points[2].X, points[1].Y)), tick.Geometry!);
     }
 
     [AvaloniaFact]
     public void Small_font_keeps_a_one_pixel_stroke()
     {
         var glyph = Laid(false, fontSize: 10);
-        Assert.Equal(1, Assert.Single(Draw(glyph)).Pen!.Thickness);
+        Assert.Equal(1, glyph.GetShape(default).Thickness);
     }
 
     [AvaloniaFact]
