@@ -74,7 +74,7 @@ Subscript, superscript, underline (inserted), bold, italic, and strikethrough us
 | `markdown-alert-header` | `TextBlock` | Alert kind label (e.g. "NOTE"), or the custom title (`> [!TIP] Title`) |
 | `markdown-alert-content` | `StackPanel` | Alert body |
 | `markdown-alert-collapsible` | `Border` | Foldable alert (`> [!NOTE]-` / `> [!NOTE]+`); has the `:expanded` pseudo-class while its body is shown |
-| `markdown-alert-chevron` | `Run` | Fold indicator at the start of a foldable alert's header (▸ collapsed, ▾ expanded) |
+| `markdown-alert-chevron` | `Control` | Fold indicator at the start of a foldable alert's header: a triangle pointing right when collapsed and down when expanded, drawn in the header's `Foreground` and sized by its `FontSize` |
 
 A foldable alert's header is focusable and toggles the body on click, Enter or Space; the body's visibility is set by the control, not by a style. The default theme gives the header a transparent background (so the whole row is clickable), a hand cursor, and an underline when focused from the keyboard:
 

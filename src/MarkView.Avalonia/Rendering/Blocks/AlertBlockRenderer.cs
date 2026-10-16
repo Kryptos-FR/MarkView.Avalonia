@@ -63,13 +63,13 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         border.Classes.Add("markdown-alert");
         border.Classes.Add($"markdown-alert-{kindLower}");
 
-        Run? chevron = null;
+        AlertChevron? chevron = null;
         if (fold != AlertFold.None)
         {
             border.Classes.Add("markdown-alert-collapsible");
-            chevron = new Run();
+            chevron = new AlertChevron();
             chevron.Classes.Add("markdown-alert-chevron");
-            header.Inlines!.Add(chevron);
+            header.Inlines!.Add(new InlineUIContainer(chevron));
             header.Inlines.Add(new Run(" "));
         }
 

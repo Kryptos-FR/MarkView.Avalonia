@@ -58,6 +58,15 @@ public class FoldableAlertTests : RenderTestBase
     private static string[] StyleClasses(StyledElement element) =>
         element.Classes.Where(c => !c.StartsWith(':')).ToArray();
 
+    // The header text shows the chevron as the glyph it draws.
+    private const string Collapsed = "▸";
+    private const string Expanded = "▾";
+
+    private static AlertChevron Chevron(TextBlock header) =>
+        Assert.IsType<AlertChevron>(Assert.IsType<InlineUIContainer>(header.Inlines![0]).Child);
+
+    private static string Glyph(AlertChevron chevron) => chevron.IsExpanded ? Expanded : Collapsed;
+
     private static string HeaderText(TextBlock header) =>
         header.Inlines is { Count: > 0 } inlines ? InlineText(inlines) : header.Text ?? string.Empty;
 
@@ -66,6 +75,7 @@ public class FoldableAlertTests : RenderTestBase
         {
             Run run => run.Text,
             Span span => InlineText(span.Inlines),
+            InlineUIContainer { Child: AlertChevron chevron } => Glyph(chevron),
             _ => string.Empty,
         }));
 
@@ -93,8 +103,8 @@ public class FoldableAlertTests : RenderTestBase
     }
 
     [AvaloniaTheory]
-    [InlineData("-", false, CollapsibleAlert.CollapsedGlyph)]
-    [InlineData("+", true, CollapsibleAlert.ExpandedGlyph)]
+    [InlineData("-", false, Collapsed)]
+    [InlineData("+", true, Expanded)]
     public void Fold_marker_makes_the_alert_foldable_in_its_initial_state(string marker, bool expanded, string glyph)
     {
         var alert = RenderAlert($"> [!WARNING]{marker}\n> Watch out");
@@ -104,9 +114,9 @@ public class FoldableAlertTests : RenderTestBase
         Assert.Equal(expanded, alert.Content.IsVisible);
         Assert.True(alert.Header.Focusable);
         Assert.Equal($"{glyph} WARNING", HeaderText(alert.Header));
-        var chevron = Assert.IsType<Run>(alert.Header.Inlines![0]);
+        var chevron = Chevron(alert.Header);
         Assert.Equal(["markdown-alert-chevron"], chevron.Classes.ToArray());
-        Assert.Equal(glyph, chevron.Text);
+        Assert.Equal(glyph, Glyph(chevron));
         Assert.Equal(["Watch out"], ParagraphTexts(alert.Content));
         Assert.Equal(expanded, CollapsibleAlert.Get(alert.Border)!.IsExpanded);
     }
@@ -116,21 +126,21 @@ public class FoldableAlertTests : RenderTestBase
     {
         var alert = RenderAlert("> [!NOTE]-\n> Body");
         var state = CollapsibleAlert.Get(alert.Border)!;
-        var chevron = Assert.IsType<Run>(alert.Header.Inlines![0]);
+        var chevron = Chevron(alert.Header);
 
         state.Toggle();
 
         Assert.True(state.IsExpanded);
         Assert.True(alert.Content.IsVisible);
         Assert.Contains(":expanded", alert.Border.Classes);
-        Assert.Equal(CollapsibleAlert.ExpandedGlyph, chevron.Text);
+        Assert.Equal(Expanded, Glyph(chevron));
 
         state.Toggle();
 
         Assert.False(state.IsExpanded);
         Assert.False(alert.Content.IsVisible);
         Assert.DoesNotContain(":expanded", alert.Border.Classes);
-        Assert.Equal(CollapsibleAlert.CollapsedGlyph, chevron.Text);
+        Assert.Equal(Collapsed, Glyph(chevron));
     }
 
     [AvaloniaTheory]
@@ -222,7 +232,7 @@ public class FoldableAlertTests : RenderTestBase
     {
         var alert = RenderAlert($"> [!TIP]{marker} My title\n> Body");
 
-        var glyph = expanded ? CollapsibleAlert.ExpandedGlyph : CollapsibleAlert.CollapsedGlyph;
+        var glyph = expanded ? Expanded : Collapsed;
         Assert.Equal($"{glyph} My title", HeaderText(alert.Header));
         Assert.Contains("markdown-alert-collapsible", alert.Border.Classes);
         Assert.Equal(expanded, alert.Content.IsVisible);
@@ -266,13 +276,13 @@ public class FoldableAlertTests : RenderTestBase
     {
         var alert = RenderAlert("> [!TIP]- Title only");
 
-        Assert.Equal($"{CollapsibleAlert.CollapsedGlyph} Title only", HeaderText(alert.Header));
+        Assert.Equal($"{Collapsed} Title only", HeaderText(alert.Header));
         Assert.Empty(alert.Content.Children);
     }
 
     [AvaloniaTheory]
     [InlineData("> [!TIP] X", "X")]
-    [InlineData("> [!TIP]- X", $"{CollapsibleAlert.CollapsedGlyph} X")]
+    [InlineData("> [!TIP]- X", $"{Collapsed} X")]
     public void One_character_title_at_the_end_of_the_document_is_a_title(string markdown, string header)
     {
         var alert = RenderAlert(markdown);
@@ -298,7 +308,7 @@ public class FoldableAlertTests : RenderTestBase
 
         var alert = RenderAlert(new MarkdownDocument { block });
 
-        Assert.Equal($"{CollapsibleAlert.ExpandedGlyph} TIP", HeaderText(alert.Header));
+        Assert.Equal($"{Expanded} TIP", HeaderText(alert.Header));
         var only = Assert.Single(alert.Content.Children);
         Assert.IsNotType<MarkdownSelectableTextBlock>(only);
     }
@@ -323,13 +333,13 @@ public class FoldableAlertTests : RenderTestBase
     {
         var alert = RenderAlert(markdown);
 
-        Assert.Equal($"{CollapsibleAlert.CollapsedGlyph} NOTE", HeaderText(alert.Header));
+        Assert.Equal($"{Collapsed} NOTE", HeaderText(alert.Header));
         Assert.Equal(["line one line two"], ParagraphTexts(alert.Content));
     }
 
     [AvaloniaTheory]
     [InlineData("> [!NOTE]", "NOTE")]
-    [InlineData("> [!NOTE]+", $"{CollapsibleAlert.ExpandedGlyph} NOTE")]
+    [InlineData("> [!NOTE]+", $"{Expanded} NOTE")]
     public void Marker_line_alone_renders_an_empty_body(string markdown, string header)
     {
         var alert = RenderAlert(markdown);

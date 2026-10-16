@@ -3,7 +3,6 @@
 
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Documents;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 
@@ -13,21 +12,18 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// The fold state of a foldable alert (<c>&gt; [!KIND]-</c> / <c>&gt; [!KIND]+</c>). Clicking (tapping) the
 /// header, or pressing Enter or Space while it has focus, shows or hides the body. The alert's
 /// <see cref="Border"/> carries the <c>:expanded</c> pseudo-class while the body is shown, and the
-/// header's chevron run (<c>markdown-alert-chevron</c>) points right when collapsed and down when expanded.
+/// header's chevron (<c>markdown-alert-chevron</c>) points right when collapsed and down when expanded.
 /// </summary>
 internal sealed class CollapsibleAlert
 {
-    internal const string CollapsedGlyph = "▸"; // ▸
-    internal const string ExpandedGlyph = "▾";  // ▾
-
     private static readonly AttachedProperty<CollapsibleAlert?> StateProperty =
         AvaloniaProperty.RegisterAttached<Border, CollapsibleAlert?>("State", typeof(CollapsibleAlert));
 
     private readonly Border _border;
     private readonly Control _body;
-    private readonly Run _chevron;
+    private readonly AlertChevron _chevron;
 
-    private CollapsibleAlert(Border border, TextBlock header, Run chevron, Control body, bool isExpanded)
+    private CollapsibleAlert(Border border, TextBlock header, AlertChevron chevron, Control body, bool isExpanded)
     {
         _border = border;
         _body = body;
@@ -63,7 +59,7 @@ internal sealed class CollapsibleAlert
         set
         {
             _body.IsVisible = value;
-            _chevron.Text = value ? ExpandedGlyph : CollapsedGlyph;
+            _chevron.IsExpanded = value;
             ((IPseudoClasses)_border.Classes).Set(":expanded", value);
         }
     }
@@ -73,9 +69,9 @@ internal sealed class CollapsibleAlert
 
     /// <summary>
     /// Makes <paramref name="border"/> a foldable alert whose <paramref name="header"/> toggles
-    /// <paramref name="body"/>, with <paramref name="chevron"/> (a run of the header) showing the state.
+    /// <paramref name="body"/>, with <paramref name="chevron"/> (inline in the header) showing the state.
     /// </summary>
-    public static CollapsibleAlert Attach(Border border, TextBlock header, Run chevron, Control body, bool isExpanded) =>
+    public static CollapsibleAlert Attach(Border border, TextBlock header, AlertChevron chevron, Control body, bool isExpanded) =>
         new(border, header, chevron, body, isExpanded);
 
     /// <summary>Returns the fold state of an alert border, or <c>null</c> when it is not foldable.</summary>
