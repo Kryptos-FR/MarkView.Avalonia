@@ -26,7 +26,7 @@ public class MarkdownViewerDefaultsTests
         var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var rootPanel = contentGrid.Children.OfType<StackPanel>().First();
 
-        // Built-in default uses UseSupportedExtensions which includes UseTaskLists.
+        // Built-in default uses UseGitHubExtensions which includes UseTaskLists.
         // A task list item renders a TextBlock with class "markdown-task-list" when the extension is active.
         Assert.NotNull(FindTaskMarker(rootPanel));
     }

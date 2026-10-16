@@ -15,8 +15,8 @@ namespace MarkView.Avalonia;
 /// <code>
 /// // App.axaml.cs
 /// MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
-///     .UseSupportedExtensions()
-///     .UseAlertBlocks()
+///     .UseGitHubExtensions()
+///     .UseAbbreviations()
 ///     .Build();
 /// MarkdownViewerDefaults.Extensions.Add(new SyntaxHighlightingExtension(theme));
 /// </code>
@@ -26,7 +26,7 @@ public static class MarkdownViewerDefaults
     /// <summary>
     /// Global pipeline used by all <see cref="MarkdownViewer"/> instances that do not set their own
     /// <see cref="MarkdownViewer.Pipeline"/>. If <see langword="null"/>, the built-in default
-    /// pipeline (<c>UseSupportedExtensions</c>) is used.
+    /// pipeline (<c>UseGitHubExtensions</c>) is used.
     /// </summary>
     public static MarkdownPipeline? Pipeline { get; set; }
 

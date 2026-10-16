@@ -110,9 +110,9 @@ See [Code block toolbar](docs/configuration.md#code-block-toolbar) for details.
 
 ```csharp
 viewer.Pipeline = new MarkdownPipelineBuilder()
-    .UseSupportedExtensions()
-    .UseAlertBlocks()
-    .UseFootnotes()
+    .UseGitHubExtensions()      // the viewer's default pipeline
+    .UseAbbreviations()
+    .UseFigures()
     .Build();
 ```
 
@@ -139,9 +139,8 @@ To combine several opt-in features, build the pipeline explicitly (see above).
 ```csharp
 // App.axaml.cs
 MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
-    .UseSupportedExtensions()
-    .UseFootnotes()
-    .UseAlertBlocks()
+    .UseGitHubExtensions()
+    .UseExtendedAlertBlocks()
     .Build();
 
 MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
@@ -170,22 +169,23 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Hard line breaks | CommonMark (`\` or two spaces) |
 | HTML `<br>` / `<br />` | Rendered as line break |
 
-### Extensions (enabled by `UseSupportedExtensions()`)
+### Extensions (enabled by default, with `UseGitHubExtensions()`)
 
 | Feature | Syntax |
 |---------|--------|
-| Strikethrough | `~~text~~` |
-| Subscript | `~text~` |
-| Superscript | `^text^` |
-| Underline (inserted) | `++text++` |
-| Highlight (marked) | `==text==` |
+| Strikethrough | `~~text~~` or `~text~`, as on GitHub |
 | Task lists | `- [x] item` (clickable with `AreTaskListsInteractive`) |
 | Pipe tables | GFM-style `\| col \| col \|` |
-| Grid tables | RST-style grid tables |
 | Autolinks | bare `https://…` URLs |
 | Emoji shortcodes | `:rocket:` → 🚀 (ASCII smileys like `:)` are intentionally left as plain text) |
+| GitHub alert blocks | `> [!NOTE]` etc. |
+| Footnotes | `[^1]` |
 | CJK-friendly emphasis | parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation |
 | YAML front matter | `---` metadata block at the top of a document is parsed and hidden |
+
+`UseSupportedExtensions()`, the previous default, enables the same features except alerts and footnotes, and adds subscript (`~text~`), superscript (`^text^`), underline (`++text++`), highlight (`==text==`) and grid tables.
+
+**Subscript is not available on top of `UseGitHubExtensions()`:** there `~text~` is always strikethrough, as on GitHub, even with `UseEmphasisExtras()`. For subscript, build the pipeline from `UseSupportedExtensions()` and add `UseAlertBlocks()` / `UseFootnotes()` if needed. See [Markdig Pipeline](docs/configuration.md#markdig-pipeline).
 
 ### Opt-in extensions
 
@@ -194,11 +194,11 @@ These require adding `.UseXxx()` to the pipeline (see [Extension Methods](#exten
 | Feature | Activation | Syntax |
 |---------|-----------|--------|
 | Abbreviations | `UseAbbreviations()` | `*[HTML]: …` |
-| GitHub alert blocks | `UseAlertBlocks()` | `> [!NOTE]` etc. |
 | Foldable alerts and custom titles | `UseExtendedAlertBlocks()` (also enabled by `viewer.UseAlertBlocks()`) | Obsidian-style `> [!NOTE] Custom title`, foldable `> [!NOTE]-` (collapsed) / `> [!NOTE]+` (expanded) |
+| Superscript, underline, highlight | `UseEmphasisExtras()` | `^text^`, `++text++`, `==text==` |
+| Grid tables | `UseGridTables()` | RST-style grid tables |
 | Citations | `UseCitations()` | `""quoted text""` |
 | Figures | `UseFigures()` | `^^^` / `^^^ caption` |
-| Footnotes | `UseFootnotes()` | `[^1]` / `[^1]: …` |
 | Hardline breaks | `UseHardlineBreaks()` | every soft line break renders as a hard break |
 | YouTube embeds | `UseMediaLinks()` | `![title](https://youtu.be/…)` |
 | Definition lists | `UseDefinitionLists()` | `Term` followed by `:   definition` |

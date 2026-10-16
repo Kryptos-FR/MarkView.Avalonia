@@ -52,7 +52,7 @@ public partial class MarkdownViewer : ContentControl
     private CancellationTokenSource? _sourceLoadCts;
 
     private static readonly MarkdownPipeline DefaultPipeline =
-        new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
+        new MarkdownPipelineBuilder().UseGitHubExtensions().Build();
 
     /// <summary>
     /// Defines the <see cref="Markdown"/> property.

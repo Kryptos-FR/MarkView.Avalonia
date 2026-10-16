@@ -6,7 +6,7 @@
 |----------|------|---------|-------------|
 | `Markdown` | `string?` | `null` | The markdown text to render. Setting this triggers a full re-render. |
 | `Source` | `Uri?` | `null` | URI of a markdown document to load and render. Takes precedence over `Markdown` when set. Supports `avares://`, `file://`, and `http/https`. |
-| `Pipeline` | `MarkdownPipeline?` | `null` | The Markdig pipeline. `null` falls back to `MarkdownViewerDefaults.Pipeline`, or the built-in default (`UseSupportedExtensions`). |
+| `Pipeline` | `MarkdownPipeline?` | `null` | The Markdig pipeline. `null` falls back to `MarkdownViewerDefaults.Pipeline`, or the built-in default (`UseGitHubExtensions`). |
 | `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
 | `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. |
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
@@ -22,14 +22,12 @@ The pipeline controls which Markdig extensions parse the input markdown. Build o
 
 ```csharp
 viewer.Pipeline = new MarkdownPipelineBuilder()
-    .UseSupportedExtensions()   // bold, italic, strikethrough, subscript, superscript, underline,
-                                // highlight, task lists, tables, autolinks, emoji shortcodes,
-                                // Chinese/Japanese/Korean (CJK)-friendly emphasis, YAML front matter (hidden)
+    .UseGitHubExtensions()      // what GitHub renders: tables, task lists, ~~strike~~ and ~strike~,
+                                // autolinks, emoji shortcodes, alerts, footnotes, CJK-friendly emphasis,
+                                // YAML front matter (hidden). The viewer's default pipeline.
     .UseAbbreviations()         // *[HTML]: HyperText Markup Language
-    .UseAlertBlocks()           // > [!NOTE] / > [!WARNING] etc.
     .UseCitations()             // ""quoted text""
     .UseFigures()               // ^^^ figure blocks
-    .UseFootnotes()             // [^1] footnotes
     .UseHardlineBreaks()        // every soft line break renders as a hard break
     .UseMediaLinks()            // YouTube thumbnail embeds
     .UseDefinitionLists()       // Term + ":   definition"
@@ -41,16 +39,46 @@ viewer.Pipeline = new MarkdownPipelineBuilder()
     .Build();
 ```
 
-`UseSupportedExtensions()` is a MarkView.Avalonia helper that enables the subset of Markdig extensions that have native renderers in the library, or that are safe to enable unconditionally because they can't surprise ordinary markdown:
+MarkView.Avalonia has two helpers that enable a base set of extensions. Both take a `MarkdownExtensionsOptions` (pipe table options).
 
-- `EmphasisExtras` — strikethrough `~~`, subscript `~`, superscript `^`, underline `++`, highlight `==`
-- `AutoLinks` — bare URL auto-linking
-- `GridTables` — RST-style grid tables
+`UseGitHubExtensions()` makes a document render as it does on GitHub. It is what a viewer uses when no pipeline is set:
+
 - `PipeTables` — GFM pipe tables
 - `TaskLists` — `- [x]` checkboxes
+- Strikethrough — `~~text~~` and, as on GitHub, `~text~`
+- `AutoLinks` — bare URL auto-linking
+- `EmojiAndSmiley` (shortcodes only) — `:rocket:` renders as 🚀; ASCII smileys (`:)`) are intentionally left as plain text, since silently rewriting them is more surprising than useful
+- `AlertBlocks` — `> [!NOTE]`, `> [!WARNING]` etc. (see [Alert blocks](#alert-blocks) for the extras)
+- `Footnotes` — `[^1]` references and their notes
 - `CjkFriendlyEmphasis` — parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation
 - `YamlFrontMatter` — `---` metadata block at the top of a document is parsed and hidden, not shown as garbled text
-- `EmojiAndSmiley` (shortcodes only) — `:rocket:` renders as 🚀; ASCII smileys (`:)`) are intentionally left as plain text, since silently rewriting them is more surprising than useful
+
+Math and Mermaid diagrams, which GitHub also renders, come from their own packages (`UseMath()`, `UseMermaid()`).
+
+> [!NOTE]
+> **Subscript and `UseGitHubExtensions()` don't mix.** `~text~` is either strikethrough (GitHub) or subscript (Markdig's emphasis extras), and with `UseGitHubExtensions()` it is always strikethrough, even if `UseEmphasisExtras()` is added after it. Adding `UseEmphasisExtras()` still gives superscript `^`, underline `++` and highlight `==`.
+>
+> For subscript, start from `UseSupportedExtensions()` instead and add what you need from the GitHub set. `~~text~~` stays strikethrough:
+>
+> ```csharp
+> viewer.Pipeline = new MarkdownPipelineBuilder()
+>     .UseSupportedExtensions()   // ~text~ is subscript
+>     .UseAlertBlocks()
+>     .UseFootnotes()
+>     .Build();
+> ```
+
+`UseSupportedExtensions()` was the default before `UseGitHubExtensions()`. It enables the other emphasis extras and grid tables, but not alerts or footnotes:
+
+- `EmphasisExtras` — strikethrough `~~`, subscript `~`, superscript `^`, underline `++`, highlight `==`
+- `AutoLinks`, `PipeTables`, `TaskLists`, `CjkFriendlyEmphasis`, `YamlFrontMatter` and emoji shortcodes, as above
+- `GridTables` — RST-style grid tables
+
+To keep the previous rendering (`~text~` as subscript), set it as the default pipeline:
+
+```csharp
+MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
+```
 
 The opt-in extensions above are Markdig's own pipeline methods, except `UseHardlineBreaks()`, a MarkView.Avalonia shorthand for Markdig's `UseSoftlineBreakAsHardlineBreak()`. Import both `Markdig` and `MarkView.Avalonia` to use them together.
 
@@ -65,7 +93,7 @@ The last six (`UseDefinitionLists()` to `UseGenericAttributes()`) render as foll
   var smartyPants = new SmartyPantOptions();
   smartyPants.Mapping[SmartyPantType.LeftDoubleQuote] = "&laquo;&nbsp;";
   smartyPants.Mapping[SmartyPantType.RightDoubleQuote] = "&nbsp;&raquo;";
-  viewer.Pipeline = new MarkdownPipelineBuilder().UseSupportedExtensions().UseSmartyPants(smartyPants).Build();
+  viewer.Pipeline = new MarkdownPipelineBuilder().UseGitHubExtensions().UseSmartyPants(smartyPants).Build();
   ```
 
 - **List extras** number items with letters or roman numerals. The `.` or `)` after the number is kept for every ordered list.
@@ -73,7 +101,7 @@ The last six (`UseDefinitionLists()` to `UseGenericAttributes()`) render as foll
 
 ### Alert blocks
 
-MarkView's `UseExtendedAlertBlocks()` enables Markdig's GitHub alerts (as `UseAlertBlocks()` does) and extends them with the Obsidian-style first-line extras, which Markdig alone leaves as a plain blockquote. `viewer.UseAlertBlocks()` turns them on too:
+The default pipeline renders GitHub alerts. MarkView's `UseExtendedAlertBlocks()` enables them too (as Markdig's `UseAlertBlocks()` does) and extends them with the Obsidian-style first-line extras, which Markdig alone leaves as a plain blockquote. `viewer.UseAlertBlocks()` turns them on too:
 
 ```markdown
 > [!NOTE]
@@ -100,15 +128,15 @@ For simple use cases, call a single method instead of building the pipeline manu
 
 ```csharp
 viewer.UseAbbreviations();  // pipeline + abbreviation tooltips
-viewer.UseAlertBlocks();    // pipeline + alert block rendering
+viewer.UseAlertBlocks();    // pipeline + foldable alerts and custom alert titles
 viewer.UseCitations();      // pipeline + citation rendering
 viewer.UseFigures();        // pipeline + figure blocks
-viewer.UseFootnotes();      // pipeline + footnote rendering
+viewer.UseFootnotes();      // pipeline (footnotes are already in it)
 viewer.UseHardlineBreaks(); // pipeline + hardline breaks
 viewer.UseMediaLinks();     // pipeline + YouTube thumbnails
 ```
 
-Each method calls `UseSupportedExtensions()` plus the requested feature. To combine several opt-in features, build the pipeline explicitly.
+Each method calls `UseGitHubExtensions()` plus the requested feature. To combine several opt-in features, build the pipeline explicitly.
 
 ## Application-wide defaults (`MarkdownViewerDefaults`)
 
@@ -117,8 +145,8 @@ Set the pipeline and extensions once at application startup and they apply to **
 ```csharp
 // App.axaml.cs  OnFrameworkInitializationCompleted()
 MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
-    .UseSupportedExtensions()
-    .UseAlertBlocks()
+    .UseGitHubExtensions()
+    .UseExtendedAlertBlocks()
     .Build();
 
 MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();

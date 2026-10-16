@@ -7,13 +7,14 @@ namespace MarkView.Avalonia;
 
 /// <summary>
 /// Convenience extension methods for enabling opt-in Markdig features on a <see cref="MarkdownViewer"/>.
-/// Each method rebuilds the pipeline from <see cref="MarkdownExtensions.UseSupportedExtensions"/>
-/// plus the requested feature. To combine multiple opt-in features, build the pipeline explicitly:
+/// Each method rebuilds the pipeline from <see cref="MarkdownExtensions.UseGitHubExtensions"/> (the
+/// viewer's default pipeline) plus the requested feature. To combine multiple opt-in features, build
+/// the pipeline explicitly:
 /// <code>
 /// viewer.Pipeline = new MarkdownPipelineBuilder()
-///     .UseSupportedExtensions()
-///     .UseFootnotes()
-///     .UseAlertBlocks()
+///     .UseGitHubExtensions()
+///     .UseAbbreviations()
+///     .UseFigures()
 ///     .Build();
 /// </code>
 /// </summary>
@@ -25,19 +26,20 @@ public static class MarkdownViewerExtensions
     public static MarkdownViewer UseAbbreviations(this MarkdownViewer viewer)
     {
         viewer.Pipeline = new MarkdownPipelineBuilder()
-            .UseSupportedExtensions()
+            .UseGitHubExtensions()
             .UseAbbreviations()
             .Build();
         return viewer;
     }
 
     /// <summary>
-    /// Enables GitHub-style alert block rendering on the viewer.
+    /// Enables the alert extras on the viewer: foldable alerts and custom titles. GitHub-style alerts
+    /// themselves are already part of the default pipeline.
     /// </summary>
     public static MarkdownViewer UseAlertBlocks(this MarkdownViewer viewer)
     {
         viewer.Pipeline = new MarkdownPipelineBuilder()
-            .UseSupportedExtensions()
+            .UseGitHubExtensions()
             .UseExtendedAlertBlocks()
             .Build();
         return viewer;
@@ -49,7 +51,7 @@ public static class MarkdownViewerExtensions
     public static MarkdownViewer UseCitations(this MarkdownViewer viewer)
     {
         viewer.Pipeline = new MarkdownPipelineBuilder()
-            .UseSupportedExtensions()
+            .UseGitHubExtensions()
             .UseCitations()
             .Build();
         return viewer;
@@ -61,19 +63,20 @@ public static class MarkdownViewerExtensions
     public static MarkdownViewer UseFigures(this MarkdownViewer viewer)
     {
         viewer.Pipeline = new MarkdownPipelineBuilder()
-            .UseSupportedExtensions()
+            .UseGitHubExtensions()
             .UseFigures()
             .Build();
         return viewer;
     }
 
     /// <summary>
-    /// Enables footnote rendering on the viewer.
+    /// Enables footnote rendering on the viewer. Footnotes are already part of the default pipeline, so
+    /// this only matters to restore the default after another pipeline was set.
     /// </summary>
     public static MarkdownViewer UseFootnotes(this MarkdownViewer viewer)
     {
         viewer.Pipeline = new MarkdownPipelineBuilder()
-            .UseSupportedExtensions()
+            .UseGitHubExtensions()
             .UseFootnotes()
             .Build();
         return viewer;
@@ -86,7 +89,7 @@ public static class MarkdownViewerExtensions
     public static MarkdownViewer UseHardlineBreaks(this MarkdownViewer viewer)
     {
         viewer.Pipeline = new MarkdownPipelineBuilder()
-            .UseSupportedExtensions()
+            .UseGitHubExtensions()
             .UseHardlineBreaks()
             .Build();
         return viewer;
@@ -98,7 +101,7 @@ public static class MarkdownViewerExtensions
     public static MarkdownViewer UseMediaLinks(this MarkdownViewer viewer)
     {
         viewer.Pipeline = new MarkdownPipelineBuilder()
-            .UseSupportedExtensions()
+            .UseGitHubExtensions()
             .UseMediaLinks()
             .Build();
         return viewer;

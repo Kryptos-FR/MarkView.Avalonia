@@ -126,7 +126,7 @@ viewer.UseMath();
 // or globally:
 MarkdownViewerDefaults.Extensions.AddMath();
 MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
-    .UseSupportedExtensions()
+    .UseGitHubExtensions()
     .UseMathematics()
     .Build();
 ```

@@ -90,9 +90,8 @@ Configure globally at startup so all `MarkdownViewer` instances share the same s
 public override void OnFrameworkInitializationCompleted()
 {
     MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
-        .UseSupportedExtensions()
-        .UseAlertBlocks()
-        .UseFootnotes()
+        .UseGitHubExtensions()
+        .UseExtendedAlertBlocks()
         .Build();
 
     MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();

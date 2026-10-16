@@ -19,11 +19,16 @@ internal sealed class ExtendedAlertExtension : IMarkdownExtension
     public void Setup(MarkdownPipelineBuilder pipeline)
     {
         var existing = pipeline.InlineParsers.Find<AlertInlineParser>();
-        var parser = new ExtendedAlertInlineParser { AllowNestedAlerts = existing?.AllowNestedAlerts ?? false };
         if (existing is null)
-            pipeline.InlineParsers.InsertBefore<LinkInlineParser>(parser);
+        {
+            // AlertExtension, set up after this one, applies its option to this parser.
+            pipeline.InlineParsers.InsertBefore<LinkInlineParser>(new ExtendedAlertInlineParser());
+        }
         else
-            pipeline.InlineParsers.Replace<AlertInlineParser>(parser);
+        {
+            pipeline.InlineParsers.Replace<AlertInlineParser>(
+                new ExtendedAlertInlineParser { AllowNestedAlerts = existing.AllowNestedAlerts });
+        }
     }
 
     public void Setup(MarkdownPipeline pipeline, IMarkdownRenderer renderer)
