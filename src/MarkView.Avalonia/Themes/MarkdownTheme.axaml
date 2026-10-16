@@ -19,7 +19,7 @@
           <SolidColorBrush x:Key="MarkdownBlockquoteBorder">#4A9ECC</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownTableBorder">#6B6B6B</SolidColorBrush>
           <!-- Alert accent colours — dark theme (Default: kinds without their own colours, e.g. [!QUESTION]) -->
-          <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#71717A</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#A1A1AA</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertDefaultBackground">#1A71717A</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#3B82F6</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#1A3B82F6</SolidColorBrush>
@@ -54,7 +54,7 @@
           <SolidColorBrush x:Key="MarkdownBlockquoteBorder">#2F7FB3</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownTableBorder">#8A8A8A</SolidColorBrush>
           <!-- Alert accent colours — light theme (Default: kinds without their own colours, e.g. [!QUESTION]) -->
-          <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#71717A</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#52525B</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertDefaultBackground">#F4F4F5</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#2563EB</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#EFF6FF</SolidColorBrush>

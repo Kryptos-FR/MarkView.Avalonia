@@ -3,10 +3,13 @@
 
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
 using Markdig;
+using MarkView.Avalonia.Rendering;
 using Xunit;
 
 namespace MarkView.Avalonia.Tests.Accessibility;
@@ -86,6 +89,25 @@ public class AutomationRoleTests : RenderTestBase
             var marker = item.Children.OfType<TextBlock>().Single(t => t.Classes.Contains("markdown-list-marker"));
             Assert.False(Peer(marker).IsControlElement());
         }
+    }
+
+    [AvaloniaTheory]
+    [InlineData("- [x] Ship it", true)]
+    [InlineData("- [ ] Write **docs**", false)]
+    public void Interactive_task_is_a_check_box_named_by_its_text(string markdown, bool isChecked)
+    {
+        var renderer = new AvaloniaRenderer { AreTaskListsInteractive = true };
+        var pipeline = new MarkdownPipelineBuilder().UseTaskLists().Build();
+        pipeline.Setup(renderer);
+        renderer.Render(Markdown.Parse(markdown, pipeline));
+        var toggle = FindAll<ToggleButton>(renderer.RootPanel).Single();
+        var peer = Peer(toggle);
+
+        Assert.Equal(AutomationControlType.CheckBox, peer.GetAutomationControlType());
+        Assert.True(peer.IsContentElement());
+        Assert.Equal(markdown[6..].Replace("**", ""), peer.GetName());
+        var toggleProvider = Assert.IsAssignableFrom<IToggleProvider>(peer);
+        Assert.Equal(isChecked ? ToggleState.On : ToggleState.Off, toggleProvider.ToggleState);
     }
 
     [AvaloniaFact]

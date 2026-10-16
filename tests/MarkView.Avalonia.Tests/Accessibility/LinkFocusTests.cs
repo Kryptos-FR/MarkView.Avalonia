@@ -225,6 +225,56 @@ public class LinkFocusTests
         Assert.Equal("after", f.FocusedLink);
     }
 
+    private const string Controls = """
+        [first](https://example.com/1)
+
+        > [!NOTE]-
+        > Folded [hidden](https://example.com/h)
+
+        ```cs
+        var x = 1;
+        ```
+
+        - [ ] task [last](https://example.com/2)
+        """;
+
+    private static string? Describe(IInputElement? element) => element switch
+    {
+        LinkFocusTarget target => target.AccessibleName,
+        StyledElement styled when styled.Classes.Contains("markdown-alert-header") => "alert header",
+        StyledElement styled when styled.Classes.Contains("markdown-code-copy") => "copy button",
+        StyledElement styled when styled.Classes.Contains("markdown-task-toggle") => "task checkbox",
+        _ => element?.GetType().Name,
+    };
+
+    [AvaloniaFact]
+    public void Alert_header_copy_button_and_task_checkbox_are_stops_in_reading_order()
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseGitHubExtensions().UseExtendedAlertBlocks().Build();
+        using var f = Show(Controls, pipeline);
+        f.Viewer.AreTaskListsInteractive = true;
+        Dispatcher.UIThread.RunJobs();
+        f.Viewer.Focus();
+
+        var visited = new List<string?>();
+        for (var i = 0; i < 5; i++)
+        {
+            f.Tab();
+            visited.Add(Describe(f.Focused));
+        }
+        // The folded alert's link is skipped until the alert is expanded.
+        Assert.Equal(["first", "alert header", "copy button", "task checkbox", "last"], visited);
+
+        f.Tab(shift: true);
+        f.Tab(shift: true);
+        f.Tab(shift: true);
+        Assert.Equal("alert header", Describe(f.Focused));
+        f.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Dispatcher.UIThread.RunJobs();
+        f.Tab();
+        Assert.Equal("hidden", Describe(f.Focused));
+    }
+
     [AvaloniaFact]
     public void Enter_opens_the_focused_link()
     {

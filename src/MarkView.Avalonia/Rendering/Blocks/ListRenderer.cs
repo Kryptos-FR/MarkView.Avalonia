@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Text;
 
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -48,6 +49,7 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
             };
             AutomationRoles.Set(itemGrid, AutomationControlType.ListItem);
 
+            Control? taskToggle = null;
             bool isTaskItem = listItem.Count > 0
                 && listItem[0] is ParagraphBlock para
                 && para.Inline?.FirstChild is TaskList;
@@ -67,9 +69,13 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
 
                 // Interactive: the glyph becomes the content of a toggle; the toggle takes the
                 // marker's place (and layout) in the item grid.
-                Control marker = renderer.AreTaskListsInteractive
-                    ? TaskListToggle.Create(glyph, taskList.Checked, isChecked => renderer.OnTaskToggled(taskParagraph, isChecked))
-                    : glyph;
+                if (renderer.AreTaskListsInteractive)
+                {
+                    taskToggle = TaskListToggle.Create(glyph, taskList.Checked, isChecked => renderer.OnTaskToggled(taskParagraph, isChecked));
+                    // A screen reader announces a check box named after the task, not a "☐" button.
+                    AutomationRoles.Set(taskToggle, AutomationControlType.CheckBox);
+                }
+                var marker = taskToggle ?? glyph;
                 marker.Margin = new Thickness(0, 0, 8, 0);
                 marker.VerticalAlignment = VerticalAlignment.Top;
                 // Stryker disable once Statement : column 0 is Grid's default column
@@ -104,6 +110,8 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
             if (isTaskItem) renderer.SkipNextTaskList = true;
             renderer.WriteChildren(listItem);
             renderer.Pop();
+            if (taskToggle is not null && contentPanel.Children.Count > 0)
+                AutomationProperties.SetLabeledBy(taskToggle, contentPanel.Children[0]);
 
             listPanel.Children.Add(itemGrid);
             if (obj.IsOrdered) index++;

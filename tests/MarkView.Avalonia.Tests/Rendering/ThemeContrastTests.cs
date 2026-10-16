@@ -34,10 +34,12 @@ public class ThemeContrastTests
         {
             data.Add(variant, "MarkdownCodeBlockForeground", "MarkdownCodeBlockBackground", Text);
             data.Add(variant, "MarkdownCodeInlineForeground", "MarkdownCodeInlineBackground", Text);
+            // The language label and the copy icon above a code block.
+            data.Add(variant, "MarkdownCodeHeaderForeground", "MarkdownCodeHeaderBackground", Text);
             data.Add(variant, "Body", "MarkdownMarkedBackground", Text);
             data.Add(variant, "MarkdownBlockquoteBorder", "Page", NonText);
             data.Add(variant, "MarkdownTableBorder", "Page", NonText);
-            foreach (var kind in new[] { "Note", "Tip", "Important", "Warning", "Caution" })
+            foreach (var kind in new[] { "Default", "Note", "Tip", "Important", "Warning", "Caution" })
             {
                 // The alert title is drawn in the border colour on the alert background.
                 data.Add(variant, $"MarkdownAlert{kind}Border", $"MarkdownAlert{kind}Background", Text);

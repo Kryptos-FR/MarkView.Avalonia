@@ -13,6 +13,7 @@ Avalonia forwards automation peers to each platform's accessibility API: UI Auto
 | Paragraph | `Text` |
 | Link | `Hyperlink`, a child of its paragraph, named by its text and invokable. An image inside a link, such as a badge, is read as its alt text. A link title (`[text](url "title")`) is its help text. |
 | List / list item | `List` / `ListItem`. Bullets are hidden; numbers stay readable, since an ordered list can start at any number. |
+| Interactive task (`AreTaskListsInteractive`) | `CheckBox`, named by the task's text, with its checked state |
 | Table / header cell / body cell | `Table` / `HeaderItem` / `DataItem` |
 | Blockquote, figure | `Group`. A figure is named by its caption. |
 | Alert (`> [!NOTE]`) | `Group`, named by its title ("NOTE", "TIP", …), so the alert kind is announced as text and not only shown by colour |
@@ -39,7 +40,7 @@ Avalonia 12.1.3 has the following gaps:
 
 ## Keyboard
 
-The viewer is one Tab stop, followed by each link and each focusable control in the document (such as a video embed), in reading order.
+The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a code block's copy button, an interactive task's check box, a video embed. `Enter` or `Space` folds or unfolds a focused alert and ticks a focused task; `Enter` or `Space` on the copy button copies the code.
 
 | Key | Action |
 |---|---|
@@ -55,7 +56,7 @@ Links stay inline text, so they wrap and select as before. An invisible stand-in
 
 The default palette in `MarkdownTheme.axaml` meets WCAG 2.2 AA on FluentTheme's page colours (white with black text, and black with white text):
 
-- **4.5:1** for text: code, inline code, `==marked==` text, alert titles and alert bodies.
+- **4.5:1** for text: code, inline code, the code block header (language label and copy icon), `==marked==` text, alert titles and alert bodies.
 - **3:1** for borders that carry meaning (1.4.11): blockquote bars and table cell borders.
 
 `ThemeContrastTests` checks every pair against the colours in the theme file, so a brush change that drops below these ratios fails the build.
