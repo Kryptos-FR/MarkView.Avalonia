@@ -54,6 +54,18 @@ public class MarkdownViewerFoldableAlertTests
         return new Fixture(window, viewer);
     }
 
+    // Mutation testing compiles the library without its AXAML, so the theme include above cannot load
+    // there; the tests built on this fixture leave it out to also count under Stryker.
+    private static Fixture ShowWithoutTheme(string markdown)
+    {
+        var viewer = new MarkdownViewer().UseAlertBlocks();
+        viewer.Template = ScrollingViewerTemplate.Create();
+        viewer.Markdown = markdown;
+        var window = new Window { Width = 400, Height = 300, Content = viewer };
+        window.Show();
+        return new Fixture(window, viewer);
+    }
+
     private static Point At(Window window, TextBlock block, int index)
     {
         var caret = block.TextLayout.HitTestTextPosition(index);
@@ -233,6 +245,55 @@ public class MarkdownViewerFoldableAlertTests
 
         Assert.True(f.State.IsExpanded);
         Assert.Equal(16, heading.TranslatePoint(new Point(0, 0), scrollViewer)!.Value.Y, 3);
+    }
+
+    [AvaloniaFact]
+    public void ScrollToAnchor_lays_out_the_expanded_alert_before_measuring_its_heading()
+    {
+        var leading = string.Join("\n\n", Enumerable.Range(0, 30).Select(i => $"Paragraph {i}"));
+        var trailing = string.Join("\n\n", Enumerable.Range(0, 30).Select(i => $"Trailing paragraph {i}"));
+        using var f = ShowWithoutTheme($"""
+            {leading}
+
+            > [!NOTE]-
+            > Intro
+            >
+            > ## Inside heading
+
+            {trailing}
+            """);
+        var scrollViewer = f.Viewer.GetVisualDescendants().OfType<ScrollViewer>().Single();
+        var heading = f.Viewer.GetVisualDescendants().OfType<TextBlock>().Single(tb => tb.Classes.Contains("markdown-h2"));
+
+        f.Viewer.ScrollToAnchor("inside-heading");
+        f.Window.UpdateLayout();
+
+        Assert.True(f.State.IsExpanded);
+        Assert.Equal(16, heading.TranslatePoint(new Point(0, 0), scrollViewer)!.Value.Y, 3);
+    }
+
+    [AvaloniaFact]
+    public void Hit_testing_ignores_the_bounds_a_collapsed_body_kept_from_its_last_layout()
+    {
+        var hidden = string.Join(" ", Enumerable.Repeat("Hidden words", 30));
+        using var f = ShowWithoutTheme($"""
+            > [!NOTE]+
+            > {hidden}
+
+            After
+            """);
+        var layer = Layer(f.Viewer);
+        var hiddenParagraph = f.Paragraph("Hidden");
+        f.State.Toggle();
+        f.Window.UpdateLayout();
+        var after = f.Paragraph("After");
+        var point = after.TranslatePoint(new Point(1, after.Bounds.Height / 2), layer)!.Value;
+        Assert.True(hiddenParagraph.Bounds.Height > after.Bounds.Height); // the stale bounds overlap "After"
+
+        var entry = layer.HitTestEntry(point);
+
+        Assert.Same(after, entry?.Element);
+        Assert.Equal(entry!.AbsStart, layer.HitTestOffset(point));
     }
 
     [AvaloniaFact]

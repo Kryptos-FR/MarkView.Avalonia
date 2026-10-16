@@ -31,6 +31,7 @@ internal sealed class ExtendedAlertInlineParser : AlertInlineParser
         var end = slice.End;
         var kindStart = slice.Start + 2;
         var i = kindStart;
+        // Stryker disable once Equality : stopping on a letter at slice.End fails the "]" check below, as running past it does
         while (i <= end && char.IsAsciiLetter(text[i]))
             i++;
         if (i == kindStart || i > end || text[i] != ']')
@@ -46,6 +47,7 @@ internal sealed class ExtendedAlertInlineParser : AlertInlineParser
         }
 
         var titleStart = i;
+        // Stryker disable once Equality : Markdig trims trailing whitespace off the paragraph, so slice.End is never on a space or tab
         while (titleStart <= end && text[titleStart] is ' ' or '\t')
             titleStart++;
         var hasTitle = titleStart <= end && text[titleStart] is not ('\n' or '\r');
@@ -87,7 +89,9 @@ internal sealed class ExtendedAlertInlineParser : AlertInlineParser
         {
             // Consume the rest of the line, like the base parser does after a plain "[!KIND]".
             i = titleStart;
+            // Stryker disable once Equality : Markdig trims trailing whitespace off the paragraph, so slice.End is never on a '\r'
             if (i <= end && text[i] == '\r') i++;
+            // Stryker disable once Equality : Markdig trims trailing whitespace off the paragraph, so slice.End is never on a '\n'
             if (i <= end && text[i] == '\n') i++;
             slice.Start = i;
         }

@@ -10,7 +10,9 @@ using Avalonia.VisualTree;
 
 using Markdig;
 using Markdig.Extensions.Alerts;
+using Markdig.Helpers;
 using Markdig.Parsers.Inlines;
+using Markdig.Syntax;
 
 using MarkView.Avalonia.Parsing;
 using MarkView.Avalonia.Rendering;
@@ -30,9 +32,20 @@ public class FoldableAlertTests : RenderTestBase
     private static MarkdownPipeline AlertPipeline() =>
         new MarkdownPipelineBuilder().UseExtendedAlertBlocks().Build();
 
-    private static RenderedAlert RenderAlert(string markdown, MarkdownPipeline? pipeline = null)
+    private static RenderedAlert RenderAlert(string markdown, MarkdownPipeline? pipeline = null) =>
+        SingleAlert(Render(markdown, pipeline ?? AlertPipeline()));
+
+    private static RenderedAlert RenderAlert(MarkdownDocument document)
     {
-        var border = Assert.IsType<Border>(Assert.Single(Render(markdown, pipeline ?? AlertPipeline()).Children));
+        var renderer = new AvaloniaRenderer();
+        AlertPipeline().Setup(renderer);
+        renderer.Render(document);
+        return SingleAlert(renderer.RootPanel);
+    }
+
+    private static RenderedAlert SingleAlert(StackPanel root)
+    {
+        var border = Assert.IsType<Border>(Assert.Single(root.Children));
         var outer = Assert.IsType<StackPanel>(border.Child);
         Assert.Equal(2, outer.Children.Count);
         var header = Assert.IsType<TextBlock>(outer.Children[0]);
@@ -135,6 +148,52 @@ public class FoldableAlertTests : RenderTestBase
         Assert.Equal(toggles, args.Handled);
     }
 
+    [AvaloniaTheory]
+    [InlineData(MouseButton.Left, true, true)]
+    [InlineData(MouseButton.Right, true, false)]
+    [InlineData(MouseButton.Left, false, false)]
+    public void Left_button_release_over_the_header_toggles_the_body(MouseButton button, bool overHeader, bool toggles)
+    {
+        var root = Render("> [!NOTE]-\n> Body", AlertPipeline());
+        var window = new Window { Width = 400, Height = 300, Content = root };
+        window.Show();
+        try
+        {
+            var alert = SingleAlert(root);
+            var size = alert.Header.Bounds.Size;
+            var position = overHeader ? new Point(size.Width / 2, size.Height / 2) : new Point(size.Width / 2, size.Height + 1);
+            var pointer = new Pointer(Pointer.GetNextFreeId(), PointerType.Mouse, true);
+            var properties = new PointerPointProperties(RawInputModifiers.None,
+                button == MouseButton.Left ? PointerUpdateKind.LeftButtonReleased : PointerUpdateKind.RightButtonReleased);
+            var args = new PointerReleasedEventArgs(alert.Header, pointer, alert.Header, position, 1, properties, KeyModifiers.None, button);
+
+            alert.Header.RaiseEvent(args);
+
+            Assert.Equal(toggles, alert.Content.IsVisible);
+            Assert.Equal(toggles, args.Handled);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void ExpandAncestors_expands_the_collapsed_alert_around_a_control_and_reports_whether_it_did()
+    {
+        var root = Render("Outside\n\n> [!NOTE]-\n> Inside", AlertPipeline());
+        Assert.Equal(2, root.Children.Count);
+        var outside = Assert.IsType<MarkdownSelectableTextBlock>(root.Children[0]);
+        var border = Assert.IsType<Border>(root.Children[1]);
+        var content = Assert.IsType<StackPanel>(Assert.IsType<StackPanel>(border.Child).Children[1]);
+        var inside = Assert.Single(content.Children);
+
+        Assert.False(CollapsibleAlert.ExpandAncestors(outside));
+        Assert.True(CollapsibleAlert.ExpandAncestors(inside));
+        Assert.True(content.IsVisible);
+        Assert.False(CollapsibleAlert.ExpandAncestors(inside));
+    }
+
     [AvaloniaFact]
     public void Custom_title_replaces_the_kind_in_the_header()
     {
@@ -209,6 +268,51 @@ public class FoldableAlertTests : RenderTestBase
 
         Assert.Equal($"{CollapsibleAlert.CollapsedGlyph} Title only", HeaderText(alert.Header));
         Assert.Empty(alert.Content.Children);
+    }
+
+    [AvaloniaTheory]
+    [InlineData("> [!TIP] X", "X")]
+    [InlineData("> [!TIP]- X", $"{CollapsibleAlert.CollapsedGlyph} X")]
+    public void One_character_title_at_the_end_of_the_document_is_a_title(string markdown, string header)
+    {
+        var alert = RenderAlert(markdown);
+
+        Assert.Equal(header, HeaderText(alert.Header));
+        Assert.Empty(alert.Content.Children);
+    }
+
+    [AvaloniaFact]
+    public void Alert_without_any_block_renders_only_its_header()
+    {
+        var alert = RenderAlert(new MarkdownDocument { new AlertBlock(new StringSlice("NOTE")) });
+
+        Assert.Equal("NOTE", alert.Header.Text);
+        Assert.Empty(alert.Content.Children);
+    }
+
+    [AvaloniaFact]
+    public void Titled_alert_whose_first_block_is_not_a_paragraph_shows_its_kind_and_keeps_the_block()
+    {
+        var block = new ExtendedAlertBlock(new StringSlice("TIP")) { HasTitle = true, Fold = AlertFold.Expanded };
+        block.Add(new ThematicBreakBlock(null!));
+
+        var alert = RenderAlert(new MarkdownDocument { block });
+
+        Assert.Equal($"{CollapsibleAlert.ExpandedGlyph} TIP", HeaderText(alert.Header));
+        var only = Assert.Single(alert.Content.Children);
+        Assert.IsNotType<MarkdownSelectableTextBlock>(only);
+    }
+
+    [AvaloniaFact]
+    public void First_paragraph_without_parsed_inlines_is_kept_in_the_body()
+    {
+        var alert = RenderAlert(new MarkdownDocument
+        {
+            new AlertBlock(new StringSlice("NOTE")) { new ParagraphBlock() },
+        });
+
+        Assert.Equal("NOTE", alert.Header.Text);
+        Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(alert.Content.Children));
     }
 
     [AvaloniaTheory]
