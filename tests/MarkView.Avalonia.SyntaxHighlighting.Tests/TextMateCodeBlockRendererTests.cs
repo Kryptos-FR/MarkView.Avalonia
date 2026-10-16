@@ -10,6 +10,7 @@ using Markdig;
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Rendering.Blocks;
+using MarkView.Avalonia.Tests.Shared;
 using TextMateSharp.Grammars;
 using Xunit;
 
@@ -31,10 +32,22 @@ public class TextMateCodeBlockRendererTests
     }
 
     [AvaloniaFact]
+    public void Highlighted_block_gets_the_code_block_toolbar()
+    {
+        var result = Render("```csharp\nvar x = 1;\n```");
+        var container = Assert.IsType<StackPanel>(Assert.Single(result.Children));
+        Assert.Contains("markdown-code-container", container.Classes);
+        var toolbar = Assert.IsType<Grid>(Assert.IsType<Border>(container.Children[0]).Child);
+        Assert.Contains(toolbar.Children.OfType<TextBlock>(), tb => tb.Text == "csharp");
+        Assert.Contains(toolbar.Children.OfType<Button>(), b => b.Classes.Contains("markdown-code-copy"));
+        Assert.Same(CodeBlockAssert.CodeBorder(container), container.Children[1]);
+    }
+
+    [AvaloniaFact]
     public void Fenced_csharp_block_renders_as_Border_with_TextBlock()
     {
         var result = Render("```csharp\nvar x = 1;\n```");
-        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        var border = CodeBlockAssert.CodeBorder(Assert.Single(result.Children));
         Assert.Contains("markdown-code-block", border.Classes);
         var textBlock = Assert.IsType<TextBlock>(border.Child);
         Assert.NotNull(textBlock.Inlines);
@@ -45,7 +58,7 @@ public class TextMateCodeBlockRendererTests
     public void Fenced_csharp_block_produces_coloured_Runs()
     {
         var result = Render("```csharp\nvar x = 1;\n```");
-        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        var border = CodeBlockAssert.CodeBorder(Assert.Single(result.Children));
         var textBlock = Assert.IsType<TextBlock>(border.Child);
         // At least one Run with a non-null Foreground should exist
         var runs = textBlock.Inlines!.OfType<Run>().ToList();
@@ -57,7 +70,7 @@ public class TextMateCodeBlockRendererTests
     public void Fenced_block_with_unknown_language_falls_back_to_plain_runs()
     {
         var result = Render("```notareallanguage\nsome code\n```");
-        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        var border = CodeBlockAssert.CodeBorder(Assert.Single(result.Children));
         var textBlock = Assert.IsType<TextBlock>(border.Child);
         var runs = textBlock.Inlines!.OfType<Run>().ToList();
         Assert.NotEmpty(runs);
@@ -125,7 +138,7 @@ public class TextMateCodeBlockRendererTests
 
     private static (Border Border, TextBlock Text) SingleCodeBlock(StackPanel root)
     {
-        var border = Assert.IsType<Border>(Assert.Single(root.Children));
+        var border = CodeBlockAssert.CodeBorder(Assert.Single(root.Children));
         return (border, Assert.IsType<TextBlock>(border.Child));
     }
 

@@ -33,7 +33,7 @@ public class TextMateThemeSwitchTests
         new TextMateExtension().Register(renderer);
         pipeline.Setup(renderer);
         renderer.Render(Markdown.Parse(Code, pipeline));
-        var border = Assert.IsType<Border>(Assert.Single(renderer.RootPanel.Children));
+        var border = CodeBlockAssert.CodeBorder(Assert.Single(renderer.RootPanel.Children));
         return (renderer.RootPanel, Assert.IsType<TextBlock>(border.Child));
     }
 

@@ -34,6 +34,6 @@ public sealed class TextMateCodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock
 
         HighlightedCode.Write(border, textBlock, obj, language, renderer.CodeHighlighter);
 
-        renderer.WriteBlock(border);
+        CodeBlockToolbar.Write(renderer, border, obj, language);
     }
 }

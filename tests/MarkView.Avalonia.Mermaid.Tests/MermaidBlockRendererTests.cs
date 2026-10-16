@@ -6,6 +6,7 @@ using Avalonia.Headless.XUnit;
 using Markdig;
 using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Rendering.Blocks;
+using MarkView.Avalonia.Tests.Shared;
 using Xunit;
 
 namespace MarkView.Avalonia.Mermaid.Tests;
@@ -21,6 +22,18 @@ public class MermaidBlockRendererTests
         pipeline.Setup(renderer);
         renderer.Render(document);
         return renderer.RootPanel;
+    }
+
+    [AvaloniaFact]
+    public void Non_mermaid_fence_gets_the_code_block_toolbar()
+    {
+        var result = Render("```csharp\nvar x = 1;\n```");
+        var container = Assert.IsType<StackPanel>(Assert.Single(result.Children));
+        Assert.Contains("markdown-code-container", container.Classes);
+        var toolbar = Assert.IsType<Grid>(Assert.IsType<Border>(container.Children[0]).Child);
+        Assert.Contains(toolbar.Children.OfType<TextBlock>(), tb => tb.Text == "csharp");
+        Assert.Contains(toolbar.Children.OfType<Button>(), b => b.Classes.Contains("markdown-code-copy"));
+        Assert.Same(CodeBlockAssert.CodeBorder(container), container.Children[1]);
     }
 
     [AvaloniaFact]
@@ -43,7 +56,7 @@ public class MermaidBlockRendererTests
     public void Non_mermaid_fence_renders_with_code_block_class()
     {
         var result = Render("```csharp\nvar x = 1;\n```");
-        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        var border = CodeBlockAssert.CodeBorder(Assert.Single(result.Children));
         Assert.Contains("markdown-code-block", border.Classes);
         Assert.DoesNotContain("markdown-mermaid-fallback", border.Classes);
     }
@@ -52,7 +65,7 @@ public class MermaidBlockRendererTests
     public void Non_mermaid_fence_gets_language_class()
     {
         var result = Render("```csharp\nvar x = 1;\n```");
-        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        var border = CodeBlockAssert.CodeBorder(Assert.Single(result.Children));
         Assert.Contains("language-csharp", border.Classes);
     }
 

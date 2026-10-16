@@ -11,6 +11,9 @@
           <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#D4D4D4</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#1A000000</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#CE9178</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#2D2D2D</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#A0A0A0</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#1AFFFFFF</SolidColorBrush>
           <!-- Alert accent colours — dark theme -->
           <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#3B82F6</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#1A3B82F6</SolidColorBrush>
@@ -29,6 +32,9 @@
           <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#1E1E1E</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#0A000000</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#A31515</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#E4E4E4</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#5F5F5F</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#14000000</SolidColorBrush>
           <!-- Alert accent colours — light theme -->
           <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#2563EB</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#EFF6FF</SolidColorBrush>
@@ -43,6 +49,9 @@
           <SolidColorBrush x:Key="MarkdownMarkedBackground">#FFFF00</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+      <!-- Code block copy button icons (16x16) -->
+      <StreamGeometry x:Key="MarkdownCodeCopyIcon">M5,1 L15,1 L15,11 L12,11 L12,10 L14,10 L14,2 L6,2 L6,4 L5,4 Z M1,5 L11,5 L11,15 L1,15 Z M2,6 L2,14 L10,14 L10,6 Z</StreamGeometry>
+      <StreamGeometry x:Key="MarkdownCodeCopiedIcon">M13.5,3.5 L6,11 L2.5,7.5 L1.5,8.5 L6,13 L14.5,4.5 Z</StreamGeometry>
     </ResourceDictionary>
   </Styles.Resources>
 
@@ -124,6 +133,51 @@
     <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace" />
     <Setter Property="FontSize" Value="13" />
     <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeBlockForeground}" />
+  </Style>
+
+  <!-- Code block toolbar (language label and copy button above the code) -->
+  <Style Selector="StackPanel.markdown-code-container">
+    <Setter Property="Margin" Value="0,4" />
+  </Style>
+  <Style Selector="StackPanel.markdown-code-container > Border.markdown-code-block">
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="CornerRadius" Value="0,0,4,4" />
+  </Style>
+  <Style Selector="Border.markdown-code-header">
+    <Setter Property="Background" Value="{DynamicResource MarkdownCodeHeaderBackground}" />
+    <Setter Property="CornerRadius" Value="4,4,0,0" />
+    <Setter Property="Padding" Value="12,2,4,2" />
+    <Setter Property="MinHeight" Value="28" />
+  </Style>
+  <Style Selector="TextBlock.markdown-code-language">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeHeaderForeground}" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="5" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeHeaderForeground}" />
+    <Setter Property="ToolTip.Tip" Value="Copy code" />
+    <Setter Property="AutomationProperties.Name" Value="Copy code" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource MarkdownCodeCopyButtonHoverBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeBlockForeground}" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy.copied">
+    <Setter Property="ToolTip.Tip" Value="Copied" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy PathIcon">
+    <Setter Property="Width" Value="14" />
+    <Setter Property="Height" Value="14" />
+    <Setter Property="Data" Value="{StaticResource MarkdownCodeCopyIcon}" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy.copied PathIcon">
+    <Setter Property="Data" Value="{StaticResource MarkdownCodeCopiedIcon}" />
   </Style>
 
   <!-- Inline code -->

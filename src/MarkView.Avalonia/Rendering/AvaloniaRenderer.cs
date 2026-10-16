@@ -41,6 +41,18 @@ public class AvaloniaRenderer : RendererBase
     public ImageResizeMode ImageResizeMode { get; set; } = ImageResizeMode.ScaleDownToFit;
 
     /// <summary>
+    /// Whether code blocks show their language (the info string of a fenced code block) in a
+    /// toolbar above the code. Defaults to <c>true</c>.
+    /// </summary>
+    public bool ShowCodeBlockLanguage { get; set; } = true;
+
+    /// <summary>
+    /// Whether code blocks show a button in a toolbar above the code that copies the code to the
+    /// clipboard. Defaults to <c>true</c>.
+    /// </summary>
+    public bool ShowCodeBlockCopyButton { get; set; } = true;
+
+    /// <summary>
     /// Generates GitHub-style anchor IDs for headings. Reset on each render pass.
     /// </summary>
     public SlugGenerator SlugGenerator { get; } = new();

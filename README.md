@@ -74,6 +74,17 @@ MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>((_, e) =>
 viewer.ScrollToAnchor("my-heading");  // scrolls to the heading's anchor position
 ```
 
+### Code block toolbar
+
+Code blocks show their language and a copy button above the code. Turn either off per viewer or
+for the whole application with a style:
+
+```xml
+<mv:MarkdownViewer ShowCodeBlockLanguage="False" ShowCodeBlockCopyButton="False" />
+```
+
+See [Code block toolbar](docs/configuration.md#code-block-toolbar) for details.
+
 ### Using a custom Markdig pipeline
 
 ```csharp
@@ -285,6 +296,10 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-h1` … `markdown-h6` | Headings | `TextBlock` |
 | `markdown-paragraph` | Paragraphs | `TextBlock` |
 | `markdown-code-block` | Code blocks | `Border` |
+| `markdown-code-container` | Code block with its toolbar | `StackPanel` |
+| `markdown-code-header` | Code block toolbar | `Border` |
+| `markdown-code-language` | Code block language label | `TextBlock` |
+| `markdown-code-copy` | Code block copy button | `Button` |
 | `markdown-code-inline` | Inline code | `Border` |
 | `markdown-blockquote` | Blockquotes | `Border` |
 | `markdown-list` | Lists | `StackPanel` |
