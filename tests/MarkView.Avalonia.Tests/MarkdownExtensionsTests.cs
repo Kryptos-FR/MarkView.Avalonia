@@ -103,7 +103,9 @@ public class MarkdownExtensionsTests : RenderTestBase
     public void UseSupportedExtensions_does_not_convert_ascii_smileys()
     {
         // enableSmileys is explicitly false: only named :shortcode: emoji are recognized.
-        var result = Render("Great :) job", _pipeline);
+        // The pipeline is built here, not shared, so that mutation testing reaches the setting.
+        var pipeline = new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
+        var result = Render("Great :) job", pipeline);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var run = Assert.IsType<Run>(Assert.Single(textBlock.Inlines!));
         Assert.Equal("Great :) job", run.Text);
