@@ -250,7 +250,7 @@ The extension inserts `SvgImageLoader` at the front of the image loader chain. R
 
 ### LaTeX Math (`MarkView.Avalonia.Math`)
 
-Renders `$...$` (inline) and `$$...$$` (block) LaTeX math using CSharpMath's SkiaSharp renderer — pure .NET, no browser or WebView required.
+Renders `$...$` and `\(...\)` (inline) and `$$...$$` and `\[...\]` (display) LaTeX math using CSharpMath's SkiaSharp renderer — pure .NET, no browser or WebView required. The bracket delimiters, which LLMs commonly emit, can be turned off with `viewer.UseMath(bracketDelimiters: false)`.
 
 ```bash
 dotnet add package MarkView.Avalonia.Math

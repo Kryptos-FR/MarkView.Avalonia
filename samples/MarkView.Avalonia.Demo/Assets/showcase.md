@@ -192,6 +192,12 @@ $$
 \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n = e = \sum_{k=0}^{\infty} \frac{1}{k!}
 $$
 
+The LaTeX bracket delimiters that LLMs tend to write work too: the roots of \(ax^2 + bx + c = 0\) are
+\[
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+\]
+for any \(a \neq 0\).
+
 ---
 
 *End of showcase.*
