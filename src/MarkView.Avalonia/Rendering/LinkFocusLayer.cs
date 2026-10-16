@@ -95,11 +95,34 @@ internal sealed class LinkFocusLayer : Panel
                     CollectInlines(textBlock, span.Inlines, ref spanOffset, activate);
                     break;
                 case InlineUIContainer { Child: { } child }:
+                    var firstStop = _stops.Count;
                     Collect(child, activate);
+                    for (var i = firstStop; i < _stops.Count; i++)
+                        KeepFocusAcrossArrange((InputElement)_stops[i]);
                     break;
             }
             offset += length;
         }
+    }
+
+    /// <summary>
+    /// A text block removes and re-adds its embedded controls on every arrange (e.g. once a video
+    /// thumbnail has loaded), and Avalonia drops the focus of a control that is removed, which would
+    /// leave a keyboard user nowhere. Gives the focus back, the same way it was given, once the
+    /// control is re-added.
+    /// </summary>
+    private static void KeepFocusAcrossArrange(InputElement control)
+    {
+        NavigationMethod? refocus = null;
+        control.DetachedFromVisualTree += (_, _) =>
+            refocus = !control.IsFocused ? null
+                : control.Classes.Contains(":focus-visible") ? NavigationMethod.Tab : NavigationMethod.Pointer;
+        control.AttachedToVisualTree += (_, _) =>
+        {
+            if (refocus is not { } method) return;
+            refocus = null;
+            control.Focus(method);
+        };
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)

@@ -180,6 +180,39 @@ public class LinkFocusTests
     }
 
     [AvaloniaFact]
+    public void Embedded_control_keeps_focus_when_its_paragraph_is_laid_out_again()
+    {
+        // A text block re-adds its embedded controls on every arrange, e.g. once the video
+        // thumbnail has loaded; Avalonia drops the focus of a control that is detached.
+        var pipeline = new MarkdownPipelineBuilder().UseMediaLinks().Build();
+        using var f = Show("[before](https://example.com/b) ![Trailer](https://www.youtube.com/watch?v=dQw4w9WgXcQ)", pipeline);
+        f.Viewer.Focus();
+        f.Tab();
+        f.Tab();
+        var button = Assert.IsType<Button>(f.Focused);
+        var detached = 0;
+        button.DetachedFromVisualTree += (_, _) => detached++;
+
+        var paragraph = f.Targets.Single().TextBlock;
+        paragraph.InvalidateMeasure();
+        paragraph.InvalidateArrange();
+        f.Window.UpdateLayout();
+
+        Assert.True(detached > 0, "The paragraph did not re-add its embedded controls.");
+        Assert.Same(button, f.Focused);
+        Assert.Contains(":focus-visible", button.Classes);
+
+        // Focus the button with the pointer instead: a re-layout keeps it without the focus ring.
+        f.Viewer.Focus();
+        button.Focus(NavigationMethod.Pointer);
+        Assert.DoesNotContain(":focus-visible", button.Classes);
+        paragraph.InvalidateMeasure();
+        f.Window.UpdateLayout();
+        Assert.Same(button, f.Focused);
+        Assert.DoesNotContain(":focus-visible", button.Classes);
+    }
+
+    [AvaloniaFact]
     public void Disabled_embedded_controls_are_skipped()
     {
         var pipeline = new MarkdownPipelineBuilder().UseMediaLinks().Build();
