@@ -36,6 +36,8 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-code-header` | `Border` | Code block toolbar |
 | `markdown-code-language` | `TextBlock` | Language label in the toolbar |
 | `markdown-code-copy` | `Button` | Copy button in the toolbar; also has the `copied` class for two seconds after a copy |
+| `markdown-custom-fence` | `Border` | Wraps the control a [fence renderer](custom-extensions.md#rendering-a-fence-language-as-your-own-control) returned for a fenced block |
+| `markdown-fence-<language>` | `Border` | The same `Border`, by fence language in lower case (e.g. `markdown-fence-chart`) |
 | `markdown-code-inline` | `Border` | Inline code container |
 | `markdown-blockquote` | `Border` | Blockquote container |
 | `markdown-list` | `StackPanel` | Ordered / unordered list |

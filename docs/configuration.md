@@ -8,7 +8,7 @@
 | `Source` | `Uri?` | `null` | URI of a markdown document to load and render. Takes precedence over `Markdown` when set. Supports `avares://`, `file://`, and `http/https`. |
 | `Pipeline` | `MarkdownPipeline?` | `null` | The Markdig pipeline. `null` falls back to `MarkdownViewerDefaults.Pipeline`, or the built-in default (`UseGitHubExtensions`). |
 | `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
-| `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. |
+| `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. See also [Custom fenced blocks](#custom-fenced-blocks). |
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
 | `ShowCodeBlockLanguage` | `bool` | `true` | Shows the language of a fenced code block (e.g. `csharp`) in a toolbar above the code. See [Code block toolbar](#code-block-toolbar). |
 | `ShowCodeBlockCopyButton` | `bool` | `true` | Shows a button in a toolbar above each code block that copies the code to the clipboard. See [Code block toolbar](#code-block-toolbar). |
@@ -179,6 +179,7 @@ MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
 MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
 MarkdownViewerDefaults.Extensions.AddSvg();
 MarkdownViewerDefaults.Extensions.AddMermaid();
+MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new MyChart(code));
 ```
 
 **Priority rules:**
@@ -186,6 +187,7 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 1. `viewer.Pipeline` is used if set; otherwise `MarkdownViewerDefaults.Pipeline`; otherwise the built-in default.
 2. `MarkdownViewerDefaults.Extensions` are registered first, then `viewer.Extensions`.
 3. If the same extension object appears in both lists it is registered only once (reference equality check).
+4. For [fence renderers](#custom-fenced-blocks), the last one registered for a language wins, so a viewer's own overrides a default one.
 
 ## Source property
 
@@ -443,3 +445,27 @@ The toolbar applies to the built-in code block renderer and to the code blocks o
 `SyntaxHighlighting` and `Mermaid` (non-diagram fences) packages. Mermaid diagrams and math
 blocks have no toolbar. Text selection skips the toolbar, so selecting and copying across a
 code block copies only the code. See [Theming](theming.md#code-block-toolbar) to restyle it.
+
+## Custom fenced blocks
+
+Fenced code blocks of a language can render as your own control instead of code, without writing
+a Markdig renderer:
+
+```csharp
+viewer.UseFenceRenderer("chart", (code, info) => new MyChart(code));
+// for every viewer of the application:
+MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new MyChart(code));
+```
+
+The factory receives the block's content (`code`, without the fences) and its whole info string
+(`info`, e.g. `chart {height=200}` for ```` ```chart {height=200} ````), and returns a new control,
+or `null` to render that block as code. The language is matched case-insensitively, and a fence
+renderer takes precedence over Mermaid diagrams, syntax highlighting and the plain code block,
+whatever order they were registered in. A factory that throws renders its block as code and logs
+a warning. `UseFenceRenderer` replaces the viewer's earlier fence renderer for the same language
+and re-renders the document.
+
+The control is wrapped in a `Border` with the `markdown-custom-fence` and `markdown-fence-<language>`
+classes, and text selection copies it as its fenced source. See
+[Writing custom extensions](custom-extensions.md#rendering-a-fence-language-as-your-own-control)
+for the details, including how to follow theme changes.

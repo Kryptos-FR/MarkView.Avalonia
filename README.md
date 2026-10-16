@@ -106,6 +106,17 @@ for the whole application with a style:
 
 See [Code block toolbar](docs/configuration.md#code-block-toolbar) for details.
 
+### Custom fenced blocks
+
+Render the fenced code blocks of a language as your own control, without writing a Markdig
+renderer. The factory gets the block's content and its info string:
+
+```csharp
+viewer.UseFenceRenderer("chart", (code, info) => new MyChart(code));   // ```chart blocks
+```
+
+See [Custom fenced blocks](docs/configuration.md#custom-fenced-blocks) for details.
+
 ### Using a custom Markdig pipeline
 
 ```csharp
@@ -146,6 +157,7 @@ MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
 MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
 MarkdownViewerDefaults.Extensions.AddSvg();
 MarkdownViewerDefaults.Extensions.AddMermaid();
+MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new MyChart(code));
 ```
 
 Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an extension object shared between the defaults list and an instance list is only registered once per render.
@@ -159,7 +171,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Headings H1–H6 | CommonMark |
 | Bold, italic | CommonMark |
 | Inline code | CommonMark |
-| Fenced code blocks | CommonMark |
+| Fenced code blocks | CommonMark; any language can render as your own control ([custom fenced blocks](#custom-fenced-blocks)) |
 | Blockquotes | CommonMark |
 | Ordered and unordered lists | CommonMark, tight and loose |
 | Links and autolinks | CommonMark + extension |
@@ -331,6 +343,8 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-code-header` | Code block toolbar | `Border` |
 | `markdown-code-language` | Code block language label | `TextBlock` |
 | `markdown-code-copy` | Code block copy button | `Button` |
+| `markdown-custom-fence` | Control a fence renderer returned (`UseFenceRenderer`) | `Border` |
+| `markdown-fence-<language>` | The same, by fence language in lower case | `Border` |
 | `markdown-code-inline` | Inline code | `Border` |
 | `markdown-blockquote` | Blockquotes | `Border` |
 | `markdown-list` | Lists | `StackPanel` |

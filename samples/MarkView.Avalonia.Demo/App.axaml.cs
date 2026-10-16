@@ -1,6 +1,8 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 
 using Markdig;
 using Markdig.Extensions.Tables;
@@ -45,6 +47,9 @@ public class App : Application
         MarkdownViewerDefaults.Extensions.AddMermaid();
         MarkdownViewerDefaults.Extensions.AddMath();
 
+        // Global fence renderer — every ```palette block renders as a row of colour swatches
+        MarkdownViewerDefaults.Extensions.AddFenceRenderer("palette", (code, _) => CreatePalette(code));
+
         // Global link handler — handles external links for every MarkdownViewer in the app
         MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>(OnLinkClicked);
 
@@ -72,6 +77,28 @@ public class App : Application
 
         base.OnFrameworkInitializationCompleted();
         return;
+
+        // Returns null for anything that is not a list of colours, so the block shows as code instead.
+        static Control? CreatePalette(string code)
+        {
+            var swatches = new WrapPanel();
+            foreach (var name in code.Split([' ', ',', '\n'], StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!Color.TryParse(name, out var color))
+                    return null;
+                var swatch = new Border
+                {
+                    Width = 48,
+                    Height = 48,
+                    Margin = new Thickness(0, 0, 8, 8),
+                    CornerRadius = new CornerRadius(4),
+                    Background = new SolidColorBrush(color),
+                };
+                ToolTip.SetTip(swatch, name);
+                swatches.Children.Add(swatch);
+            }
+            return swatches;
+        }
 
         static void OnLinkClicked(MarkdownViewer sender, Rendering.LinkClickedEventArgs e)
         {
