@@ -151,7 +151,7 @@ public class MyCodeBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 }
 ```
 
-A custom code block renderer does not get the built-in [code block toolbar](configuration.md#code-block-toolbar); add your own controls if you want one.
+A custom code block renderer does not get the built-in [code block toolbar](configuration.md#code-block-toolbar), nor its line numbers, wrapping and maximum height; add your own controls if you want them.
 
 `renderer.WriteBlock(control)` adds the control to the current `Panel` container.  
 `renderer.WriteInline(inline)` adds an inline to the current `InlineCollection`.  

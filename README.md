@@ -104,6 +104,13 @@ for the whole application with a style:
 <mv:MarkdownViewer ShowCodeBlockLanguage="False" ShowCodeBlockCopyButton="False" />
 ```
 
+Line numbers, wrapping long lines, and a maximum height past which a block scrolls inside itself
+are opt-in:
+
+```xml
+<mv:MarkdownViewer ShowCodeBlockLineNumbers="True" WrapCodeBlockLines="True" CodeBlockMaxHeight="400" />
+```
+
 See [Code block toolbar](docs/configuration.md#code-block-toolbar) for details.
 
 ### Custom fenced blocks
@@ -343,6 +350,8 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-code-header` | Code block toolbar | `Border` |
 | `markdown-code-language` | Code block language label | `TextBlock` |
 | `markdown-code-copy` | Code block copy button | `Button` |
+| `markdown-code-line-numbers` | Code block line numbers | `TextBlock` |
+| `markdown-code-scroll` | Scrolls a code block taller than `CodeBlockMaxHeight` | `ScrollViewer` |
 | `markdown-custom-fence` | Control a fence renderer returned (`UseFenceRenderer`) | `Border` |
 | `markdown-fence-<language>` | The same, by fence language in lower case | `Border` |
 | `markdown-code-inline` | Inline code | `Border` |

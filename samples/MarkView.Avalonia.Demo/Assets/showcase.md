@@ -128,6 +128,34 @@ data_uri = f"data:image/svg+xml;base64,{encoded}"
 print(data_uri)
 ```
 
+### A long block
+
+Turn on **Line numbers**, **Wrap code** or **Short code blocks** above to see the code block options.
+
+```csharp
+// A long line, which runs past the block unless "Wrap code" is on: var viewer = new MarkdownViewer { ShowCodeBlockLineNumbers = true, WrapCodeBlockLines = true, CodeBlockMaxHeight = 400 };
+public static class Fibonacci
+{
+    public static IEnumerable<long> Sequence()
+    {
+        long previous = 0, current = 1;
+        while (true)
+        {
+            yield return previous;
+            (previous, current) = (current, previous + current);
+        }
+    }
+
+    public static long Nth(int n) => Sequence().Skip(n).First();
+
+    public static void Main()
+    {
+        foreach (var number in Sequence().Take(10))
+            Console.WriteLine(number);
+    }
+}
+```
+
 ---
 
 ## Bitmap Image
