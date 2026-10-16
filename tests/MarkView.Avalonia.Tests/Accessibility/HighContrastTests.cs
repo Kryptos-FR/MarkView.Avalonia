@@ -105,7 +105,6 @@ public class HighContrastTests
     {
         using var _ = new ThemeScope(variant == "Light" ? ThemeVariant.Light : ThemeVariant.Dark);
         var viewer = ShowViewer("[link](https://example.com)\n\n> [!TIP]\n> Body", HighContrastMode.Enabled, withTheme: true);
-        viewer.Pipeline = new Markdig.MarkdownPipelineBuilder().UseAlertBlocks().Build();
 
         Assert.Equal(Color.Parse(link), LinkColor(viewer));
         Assert.Equal(Color.Parse(background), ((ISolidColorBrush)viewer.Background!).Color);
