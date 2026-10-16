@@ -116,6 +116,7 @@ internal sealed class AvaloniaTypefaceProvider(
             using (stream)
                 return (glyphTypeface.FamilyName, SKData.Create(stream));
         }
+        // Stryker disable once Block : removing the body leaves an empty catch, and Stryker substitutes the default return value (null) for the missing return, which is exactly what the body returns
         catch (Exception)
         {
             // No usable font manager: leave every family to the SVG renderer.

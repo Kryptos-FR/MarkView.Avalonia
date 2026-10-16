@@ -1,11 +1,15 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Reflection;
+
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Svg.Skia;
 
 using SkiaSharp;
+
+using Svg.Skia.TypefaceProviders;
 
 using Xunit;
 
@@ -150,6 +154,38 @@ public class AvaloniaTypefaceProviderTests
         Assert.Same(AvaloniaTypefaceProvider.Shared, providers[0]);
         Assert.Single(providers, p => ReferenceEquals(p, AvaloniaTypefaceProvider.Shared));
         Assert.Equal(font, AvaloniaTypefaceProvider.Shared.DocumentFont);
+        // The SVG renderer's own providers stay behind it, for the families it leaves to them.
+        Assert.Contains(providers, p => p is DefaultTypefaceProvider);
+    }
+
+    public static TheoryData<bool> ExistingProviders => [true, false];
+
+    [AvaloniaTheory]
+    [MemberData(nameof(ExistingProviders))]
+    public void Use_registers_the_shared_provider_on_first_use_whatever_providers_the_svg_settings_have(bool hasProviders)
+    {
+        var registered = typeof(AvaloniaTypefaceProvider).GetField("s_registered", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var settings = SvgSource.s_skiaModel.Settings;
+        var originalProviders = settings.TypefaceProviders;
+        var originalRegistered = registered.GetValue(null);
+        var existing = new DefaultTypefaceProvider();
+        try
+        {
+            // As before the first diagram of an application that set (or cleared) the providers itself.
+            registered.SetValue(null, false);
+            settings.TypefaceProviders = hasProviders ? [existing] : null;
+
+            AvaloniaTypefaceProvider.Use(DocumentFont);
+            AvaloniaTypefaceProvider.Use(DocumentFont);
+
+            ITypefaceProvider[] expected = hasProviders ? [AvaloniaTypefaceProvider.Shared, existing] : [AvaloniaTypefaceProvider.Shared];
+            Assert.Equal(expected, settings.TypefaceProviders);
+        }
+        finally
+        {
+            settings.TypefaceProviders = originalProviders;
+            registered.SetValue(null, originalRegistered);
+        }
     }
 
     [AvaloniaFact]
