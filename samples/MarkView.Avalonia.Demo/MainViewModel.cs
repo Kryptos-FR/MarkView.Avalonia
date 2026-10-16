@@ -76,6 +76,37 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         ---
 
+        ## Collapsible Details
+
+        HTML `<details>` / `<summary>` blocks fold like on GitHub (part of `UseGitHubExtensions()`, or `UseHtmlDetails()` on its own). Separate the tags from the markdown inside with blank lines:
+
+        <details>
+        <summary>Click to expand</summary>
+
+        The body is ordinary **markdown**, hidden from selection and copy until expanded:
+
+        ```bash
+        dotnet add package MarkView.Avalonia
+        ```
+
+        <details>
+        <summary>Details can nest</summary>
+
+        An inner block, collapsed again.
+
+        </details>
+
+        </details>
+
+        <details open>
+        <summary>Starts expanded with <code>&lt;details open&gt;</code></summary>
+
+        Click the summary, or focus it and press Enter or Space, to fold it.
+
+        </details>
+
+        ---
+
         ## Abbreviations
 
         Define abbreviations once; every occurrence in the document gets a tooltip automatically.

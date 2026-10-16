@@ -24,7 +24,7 @@ The pipeline controls which Markdig extensions parse the input markdown. Build o
 viewer.Pipeline = new MarkdownPipelineBuilder()
     .UseGitHubExtensions()      // what GitHub renders: tables, task lists, ~~strike~~ and ~strike~,
                                 // autolinks, emoji shortcodes, alerts, footnotes, CJK-friendly emphasis,
-                                // YAML front matter (hidden). The viewer's default pipeline.
+                                // YAML front matter (hidden), <details> blocks. The viewer's default pipeline.
     .UseAbbreviations()         // *[HTML]: HyperText Markup Language
     .UseCitations()             // ""quoted text""
     .UseFigures()               // ^^^ figure blocks
@@ -52,6 +52,7 @@ MarkView.Avalonia has two helpers that enable a base set of extensions. Both tak
 - `Footnotes` — `[^1]` references and their notes
 - `CjkFriendlyEmphasis` — parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation
 - `YamlFrontMatter` — `---` metadata block at the top of a document is parsed and hidden, not shown as garbled text
+- `HtmlDetails` — HTML `<details>` / `<summary>` blocks fold as on GitHub (see [HTML details blocks](#html-details-blocks)); MarkView's `UseHtmlDetails()` adds them to another pipeline
 
 Math (`$...$`, and the `\(...\)`/`\[...\]` delimiters LLMs emit) and Mermaid diagrams, which GitHub also renders, come from their own packages (`UseMath()`, `UseMermaid()`).
 
@@ -68,7 +69,7 @@ Math (`$...$`, and the `\(...\)`/`\[...\]` delimiters LLMs emit) and Mermaid dia
 >     .Build();
 > ```
 
-`UseSupportedExtensions()` was the default before `UseGitHubExtensions()`. It enables the other emphasis extras and grid tables, but not alerts or footnotes:
+`UseSupportedExtensions()` was the default before `UseGitHubExtensions()`. It enables the other emphasis extras and grid tables, but not alerts, footnotes or details blocks:
 
 - `EmphasisExtras` — strikethrough `~~`, subscript `~`, superscript `^`, underline `++`, highlight `==`
 - `AutoLinks`, `PipeTables`, `TaskLists`, `CjkFriendlyEmphasis`, `YamlFrontMatter` and emoji shortcodes, as above
@@ -121,6 +122,32 @@ The default pipeline renders GitHub alerts. MarkView's `UseExtendedAlertBlocks()
 - Any kind made of ASCII letters is accepted, as in Markdig: `> [!QUESTION]` renders with the neutral alert style plus a `markdown-alert-question` class.
 - The body of a collapsed alert cannot be selected or copied. `ScrollToAnchor` (and so in-document links and table-of-contents navigation) expands the collapsed alerts around a heading before scrolling to it.
 - The extras need `UseExtendedAlertBlocks()`; a pipeline built with only Markdig's `UseAlertBlocks()`/`UseAdvancedExtensions()` parses plain alerts. The two can be combined in either order. See [Theming](theming.md#alert-blocks) for the style classes.
+
+### HTML details blocks
+
+The default pipeline renders HTML `<details>` / `<summary>` elements as collapsible blocks, as GitHub does. To add them to a pipeline built from something else, call MarkView's `UseHtmlDetails()`:
+
+```markdown
+<details>
+<summary>Click to expand</summary>
+
+Ordinary **markdown**: paragraphs, lists, code blocks, headings, even nested `<details>`.
+
+</details>
+
+<details open>
+<summary>Starts expanded</summary>
+
+Shown until the summary is clicked.
+
+</details>
+```
+
+- Click the summary, or focus it and press Enter or Space, to show or hide the body. It starts hidden unless the tag has the `open` attribute. Without a `<summary>`, the summary reads "Details", as in browsers.
+- Leave a blank line between the tags and the markdown inside: as on GitHub, text on lines right next to the tags belongs to the same HTML block and is not parsed as markdown. MarkView shows such text as plain text (tags removed, entities decoded, `<br>` as a line break), and the summary as plain text too: `<summary><b>Title</b></summary>` reads "Title", not bold.
+- A `<details>` without its `</details>` (or the reverse), or one whose closing tag is in another container (e.g. opened outside a list and closed inside it), is left as raw HTML, which the viewer doesn't render, as before. Other HTML blocks are unchanged too, inside a details block or not.
+- As with [foldable alerts](#alert-blocks), the body of a collapsed details block cannot be selected or copied, and `ScrollToAnchor` expands the details blocks around a heading before scrolling to it. See [Theming](theming.md#details-blocks) for the style classes.
+- A pipeline that disables HTML (Markdig's `DisableHtml()`) has no details blocks either.
 
 ### Convenience extension methods
 
@@ -308,7 +335,7 @@ viewer.ScrollToAnchor("fn-1");            // matches footnote [^1]
 
 Anchors are generated from heading text using GitHub-compatible slug rules (lowercase, spaces to hyphens, non-alphanumeric stripped). Headings with identical slugs are disambiguated with a numeric suffix (`-1`, `-2`, …).
 
-A heading inside a collapsed [foldable alert](#alert-blocks) is still listed in `TableOfContents`; scrolling to its anchor expands the alert first.
+A heading inside a collapsed [foldable alert](#alert-blocks) or [details block](#html-details-blocks) is still listed in `TableOfContents`; scrolling to its anchor expands it first.
 
 ## Table of contents
 

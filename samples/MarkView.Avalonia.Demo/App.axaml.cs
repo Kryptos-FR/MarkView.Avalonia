@@ -22,6 +22,7 @@ public class App : Application
             .UseSupportedExtensions(new MarkdownExtensionsOptions { PipeTable = new PipeTableOptions { InferColumnWidthsFromSeparator = true } })
             .UseAbbreviations()
             .UseExtendedAlertBlocks()
+            .UseHtmlDetails()
             .UseCitations()
             .UseFigures()
             .UseFootnotes()

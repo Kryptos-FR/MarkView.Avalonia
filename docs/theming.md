@@ -96,6 +96,7 @@ A foldable alert's header is focusable and toggles the body on click, Enter or S
 <Style Selector="Border.markdown-alert-collapsible:not(:expanded) TextBlock.markdown-alert-header">
   <Setter Property="Margin" Value="0" />
 </Style>
+```
 
 Example — colour the NOTE variant:
 
@@ -103,6 +104,31 @@ Example — colour the NOTE variant:
 <Style Selector="Border.markdown-alert-note">
   <Setter Property="BorderBrush" Value="#3b82f6" />
   <Setter Property="Background" Value="#eff6ff" />
+</Style>
+```
+
+### Details blocks
+
+HTML `<details>` / `<summary>` (see [HTML details blocks](configuration.md#html-details-blocks)).
+
+| Class | Control | Element |
+|-------|---------|---------|
+| `markdown-details` | `Border` | The whole block; has the `:expanded` pseudo-class while its body is shown |
+| `markdown-details-summary` | `TextBlock` | The summary line, which toggles the body |
+| `markdown-details-chevron` | `Control` | Fold indicator at the start of the summary, like `markdown-alert-chevron`: drawn in the summary's `Foreground` and sized by its `FontSize` |
+| `markdown-details-content` | `StackPanel` | The body |
+
+The summary is focusable and toggles the body on click, Enter or Space; the body's visibility is set by the control, not by a style. The default theme only gives the summary a transparent background (so the whole row is clickable), a hand cursor and an underline when focused from the keyboard. For example, to frame the block:
+
+```xml
+<Style Selector="Border.markdown-details">
+  <Setter Property="BorderBrush" Value="#40808080" />
+  <Setter Property="BorderThickness" Value="1" />
+  <Setter Property="CornerRadius" Value="4" />
+  <Setter Property="Padding" Value="12,8" />
+</Style>
+<Style Selector="TextBlock.markdown-details-summary">
+  <Setter Property="FontWeight" Value="SemiBold" />
 </Style>
 ```
 

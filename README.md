@@ -182,8 +182,9 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Footnotes | `[^1]` |
 | CJK-friendly emphasis | parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation |
 | YAML front matter | `---` metadata block at the top of a document is parsed and hidden |
+| Collapsible details | HTML `<details>` / `<summary>`, as on GitHub (also `UseHtmlDetails()` on its own) |
 
-`UseSupportedExtensions()`, the previous default, enables the same features except alerts and footnotes, and adds subscript (`~text~`), superscript (`^text^`), underline (`++text++`), highlight (`==text==`) and grid tables.
+`UseSupportedExtensions()`, the previous default, enables the same features except alerts, footnotes and details, and adds subscript (`~text~`), superscript (`^text^`), underline (`++text++`), highlight (`==text==`) and grid tables.
 
 **Subscript is not available on top of `UseGitHubExtensions()`:** there `~text~` is always strikethrough, as on GitHub, even with `UseEmphasisExtras()`. For subscript, build the pipeline from `UseSupportedExtensions()` and add `UseAlertBlocks()` / `UseFootnotes()` if needed. See [Markdig Pipeline](docs/configuration.md#markdig-pipeline).
 
