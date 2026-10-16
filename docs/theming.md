@@ -40,7 +40,7 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-blockquote` | `Border` | Blockquote container |
 | `markdown-list` | `StackPanel` | Ordered / unordered list |
 | `markdown-list-marker` | `TextBlock` | List item bullet, number or task-list check glyph |
-| `markdown-task-list` | `TextBlock` | Task-list check glyph (☐/☑) |
+| `markdown-task-list` | `TextBlock` | Task-list check glyph: a box, ticked when checked, drawn in its `Foreground` and sized by its `FontSize` (its text, ☐ or ☑, is what selection copies) |
 | `markdown-task-toggle` | `ToggleButton` | Clickable task-list checkbox wrapping the glyph, when `AreTaskListsInteractive` is set; `:checked` when ticked |
 | `markdown-thematic-break` | `Separator` | Horizontal rule |
 | `markdown-image` | `Image` | Rendered image |
@@ -52,7 +52,8 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 The clickable task-list checkbox (`ToggleButton.markdown-task-toggle`) uses its own minimal control
 theme rather than your application's `ToggleButton` theme, so it looks like the static glyph: no
 padding, chrome or accent fill. Its glyph is still a `TextBlock.markdown-task-list`, styled like
-the static one. App-wide `ToggleButton` *styles* (as opposed to the control theme) do apply to it;
+the static one. The box is drawn rather than taken from a font, because browser builds only have
+the fonts the application embeds, which usually lack ☐ and ☑. App-wide `ToggleButton` *styles* (as opposed to the control theme) do apply to it;
 scope them with a class, or reset them on `ToggleButton.markdown-task-toggle`.
 
 ### EmphasisExtras

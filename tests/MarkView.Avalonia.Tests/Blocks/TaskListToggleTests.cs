@@ -13,6 +13,7 @@ using Avalonia.VisualTree;
 using Markdig;
 
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Blocks;
 
 using Xunit;
 
@@ -41,7 +42,7 @@ public class TaskListToggleTests
     private static ToggleButton[] Toggles(StackPanel list) =>
         Markers(list).Select(m => Assert.IsType<ToggleButton>(m)).ToArray();
 
-    private static TextBlock Glyph(ToggleButton toggle) => Assert.IsType<TextBlock>(toggle.Content);
+    private static TaskCheckGlyph Glyph(ToggleButton toggle) => Assert.IsType<TaskCheckGlyph>(toggle.Content);
 
     [AvaloniaFact]
     public void Renderer_task_lists_are_not_interactive_by_default()
@@ -54,7 +55,7 @@ public class TaskListToggleTests
     {
         var (list, _) = Render(TwoTasks, interactive: false);
 
-        var markers = Markers(list).Select(m => Assert.IsType<TextBlock>(m)).ToArray();
+        var markers = Markers(list).Select(m => Assert.IsType<TaskCheckGlyph>(m)).ToArray();
         Assert.Equal(["☑", "☐"], markers.Select(m => m.Text));
         Assert.All(markers, m =>
         {

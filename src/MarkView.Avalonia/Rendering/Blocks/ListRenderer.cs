@@ -58,7 +58,7 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
                 if (taskList.NextSibling is LiteralInline literal)
                     literal.Content.TrimStart();
 
-                var glyph = new TextBlock { Text = TaskListToggle.Glyph(taskList.Checked) };
+                var glyph = new TaskCheckGlyph(taskList.Checked);
                 glyph.Classes.Add("markdown-list-marker");
                 glyph.Classes.Add("markdown-task-list");
 

@@ -24,9 +24,6 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// </remarks>
 internal static class TaskListToggle
 {
-    public const string CheckedGlyph = "☑";
-    public const string UncheckedGlyph = "☐";
-
     private static readonly ControlTheme Theme = new(typeof(ToggleButton))
     {
         Setters =
@@ -44,13 +41,11 @@ internal static class TaskListToggle
         },
     };
 
-    public static string Glyph(bool isChecked) => isChecked ? CheckedGlyph : UncheckedGlyph;
-
     /// <summary>
     /// Creates a toggle showing <paramref name="glyph"/> in the given state. Toggling it updates the
     /// glyph, then calls <paramref name="toggled"/> with the new state.
     /// </summary>
-    public static ToggleButton Create(TextBlock glyph, bool isChecked, Action<bool> toggled)
+    public static ToggleButton Create(TaskCheckGlyph glyph, bool isChecked, Action<bool> toggled)
     {
         var toggle = new ToggleButton
         {
@@ -62,7 +57,7 @@ internal static class TaskListToggle
         toggle.IsCheckedChanged += (_, _) =>
         {
             var nowChecked = toggle.IsChecked == true;
-            glyph.Text = Glyph(nowChecked);
+            glyph.IsChecked = nowChecked;
             toggled(nowChecked);
         };
         return toggle;

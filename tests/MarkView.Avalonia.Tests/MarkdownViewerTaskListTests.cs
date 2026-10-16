@@ -15,6 +15,7 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Blocks;
 
 using Xunit;
 
@@ -383,7 +384,7 @@ public class MarkdownViewerTaskListTests
         Click(f.Window, CenterOf(f.Window, toggle));
 
         Assert.True(toggle.IsChecked);
-        Assert.Equal("☑", Assert.IsType<TextBlock>(toggle.Content).Text);
+        Assert.Equal("☑", Assert.IsType<TaskCheckGlyph>(toggle.Content).Text);
         var e = Assert.Single(f.Events);
         Assert.True(e.IsChecked);
         Assert.Equal(TwoTasks.IndexOf("[ ]", StringComparison.Ordinal), e.SourceStart);
@@ -400,7 +401,7 @@ public class MarkdownViewerTaskListTests
         Click(f.Window, CenterOf(f.Window, toggle));
 
         Assert.True(toggle.IsChecked);
-        Assert.Equal("☑", Assert.IsType<TextBlock>(toggle.Content).Text);
+        Assert.Equal("☑", Assert.IsType<TaskCheckGlyph>(toggle.Content).Text);
         Assert.Equal([false, true], f.Events.Select(e => e.IsChecked));
     }
 
