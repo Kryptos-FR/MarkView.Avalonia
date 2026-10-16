@@ -385,7 +385,7 @@ public partial class MarkdownViewer : ContentControl
         RenderMarkdown();
     }
 
-    private void RenderMarkdown()
+    internal void RenderMarkdown()
     {
         var markdown = _sourceMarkdown ?? Markdown;
         _renderedMarkdown = markdown;
