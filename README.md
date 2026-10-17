@@ -182,8 +182,10 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Blockquotes | CommonMark |
 | Ordered and unordered lists | CommonMark, tight and loose |
 | Links and autolinks | CommonMark + extension |
-| Images | CommonMark, remote URLs loaded async |
+| Images | CommonMark, remote URLs loaded async and cached in memory ([image cache](docs/configuration.md#image-cache)) |
 | Image sizing | `![alt](url =WxH)` — inline pixel dimensions, e.g. `=80x80` |
+| Image zoom | Clicking an image opens it in a lightbox over the viewer (`IsImageZoomEnabled`, on by default) |
+| Broken images | An image that fails to load shows a placeholder with its alt text |
 | Thematic breaks | CommonMark |
 | Hard line breaks | CommonMark (`\` or two spaces) |
 | HTML `<br>` / `<br />` | Rendered as line break |
@@ -372,6 +374,8 @@ Override any style class in your own `Styles` to customise appearance:
 | `markdown-task-toggle` | Clickable task-list checkbox (`AreTaskListsInteractive`) | `ToggleButton` |
 | `markdown-thematic-break` | Horizontal rules | `Separator` |
 | `markdown-image` | Images | `Image` |
+| `markdown-image-failed` | Placeholder of an image that could not be loaded | `Border` |
+| `markdown-image-lightbox` | Lightbox a clicked image opens in (`IsImageZoomEnabled`) | `Panel` |
 | `markdown-link` | Hyperlinks | `HyperlinkButton` |
 | `markdown-table` | Tables | `Grid` |
 | `markdown-table-cell` | Table cells | `Border` |

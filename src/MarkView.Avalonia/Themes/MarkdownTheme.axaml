@@ -38,6 +38,15 @@
                (MarkdownCodeBlockForeground) and inline code (MarkdownCodeInlineForeground) -->
           <SolidColorBrush x:Key="MarkdownFindMatchBackground">#453A00</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#652A00</SolidColorBrush>
+          <!-- Image that could not be loaded: 8.2:1 text on the page, 5.8:1 on its background; border 3.5:1 -->
+          <SolidColorBrush x:Key="MarkdownImageFailedForeground">#A1A1AA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBackground">#27272A</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBorder">#7A7A83</SolidColorBrush>
+          <!-- Image lightbox: the close cross is 12:1 or more on the backdrop over any page -->
+          <SolidColorBrush x:Key="MarkdownImageLightboxBackdrop">#E0000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#F3F3F3</SolidColorBrush>
@@ -71,6 +80,15 @@
                (MarkdownCodeBlockForeground) and inline code (MarkdownCodeInlineForeground) -->
           <SolidColorBrush x:Key="MarkdownFindMatchBackground">#FFF176</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#FFC584</SolidColorBrush>
+          <!-- Image that could not be loaded: 7.7:1 text on the page, 7.0:1 on its background; border 3.5:1 -->
+          <SolidColorBrush x:Key="MarkdownImageFailedForeground">#52525B</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBackground">#F4F4F5</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBorder">#82828B</SolidColorBrush>
+          <!-- Image lightbox: the close cross is 12:1 or more on the backdrop over any page -->
+          <SolidColorBrush x:Key="MarkdownImageLightboxBackdrop">#CC000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
       <!-- Code block copy button icons (16x16) -->
@@ -274,6 +292,37 @@
   <!-- Images -->
   <Style Selector="Image.markdown-image">
     <Setter Property="Margin" Value="0,4" />
+  </Style>
+  <!-- Placeholder of an image that could not be loaded: a broken-image glyph and the alt text -->
+  <Style Selector="Border.markdown-image-failed">
+    <Setter Property="Background" Value="{DynamicResource MarkdownImageFailedBackground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownImageFailedBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="6,2" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownImageFailedForeground}" />
+  </Style>
+  <!-- Lightbox a clicked image opens in (MarkdownViewer.IsImageZoomEnabled) -->
+  <Style Selector=":is(Panel).markdown-image-lightbox">
+    <Setter Property="Background" Value="{DynamicResource MarkdownImageLightboxBackdrop}" />
+  </Style>
+  <Style Selector="Image.markdown-image-lightbox-image">
+    <Setter Property="Margin" Value="48" />
+  </Style>
+  <Style Selector="Button.markdown-image-lightbox-close">
+    <Setter Property="Background" Value="{DynamicResource MarkdownImageLightboxCloseBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownImageLightboxCloseForeground}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Padding" Value="8" />
+    <Setter Property="Margin" Value="8" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="ToolTip.Tip" Value="Close" />
+    <Setter Property="AutomationProperties.Name" Value="Close" />
+  </Style>
+  <Style Selector="Button.markdown-image-lightbox-close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource MarkdownImageLightboxCloseHoverBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownImageLightboxCloseForeground}" />
   </Style>
 
   <!-- Text selection highlight -->

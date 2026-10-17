@@ -16,6 +16,7 @@
 | `WrapCodeBlockLines` | `bool` | `false` | Wraps code lines longer than the block's width instead of letting them run past it. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `CodeBlockMaxHeight` | `double` | `PositiveInfinity` | Maximum height of a code block (toolbar excluded); a taller block scrolls vertically inside itself. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `AreTaskListsInteractive` | `bool` | `false` | Renders task-list items as checkboxes the user can toggle, raising `TaskToggled`. Setting it re-renders the document. See [Interactive task lists](#interactive-task-lists). |
+| `IsImageZoomEnabled` | `bool` | `true` | Clicking an image opens it in a lightbox over the viewer. See [Image zoom](#image-zoom). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
 
@@ -257,6 +258,32 @@ MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new 
 3. If the same extension object appears in both lists it is registered only once (reference equality check).
 4. For [fence renderers](#custom-fenced-blocks), the last one registered for a language wins, so a viewer's own overrides a default one.
 
+### Image cache
+
+Loaded images are kept in an in-memory cache shared by every viewer, so rendering an image again
+(the document edited and re-rendered, a viewer recreated when its tab is shown again, the same image
+twice in a document) neither downloads nor decodes it again:
+
+```csharp
+MarkdownViewerDefaults.ImageCacheSize = 200; // images kept; 0 disables the cache. Default: 100
+MarkdownViewerDefaults.ClearImageCache();    // e.g. after the images behind some URLs have changed
+```
+
+- An image is cached under its resolved URL (after `BaseUri`) and the types of the
+  [image loaders](custom-extensions.md#writing-a-custom-image-loader) in use, since another loader
+  chain (one with the SVG loader, say) can load the same URL differently. A custom loader whose result
+  depends on more than the URL and its type (e.g. settings passed to its constructor) should use URLs
+  that tell those results apart, or the cache should be cleared when the settings change.
+- Once it holds `ImageCacheSize` images, the least recently used one is evicted first. Evicted images
+  are never disposed, since a viewer may still show them; they are collected once nothing does.
+  Lowering `ImageCacheSize` evicts the images beyond the new size at once.
+- A failed load is never cached: the next render tries again.
+- Loads of the same image that run at the same time (two viewers, or two copies of the image) share
+  one download. It is cancelled only when every viewer waiting for it has dropped the image.
+- `ClearImageCache()` keeps the images already shown; only the next render loads them again.
+- The cache is thread-safe. With `ImageCacheSize = 0`, no image is cached and every image is loaded
+  on its own, even when the same one is loading elsewhere.
+
 ## Source property
 
 `Source` is a `Uri?` that tells the viewer where to load its markdown from, instead
@@ -481,6 +508,43 @@ fixed cap, add your own style:
   <Setter Property="MaxWidth" Value="800" />
 </Style>
 ```
+
+### Images that fail to load
+
+When an image cannot be loaded (no image loader accepts its URL, the loaders return nothing, a loader
+throws, the server answers with an error, or the data cannot be decoded), the viewer shows a small
+placeholder in its place: a drawn broken-image icon followed by the image's alt text, in a muted
+colour (`Border.markdown-image-failed`, see [Theming](theming.md#images)). Selection still copies the
+alt text. Removing an image while it loads (a re-render, a closed document) cancels its load and shows
+nothing.
+
+The placeholder keeps its own compact size, one line of text high, whatever `=WxH` hint the image
+has: the hint only caps it, and an alt text wider than `W` is cut with an ellipsis. Blowing the
+placeholder up to the size of a picture that isn't there would leave a large empty box in the text.
+
+## Image zoom
+
+Clicking an image opens it in a lightbox laid over the viewer: a dimmed backdrop with the image as
+large as fits. Images are never enlarged past their natural size, so a small image stays sharp at its
+own size rather than being blown up. Clicking anywhere, the close button in the top right corner or
+pressing Escape closes it.
+
+- Zoomable images show a zoom-in cursor. They are also focusable: Enter or Space opens the lightbox,
+  which takes focus (Tab stays inside it); when it closes, focus returns to where it was.
+- An image inside a link (`[![alt](image.png)](https://example.com)`) opens the link instead.
+- Ending a text selection drag on an image does not open it.
+- The lightbox covers the viewer (not the whole window) and is part of the viewer itself, so it works
+  with any template and on every platform. Rendering another document closes it.
+
+Turn it off with `IsImageZoomEnabled`, per viewer or for every viewer of an application:
+
+```xml
+<Style Selector="mv|MarkdownViewer">
+  <Setter Property="IsImageZoomEnabled" Value="False" />
+</Style>
+```
+
+The lightbox's colours and close button are themable, see [Theming](theming.md#images).
 
 ## Code block toolbar
 

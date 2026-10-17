@@ -50,6 +50,7 @@ public partial class MarkdownViewer : ContentControl
     // The active search, run again on each new render; null when there is none.
     private string? _findText;
     private MarkdownFindOptions _findOptions;
+    private ImageLightbox? _lightbox;
 
     // The markdown last rendered, with the task toggles made since applied to it; assigning the same
     // text to Markdown (as a host writing a toggle back does) then needs no re-render.
@@ -125,6 +126,12 @@ public partial class MarkdownViewer : ContentControl
     /// </summary>
     public static readonly StyledProperty<bool> AreTaskListsInteractiveProperty =
         AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(AreTaskListsInteractive));
+
+    /// <summary>
+    /// Defines the <see cref="IsImageZoomEnabled"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsImageZoomEnabledProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(IsImageZoomEnabled), true);
 
     /// <summary>
     /// Defines the <see cref="TableOfContentsMaxDepth"/> property.
@@ -273,6 +280,19 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets whether clicking an image opens it in a lightbox over the viewer: the image as large
+    /// as fits, never enlarged past its natural size, on a dimmed backdrop. Clicking anywhere, the close
+    /// button or Escape closes it, and focus returns to where it was. A zoomable image shows the zoom-in
+    /// cursor and also opens with Enter or Space while it has focus; an image inside a link opens the
+    /// link instead. Defaults to <c>true</c>. Can be set from a style, e.g. for every viewer of an application.
+    /// </summary>
+    public bool IsImageZoomEnabled
+    {
+        get => GetValue(IsImageZoomEnabledProperty);
+        set => SetValue(IsImageZoomEnabledProperty, value);
+    }
+
+    /// <summary>
     /// Gets or sets the maximum heading level included in <see cref="TableOfContents"/>.
     /// Headings deeper than this level, and their descendants, are excluded. Defaults to 6 (no limit).
     /// </summary>
@@ -373,6 +393,7 @@ public partial class MarkdownViewer : ContentControl
         WrapCodeBlockLinesProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         CodeBlockMaxHeightProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         AreTaskListsInteractiveProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        IsImageZoomEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
     }
@@ -486,6 +507,7 @@ public partial class MarkdownViewer : ContentControl
         if (string.IsNullOrEmpty(markdown))
         {
             Content = null;
+            CloseLightbox();
             _anchors = new(StringComparer.OrdinalIgnoreCase);
             _headingEntries = [];
             RebuildTableOfContents();
@@ -508,8 +530,10 @@ public partial class MarkdownViewer : ContentControl
             WrapCodeBlockLines = WrapCodeBlockLines,
             CodeBlockMaxHeight = CodeBlockMaxHeight,
             AreTaskListsInteractive = AreTaskListsInteractive,
+            IsImageZoomEnabled = IsImageZoomEnabled,
         };
         renderer.LinkClicked += OnLinkClicked;
+        renderer.ImageZoomRequested += OpenLightbox;
         renderer.TaskToggled += (_, e) => OnTaskToggled(e, sourceShifts);
 
         // Extensions register before pipeline.Setup() so they can swap renderers.
@@ -562,6 +586,9 @@ public partial class MarkdownViewer : ContentControl
             OnContentPointerReleased, RoutingStrategies.Tunnel);
 
         Content = contentGrid;
+        // The image it shows may not be part of the new document. Closed once the old document is gone,
+        // so that focus does not return to one of its controls.
+        CloseLightbox();
 
         // Every new render is treated as a fresh document — reset scroll position to the
         // top, since PART_ScrollViewer now persists across renders (it lives in the
@@ -1071,6 +1098,46 @@ public partial class MarkdownViewer : ContentControl
     {
         base.OnApplyTemplate(e);
         _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+        // Applying a template replaces every visual child, the open lightbox included.
+        if (_lightbox is not null)
+            VisualChildren.Add(_lightbox);
+    }
+
+    // ── Image lightbox ────────────────────────────────────────────────────────
+
+    /// <summary>The open lightbox, or <c>null</c>.</summary>
+    internal ImageLightbox? Lightbox => _lightbox;
+
+    /// <summary>
+    /// Shows <paramref name="image"/>'s picture in a lightbox laid over the viewer, as a child of the
+    /// viewer itself rather than of its template or of the window's overlay layer, so it covers
+    /// exactly the viewer with any template and on any platform. The lightbox takes focus.
+    /// </summary>
+    private void OpenLightbox(Image image)
+    {
+        if (_lightbox is not null || image.Source is not { } source) return;
+        var lightbox = new ImageLightbox(source, MarkdownSelection.GetCopyText(image),
+            TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement());
+        lightbox.CloseRequested += CloseLightbox;
+        _lightbox = lightbox;
+        LogicalChildren.Add(lightbox);
+        VisualChildren.Add(lightbox);
+        // A new visual child is only laid out with its parent.
+        InvalidateMeasure();
+        lightbox.Focus(NavigationMethod.Pointer);
+    }
+
+    private void CloseLightbox()
+    {
+        if (_lightbox is not { } lightbox) return;
+        _lightbox = null;
+        var hadFocus = lightbox.IsKeyboardFocusWithin;
+        VisualChildren.Remove(lightbox);
+        LogicalChildren.Remove(lightbox);
+        // Focus returns to where it was, unless that is gone (e.g. with the document the lightbox
+        // was closed for), or focus has moved elsewhere since.
+        if (hadFocus && lightbox.ReturnFocus?.Focus() != true)
+            Focus();
     }
 
     public void ScrollToAnchor(string anchorId)

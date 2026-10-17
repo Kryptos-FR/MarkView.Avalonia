@@ -195,6 +195,10 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-task-toggle` | `ToggleButton` | Clickable task-list checkbox wrapping the glyph, when `AreTaskListsInteractive` is set; `:checked` when ticked |
 | `markdown-thematic-break` | `Separator` | Horizontal rule |
 | `markdown-image` | `Image` | Rendered image |
+| `markdown-image-failed` | `Border` | Placeholder of an image that could not be loaded: a broken-image glyph and the alt text (see [Images](#images)) |
+| `markdown-image-lightbox` | `Panel` | Lightbox a clicked image opens in, over the viewer (see [Images](#images)) |
+| `markdown-image-lightbox-image` | `Image` | The image in the lightbox |
+| `markdown-image-lightbox-close` | `Button` | The lightbox's close button |
 | `markdown-link` | `HyperlinkButton` | Hyperlink |
 | `markdown-table` | `Grid` | Table |
 | `markdown-table-cell` | `Border` | Table body cell |
@@ -469,6 +473,41 @@ they can be replaced or translated:
 | `MarkdownCodeCopyButtonHoverBackground` | `#1AFFFFFF` | `#14000000` | Copy button under the pointer |
 | `MarkdownCodeCopyIcon` | | | `StreamGeometry` of the copy icon |
 | `MarkdownCodeCopiedIcon` | | | `StreamGeometry` of the icon shown after a copy |
+
+### Images
+
+An image that could not be loaded is replaced by a `Border.markdown-image-failed` holding a
+two-column `Grid`: the broken-image glyph (drawn in the border's `TextElement.Foreground` and sized by
+its font size) and, when the image has alt text, a `TextBlock` with it. The lightbox of a clicked image
+(`IsImageZoomEnabled`) is a `Panel.markdown-image-lightbox` — select it with `:is(Panel)`, since it is
+a subclass — laid over the viewer, holding the `Image.markdown-image-lightbox-image` (48 pixels from the
+viewer's edges in the default theme) and the `Button.markdown-image-lightbox-close`, whose cross is
+drawn in its `Foreground` and sized by its `FontSize`. Its tooltip and accessible name come from the
+theme, so they can be translated:
+
+```xml
+<Style Selector="Button.markdown-image-lightbox-close">
+  <Setter Property="ToolTip.Tip" Value="Fermer" />
+  <Setter Property="AutomationProperties.Name" Value="Fermer" />
+</Style>
+<!-- A lighter backdrop, with more room around the image -->
+<Style Selector=":is(Panel).markdown-image-lightbox">
+  <Setter Property="Background" Value="#99000000" />
+</Style>
+<Style Selector="Image.markdown-image-lightbox-image">
+  <Setter Property="Margin" Value="96" />
+</Style>
+```
+
+| Resource key | Dark | Light | Use |
+|---|---|---|---|
+| `MarkdownImageFailedForeground` | `#A1A1AA` | `#52525B` | Glyph and alt text of a failed image (AA on the page and on its background) |
+| `MarkdownImageFailedBackground` | `#27272A` | `#F4F4F5` | Background of a failed image |
+| `MarkdownImageFailedBorder` | `#7A7A83` | `#82828B` | Border of a failed image (3:1 on the page and on its background) |
+| `MarkdownImageLightboxBackdrop` | `#E0000000` | `#CC000000` | Dimmed backdrop behind the zoomed image (`#CC000000` without the theme) |
+| `MarkdownImageLightboxCloseForeground` | `#FFFFFF` | `#FFFFFF` | Cross of the close button |
+| `MarkdownImageLightboxCloseBackground` | `#66000000` | `#66000000` | Close button |
+| `MarkdownImageLightboxCloseHoverBackground` | `#33FFFFFF` | `#33FFFFFF` | Close button under the pointer |
 
 ### Line numbers and scrolling code
 

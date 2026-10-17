@@ -206,6 +206,11 @@ The table below shows the same image at different sizes:
 | `![alt](url "=160x160")` | ![Avalonia Logo](avalonia-logo.png "=160x160") 160×160 |
 | `![alt](url)` (no size)  | ![Avalonia Logo](avalonia-logo.png) natural size   |
 
+Click any image to open it in a lightbox over the viewer; click anywhere or press Esc to close it.
+
+An image that cannot be loaded shows a placeholder with its alt text instead:
+![Architecture diagram (missing file)](missing-diagram.png)
+
 ---
 
 ## SVG Image

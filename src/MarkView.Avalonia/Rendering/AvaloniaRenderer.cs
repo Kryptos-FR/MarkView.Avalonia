@@ -80,6 +80,19 @@ public class AvaloniaRenderer : RendererBase
     public bool AreTaskListsInteractive { get; set; }
 
     /// <summary>
+    /// When <c>true</c>, clicking a loaded image that is not inside a link (or pressing Enter or Space
+    /// while it has focus) raises <see cref="ImageZoomRequested"/>, and the image shows the zoom-in
+    /// cursor. <see cref="MarkdownViewer"/> turns this on from its <see cref="MarkdownViewer.IsImageZoomEnabled"/>
+    /// and shows the image in its lightbox. Defaults to <c>false</c>.
+    /// </summary>
+    internal bool IsImageZoomEnabled { get; set; }
+
+    /// <summary>Raised with the clicked image when <see cref="IsImageZoomEnabled"/> is set.</summary>
+    internal event Action<Image>? ImageZoomRequested;
+
+    internal void OnImageZoomRequested(Image image) => ImageZoomRequested?.Invoke(image);
+
+    /// <summary>
     /// Generates GitHub-style anchor IDs for headings. Reset on each render pass.
     /// </summary>
     public SlugGenerator SlugGenerator { get; } = new();
