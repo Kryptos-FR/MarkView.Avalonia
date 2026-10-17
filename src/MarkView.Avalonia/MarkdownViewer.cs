@@ -40,6 +40,7 @@ public partial class MarkdownViewer : ContentControl
     private Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
     private List<(int Level, string Text, string Slug)> _headingEntries = [];
     private DocumentSelectionLayer? _selectionLayer;
+    private LinkFocusLayer? _linkFocusLayer;
     private ScrollViewer? _scrollViewer;
     private bool _isDragging;
     private Point _dragStart;
@@ -504,6 +505,8 @@ public partial class MarkdownViewer : ContentControl
     {
         var markdown = _sourceMarkdown ?? Markdown;
         _renderedMarkdown = markdown;
+        // A focused link is about to be replaced; keep focus in the viewer rather than losing it.
+        var focusWasInDocument = IsKeyboardFocusWithin && !IsFocused;
         if (string.IsNullOrEmpty(markdown))
         {
             Content = null;
@@ -512,7 +515,9 @@ public partial class MarkdownViewer : ContentControl
             _headingEntries = [];
             RebuildTableOfContents();
             _selectionLayer = null;
+            _linkFocusLayer = null;
             UpdateFind(CurrentFindMatchIndex);
+            if (focusWasInDocument) Focus();
             return;
         }
 
@@ -572,10 +577,17 @@ public partial class MarkdownViewer : ContentControl
         RegisterBlocks(layer, renderer.RootPanel);
         _selectionLayer = layer;
 
-        // Stack panel + transparent selection layer in a single-cell Grid
+        // Keyboard stand-ins for the document's links
+        _linkFocusLayer = LinkFocusLayer.Create(renderer.RootPanel, ActivateLink);
+
+        // Stack panel + transparent selection and link focus layers in a single-cell Grid
         var contentGrid = new Grid();
         contentGrid.Children.Add(renderer.RootPanel);
         contentGrid.Children.Add(layer);
+        contentGrid.Children.Add(_linkFocusLayer);
+        // Tab moves through the document in reading order (ICustomKeyboardNavigation.GetNext),
+        // so default navigation must not walk into it in visual-tree order as well.
+        KeyboardNavigation.SetTabNavigation(contentGrid, KeyboardNavigationMode.None);
 
         // Tunnel handlers fire before any child receives the event
         contentGrid.AddHandler(InputElement.PointerPressedEvent,
@@ -589,6 +601,7 @@ public partial class MarkdownViewer : ContentControl
         // The image it shows may not be part of the new document. Closed once the old document is gone,
         // so that focus does not return to one of its controls.
         CloseLightbox();
+        if (focusWasInDocument) Focus();
 
         // Every new render is treated as a fresh document — reset scroll position to the
         // top, since PART_ScrollViewer now persists across renders (it lives in the
@@ -913,8 +926,15 @@ public partial class MarkdownViewer : ContentControl
         if (entry?.TextBlock is not MarkdownSelectableTextBlock mstb) return;
         var origin = mstb.TranslatePoint(new Point(0, 0), _selectionLayer) ?? default;
         var hyperlink = mstb.HitTestHyperlink(posInLayer - origin);
-        if (hyperlink?.NavigateUri != null)
-            OnLinkClicked(this, new LinkClickedEventArgs(hyperlink.NavigateUri.ToString()));
+        if (hyperlink is not null)
+            ActivateLink(hyperlink);
+    }
+
+    /// <summary>Opens <paramref name="hyperlink"/>, whether it was clicked or activated from the keyboard.</summary>
+    private void ActivateLink(MarkdownHyperlink hyperlink)
+    {
+        if (hyperlink.NavigateUri is { } uri)
+            OnLinkClicked(this, new LinkClickedEventArgs(uri.ToString()));
     }
 
     // ── Selection API ─────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@
 
 using Avalonia;
 using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -201,6 +202,46 @@ public class MarkdownViewerImageZoomTests
 
         Click(f.Window, f.Center(f.Image));
         Assert.Null(AutomationProperties.GetName(f.Lightbox!));
+    }
+
+    [AvaloniaFact]
+    public async Task Screen_readers_see_a_zoomable_image_without_alt_text_and_what_it_does()
+    {
+        using var f = await ShowAsync($"![]({FakeUrl()})", theme: true);
+        var peer = ControlAutomationPeer.CreatePeerForElement(f.Image);
+
+        // A Tab stop, so not hidden as decorative
+        Assert.Equal(AutomationControlType.Image, peer.GetAutomationControlType());
+        Assert.True(peer.IsContentElement());
+        Assert.Equal("Zoom", peer.GetHelpText());
+
+        Click(f.Window, f.Center(f.Image));
+        var lightbox = ControlAutomationPeer.CreatePeerForElement(f.Lightbox!);
+        Assert.Equal(AutomationControlType.Image, lightbox.GetAutomationControlType());
+        Assert.Equal("Image", lightbox.GetName());
+    }
+
+    [AvaloniaFact]
+    public async Task The_lightbox_is_announced_by_the_image_alt_text()
+    {
+        using var f = await ShowAsync($"![A diagram]({FakeUrl()})", theme: true);
+        Click(f.Window, f.Center(f.Image));
+
+        Assert.Equal("A diagram", ControlAutomationPeer.CreatePeerForElement(f.Lightbox!).GetName());
+    }
+
+    [AvaloniaFact]
+    public async Task Tab_reaches_a_zoomable_image_between_the_links_around_it()
+    {
+        using var f = await ShowAsync($"[before](https://example.com/b) ![A diagram]({FakeUrl()}) [after](https://example.com/a)");
+        f.Viewer.Focus();
+
+        Press(f.Window, Key.Tab);
+        Assert.IsType<LinkFocusTarget>(f.Window.FocusManager!.GetFocusedElement());
+        Press(f.Window, Key.Tab);
+        Assert.True(f.Image.IsFocused);
+        Press(f.Window, Key.Tab);
+        Assert.Equal("after", Assert.IsType<LinkFocusTarget>(f.Window.FocusManager!.GetFocusedElement()).AccessibleName);
     }
 
     [AvaloniaFact]

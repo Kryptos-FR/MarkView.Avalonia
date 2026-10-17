@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
@@ -129,6 +130,17 @@ public class HtmlSubsetInlineTests : RenderTestBase
         var text = (TextBlock)key.Child!;
         Assert.IsType<Bold>(text.Inlines![0]);
         Assert.Equal("Ctrl", MarkdownSelection.GetCopyText(key));
+    }
+
+    [AvaloniaFact]
+    public void Screen_readers_read_a_key_as_its_text_once()
+    {
+        var key = Render("<kbd><b>C</b>trl</kbd>", Pipeline).GetLogicalDescendants().OfType<HtmlKeyboardKey>().Single();
+        var peer = ControlAutomationPeer.CreatePeerForElement(key);
+
+        Assert.Equal(AutomationControlType.Text, peer.GetAutomationControlType());
+        Assert.Equal("Ctrl", peer.GetName());
+        Assert.False(ControlAutomationPeer.CreatePeerForElement((Control)key.Child!).IsControlElement());
     }
 
     [AvaloniaFact]

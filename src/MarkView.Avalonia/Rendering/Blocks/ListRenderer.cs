@@ -5,6 +5,8 @@ using System.Globalization;
 using System.Text;
 
 using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Layout;
 
@@ -22,6 +24,7 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
         // Every item's marker column takes the width of the widest marker ("iii." next to "i."),
         // so the items' text lines up.
         Grid.SetIsSharedSizeScope(listPanel, true);
+        AutomationRoles.Set(listPanel, AutomationControlType.List);
         listPanel.Classes.Add("markdown-list");
         if (obj.IsOrdered)
             listPanel.Classes.Add("markdown-list-ordered");
@@ -44,7 +47,9 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
                     new ColumnDefinition(1, GridUnitType.Star),
                 },
             };
+            AutomationRoles.Set(itemGrid, AutomationControlType.ListItem);
 
+            Control? taskToggle = null;
             bool isTaskItem = listItem.Count > 0
                 && listItem[0] is ParagraphBlock para
                 && para.Inline?.FirstChild is TaskList;
@@ -64,9 +69,13 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
 
                 // Interactive: the glyph becomes the content of a toggle; the toggle takes the
                 // marker's place (and layout) in the item grid.
-                Control marker = renderer.AreTaskListsInteractive
-                    ? TaskListToggle.Create(glyph, taskList.Checked, isChecked => renderer.OnTaskToggled(taskParagraph, isChecked))
-                    : glyph;
+                if (renderer.AreTaskListsInteractive)
+                {
+                    taskToggle = TaskListToggle.Create(glyph, taskList.Checked, isChecked => renderer.OnTaskToggled(taskParagraph, isChecked));
+                    // A screen reader announces a check box named after the task, not a "☐" button.
+                    AutomationRoles.Set(taskToggle, AutomationControlType.CheckBox);
+                }
+                var marker = taskToggle ?? glyph;
                 marker.Margin = new Thickness(0, 0, 8, 0);
                 marker.VerticalAlignment = VerticalAlignment.Top;
                 // Stryker disable once Statement : column 0 is Grid's default column
@@ -84,6 +93,10 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
                     VerticalAlignment = VerticalAlignment.Top,
                 };
                 marker.Classes.Add("markdown-list-marker");
+                // The list item role already says it's a bullet point; a number is kept, since
+                // an ordered list can start anywhere and the reader can't infer it.
+                if (!obj.IsOrdered)
+                    AutomationRoles.Hide(marker);
                 // Stryker disable once Statement : column 0 is Grid's default column
                 Grid.SetColumn(marker, 0);
                 itemGrid.Children.Add(marker);
@@ -97,6 +110,8 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
             if (isTaskItem) renderer.SkipNextTaskList = true;
             renderer.WriteChildren(listItem);
             renderer.Pop();
+            if (taskToggle is not null && contentPanel.Children.Count > 0)
+                AutomationProperties.SetLabeledBy(taskToggle, contentPanel.Children[0]);
 
             listPanel.Children.Add(itemGrid);
             if (obj.IsOrdered) index++;

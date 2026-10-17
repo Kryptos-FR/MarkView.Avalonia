@@ -449,6 +449,13 @@ viewer.ClearFind();
 
 See [Find in Document](docs/find-in-document.md) for what is searched and the highlight colours.
 
+## Accessibility
+
+- **Keyboard.** `Tab` / `Shift+Tab` move through the document's links and interactive elements in reading order, with a focus ring, and `Enter` opens the focused link.
+- **Screen readers.** Headings report their level, and lists, tables, quotes, alerts, images and links report their roles.
+
+See [Accessibility](docs/accessibility.md).
+
 ## Known Limitations
 
 | Limitation | Detail |

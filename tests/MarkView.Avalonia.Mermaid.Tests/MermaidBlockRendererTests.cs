@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Markdig;
@@ -50,6 +51,15 @@ public class MermaidBlockRendererTests
         var result = Render("```mermaid\ngraph TD\n  A --> B\n```");
         var border = Assert.IsType<Border>(Assert.Single(result.Children));
         Assert.IsType<Image>(border.Child);
+    }
+
+    [AvaloniaFact]
+    public void Mermaid_diagram_image_is_named_by_its_source()
+    {
+        var border = Assert.IsType<Border>(Assert.Single(Render("```mermaid\ngraph TD\n  A --> B\n```").Children));
+        var peer = ControlAutomationPeer.CreatePeerForElement(Assert.IsType<Image>(border.Child));
+        Assert.Equal(AutomationControlType.Image, peer.GetAutomationControlType());
+        Assert.Equal("graph TD\n  A --> B", peer.GetName());
     }
 
     [AvaloniaFact]

@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation;
 using Avalonia.Media;
 
 using Markdig.Syntax;
@@ -23,6 +24,7 @@ public sealed class HeadingRenderer : AvaloniaObjectRenderer<HeadingBlock>
         };
         textBlock.Classes.Add("markdown-heading");
         textBlock.Classes.Add($"markdown-h{obj.Level}");
+        AutomationProperties.SetHeadingLevel(textBlock, obj.Level);
 
         renderer.Push(textBlock.Inlines!);
         renderer.WriteLeafInline(obj);
