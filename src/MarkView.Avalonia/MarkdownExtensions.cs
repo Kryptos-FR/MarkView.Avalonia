@@ -16,7 +16,8 @@ public static class MarkdownExtensions
     /// <summary>
     /// Enables the Markdig extensions that make a document render as it does on GitHub: pipe tables,
     /// task lists, strikethrough (<c>~~text~~</c> and <c>~text~</c>), autolinks, emoji shortcodes,
-    /// alerts (<c>&gt; [!NOTE]</c>), footnotes, CJK-friendly emphasis and hidden YAML front matter.
+    /// alerts (<c>&gt; [!NOTE]</c>), footnotes, CJK-friendly emphasis, hidden YAML front matter and
+    /// collapsible HTML <c>&lt;details&gt;</c> blocks (see <see cref="UseHtmlDetails"/>).
     /// This is the pipeline a <see cref="MarkdownViewer"/> uses when none is set. Math and Mermaid
     /// diagrams come from their own packages (<c>UseMath()</c>, <c>UseMermaid()</c>).
     /// </summary>
@@ -26,6 +27,7 @@ public static class MarkdownExtensions
     {
         builder.Extensions.AddIfNotAlready<Parsing.GitHubStrikethroughExtension>();
         return builder
+            .UseHtmlDetails()
             .UseAlertBlocks()
             .UseAutoLinks()
             .UseCjkFriendlyEmphasis()
@@ -66,6 +68,19 @@ public static class MarkdownExtensions
     public static MarkdownPipelineBuilder UseHardlineBreaks(this MarkdownPipelineBuilder builder)
     {
         return builder.UseSoftlineBreakAsHardlineBreak();
+    }
+
+    /// <summary>
+    /// Renders HTML <c>&lt;details&gt;</c> / <c>&lt;summary&gt;</c> elements as collapsible blocks, as GitHub
+    /// does: the summary line (or "Details" without one) toggles the body, which starts hidden unless the tag
+    /// is <c>&lt;details open&gt;</c>. The markdown between the tags, separated from them by blank lines, is
+    /// rendered as usual; details elements can nest. Tags without a match, and any other HTML, are left as
+    /// they are. Part of <see cref="UseGitHubExtensions"/>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseHtmlDetails(this MarkdownPipelineBuilder builder)
+    {
+        builder.Extensions.AddIfNotAlready<Parsing.HtmlDetailsExtension>();
+        return builder;
     }
 
     /// <summary>
