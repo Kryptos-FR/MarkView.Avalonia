@@ -27,7 +27,8 @@ The pipeline controls which Markdig extensions parse the input markdown. Build o
 viewer.Pipeline = new MarkdownPipelineBuilder()
     .UseGitHubExtensions()      // what GitHub renders: tables, task lists, ~~strike~~ and ~strike~,
                                 // autolinks, emoji shortcodes, alerts, footnotes, CJK-friendly emphasis,
-                                // YAML front matter (hidden), <details> blocks. The viewer's default pipeline.
+                                // YAML front matter (hidden), <details> blocks, the HTML READMEs use.
+                                // The viewer's default pipeline.
     .UseAbbreviations()         // *[HTML]: HyperText Markup Language
     .UseCitations()             // ""quoted text""
     .UseFigures()               // ^^^ figure blocks
@@ -56,6 +57,7 @@ MarkView.Avalonia has two helpers that enable a base set of extensions. Both tak
 - `CjkFriendlyEmphasis` — parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation
 - `YamlFrontMatter` — `---` metadata block at the top of a document is parsed and hidden, not shown as garbled text
 - `HtmlDetails` — HTML `<details>` / `<summary>` blocks fold as on GitHub (see [HTML details blocks](#html-details-blocks)); MarkView's `UseHtmlDetails()` adds them to another pipeline
+- `HtmlSubset` — the HTML READMEs use (centered headers, badges, `<kbd>`, `<sub>`…) renders with native controls (see [HTML subset](#html-subset)); MarkView's `UseHtmlSubset()` adds it to another pipeline
 
 Math (`$...$`, and the `\(...\)`/`\[...\]` delimiters LLMs emit) and Mermaid diagrams, which GitHub also renders, come from their own packages (`UseMath()`, `UseMermaid()`).
 
@@ -75,7 +77,7 @@ Math (`$...$`, and the `\(...\)`/`\[...\]` delimiters LLMs emit) and Mermaid dia
 `UseSupportedExtensions()` was the default before `UseGitHubExtensions()`. It enables the other emphasis extras and grid tables, but not alerts, footnotes or details blocks:
 
 - `EmphasisExtras` — strikethrough `~~`, subscript `~`, superscript `^`, underline `++`, highlight `==`
-- `AutoLinks`, `PipeTables`, `TaskLists`, `CjkFriendlyEmphasis`, `YamlFrontMatter` and emoji shortcodes, as above
+- `AutoLinks`, `PipeTables`, `TaskLists`, `CjkFriendlyEmphasis`, `YamlFrontMatter`, emoji shortcodes and the HTML subset, as above
 - `GridTables` — RST-style grid tables
 
 To keep the previous rendering (`~text~` as subscript), set it as the default pipeline:
@@ -147,10 +149,73 @@ Shown until the summary is clicked.
 ```
 
 - Click the summary, or focus it and press Enter or Space, to show or hide the body. It starts hidden unless the tag has the `open` attribute. Without a `<summary>`, the summary reads "Details", as in browsers.
-- Leave a blank line between the tags and the markdown inside: as on GitHub, text on lines right next to the tags belongs to the same HTML block and is not parsed as markdown. MarkView shows such text as plain text (tags removed, entities decoded, `<br>` as a line break), and the summary as plain text too: `<summary><b>Title</b></summary>` reads "Title", not bold.
-- A `<details>` without its `</details>` (or the reverse), or one whose closing tag is in another container (e.g. opened outside a list and closed inside it), is left as raw HTML, which the viewer doesn't render, as before. Other HTML blocks are unchanged too, inside a details block or not.
+- Leave a blank line between the tags and the markdown inside: as on GitHub, text on lines right next to the tags belongs to the same HTML block and is not parsed as markdown. With the [HTML subset](#html-subset) (in the default pipeline), such text, and the summary, render as that HTML: `<summary><b>Title</b></summary>` reads "**Title**". Without it, MarkView shows them as plain text (tags removed, entities decoded, `<br>` as a line break): "Title", not bold.
+- A `<details>` without its `</details>` (or the reverse), or one whose closing tag is in another container (e.g. opened outside a list and closed inside it), is left as raw HTML: the HTML subset shows its text with the tags dropped, and a pipeline without it does not render it, as before. Other HTML blocks are left to the HTML subset too, inside a details block or not.
 - As with [foldable alerts](#alert-blocks), the body of a collapsed details block cannot be selected or copied, and `ScrollToAnchor` expands the details blocks around a heading before scrolling to it. See [Theming](theming.md#details-blocks) for the style classes.
 - A pipeline that disables HTML (Markdig's `DisableHtml()`) has no details blocks either.
+
+### HTML subset
+
+GitHub READMEs often use a little HTML: a centered logo and title, a row of badges, `<kbd>` keys, `<sub>` and `<sup>`. The default pipeline renders a small, safe subset of HTML with native controls, the way GitHub shows it, without building a browser: nothing is run, and nothing is fetched but the `src` of an `<img>`, through the viewer's image loaders like a markdown image. To add it to a pipeline built from something else, call MarkView's `UseHtmlSubset()` (also part of `UseSupportedExtensions()`).
+
+```markdown
+<p align="center">
+  <img src="docs/logo.png" alt="Logo" width="120"><br>
+  <b>MyProject</b>
+</p>
+
+<p align="center">
+  <a href="https://github.com/me/myproject/actions"><img src="https://img.shields.io/badge/build-passing-green" alt="Build"></a>
+  <a href="https://www.nuget.org/packages/MyProject"><img src="https://img.shields.io/badge/nuget-1.0-blue" alt="NuGet"></a>
+</p>
+
+Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy H<sub>2</sub>O and E = mc<sup>2</sup>.
+```
+
+Inline elements, in paragraphs, headings, table cells, list items and details summaries:
+
+| Tags | Renders as |
+|------|------------|
+| `<b>`, `<strong>` | Bold, like `**text**` |
+| `<i>`, `<em>` | Italic, like `*text*` |
+| `<del>`, `<s>`, `<strike>` | Strikethrough, like `~~text~~` |
+| `<ins>`, `<u>` | Underline |
+| `<mark>` | Highlighted, like `==text==` |
+| `<sub>`, `<sup>` | Subscript and superscript, on a smaller font |
+| `<kbd>` | A keyboard key; selection copies its text |
+| `<code>` | Inline code, like `` `code` ``, of the element's text |
+| `<a href="…" title="…">` | A link, like `[text](href "title")`: same click handling (`LinkClicked`), URL resolution against `BaseUri` and style |
+| `<img src="…" alt="…" title="…" width="…" height="…">` | An image, like `![alt](src)`: same image loaders (SVG, bitmaps), URL resolution, tooltip and copy text. `width` and `height`, in pixels, cap its size like the `=WxH` [size hint](#image-sizing), and either can be given alone; other values (`50%`) are ignored |
+| `<br>` | A line break |
+
+HTML blocks — HTML that starts a line, which CommonMark does not parse markdown inside:
+
+| Tags | Renders as |
+|------|------------|
+| `<p>`, `<h1>`…`<h6>` | A paragraph or heading of the inline HTML inside it. A heading gets an anchor and is listed in `TableOfContents`, like a markdown heading |
+| `<div>` | Its content; text and inline elements outside any `<p>` become a paragraph |
+| `align="left\|center\|right\|justify"` on `<p>`, `<div>` and `<h1>`…`<h6>` | Aligns the text and images inside it, as `text-align` does |
+| `<hr>` | A thematic break, like `---` |
+
+A `<div align="center">` and its `</div>`, each separated by blank lines from the markdown between them, align that markdown too, as on GitHub:
+
+```markdown
+<div align="center">
+
+# MyProject
+
+![Logo](docs/logo.png)
+
+</div>
+```
+
+- Only the `href`, `src`, `alt`, `title`, `width`, `height` and `align` attributes are read; any other (`style`, `class`, `onclick`…) is ignored.
+- Any other tag (`<span>`, `<table>`, `<iframe>`, `<picture>`…), and a tag without its match (`<b>` never closed, a stray `</i>`), is dropped, and the text around it still shows, as it did before. The content of `<script>` and `<style>` is dropped with them, as GitHub does. Comments do not show.
+- Tags pair like elements: `<b><i>x</i></b>` nests, and `</b>` in `<b><i>x</b>` also closes the `<i>`. Inline tags pair within the same markdown inline only: in `*<b>x*</b>`, the `<b>` is inside the emphasis and the `</b>` outside, so both are dropped. A `<div>` pairs with a `</div>` among the blocks of the same container (as for [details blocks](#html-details-blocks)); one without its match is dropped.
+- A `<p>` or heading ends at its end tag, at the next block tag, or at the end of its HTML block. Whitespace collapses as in HTML.
+- HTML blocks Markdig starts with `<script>`, `<style>`, `<pre>`, `<textarea>`, a comment or a declaration are still not rendered.
+- A link inside a details summary shows as a link but is not clickable: clicking the summary toggles the details block.
+- A pipeline that disables HTML (Markdig's `DisableHtml()`) shows HTML as literal text, as before. See [Theming](theming.md#html-subset) for the style classes.
 
 ### Convenience extension methods
 
@@ -404,7 +469,8 @@ Set an app-wide default with a normal Avalonia style:
 **Explicit per-image sizing:** `![alt](url =WxH)` sets a maximum size hint,
 independent of `ImageResizeMode`. It always acts as a ceiling — the image is
 scaled down to fit `WxH` if larger, but never enlarged past its native resolution
-to reach `WxH`, regardless of the active mode.
+to reach `WxH`, regardless of the active mode. The `width` and `height` attributes of an
+HTML `<img>` ([HTML subset](#html-subset)) act the same way, and either can be given alone.
 
 **Note:** images are no longer capped at 800px by the theme — they scale to the
 container width instead (see `ScaleDownToFit` above). To restore the previous

@@ -284,6 +284,36 @@ The summary is focusable and toggles the body on click, Enter or Space; the body
 </Style>
 ```
 
+### HTML subset
+
+The HTML elements of the [HTML subset](configuration.md#html-subset). The others render with the controls and classes of their markdown counterparts: `<b>`, `<i>`, `<ins>`, `<del>` as `Bold`, `Italic`, `Underline` and a struck-through `Span`; `<mark>` as `Span.markdown-marked`; `<code>` as `markdown-code-inline`; `<a>` as `markdown-link`; `<img>` as `markdown-image`; `<p>` and headings as `markdown-paragraph` and `markdown-h1`…`markdown-h6`; `<hr>` as `markdown-thematic-break`.
+
+| Class | Control | Element |
+|-------|---------|---------|
+| `markdown-html-sub` | `Span` | `<sub>`, on the subscript baseline; the default theme sets a smaller `FontSize` |
+| `markdown-html-sup` | `Span` | `<sup>`, on the superscript baseline; the default theme sets a smaller `FontSize` |
+| `markdown-html-kbd` | `Border` | `<kbd>`: a key around a `TextBlock` of its text, which sits on the line's baseline |
+| `markdown-html-align` | `StackPanel` | Blocks aligned by an `align` attribute: a `<div align>` and the blocks in it, or the paragraph or heading of a `<p align>` / `<h1 align>`. Its inherited `TextBlock.TextAlignment` aligns the text inside it, set by the control |
+| `markdown-html-align-left`, `-center`, `-right`, `-justify` | `StackPanel` | The same panel, by alignment |
+
+| Resource key | Light | Dark | Used by |
+|--------------|-------|------|---------|
+| `MarkdownKbdBackground` | `#F6F8FA` | `#151B23` | Key background |
+| `MarkdownKbdForeground` | `#1F2328` | `#F0F6FC` | Key text |
+| `MarkdownKbdBorder` | `#818B98` | `#6E7681` | Key outline (thicker at the bottom) |
+
+For example, a flatter key:
+
+```xml
+<Style Selector="Border.markdown-html-kbd">
+  <Setter Property="BorderThickness" Value="1" />
+  <Setter Property="CornerRadius" Value="2" />
+</Style>
+<Style Selector="Border.markdown-html-kbd > TextBlock">
+  <Setter Property="FontFamily" Value="Inter" />
+</Style>
+```
+
 ### Figures
 
 | Class | Control | Element |

@@ -37,12 +37,14 @@ All text-bearing block types are registered with the selection layer:
 - List items, including their markers (`•`, `1.`, or the `☑`/`☐` task-list glyph — for a clickable task-list checkbox, its current state) and any code blocks or tables nested inside them
 - Table cells (tab-separated when copying)
 - Footnote definitions
+- The paragraphs and headings of [HTML blocks](configuration.md#html-subset), and the blocks of an aligned `<div>`
 
 Non-text content is copied as a text equivalent:
 
 | Content | Highlighted | Copied as |
 |---------|-------------|-----------|
-| Image (including linked images and YouTube thumbnails) | With the surrounding text | Its alt text; nothing when it has none |
+| Image (including linked images, HTML `<img>` and YouTube thumbnails) | With the surrounding text | Its alt text; nothing when it has none |
+| HTML `<kbd>` key ([HTML subset](configuration.md#html-subset)) | As a whole, with the surrounding text | Its text |
 | Inline math (`MarkView.Avalonia.Math`) | With the surrounding text | Its source between its own delimiters: `$...$`, `\(...\)`, or `\[...\]` within a line |
 | Display math (`MarkView.Avalonia.Math`) | As a whole block | Its source between `$$` lines, or `\[` and `\]` lines |
 | Mermaid diagram (`MarkView.Avalonia.Mermaid`) | As a whole block | Its source in a ```` ```mermaid ```` fence |
