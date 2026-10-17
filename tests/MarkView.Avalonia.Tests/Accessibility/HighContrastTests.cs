@@ -119,6 +119,39 @@ public class HighContrastTests
         Assert.NotEqual(Color.Parse(link), LinkColor(viewer));
     }
 
+    [AvaloniaTheory]
+    [InlineData("Light", "#FFFFFF", "#000000")]
+    [InlineData("Dark", "#000000", "#FFFFFF")]
+    public void High_contrast_palette_covers_the_code_block_toolbar_and_line_numbers(string variant, string background, string foreground)
+    {
+        using var _ = new ThemeScope(variant == "Light" ? ThemeVariant.Light : ThemeVariant.Dark);
+        var viewer = new MarkdownViewer
+        {
+            HighContrastMode = HighContrastMode.Enabled,
+            ShowCodeBlockLineNumbers = true,
+            CodeBlockMaxHeight = 100,
+            Markdown = "```csharp\nvar x = 1;\nvar y = 2;\n```",
+        };
+        viewer.Styles.Add(MarkdownThemeInclude());
+        new Window { Width = 400, Height = 300, Content = viewer }.Show();
+
+        static Color ColorOf(IBrush? brush) => Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;
+        var header = viewer.GetVisualDescendants().OfType<Border>().Single(b => b.Classes.Contains("markdown-code-header"));
+        Assert.Equal(Color.Parse(background), ColorOf(header.Background));
+        Assert.Equal(Color.Parse(foreground), ColorOf(header.BorderBrush));
+        var label = viewer.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Classes.Contains("markdown-code-language"));
+        Assert.Equal(Color.Parse(foreground), ColorOf(label.Foreground));
+        var copy = viewer.GetVisualDescendants().OfType<Button>().Single(b => b.Classes.Contains("markdown-code-copy"));
+        Assert.Equal(Color.Parse(foreground), ColorOf(copy.Foreground));
+
+        // The code and its gutter sit in a grid inside a scroll viewer, not directly in the block.
+        var block = viewer.GetVisualDescendants().OfType<Border>().Single(b => b.Classes.Contains("markdown-code-block"));
+        var texts = block.GetVisualDescendants().OfType<TextBlock>().ToList();
+        Assert.Contains(texts, t => t.Classes.Contains("markdown-code-line-numbers"));
+        Assert.Equal(2, texts.Count);
+        Assert.All(texts, t => Assert.Equal(Color.Parse(foreground), ColorOf(t.Foreground)));
+    }
+
     [AvaloniaFact]
     public void Viewer_is_a_document_named_by_its_first_heading()
     {

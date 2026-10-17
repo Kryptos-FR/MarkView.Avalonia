@@ -1,6 +1,8 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Media;
@@ -26,11 +28,12 @@ internal sealed class DetailsBlockRenderer : AvaloniaObjectRenderer<DetailsBlock
         var chevron = new AlertChevron();
         chevron.Classes.Add("markdown-details-chevron");
 
+        var summaryText = obj.Summary ?? DefaultSummary;
         var summary = new TextBlock { TextWrapping = TextWrapping.Wrap };
         summary.Classes.Add("markdown-details-summary");
         summary.Inlines!.Add(new InlineUIContainer(chevron));
         summary.Inlines.Add(new Run(" "));
-        summary.Inlines.Add(new Run(obj.Summary ?? DefaultSummary));
+        summary.Inlines.Add(new Run(summaryText));
 
         var content = new StackPanel { Spacing = 8 };
         content.Classes.Add("markdown-details-content");
@@ -41,6 +44,9 @@ internal sealed class DetailsBlockRenderer : AvaloniaObjectRenderer<DetailsBlock
 
         var border = new Border { Child = outer };
         border.Classes.Add("markdown-details");
+        // A group named by its summary, like an alert by its title.
+        AutomationRoles.Set(border, AutomationControlType.Group);
+        AutomationProperties.SetName(border, summaryText);
 
         renderer.Push(content);
         renderer.WriteChildren(obj);

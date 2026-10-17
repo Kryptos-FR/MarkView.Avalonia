@@ -1,6 +1,8 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Text;
+
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
@@ -64,10 +66,9 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         var border = new Border { Child = outer };
         border.Classes.Add("markdown-alert");
         border.Classes.Add($"markdown-alert-{kindLower}");
-        // A group named by its visible title, so the alert kind is announced as text, not
-        // left to colour alone.
+        // A group named by its visible title (set below), so the alert kind is announced as text,
+        // not left to colour alone.
         AutomationRoles.Set(border, AutomationControlType.Group);
-        AutomationProperties.SetLabeledBy(border, header);
 
         AlertChevron? chevron = null;
         if (fold != AlertFold.None)
@@ -97,6 +98,7 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         {
             header.Text = kindUpper;
         }
+        AutomationProperties.SetName(border, titleParagraph is null ? kindUpper : AccessibleTitle(header.Inlines!));
 
         renderer.Push(contentPanel);
         // The rest of the title paragraph, if any, is the first paragraph of the body.
@@ -110,5 +112,25 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
             CollapsibleAlert.Attach(border, header, chevron, contentPanel, fold == AlertFold.Expanded);
 
         renderer.WriteBlock(border);
+    }
+
+    /// <summary>
+    /// The text of a custom title, as a screen reader should announce it: an embedded control,
+    /// such as a formula, is read as its copy text, and the fold chevron is left out.
+    /// </summary>
+    private static string AccessibleTitle(InlineCollection inlines)
+    {
+        var text = MarkdownSelectableTextBlock.ExtractPlainText(inlines, out var embedded);
+        if (embedded is null)
+            return text.Trim();
+        var sb = new StringBuilder();
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (embedded.TryGetValue(i, out var copy))
+                sb.Append(copy);
+            else
+                sb.Append(text[i]);
+        }
+        return sb.ToString().Trim();
     }
 }

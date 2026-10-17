@@ -153,6 +153,31 @@ public class AutomationRoleTests : RenderTestBase
         Assert.Equal(kind, Peer(alert).GetName());
     }
 
+    [AvaloniaTheory]
+    [InlineData("> [!TIP] Read *me*\n> Body", "Read me")]
+    [InlineData("> [!TIP]- Read me\n> Body", "Read me")]
+    [InlineData("> [!TIP]+\n> Body", "TIP")]
+    public void Alert_with_a_custom_title_or_a_fold_is_named_by_its_visible_title(string markdown, string name)
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseExtendedAlertBlocks().Build();
+        var alert = Assert.Single(Render(markdown, pipeline).Children);
+
+        AssertRole(alert, AutomationControlType.Group);
+        Assert.Equal(name, Peer(alert).GetName());
+    }
+
+    [AvaloniaTheory]
+    [InlineData("<details>\n<summary>More</summary>\n\nBody\n\n</details>", "More")]
+    [InlineData("<details>\n\nBody\n\n</details>", "Details")]
+    public void Details_is_a_group_named_by_its_summary(string markdown, string name)
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseHtmlDetails().Build();
+        var details = Assert.Single(Render(markdown, pipeline).Children);
+
+        AssertRole(details, AutomationControlType.Group);
+        Assert.Equal(name, Peer(details).GetName());
+    }
+
     [AvaloniaFact]
     public void Figure_is_a_group_named_by_its_caption()
     {

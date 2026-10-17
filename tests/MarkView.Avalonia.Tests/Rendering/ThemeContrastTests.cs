@@ -36,6 +36,8 @@ public class ThemeContrastTests
             data.Add(variant, "MarkdownCodeInlineForeground", "MarkdownCodeInlineBackground", Text);
             // The language label and the copy icon above a code block.
             data.Add(variant, "MarkdownCodeHeaderForeground", "MarkdownCodeHeaderBackground", Text);
+            // The line-number gutter beside the code.
+            data.Add(variant, "MarkdownCodeLineNumberForeground", "MarkdownCodeBlockBackground", Text);
             data.Add(variant, "Body", "MarkdownMarkedBackground", Text);
             data.Add(variant, "MarkdownBlockquoteBorder", "Page", NonText);
             data.Add(variant, "MarkdownTableBorder", "Page", NonText);

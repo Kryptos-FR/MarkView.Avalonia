@@ -244,8 +244,36 @@ public class LinkFocusTests
         StyledElement styled when styled.Classes.Contains("markdown-alert-header") => "alert header",
         StyledElement styled when styled.Classes.Contains("markdown-code-copy") => "copy button",
         StyledElement styled when styled.Classes.Contains("markdown-task-toggle") => "task checkbox",
+        StyledElement styled when styled.Classes.Contains("markdown-details-summary") => "details summary",
         _ => element?.GetType().Name,
     };
+
+    [AvaloniaFact]
+    public void Details_summary_is_a_stop_and_hides_the_folded_links()
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseHtmlDetails().Build();
+        using var f = Show("""
+            [first](https://example.com/1)
+
+            <details>
+            <summary>More</summary>
+
+            Folded [hidden](https://example.com/h)
+
+            </details>
+
+            [last](https://example.com/2)
+            """, pipeline);
+        f.Viewer.Focus();
+
+        var visited = new List<string?>();
+        for (var i = 0; i < 3; i++)
+        {
+            f.Tab();
+            visited.Add(Describe(f.Focused));
+        }
+        Assert.Equal(["first", "details summary", "last"], visited);
+    }
 
     [AvaloniaFact]
     public void Alert_header_copy_button_and_task_checkbox_are_stops_in_reading_order()

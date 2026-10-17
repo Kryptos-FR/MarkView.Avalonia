@@ -476,7 +476,19 @@
     <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-code-block > TextBlock">
+  <!-- Descendants: the code and its line numbers, also inside the line-number grid or the max-height scroll viewer -->
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-code-block TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-code-header">
+    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBackground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
+    <Setter Property="BorderThickness" Value="1,1,1,0" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast TextBlock.markdown-code-language">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Button.markdown-code-copy">
     <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
   </Style>
   <Style Selector=":is(mv|MarkdownViewer):high-contrast Run.markdown-code-inline">

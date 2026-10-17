@@ -4,6 +4,7 @@
 using System.Reflection;
 
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
@@ -83,6 +84,16 @@ public class CodeBlockOptionsTests
     private static string CodeText(TextBlock code) => MarkdownSelectableTextBlock.ExtractPlainText(code.Inlines!);
 
     // ── Renderer ──────────────────────────────────────────────────────────────
+
+    [AvaloniaFact]
+    public void Line_numbers_are_hidden_from_screen_readers()
+    {
+        var (_, numbers, _) = LineNumbered(CodeBorder(Render(ThreeLines, lineNumbers: true)).Child!);
+
+        var peer = ControlAutomationPeer.CreatePeerForElement(numbers);
+        Assert.False(peer.IsControlElement());
+        Assert.False(peer.IsContentElement());
+    }
 
     [AvaloniaFact]
     public void Renderer_turns_every_option_off_by_default()

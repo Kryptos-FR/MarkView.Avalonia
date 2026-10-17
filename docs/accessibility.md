@@ -17,6 +17,8 @@ Avalonia forwards automation peers to each platform's accessibility API: UI Auto
 | Table / header cell / body cell | `Table` / `HeaderItem` / `DataItem` |
 | Blockquote, figure | `Group`. A figure is named by its caption. |
 | Alert (`> [!NOTE]`) | `Group`, named by its title ("NOTE", "TIP", …), so the alert kind is announced as text and not only shown by colour |
+| `<details>` (`UseHtmlDetails()`) | `Group`, named by its summary |
+| Code block line numbers | Hidden, so only the code is read |
 | Thematic break | `Separator` |
 | Image | `Image`, named by its alt text. An image with empty alt text (`![](…)`) is decorative and hidden, as browsers do with `alt=""`. |
 | YouTube embed | `Hyperlink`, named by its alt text, or by its URL when there is none |
@@ -40,7 +42,7 @@ Avalonia 12.1.3 has the following gaps:
 
 ## Keyboard
 
-The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a code block's copy button, an interactive task's check box, a video embed. `Enter` or `Space` folds or unfolds a focused alert and ticks a focused task; `Enter` or `Space` on the copy button copies the code.
+The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a code block's copy button, an interactive task's check box, a video embed. `Enter` or `Space` folds or unfolds a focused alert or `<details>` block and ticks a focused task; `Enter` or `Space` on the copy button copies the code.
 
 | Key | Action |
 |---|---|
@@ -56,7 +58,7 @@ Links stay inline text, so they wrap and select as before. An invisible stand-in
 
 The default palette in `MarkdownTheme.axaml` meets WCAG 2.2 AA on FluentTheme's page colours (white with black text, and black with white text):
 
-- **4.5:1** for text: code, inline code, the code block header (language label and copy icon), `==marked==` text, alert titles and alert bodies.
+- **4.5:1** for text: code, code block line numbers, inline code, the code block header (language label and copy icon), `==marked==` text, alert titles and alert bodies.
 - **3:1** for borders that carry meaning (1.4.11): blockquote bars and table cell borders.
 
 `ThemeContrastTests` checks every pair against the colours in the theme file, so a brush change that drops below these ratios fails the build.
@@ -73,7 +75,7 @@ Avalonia reports whether the operating system asks for high contrast. It detects
 
 - paints the viewer in solid `MarkdownHighContrastBackground` / `MarkdownHighContrastForeground`;
 - draws links in `MarkdownHighContrastLink`, and `==marked==` text in `MarkdownHighContrastHighlightForeground` on `MarkdownHighContrastHighlightBackground`;
-- gives code blocks, tables, blockquotes, figures, separators and alerts solid `MarkdownHighContrastBorder` borders;
+- gives code blocks (their header included), tables, blockquotes, figures, separators and alerts solid `MarkdownHighContrastBorder` borders, and draws the code, its line numbers and the header's label and copy icon in `MarkdownHighContrastForeground`;
 - drops the per-kind alert colours (the titles carry the kind) and all opacity dimming.
 
 | Resource key | Dark | Light |
