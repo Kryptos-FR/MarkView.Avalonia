@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 using Avalonia;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Styling;
 
 namespace MarkView.Avalonia.Demo;
@@ -255,6 +256,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isCustomStyled;
     private bool _isColorExtensionSelected;
     private bool _isCodeHeightLimited;
+    private int _themePresetIndex;
+    private StyleInclude? _gitHubTheme;
 
     public int SelectedIndex
     {
@@ -273,6 +276,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             if (!SetField(ref _isLightTheme, value)) return;
             Application.Current!.RequestedThemeVariant = value ? ThemeVariant.Light : ThemeVariant.Dark;
+        }
+    }
+
+    /// <summary>The theme preset the documents use: 0 for the default theme, 1 for the GitHub theme.</summary>
+    public int ThemePresetIndex
+    {
+        get => _themePresetIndex;
+        set
+        {
+            if (!SetField(ref _themePresetIndex, value)) return;
+            var styles = Application.Current!.Styles;
+            if (value == 1)
+            {
+                // Right after MarkdownTheme.axaml, which it builds on, so the app's own styles below still win.
+                _gitHubTheme ??= new StyleInclude((Uri?)null) { Source = new Uri("avares://MarkView.Avalonia/Themes/GitHubTheme.axaml") };
+                var markdownTheme = styles.OfType<StyleInclude>().First(s => s.Source?.AbsolutePath.EndsWith("/MarkdownTheme.axaml") == true);
+                styles.Insert(styles.IndexOf(markdownTheme) + 1, _gitHubTheme);
+            }
+            else if (_gitHubTheme is not null)
+            {
+                styles.Remove(_gitHubTheme);
+            }
         }
     }
 

@@ -21,6 +21,150 @@ Extension packages that need their own overridable colours ship a standalone the
 
 Each extension theme is independent — it does not import the core `MarkdownTheme.axaml` — so including one, none, or several has no ordering requirement. If an extension theme isn't included, the extension falls back to built-in default colours rather than failing.
 
+## Colour resources
+
+`MarkdownTheme.axaml` defines its colours as `SolidColorBrush` resources in `Light` and `Dark` theme dictionaries, used through `DynamicResource`, so you can retint the document without restyling it. Redefine a key for the variants you want (see [Overriding a preset](#overriding-a-preset) for where to put it):
+
+| Resource key | Colours | Dark | Light |
+|---|---|---|---|
+| `MarkdownCodeBlockBackground` | Fenced and indented code blocks | `#1E1E1E` | `#F3F3F3` |
+| `MarkdownCodeBlockForeground` | Code block text (before syntax highlighting); the copy icon under the pointer | `#D4D4D4` | `#1E1E1E` |
+| `MarkdownCodeInlineBackground` | Inline code | `#1A000000` | `#0A000000` |
+| `MarkdownCodeInlineForeground` | Inline code text | `#CE9178` | `#A31515` |
+| `MarkdownCodeHeaderBackground` | Code block toolbar | `#2D2D2D` | `#E4E4E4` |
+| `MarkdownCodeHeaderForeground` | Toolbar language label and copy icon | `#A0A0A0` | `#5F5F5F` |
+| `MarkdownCodeCopyButtonHoverBackground` | Copy button under the pointer | `#1AFFFFFF` | `#14000000` |
+| `MarkdownCodeLineNumberForeground` | Code block line numbers | `#8A8A8A` | `#6A6A6A` |
+| `MarkdownAlertDefaultBorder` | Bar and title of alert kinds without their own colours (e.g. `[!QUESTION]`) | `#71717A` | `#71717A` |
+| `MarkdownAlertDefaultBackground` | Background of those alerts | `#1A71717A` | `#F4F4F5` |
+| `MarkdownAlertNoteBorder` | `[!NOTE]` bar and title | `#3B82F6` | `#2563EB` |
+| `MarkdownAlertNoteBackground` | `[!NOTE]` background | `#1A3B82F6` | `#EFF6FF` |
+| `MarkdownAlertTipBorder` | `[!TIP]` bar and title | `#22C55E` | `#16A34A` |
+| `MarkdownAlertTipBackground` | `[!TIP]` background | `#1A22C55E` | `#F0FDF4` |
+| `MarkdownAlertImportantBorder` | `[!IMPORTANT]` bar and title | `#A855F7` | `#9333EA` |
+| `MarkdownAlertImportantBackground` | `[!IMPORTANT]` background | `#1AA855F7` | `#FAF5FF` |
+| `MarkdownAlertWarningBorder` | `[!WARNING]` bar and title | `#EAB308` | `#CA8A04` |
+| `MarkdownAlertWarningBackground` | `[!WARNING]` background | `#1AEAB308` | `#FEFCE8` |
+| `MarkdownAlertCautionBorder` | `[!CAUTION]` bar and title | `#EF4444` | `#DC2626` |
+| `MarkdownAlertCautionBackground` | `[!CAUTION]` background | `#1AEF4444` | `#FEF2F2` |
+| `MarkdownMarkedBackground` | Highlighted text (`==text==`) | `#5C4B00` | `#FFFF00` |
+
+Colours are `#AARRGGBB` when translucent. The theme also defines two `StreamGeometry` resources, the same in both variants: `MarkdownCodeCopyIcon` and `MarkdownCodeCopiedIcon`, the copy button's icons (see [Code block toolbar](#code-block-toolbar)). The default theme sets a few colours directly in its styles rather than through a key: the blockquote bar (`#4A9ECC`), the table and figure borders (`#40808080`), the table header background (`#20808080`) and links (`SystemAccentColor`); restyle those selectors to change them.
+
+## Theme presets
+
+A theme preset is a style file included after `MarkdownTheme.axaml` that gives the whole document another look. It builds on the default theme rather than replacing it: it redefines the [colour resources](#colour-resources) and adds styles only where its look differs, so the default theme (and its `ControlTemplate`) must still be included before it.
+
+### GitHub
+
+`GitHubTheme.axaml` makes the document look like Markdown rendered on github.com, with GitHub's [Primer](https://primer.style/) colours in both the `Light` and `Dark` variants. Like the default theme, it follows the application's theme variant live.
+
+```xml
+<Application.Styles>
+  <FluentTheme />
+  <StyleInclude Source="avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml" />
+  <StyleInclude Source="avares://MarkView.Avalonia/Themes/GitHubTheme.axaml" />
+</Application.Styles>
+```
+
+What it changes:
+
+| Element | GitHub look |
+|---|---|
+| Document | GitHub's page background and text colour (`#FFFFFF` / `#1F2328` light, `#0D1117` / `#F0F6FC` dark) set on `MarkdownViewer`, its system font stack (Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial) at 16px, and 16px between paragraphs with a little extra line spacing |
+| Headings | 2em / 1.5em / 1.25em / 1em / 0.875em / 0.85em (32 to 13.6px), semibold, 24px above and 16px below (none above the first block of the document, a quote or an alert); a 1px rule under h1 and h2; h6 in the secondary text colour |
+| Links | GitHub's blue (`#0969DA` / `#4493F8`), underlined |
+| Code blocks | GitHub's code background, 16px padding, 6px corners, 13.6px monospace (SF Mono, Menlo, Consolas, Liberation Mono). The toolbar takes the code's background, so the language label and the outlined copy button sit inside the block's top edge |
+| Inline code | Monospace on a translucent grey, in the text colour, at 85% of the paragraph's size (full size in a heading) |
+| Blockquotes | A 4px grey bar, secondary text colour, no dimming |
+| Tables | A 1px grid on every side of every cell, 6×13px cell padding, a semibold header row without background, and every second body row striped |
+| Horizontal rules | A 4px grey bar, 24px above and below |
+| Alerts | GitHub's note, tip, important, warning and caution colours for the 4px bar and the title (at body size), and no background |
+| Task lists | Check boxes in the secondary text colour, like GitHub's read-only ones |
+| Marked text | GitHub's pale yellow (dark: translucent amber) |
+| Footnotes | Below a 1px line, in 12px secondary text |
+| Definition lists | Italic terms, definitions indented by 16px |
+
+Where it departs from GitHub:
+
+- **Contrast.** Every text colour meets the WCAG 2.2 AA 4.5:1 minimum and every border that carries meaning (blockquote bar, table grid, horizontal rule, alert bars) meets 3:1, against the page and against the background it sits on. GitHub draws the blockquote bar, table grid and horizontal rule in `#D1D9E0` (dark `#3D444D`), below 3:1, so the preset uses Primer's emphasis border colour, `#818B98` (dark `#656C76`), for them; they look a little darker than on github.com. Decorative lines keep GitHub's colours: the rule under h1 and h2, the line above the footnotes and the copy button's outline.
+- **Alert colours.** GitHub uses a slightly different colour for the bar and the title in dark mode; one key (`MarkdownAlert<Kind>Border`) drives both here, so the preset uses the title colour, which also passes 4.5:1 as text. Alert titles keep the renderer's text (`NOTE`) and have no icon.
+- **What styles can't express.** Inline code has no padding or rounded corners (it is a `Run`, so its text stays selectable), and tables fill the width of the document.
+
+The preset uses three renderer hooks that the default theme leaves unstyled, and that any theme can use: the text blocks of headings and paragraphs (`MarkdownSelectableTextBlock`) draw a border from their `BorderBrush` and `BorderThickness` properties, over the edges of their `Padding` (none by default); every second body row of a table has the `markdown-table-row-even` class; and the line above the footnotes has the `markdown-footnote-separator` class next to `markdown-thematic-break`.
+
+It adds these resource keys to the ones it redefines from the default theme:
+
+| Resource key | Colours | Dark | Light |
+|---|---|---|---|
+| `MarkdownBackground` | `MarkdownViewer`'s background | `#0D1117` | `#FFFFFF` |
+| `MarkdownForeground` | Body text (`MarkdownViewer.Foreground`) | `#F0F6FC` | `#1F2328` |
+| `MarkdownMutedForeground` | Blockquotes, h6, footnotes, task check boxes | `#9198A1` | `#59636E` |
+| `MarkdownLinkForeground` | Links and footnote references | `#4493F8` | `#0969DA` |
+| `MarkdownHeadingBorder` | Rule under h1 and h2 | `#B33D444D` | `#B3D1D9E0` |
+| `MarkdownBlockquoteBorder` | Blockquote bar | `#656C76` | `#818B98` |
+| `MarkdownTableBorder` | Table grid | `#656C76` | `#818B98` |
+| `MarkdownTableRowAlternateBackground` | Striped table rows | `#151B23` | `#F6F8FA` |
+| `MarkdownThematicBreakBackground` | Horizontal rule | `#656C76` | `#818B98` |
+| `MarkdownFootnoteSeparatorBackground` | Line above the footnotes | `#3D444D` | `#D1D9E0` |
+| `MarkdownCodeCopyButtonBorder` | Copy button outline | `#3D444D` | `#D1D9E0` |
+
+and redefines the default theme's keys as follows:
+
+| Resource key | Dark | Light |
+|---|---|---|
+| `MarkdownCodeBlockBackground`, `MarkdownCodeHeaderBackground` | `#151B23` | `#F6F8FA` |
+| `MarkdownCodeBlockForeground`, `MarkdownCodeInlineForeground` | `#F0F6FC` | `#1F2328` |
+| `MarkdownCodeInlineBackground` | `#33656C76` | `#1F818B98` |
+| `MarkdownCodeHeaderForeground`, `MarkdownCodeLineNumberForeground` | `#9198A1` | `#59636E` |
+| `MarkdownCodeCopyButtonHoverBackground` | `#33656C76` | `#1A818B98` |
+| `MarkdownAlertDefaultBorder` | `#9198A1` | `#59636E` |
+| `MarkdownAlertNoteBorder` | `#4493F8` | `#0969DA` |
+| `MarkdownAlertTipBorder` | `#3FB950` | `#1A7F37` |
+| `MarkdownAlertImportantBorder` | `#AB7DF8` | `#8250DF` |
+| `MarkdownAlertWarningBorder` | `#D29922` | `#9A6700` |
+| `MarkdownAlertCautionBorder` | `#F85149` | `#D1242F` |
+| `MarkdownAlert<Kind>Background` (all six) | `#00000000` | `#00000000` |
+| `MarkdownMarkedBackground` | `#26BB8009` | `#FFF8C5` |
+
+**Next to the extension packages.** Their themes stay as they are. Syntax highlighting (`MarkView.Avalonia.SyntaxHighlighting`) keeps its TextMate colours, Dark+ and Light+ by default, drawn on the preset's code background: GitHub's own highlighting colours differ, but Dark+ and Light+ have at least the same contrast on it as on the default theme's (the light background is a little lighter, the dark one a little darker). Mermaid diagrams keep the colours of `MermaidTheme.axaml`: in the light variant their white background matches the page, while in the dark one their `#18181B` background shows as a slightly lighter card on GitHub's `#0D1117`; redefine `MarkdownMermaidBackground` in the `Dark` dictionary to blend it in. Math formulas follow the theme variant on their own.
+
+### Overriding a preset
+
+The preset's colours are resources, so the usual Avalonia lookup order applies: a key defined closer to the viewer wins. Redefine keys in `Application.Resources` (which Avalonia searches before `Application.Styles`), in a `Styles` block included after the preset, or in the `Resources` of a window or of the viewer itself:
+
+```xml
+<Application.Resources>
+  <ResourceDictionary>
+    <ResourceDictionary.ThemeDictionaries>
+      <ResourceDictionary x:Key="Light">
+        <!-- Keep the host's own background behind the document -->
+        <SolidColorBrush x:Key="MarkdownBackground">Transparent</SolidColorBrush>
+      </ResourceDictionary>
+      <ResourceDictionary x:Key="Dark">
+        <SolidColorBrush x:Key="MarkdownBackground">Transparent</SolidColorBrush>
+      </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+  </ResourceDictionary>
+</Application.Resources>
+```
+
+Styles work as with the default theme: a style declared after the preset's include wins over the preset's for the same property, whatever its selector. A value set on the viewer itself always wins over both themes, e.g. `<mv:MarkdownViewer Background="Transparent" FontSize="14" />`. The preset sets `Background`, `Foreground`, `FontFamily` and `FontSize` on `MarkdownViewer`, so local values of these replace GitHub's for the whole document.
+
+To switch presets at run time, add or remove the preset's `StyleInclude`; every open document restyles in place, without being rebuilt:
+
+```csharp
+var gitHub = new StyleInclude((Uri?)null)
+{
+    Source = new Uri("avares://MarkView.Avalonia/Themes/GitHubTheme.axaml"),
+};
+var styles = Application.Current!.Styles;
+// Right after MarkdownTheme.axaml, so the application's own styles keep winning
+styles.Insert(styles.IndexOf(markdownThemeInclude) + 1, gitHub);
+// ... and back to the default look:
+styles.Remove(gitHub);
+```
+
 ## Style class reference
 
 Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name. Override any selector in your own `Styles` block to customise appearance.
@@ -52,6 +196,7 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-table` | `Grid` | Table |
 | `markdown-table-cell` | `Border` | Table body cell |
 | `markdown-table-header` | `Border` | Table header cell |
+| `markdown-table-row-even` | `Border` | Cell of every second body row (the 2nd, 4th, … below the header), for striped rows; unstyled by the default theme |
 
 The clickable task-list checkbox (`ToggleButton.markdown-task-toggle`) uses its own minimal control
 theme rather than your application's `ToggleButton` theme, so it looks like the static glyph: no
@@ -154,6 +299,7 @@ The summary is focusable and toggles the body on click, Enter or Space; the body
 | Class | Control | Element |
 |-------|---------|---------|
 | `markdown-footnote-ref` | `HyperlinkButton` | Inline footnote reference `[1]` |
+| `markdown-footnote-separator` | `Separator` | Line above the definitions; also has `markdown-thematic-break`, so it looks like a horizontal rule unless styled |
 | `markdown-footnote-group` | `StackPanel` | Definition list at end of document |
 | `markdown-footnote-item` | `Grid` | Individual footnote row |
 
@@ -367,7 +513,7 @@ ancestor:
 
 When the user switches between `Light` and `Dark` theme variants:
 
-- All `DynamicResource` references in `MarkdownTheme.axaml` update automatically.
+- All `DynamicResource` references in `MarkdownTheme.axaml` (and in a [theme preset](#theme-presets) such as `GitHubTheme.axaml`) update automatically.
 - `TextMateCodeBlockRenderer` rebuilds only the `TextBlock.Inlines` for each code block.
 - `MermaidBlockRenderer` re-renders diagrams, reading `MarkdownMermaid*` resources for the new variant.
 - The document scroll position is preserved in both cases.
