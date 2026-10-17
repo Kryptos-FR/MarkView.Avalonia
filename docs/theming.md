@@ -36,6 +36,8 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-code-header` | `Border` | Code block toolbar |
 | `markdown-code-language` | `TextBlock` | Language label in the toolbar |
 | `markdown-code-copy` | `Button` | Copy button in the toolbar; also has the `copied` class for two seconds after a copy |
+| `markdown-code-line-numbers` | `TextBlock` | Line-number gutter of a code block, when `ShowCodeBlockLineNumbers` is set |
+| `markdown-code-scroll` | `ScrollViewer` | Scrolls the code of a block vertically, when `CodeBlockMaxHeight` is set |
 | `markdown-custom-fence` | `Border` | Wraps the control a [fence renderer](custom-extensions.md#rendering-a-fence-language-as-your-own-control) returned for a fenced block |
 | `markdown-fence-<language>` | `Border` | The same `Border`, by fence language in lower case (e.g. `markdown-fence-chart`) |
 | `markdown-code-inline` | `Border` | Inline code container |
@@ -288,6 +290,42 @@ they can be replaced or translated:
 | `MarkdownCodeCopyButtonHoverBackground` | `#1AFFFFFF` | `#14000000` | Copy button under the pointer |
 | `MarkdownCodeCopyIcon` | | | `StreamGeometry` of the copy icon |
 | `MarkdownCodeCopiedIcon` | | | `StreamGeometry` of the icon shown after a copy |
+
+### Line numbers and scrolling code
+
+With [line numbers](configuration.md#line-numbers-wrapping-and-height), the code's `TextBlock`
+sits in the right column of a two-column `Grid`, next to a `TextBlock.markdown-code-line-numbers`
+holding one number per row. With a maximum height, a `ScrollViewer.markdown-code-scroll` sits
+between the `Border.markdown-code-block` and the code (or the grid):
+
+```
+Border.markdown-code-block
+└── ScrollViewer.markdown-code-scroll      (CodeBlockMaxHeight)
+    └── Grid                                (ShowCodeBlockLineNumbers)
+        ├── TextBlock.markdown-code-line-numbers
+        └── TextBlock                       (the code)
+```
+
+The code is then no longer the border's direct child, so style it with the descendant selector
+`Border.markdown-code-block TextBlock`, as the default theme does: it also gives the line numbers
+the code's font, which keeps each number level with its line. Change the font of both together,
+or the numbers drift away from their lines.
+
+```xml
+<!-- Dimmer numbers, further from the code -->
+<Style Selector="TextBlock.markdown-code-line-numbers">
+  <Setter Property="Opacity" Value="0.7" />
+  <Setter Property="Margin" Value="0,0,24,0" />
+</Style>
+<!-- Keep the scroll bar of a long block always visible -->
+<Style Selector="ScrollViewer.markdown-code-scroll">
+  <Setter Property="AllowAutoHide" Value="False" />
+</Style>
+```
+
+| Resource key | Dark | Light | Use |
+|---|---|---|---|
+| `MarkdownCodeLineNumberForeground` | `#8A8A8A` | `#6A6A6A` | Line numbers; 4.8:1 (Dark) and 4.9:1 (Light) contrast on `MarkdownCodeBlockBackground`, above the 4.5:1 WCAG AA minimum for text |
 
 ## Template customisation
 

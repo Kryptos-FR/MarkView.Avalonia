@@ -83,6 +83,18 @@
                       Content="Clickable tasks"
                       ToolTip.Tip="Render task-list items as checkboxes you can toggle"
                       VerticalAlignment="Center" />
+        <ToggleButton IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers}"
+                      Content="Line numbers"
+                      ToolTip.Tip="Number the lines of code blocks"
+                      VerticalAlignment="Center" />
+        <ToggleButton IsChecked="{Binding #MarkdownView.WrapCodeBlockLines}"
+                      Content="Wrap code"
+                      ToolTip.Tip="Wrap code lines longer than their block"
+                      VerticalAlignment="Center" />
+        <ToggleButton IsChecked="{Binding IsCodeHeightLimited}"
+                      Content="Short code blocks"
+                      ToolTip.Tip="Cap code blocks at 160 pixels; taller blocks scroll inside themselves"
+                      VerticalAlignment="Center" />
       </StackPanel>
     </Border>
 
@@ -91,6 +103,7 @@
       <mv:MarkdownViewer x:Name="MarkdownView"
                          Source="{Binding Source}" Markdown="{Binding Markdown}"
                          Classes.custom-styled="{Binding IsCustomStyled}"
+                         CodeBlockMaxHeight="{Binding CodeBlockMaxHeight}"
                          IsVisible="{Binding !IsColorExtensionSelected}"
                          Padding="4" />
       <ce:ColorExtensionView IsVisible="{Binding IsColorExtensionSelected}" />

@@ -254,6 +254,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isLightTheme;
     private bool _isCustomStyled;
     private bool _isColorExtensionSelected;
+    private bool _isCodeHeightLimited;
 
     public int SelectedIndex
     {
@@ -274,6 +275,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Application.Current!.RequestedThemeVariant = value ? ThemeVariant.Light : ThemeVariant.Dark;
         }
     }
+
+    /// <summary>Caps code blocks at <see cref="LimitedCodeBlockHeight"/>, past which they scroll.</summary>
+    public bool IsCodeHeightLimited
+    {
+        get => _isCodeHeightLimited;
+        set
+        {
+            if (SetField(ref _isCodeHeightLimited, value))
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CodeBlockMaxHeight)));
+        }
+    }
+
+    private const double LimitedCodeBlockHeight = 160;
+
+    public double CodeBlockMaxHeight => _isCodeHeightLimited ? LimitedCodeBlockHeight : double.PositiveInfinity;
 
     public bool IsCustomStyled
     {

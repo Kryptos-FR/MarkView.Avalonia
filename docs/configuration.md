@@ -12,6 +12,9 @@
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
 | `ShowCodeBlockLanguage` | `bool` | `true` | Shows the language of a fenced code block (e.g. `csharp`) in a toolbar above the code. See [Code block toolbar](#code-block-toolbar). |
 | `ShowCodeBlockCopyButton` | `bool` | `true` | Shows a button in a toolbar above each code block that copies the code to the clipboard. See [Code block toolbar](#code-block-toolbar). |
+| `ShowCodeBlockLineNumbers` | `bool` | `false` | Shows the number of each line in a gutter next to the code. Selection and copy never include the numbers. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
+| `WrapCodeBlockLines` | `bool` | `false` | Wraps code lines longer than the block's width instead of letting them run past it. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
+| `CodeBlockMaxHeight` | `double` | `PositiveInfinity` | Maximum height of a code block (toolbar excluded); a taller block scrolls vertically inside itself. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `AreTaskListsInteractive` | `bool` | `false` | Renders task-list items as checkboxes the user can toggle, raising `TaskToggled`. Setting it re-renders the document. See [Interactive task lists](#interactive-task-lists). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
@@ -445,6 +448,44 @@ The toolbar applies to the built-in code block renderer and to the code blocks o
 `SyntaxHighlighting` and `Mermaid` (non-diagram fences) packages. Mermaid diagrams and math
 blocks have no toolbar. Text selection skips the toolbar, so selecting and copying across a
 code block copies only the code. See [Theming](theming.md#code-block-toolbar) to restyle it.
+
+### Line numbers, wrapping and height
+
+Three more options change how the code itself is laid out. All are off by default:
+
+```xml
+<mv:MarkdownViewer ShowCodeBlockLineNumbers="True" WrapCodeBlockLines="True" CodeBlockMaxHeight="400" />
+```
+
+```csharp
+viewer.ShowCodeBlockLineNumbers = true;
+viewer.WrapCodeBlockLines = true;
+viewer.CodeBlockMaxHeight = 400;
+```
+
+Like the toolbar's, they can be set for every viewer of the application with a style, and
+changing one re-renders the document. They apply to the same code blocks as the toolbar.
+
+- **`ShowCodeBlockLineNumbers`** puts the number of each line in a gutter on the left of the
+  code. The numbers are not part of the code: dragging a selection over the block, `Ctrl+A` and
+  the copy button all copy the code alone, and the gutter itself cannot be selected. With
+  wrapping on, a wrapped line is numbered once, on its first row.
+- **`WrapCodeBlockLines`** wraps lines longer than the block. Without it, code never wraps:
+  long lines run past the block's right edge and are cut off by the viewer, unless the viewer
+  scrolls horizontally (`ScrollViewer.HorizontalScrollBarVisibility="Auto"` on the
+  `MarkdownViewer`, see [Image sizing](#image-sizing)). Wrapping needs a width to wrap at, so it
+  has no effect while the viewer scrolls horizontally.
+- **`CodeBlockMaxHeight`** caps the height of each code block, padding included and toolbar
+  excluded (the toolbar stays in view). A taller block keeps that height and scrolls vertically
+  inside itself; shorter blocks are unchanged. Horizontal scrolling is unaffected: it stays
+  with the viewer, as without a maximum height. The mouse wheel over a block scrolls the block
+  first; once the block has reached its top or bottom, the wheel scrolls the document again
+  (Avalonia's scroll chaining), so a long block never traps it. Must be zero or more; the
+  default, `double.PositiveInfinity`, means no limit.
+
+Wrapping is a viewer property only, with no wrap toggle in the toolbar, to keep the toolbar
+small; a host that wants one can bind its own toggle to `WrapCodeBlockLines`. See
+[Theming](theming.md#line-numbers-and-scrolling-code) to restyle the gutter and the scroll viewer.
 
 ## Custom fenced blocks
 

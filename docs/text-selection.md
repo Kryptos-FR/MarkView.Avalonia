@@ -32,7 +32,7 @@ All text-bearing block types are registered with the selection layer:
 
 - Paragraphs
 - Headings
-- Code blocks (all text within the block)
+- Code blocks (the code only: never their toolbar or [line numbers](configuration.md#line-numbers-wrapping-and-height))
 - Blockquotes
 - List items, including their markers (`•`, `1.`, or the `☑`/`☐` task-list glyph — for a clickable task-list checkbox, its current state) and any code blocks or tables nested inside them
 - Table cells (tab-separated when copying)
@@ -50,13 +50,15 @@ Non-text content is copied as a text equivalent:
 
 Hidden content is not selectable: the body of a collapsed [foldable alert](configuration.md#alert-blocks) (`> [!NOTE]-`) or [details block](configuration.md#html-details-blocks) (`<details>`) is skipped by hit-testing, highlighting and copy (`Ctrl+A` then `Ctrl+C` copies the text around it) until it is expanded. The same applies to any block a custom renderer hides with `IsVisible`. An alert's header and a details block's summary are not selectable; clicking one toggles its block instead of starting a selection.
 
+Content scrolled out of view inside the document is treated the same way while it is out of view: the lines of a code block taller than [`CodeBlockMaxHeight`](configuration.md#line-numbers-wrapping-and-height) that lie above or below its scroll viewport are neither hit-tested nor highlighted, so pointing at the text right below such a block selects that text, not the block's hidden lines. They are still copied when the selection spans them.
+
 Custom renderers opt their own non-text controls in through the `MarkdownSelection.CopyText` attached property — see [Content that is not text](custom-extensions.md#content-that-is-not-text).
 
 ## How it works
 
 `DocumentSelectionLayer` is a single transparent `Control` rendered in a single-cell `Grid` on top of the document. It tracks a start and end character offset across the entire flattened character index built by the renderer.
 
-On `PointerMoved`, the layer calls `TextBlock.TextLayout.HitTestPoint` + `TranslatePoint` for each registered text block to find the nearest character offset, then redraws the selection highlight rectangles using `HitTestTextRange`.
+On `PointerMoved`, the layer calls `TextBlock.TextLayout.HitTestPoint` + `TranslatePoint` for each registered text block to find the nearest character offset, then redraws the selection highlight rectangles using `HitTestTextRange`. Both are limited to the part of each text block that its clipping ancestors inside the document (such as a code block's `ScrollViewer`) leave visible.
 
 On copy, `GetSelectedText()` extracts the substring from each text block's registered text and joins them with newlines (tabs between table cells, a space after a list marker). A list item's marker is registered as its own text block, so it is highlighted with the item and selection offsets inside the item text line up with what is rendered.
 
