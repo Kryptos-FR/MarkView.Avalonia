@@ -3,8 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+  # Any base branch: a pull request opened on another branch (e.g. the one below it in a
+  # stack) would otherwise get no run, and Gate would never report.
   pull_request:
-    branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
   # Publishing a GitHub release builds the tag and pushes the packages to NuGet.org.
   release:

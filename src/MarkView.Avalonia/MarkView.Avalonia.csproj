@@ -4,8 +4,8 @@
     <!-- Packaging -->
     <IsPackable>true</IsPackable>
     <PackageId>MarkView.Avalonia</PackageId>
-    <Description>A Markdig-powered markdown viewer control for Avalonia UI.</Description>
-    <PackageTags>avalonia;markdown;markdig;viewer;control</PackageTags>
+    <Description>A Markdig-powered markdown viewer control for Avalonia UI 12: GitHub-flavoured markdown, text selection across blocks, alerts, tables and task lists, with live light/dark theme switching.</Description>
+    <PackageTags>avalonia;avalonia12;markdown;markdig;viewer;control</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>

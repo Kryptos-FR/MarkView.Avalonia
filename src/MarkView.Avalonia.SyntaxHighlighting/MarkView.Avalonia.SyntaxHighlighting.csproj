@@ -3,8 +3,8 @@
     <RootNamespace>MarkView.Avalonia.SyntaxHighlighting</RootNamespace>
     <IsPackable>true</IsPackable>
     <PackageId>MarkView.Avalonia.SyntaxHighlighting</PackageId>
-    <Description>TextMate syntax highlighting extension for MarkView.Avalonia.</Description>
-    <PackageTags>avalonia;markdown;syntax-highlighting;textmate</PackageTags>
+    <Description>TextMate syntax highlighting extension for MarkView.Avalonia, the markdown viewer for Avalonia UI 12.</Description>
+    <PackageTags>avalonia;avalonia12;markdown;syntax-highlighting;textmate</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
