@@ -101,7 +101,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
         <details open>
         <summary>Starts expanded with <code>&lt;details open&gt;</code></summary>
 
-        Click the summary, or focus it and press Enter or Space, to fold it.
+        Click the summary, or focus it and press Enter or Space, to fold it. Lists work too, as long as
+        a blank line separates them from the tags:
+
+        - one blank line after `</summary>`
+        - and one before `</details>`
+
+        Without them, the list belongs to the HTML block and shows as plain text, as on GitHub.
 
         </details>
 
