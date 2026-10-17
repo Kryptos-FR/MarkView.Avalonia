@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
@@ -36,6 +37,15 @@ public class MathBlockRendererTests
         var result = Render("$$\nx^2\n$$");
         var border = Assert.IsType<Border>(Assert.Single(result.Children));
         Assert.Contains("markdown-math-block", border.Classes);
+    }
+
+    [AvaloniaFact]
+    public void Math_block_image_is_named_by_its_TeX_source()
+    {
+        var border = Assert.IsType<Border>(Assert.Single(Render("$$\nx^2\n$$").Children));
+        var peer = ControlAutomationPeer.CreatePeerForElement(Assert.IsType<Image>(border.Child));
+        Assert.Equal(AutomationControlType.Image, peer.GetAutomationControlType());
+        Assert.Equal("x^2", peer.GetName());
     }
 
     [AvaloniaFact]

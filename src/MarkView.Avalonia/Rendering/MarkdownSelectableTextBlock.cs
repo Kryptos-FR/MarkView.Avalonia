@@ -5,10 +5,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Input;
 
+using MarkView.Avalonia.Automation;
 using MarkView.Avalonia.Rendering.Inlines;
 
 namespace MarkView.Avalonia.Rendering;
@@ -28,6 +30,14 @@ public class MarkdownSelectableTextBlock : TextBlock
     internal const char ObjectReplacementCharacter = '\uFFFC';
 
     internal AvaloniaRenderer? Renderer { get; set; }
+
+    /// <summary>
+    /// The focus targets standing in for this block's links, in reading order; set by
+    /// <see cref="LinkFocusLayer"/>. <c>null</c> when the block has no link.
+    /// </summary>
+    internal List<LinkFocusTarget>? LinkTargets { get; set; }
+
+    protected override AutomationPeer OnCreateAutomationPeer() => new MarkdownTextBlockAutomationPeer(this);
 
     /// <summary>
     /// Returns the <see cref="MarkdownHyperlink"/> at <paramref name="point"/> (in this control's

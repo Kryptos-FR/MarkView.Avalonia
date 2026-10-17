@@ -386,6 +386,8 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-custom-inline` | Inline custom container (`::text::`) | `Span` |
 | `markdown-footer` | Footer (`^^`) | `StackPanel` |
 
+Colours are `DynamicResource` brushes (`MarkdownLinkForeground`, `MarkdownTableBorder`, …) that meet WCAG 2.2 AA contrast, with a high-contrast palette that follows the OS setting; see [Accessibility](docs/accessibility.md).
+
 Extension packages may ship their own theme file with additional overridable colours — check the extension's README for its `StyleInclude` path and resource keys.
 
 Example — increase heading size and add a bottom border:
@@ -416,6 +418,14 @@ await viewer.CopyToClipboardAsync();
 ```
 
 A selection that spans an image copies the image's alt text in its place; math formulas and Mermaid diagrams copy their source. See [Text Selection](docs/text-selection.md) for details.
+
+## Accessibility
+
+- **Keyboard.** `Tab` / `Shift+Tab` move through the document's links in reading order, with a focus ring, and `Enter` opens the focused link.
+- **Screen readers.** Headings report their level, and lists, tables, quotes, alerts, images and links report their roles.
+- **Contrast.** Default colours meet WCAG 2.2 AA, and a high-contrast palette follows the OS setting.
+
+See [Accessibility](docs/accessibility.md).
 
 ## Known Limitations
 

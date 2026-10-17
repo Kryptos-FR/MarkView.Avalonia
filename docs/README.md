@@ -11,6 +11,7 @@ This folder contains developer-facing documentation for the MarkView.Avalonia li
 | [extensions.md](extensions.md) | Extension packages: SyntaxHighlighting, Svg, Mermaid, Math |
 | [text-selection.md](text-selection.md) | Text selection, clipboard, and programmatic API |
 | [theming.md](theming.md) | Style classes, theme switching, and customisation |
+| [accessibility.md](accessibility.md) | Screen reader roles, keyboard navigation of links, colour contrast, and high-contrast mode |
 | [custom-extensions.md](custom-extensions.md) | Writing your own `IMarkViewExtension`, image loaders, and renderers |
 
 For a quick overview, see the [root README](../README.md).

@@ -91,6 +91,8 @@ internal static class CodeBlockToolbar
             // they are neither highlighted nor copied with the code.
             var numbers = new TextBlock { Text = LineNumbers(lineCount), TextAlignment = TextAlignment.Right };
             numbers.Classes.Add("markdown-code-line-numbers");
+            // Nor are they read out by screen readers.
+            AutomationRoles.Hide(numbers);
             // A wrapped line takes several rows of the code, and the gutter leaves all but its
             // first blank; which lines wrap is only known once the code is laid out at its width.
             if (wrap)

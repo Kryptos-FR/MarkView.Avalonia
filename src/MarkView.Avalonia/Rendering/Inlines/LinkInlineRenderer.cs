@@ -4,6 +4,8 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -66,7 +68,15 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         image.Classes.Add("markdown-image");
 
         if (!string.IsNullOrEmpty(altText))
+        {
             ToolTip.SetTip(image, altText);
+            AutomationProperties.SetName(image, altText);
+        }
+        else
+        {
+            // An image without alt text is treated as decorative, as browsers do with alt="".
+            AutomationRoles.Hide(image);
+        }
         MarkdownSelection.SetCopyText(image, altText);
 
         // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor).
@@ -206,7 +216,10 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         var button = new Button { Content = overlayGrid };
         button.Classes.Add("markdown-youtube");
         button.Click += (_, _) => renderer.OnLinkClicked(videoUri.ToString());
-        MarkdownSelection.SetCopyText(button, ExtractAltText(obj));
+        var altText = ExtractAltText(obj);
+        MarkdownSelection.SetCopyText(button, altText);
+        AutomationProperties.SetControlTypeOverride(button, AutomationControlType.Hyperlink);
+        AutomationProperties.SetName(button, string.IsNullOrEmpty(altText) ? videoUri.ToString() : altText);
 
         CancellationTokenSource? cts = null;
         thumbnail.AttachedToVisualTree += (_, _) =>

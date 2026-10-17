@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
@@ -37,6 +38,14 @@ public class MathInlineRendererTests
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
         var container = textBlock.Inlines!.OfType<InlineUIContainer>().Single();
         Assert.IsType<Image>(container.Child);
+    }
+
+    [AvaloniaFact]
+    public void Inline_math_image_is_named_by_its_TeX_source()
+    {
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(Render("$x^2$").Children));
+        var image = Assert.IsType<Image>(textBlock.Inlines!.OfType<InlineUIContainer>().Single().Child);
+        Assert.Equal("x^2", ControlAutomationPeer.CreatePeerForElement(image).GetName());
     }
 
     [AvaloniaFact]
