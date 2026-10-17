@@ -68,6 +68,7 @@ internal static class ZoomCursor
         }
         finally
         {
+            // Stryker disable once Statement : leaving the buffer pinned changes nothing a test can see
             handle.Free();
         }
     }
