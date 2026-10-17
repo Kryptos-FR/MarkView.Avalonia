@@ -29,6 +29,14 @@ public class MarkdownSelectableTextBlock : TextBlock
 
     internal AvaloniaRenderer? Renderer { get; set; }
 
+    /// <inheritdoc />
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        // Avalonia leaves inlines unstyled after a change to the application's styles.
+        StyledInlinesTextBlock.ApplyInlineStyling(Inlines);
+        return base.MeasureOverride(availableSize);
+    }
+
     /// <summary>
     /// Returns the <see cref="MarkdownHyperlink"/> at <paramref name="point"/> (in this control's
     /// local coordinates), or <c>null</c> if no hyperlink is present there.
