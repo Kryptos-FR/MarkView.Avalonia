@@ -126,6 +126,12 @@ public class AvaloniaRenderer : RendererBase
     }
 
     /// <summary>
+    /// Factories of the controls that replace fenced code blocks, by language (case-insensitive).
+    /// Filled by <see cref="FenceRendererExtension"/>.
+    /// </summary>
+    internal Dictionary<string, FenceRendererFactory> FenceRenderers { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Raised when a hyperlink is clicked.
     /// </summary>
     public event EventHandler<LinkClickedEventArgs>? LinkClicked;
@@ -199,8 +205,30 @@ public class AvaloniaRenderer : RendererBase
         _anchors.Clear();
         _headingEntries.Clear();
         SlugGenerator.Reset();
+        PlaceCustomFenceRenderer();
         Write(markdownObject);
         return RootPanel;
+    }
+
+    // Placed when rendering starts, after every extension and pipeline.Setup() have installed their
+    // renderers, so a fence renderer wins over the other renderers of fenced code blocks (Mermaid,
+    // syntax highlighting, the plain code block) whatever order they were registered in. A renderer
+    // of a narrower type (MathBlock) that already precedes them keeps its place.
+    private void PlaceCustomFenceRenderer()
+    {
+        if (FenceRenderers.Count == 0)
+            return;
+
+        var insertAt = ObjectRenderers.Count;
+        for (var i = 0; i < ObjectRenderers.Count; i++)
+        {
+            if (ObjectRenderers[i].Accept(this, typeof(FencedCodeBlock)))
+            {
+                insertAt = i;
+                break;
+            }
+        }
+        ObjectRenderers.Insert(insertAt, new CustomFenceRenderer());
     }
 
     /// <summary>

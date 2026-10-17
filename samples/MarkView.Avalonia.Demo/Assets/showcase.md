@@ -16,6 +16,7 @@
 - [SVG Image](#svg-image)
 - [Mermaid Diagram](#mermaid-diagram)
 - [Math](#math)
+- [Custom Fenced Blocks](#custom-fenced-blocks)
 
 ---
 
@@ -197,6 +198,34 @@ The LaTeX bracket delimiters that LLMs tend to write work too: the roots of \(ax
 x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
 \]
 for any \(a \neq 0\).
+
+---
+
+## Custom Fenced Blocks
+
+An application can render the fenced blocks of a language as its own control, without writing a
+Markdig renderer. This demo registers `palette`, which shows a list of colours as swatches:
+
+```palette
+#3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
+```
+
+The factory also receives the rest of the info string, so a fence can take arguments. Here
+`size=24` makes the swatches smaller:
+
+```palette size=24
+#3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
+```
+
+````markdown
+```palette
+#3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
+```
+
+```palette size=24
+#3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
+```
+````
 
 ---
 

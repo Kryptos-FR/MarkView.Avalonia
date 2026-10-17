@@ -8,6 +8,84 @@ MarkView.Avalonia is designed to be extended. The three main extension points ar
 
 All extension points are accessed through `IMarkViewExtension`.
 
+To show the fenced code blocks of one language as your own control (```` ```chart ```` → a chart),
+you don't need any of them: register a [fence renderer](#rendering-a-fence-language-as-your-own-control).
+
+## Rendering a fence language as your own control
+
+A fence renderer maps a fenced code block's language to a factory that builds a control from the
+block's content. No Markdig renderer is involved:
+
+```csharp
+using MarkView.Avalonia;
+
+viewer.UseFenceRenderer("chart", (code, info) => new MyChart(code));
+// or for every viewer of the application (App.axaml.cs):
+MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new MyChart(code));
+```
+
+````markdown
+```chart {height=200}
+jan 12
+feb 19
+```
+````
+
+The factory is a `FenceRendererFactory`, `Control? (string code, string info)`:
+
+- `code` is the block's content without its fences, its lines joined with `\n`.
+- `info` is the whole info string after the opening fence: the language, then anything after it
+  (`chart {height=200}` above), for the factory to parse as it likes. With Markdig's
+  `UseGenericAttributes()` in the pipeline, a trailing `{...}` is parsed as
+  [attributes](theming.md#classes-from-generic-attributes) instead, and is not part of `info`.
+- Return a **new** control on every call. Return `null` to render that block as an ordinary code
+  block, e.g. when its content isn't valid for your control.
+
+Behaviour:
+
+- **Precedence.** The language is matched case-insensitively against the first word of the info
+  string. A fence renderer takes precedence over every other renderer of fenced code blocks —
+  Mermaid diagrams, TextMate highlighting, the plain code block — whatever order the extensions
+  were registered in, so `UseFenceRenderer("mermaid", …)` replaces the Mermaid package's diagrams.
+  Blocks of other languages render as they would without it, and `$$` math blocks stay math.
+- **One renderer per language.** When several are registered for the same language, the last one
+  registered wins: a viewer's own `Extensions` override `MarkdownViewerDefaults.Extensions`.
+  `UseFenceRenderer` also removes the viewer's earlier fence renderer for that language.
+- **Re-rendering.** `UseFenceRenderer` re-renders the viewer's document. Adding a
+  `FenceRendererExtension` to `Extensions` directly (or with `AddFenceRenderer`) takes effect on
+  the next render, as with any other extension.
+- **Failures.** When the factory throws (or returns a control that already has a parent), the block
+  renders as an ordinary code block and the exception is logged as a warning through Avalonia's
+  logger (area `Control`), so one faulty block never takes the rest of the document down.
+- **Styling.** The control is written inside a `Border` with the `markdown-custom-fence` and
+  `markdown-fence-<language>` classes (the language in lower case, e.g. `markdown-fence-chart`);
+  see [Theming](theming.md#core).
+- **Selection.** The `Border` is selected as a whole and copied as the block's fenced source
+  (```` ```chart {height=200} ```` … ```` ``` ````), as Mermaid diagrams are. To copy something
+  else, set [`MarkdownSelection.CopyText`](#content-that-is-not-text) on the control the factory
+  returns; set it to `null` to leave the control out of selection.
+
+A fence renderer is itself an `IMarkViewExtension` — `new FenceRendererExtension("chart", factory)`
+— so it can be added to an `Extensions` list like any other extension.
+
+### Following the theme
+
+A control styled with `DynamicResource` follows light/dark switches on its own. When the control
+bakes colours in (a chart drawn to a bitmap, say), rebuild them with
+[`ThemeTracking.ReapplyOnThemeChange`](#content-that-depends-on-the-theme), from the factory:
+
+```csharp
+viewer.UseFenceRenderer("chart", (code, info) =>
+{
+    var image = new Image();
+    void Bake() => image.Source = MyChart.Render(code,
+        isDark: Application.Current?.ActualThemeVariant == ThemeVariant.Dark);
+    Bake();
+    ThemeTracking.ReapplyOnThemeChange(image, Bake);
+    return image;
+});
+```
+
 ## IMarkViewExtension
 
 ```csharp

@@ -46,6 +46,7 @@ Non-text content is copied as a text equivalent:
 | Inline math (`MarkView.Avalonia.Math`) | With the surrounding text | Its source between its own delimiters: `$...$`, `\(...\)`, or `\[...\]` within a line |
 | Display math (`MarkView.Avalonia.Math`) | As a whole block | Its source between `$$` lines, or `\[` and `\]` lines |
 | Mermaid diagram (`MarkView.Avalonia.Mermaid`) | As a whole block | Its source in a ```` ```mermaid ```` fence |
+| Control of a [fence renderer](custom-extensions.md#rendering-a-fence-language-as-your-own-control) | As a whole block | Its source in its fence, or the control's own `MarkdownSelection.CopyText` |
 
 Hidden content is not selectable: the body of a collapsed [foldable alert](configuration.md#alert-blocks) (`> [!NOTE]-`) or [details block](configuration.md#html-details-blocks) (`<details>`) is skipped by hit-testing, highlighting and copy (`Ctrl+A` then `Ctrl+C` copies the text around it) until it is expanded. The same applies to any block a custom renderer hides with `IsVisible`. An alert's header and a details block's summary are not selectable; clicking one toggles its block instead of starting a selection.
 

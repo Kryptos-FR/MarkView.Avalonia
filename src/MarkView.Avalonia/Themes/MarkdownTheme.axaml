@@ -139,6 +139,11 @@
     <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeBlockForeground}" />
   </Style>
 
+  <!-- Fenced code blocks rendered as an application's own control (FenceRendererExtension) -->
+  <Style Selector="Border.markdown-custom-fence">
+    <Setter Property="Margin" Value="0,4" />
+  </Style>
+
   <!-- Code block toolbar (language label and copy button above the code) -->
   <Style Selector="StackPanel.markdown-code-container">
     <Setter Property="Margin" Value="0,4" />

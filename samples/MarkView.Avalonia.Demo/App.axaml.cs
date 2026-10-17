@@ -1,6 +1,10 @@
+using System.Globalization;
+
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 
 using Markdig;
 using Markdig.Extensions.Tables;
@@ -45,6 +49,10 @@ public class App : Application
         MarkdownViewerDefaults.Extensions.AddMermaid();
         MarkdownViewerDefaults.Extensions.AddMath();
 
+        // Global fence renderer — every ```palette block renders as a row of colour swatches,
+        // sized by an optional argument after the language (```palette size=24)
+        MarkdownViewerDefaults.Extensions.AddFenceRenderer("palette", (code, info) => CreatePalette(code, info));
+
         // Global link handler — handles external links for every MarkdownViewer in the app
         MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>(OnLinkClicked);
 
@@ -72,6 +80,43 @@ public class App : Application
 
         base.OnFrameworkInitializationCompleted();
         return;
+
+        // Returns null for anything that is not a list of colours, so the block shows as code instead.
+        static Control? CreatePalette(string code, string info)
+        {
+            var size = SwatchSize(info);
+            var swatches = new WrapPanel();
+            foreach (var name in code.Split([' ', ',', '\n'], StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!Color.TryParse(name, out var color))
+                    return null;
+                var swatch = new Border
+                {
+                    Width = size,
+                    Height = size,
+                    Margin = new Thickness(0, 0, size / 6, size / 6),
+                    CornerRadius = new CornerRadius(4),
+                    Background = new SolidColorBrush(color),
+                };
+                ToolTip.SetTip(swatch, name);
+                swatches.Children.Add(swatch);
+            }
+            return swatches;
+        }
+
+        // Reads "size=N" from the words after the language in the info string ("palette size=24"),
+        // keeping the default for a missing or out-of-range value.
+        static double SwatchSize(string info)
+        {
+            foreach (var argument in info.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1))
+            {
+                if (argument.StartsWith("size=", StringComparison.OrdinalIgnoreCase)
+                    && double.TryParse(argument["size=".Length..], NumberStyles.Float, CultureInfo.InvariantCulture, out var size)
+                    && size is >= 8 and <= 128)
+                    return size;
+            }
+            return 48;
+        }
 
         static void OnLinkClicked(MarkdownViewer sender, Rendering.LinkClickedEventArgs e)
         {
