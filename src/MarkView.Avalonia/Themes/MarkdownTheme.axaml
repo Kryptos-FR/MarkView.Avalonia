@@ -268,7 +268,7 @@
   <Style Selector="Border.markdown-table-header">
     <Setter Property="Background" Value="#20808080" />
   </Style>
-  <Style Selector="Border.markdown-table-header > StackPanel > TextBlock">
+  <Style Selector="Border.markdown-table-header > StackPanel > :is(TextBlock)">
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
 
