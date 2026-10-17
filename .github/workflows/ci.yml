@@ -83,6 +83,9 @@ jobs:
           DRAFT: ${{ github.event.pull_request.draft }}
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           BASE_REF: ${{ github.base_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
           SHARED: ${{ steps.filter.outputs.shared }}
           CORE: ${{ steps.filter.outputs.core }}
           MATH: ${{ steps.filter.outputs.math }}
@@ -135,7 +138,13 @@ jobs:
                 if [ "$SYNTAX" = "true" ]; then list+=("MarkView.Avalonia.SyntaxHighlighting.Tests"); fi
                 mutation_projects=$(printf '%s\n' "${list[@]}" | jq -R . | jq -cs 'map(select(. != ""))')
               fi
-              if [ "$full" = false ]; then since="origin/$BASE_REF"; fi
+              if [ "$full" = false ]; then
+                # In a stack of pull requests, github.base_ref is the stack's base (main) for every
+                # pull request in it, so diffing against it would mutate the whole stack below. The
+                # pull request's own base branch is only in the API.
+                own_base=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq .base.ref || true)
+                since="origin/${own_base:-$BASE_REF}"
+              fi
             fi
           fi
 
