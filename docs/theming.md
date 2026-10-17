@@ -159,8 +159,11 @@ var gitHub = new StyleInclude((Uri?)null)
     Source = new Uri("avares://MarkView.Avalonia/Themes/GitHubTheme.axaml"),
 };
 var styles = Application.Current!.Styles;
+// A StyleInclude written in App.axaml is compiled into the theme's own Styles, so look the default
+// theme up by one of its resources rather than by type or Source.
+var markdownTheme = styles.First(s => s.TryGetResource("MarkdownCodeBlockBackground", ThemeVariant.Dark, out _));
 // Right after MarkdownTheme.axaml, so the application's own styles keep winning
-styles.Insert(styles.IndexOf(markdownThemeInclude) + 1, gitHub);
+styles.Insert(styles.IndexOf(markdownTheme) + 1, gitHub);
 // ... and back to the default look:
 styles.Remove(gitHub);
 ```
