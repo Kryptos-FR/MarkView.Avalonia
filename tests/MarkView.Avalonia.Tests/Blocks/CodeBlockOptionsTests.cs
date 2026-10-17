@@ -122,7 +122,9 @@ public class CodeBlockOptionsTests
 
         var (_, numbers, code) = LineNumbered(border.Child!);
         Assert.Equal("1\n2\n3", numbers.Text);
-        Assert.Equal("var x = 1;\nvar y = 2;\nvar z = 3;", CodeText(code));
+        // A code block's lines are LineBreak inlines, which plain text writes as the platform's line ending.
+        var nl = Environment.NewLine;
+        Assert.Equal($"var x = 1;{nl}var y = 2;{nl}var z = 3;", CodeText(code));
         Assert.Equal(TextWrapping.NoWrap, code.TextWrapping);
         Assert.Equal(double.PositiveInfinity, border.MaxHeight);
         Assert.Same(code, CodeBlockToolbar.FindCode(border));
@@ -397,7 +399,9 @@ public class CodeBlockOptionsTests
 
         viewer.SelectAll();
 
-        Assert.Equal("Intro\nvar x = 1;\nvar y = 2;\nvar z = 3;\n• item\nnested\nOutro", viewer.GetSelectedText());
+        // Blocks are joined by '\n'; the lines inside a code block keep the platform's line ending.
+        var nl = Environment.NewLine;
+        Assert.Equal($"Intro\nvar x = 1;{nl}var y = 2;{nl}var z = 3;\n• item\nnested\nOutro", viewer.GetSelectedText());
     }
 
     // ── Selection inside a block with a maximum height ───────────────────────

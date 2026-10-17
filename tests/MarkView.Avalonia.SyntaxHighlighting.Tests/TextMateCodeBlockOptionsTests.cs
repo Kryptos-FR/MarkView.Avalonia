@@ -105,6 +105,7 @@ public class TextMateCodeBlockOptionsTests
 
         viewer.SelectAll();
 
-        Assert.Equal("Intro\npublic class Foo { }\nvar x = 1;\nOutro", viewer.GetSelectedText());
+        // Blocks are joined by '\n'; the lines inside a code block keep the platform's line ending.
+        Assert.Equal($"Intro\npublic class Foo {{ }}{Environment.NewLine}var x = 1;\nOutro", viewer.GetSelectedText());
     }
 }
