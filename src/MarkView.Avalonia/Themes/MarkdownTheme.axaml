@@ -30,6 +30,10 @@
           <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#EF4444</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#1AEF4444</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownMarkedBackground">#5C4B00</SolidColorBrush>
+          <!-- HTML <kbd>: text 15.9:1 on the key; border 3.8:1 on the key, 4.6:1 on black -->
+          <SolidColorBrush x:Key="MarkdownKbdBackground">#151B23</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdForeground">#F0F6FC</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBorder">#6E7681</SolidColorBrush>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#F3F3F3</SolidColorBrush>
@@ -55,6 +59,10 @@
           <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#DC2626</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#FEF2F2</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownMarkedBackground">#FFFF00</SolidColorBrush>
+          <!-- HTML <kbd>: text 14.8:1 on the key; border 3.2:1 on the key, 3.5:1 on white -->
+          <SolidColorBrush x:Key="MarkdownKbdBackground">#F6F8FA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdForeground">#1F2328</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBorder">#818B98</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
       <!-- Code block copy button icons (16x16) -->
@@ -209,6 +217,27 @@
   <!-- Marked / highlighted text -->
   <Style Selector="Span.markdown-marked">
     <Setter Property="Background" Value="{DynamicResource MarkdownMarkedBackground}"/>
+  </Style>
+
+  <!-- HTML subset (UseHtmlSubset): <sub>/<sup> on a smaller font, <kbd> as a key -->
+  <Style Selector="Span.markdown-html-sub">
+    <Setter Property="FontSize" Value="11"/>
+  </Style>
+  <Style Selector="Span.markdown-html-sup">
+    <Setter Property="FontSize" Value="11"/>
+  </Style>
+  <Style Selector="Border.markdown-html-kbd">
+    <Setter Property="Background" Value="{DynamicResource MarkdownKbdBackground}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownKbdBorder}"/>
+    <Setter Property="BorderThickness" Value="1,1,1,2"/>
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="Padding" Value="4,0"/>
+    <Setter Property="Margin" Value="1,0"/>
+  </Style>
+  <Style Selector="Border.markdown-html-kbd > TextBlock">
+    <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownKbdForeground}"/>
   </Style>
 
   <!-- Citation -->

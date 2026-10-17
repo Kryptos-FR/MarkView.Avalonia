@@ -93,6 +93,15 @@ public class GitHubExtensionsTests : RenderTestBase
     }
 
     [Fact]
+    public void Details_and_the_html_subset_are_parsed()
+    {
+        var details = Assert.Single(Descendants<DetailsBlock>("<details>\n<summary><kbd>K</kbd></summary>\n\n<p align=\"center\"><b>x</b></p>\n\n</details>"));
+        Assert.NotNull(details.SummaryInline);
+        Assert.Single(details.Descendants<HtmlAlignedBlock>());
+        Assert.Single(details.Descendants<HtmlElementInline>(), e => e.Kind == HtmlElementKind.Bold);
+    }
+
+    [Fact]
     public void Ascii_smileys_and_grid_tables_are_not_parsed()
     {
         Assert.Empty(Descendants<EmojiInline>("Great :) job"));
