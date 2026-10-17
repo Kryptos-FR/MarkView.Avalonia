@@ -70,18 +70,28 @@ public class MathSelectionTests
         Assert.Equal(@"so \[x^2\] holds", SelectAllText(@"so \[x^2\] holds"));
     }
 
-    [AvaloniaFact]
-    public void Square_bracket_math_on_its_own_lines_is_copied_as_a_block_between_its_own_delimiters()
+    [AvaloniaTheory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public void Square_bracket_math_on_its_own_lines_is_copied_as_a_block_between_its_own_delimiters(string newLine)
     {
-        const string markdown = """
+        var markdown = """
             before
             \[
             x^2 +
             y^2
             \]
             after
-            """;
+            """.ReplaceLineEndings(newLine);
 
         Assert.Equal("before\n\\[\nx^2 +\ny^2\n\\]\nafter", SelectAllText(markdown));
+    }
+
+    [AvaloniaTheory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public void Square_bracket_math_spanning_lines_inside_a_paragraph_is_copied_with_line_feeds(string newLine)
+    {
+        Assert.Equal("a \\[x +\ny\\] b", SelectAllText($"a \\[x +{newLine}y\\] b"));
     }
 }

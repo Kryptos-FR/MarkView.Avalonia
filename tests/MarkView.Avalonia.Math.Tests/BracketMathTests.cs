@@ -107,16 +107,20 @@ public class BracketMathTests
         Assert.IsType<EmphasisInline>(inlines[1]);
     }
 
-    [Fact]
-    public void Parenthesis_formula_does_not_span_lines()
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public void Parenthesis_formula_does_not_span_lines(string newLine)
     {
-        Assert.Empty(Parse("\\(a\nb\\)").Descendants<BracketMathInline>());
+        Assert.Empty(Parse($"\\(a{newLine}b\\)").Descendants<BracketMathInline>());
     }
 
-    [Fact]
-    public void Backslash_before_a_line_break_does_not_let_a_parenthesis_formula_span_lines()
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public void Backslash_before_a_line_break_does_not_let_a_parenthesis_formula_span_lines(string newLine)
     {
-        Assert.Empty(Parse("\\(a\\\nb\\)").Descendants<BracketMathInline>());
+        Assert.Empty(Parse($"\\(a\\{newLine}b\\)").Descendants<BracketMathInline>());
     }
 
     [Fact]
@@ -205,17 +209,19 @@ public class BracketMathTests
         AssertFormulaBlock(Assert.Single(Render(@"\[x^2\]").Children));
     }
 
-    [AvaloniaFact]
-    public void Square_bracket_formula_on_several_lines_renders_as_one_block()
+    [AvaloniaTheory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public void Square_bracket_formula_on_several_lines_renders_as_one_block(string newLine)
     {
-        const string markdown = """
+        var markdown = """
             \[
             \begin{aligned}
             a &= b \\
               &= c
             \end{aligned}
             \]
-            """;
+            """.ReplaceLineEndings(newLine);
 
         AssertFormulaBlock(Assert.Single(Render(markdown).Children));
         var block = Assert.Single(Parse(markdown).Descendants<BracketMathBlock>());

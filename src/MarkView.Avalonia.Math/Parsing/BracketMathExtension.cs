@@ -106,7 +106,21 @@ internal sealed class BracketMathExtension : IMarkdownExtension
             Column = formula.Column,
             Lines = new StringLineGroup(1),
         };
-        block.Lines.Add(formula.Content);
+
+        // One line per source line, without its line ending, as Markdig stores the lines of a
+        // $$ block: the source is then joined by '\n' even when the document uses "\r\n".
+        var content = formula.Content;
+        var text = content.Text;
+        var lineStart = content.Start;
+        // Stryker disable once Equality : the content is trimmed, so its last character is never '\n'
+        for (var i = content.Start; i < content.End; i++)
+        {
+            if (text[i] != '\n')
+                continue;
+            block.Lines.Add(new StringSlice(text, lineStart, text[i - 1] == '\r' ? i - 2 : i - 1, NewLine.LineFeed));
+            lineStart = i + 1;
+        }
+        block.Lines.Add(new StringSlice(text, lineStart, content.End));
         return block;
     }
 }

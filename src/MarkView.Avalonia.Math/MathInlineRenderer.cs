@@ -21,7 +21,8 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
 {
     protected override void Write(AvaloniaRenderer renderer, MathInline obj)
     {
-        var source = obj.Content.ToString();
+        // A formula spanning lines inside a paragraph keeps the document's line endings.
+        var source = obj.Content.ToString().ReplaceLineEndings("\n");
 
         var image = new Image { Stretch = Stretch.None };
         image.Classes.Add("markdown-math-inline");
