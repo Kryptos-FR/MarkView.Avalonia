@@ -32,7 +32,8 @@ public class MarkdownSelectableTextBlock : TextBlock
     /// <inheritdoc />
     protected override Size MeasureOverride(Size availableSize)
     {
-        // Avalonia leaves inlines unstyled after a change to the application's styles.
+        // Avalonia leaves inlines unstyled after a change to the application's styles
+        // (https://github.com/AvaloniaUI/Avalonia/issues/22505).
         StyledInlinesTextBlock.ApplyInlineStyling(Inlines);
         return base.MeasureOverride(availableSize);
     }

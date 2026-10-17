@@ -16,6 +16,7 @@ namespace MarkView.Avalonia.Rendering;
 /// removes the styled values of every element below it, inlines included, and leaves each control to
 /// apply its styles again at its next measure. Inlines are never measured, so a <c>Run</c> styled as
 /// inline code or a link would keep none of its style. Measuring the text block applies them first.
+/// Remove once https://github.com/AvaloniaUI/Avalonia/issues/22505 is fixed.
 /// </remarks>
 internal sealed class StyledInlinesTextBlock : TextBlock
 {
