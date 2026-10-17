@@ -9,7 +9,7 @@ using Avalonia.Media;
 namespace MarkView.Avalonia.Rendering.Blocks;
 
 /// <summary>
-/// The fold indicator of a foldable alert's header: a triangle pointing right when collapsed and down
+/// The fold indicator of a foldable alert's header, and of an HTML details element's summary: a triangle pointing right when collapsed and down
 /// when expanded, drawn in the header's text colour and scaled with its font size.
 /// </summary>
 /// <remarks>

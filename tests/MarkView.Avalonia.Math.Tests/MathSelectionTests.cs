@@ -57,4 +57,41 @@ public class MathSelectionTests
 
         Assert.Equal($"$$\n{nested}\n$$", SelectAllText($"$$\n{nested}\n$$"));
     }
+
+    [AvaloniaFact]
+    public void Parenthesis_math_is_copied_between_its_own_delimiters()
+    {
+        Assert.Equal(@"Einstein said \(E=mc^2\) once.", SelectAllText(@"Einstein said \(E=mc^2\) once."));
+    }
+
+    [AvaloniaFact]
+    public void Square_bracket_math_within_a_line_is_copied_between_its_own_delimiters()
+    {
+        Assert.Equal(@"so \[x^2\] holds", SelectAllText(@"so \[x^2\] holds"));
+    }
+
+    [AvaloniaTheory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public void Square_bracket_math_on_its_own_lines_is_copied_as_a_block_between_its_own_delimiters(string newLine)
+    {
+        var markdown = """
+            before
+            \[
+            x^2 +
+            y^2
+            \]
+            after
+            """.ReplaceLineEndings(newLine);
+
+        Assert.Equal("before\n\\[\nx^2 +\ny^2\n\\]\nafter", SelectAllText(markdown));
+    }
+
+    [AvaloniaTheory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public void Square_bracket_math_spanning_lines_inside_a_paragraph_is_copied_with_line_feeds(string newLine)
+    {
+        Assert.Equal("a \\[x +\ny\\] b", SelectAllText($"a \\[x +{newLine}y\\] b"));
+    }
 }

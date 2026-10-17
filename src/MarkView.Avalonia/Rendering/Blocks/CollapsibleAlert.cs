@@ -9,10 +9,12 @@ using Avalonia.VisualTree;
 namespace MarkView.Avalonia.Rendering.Blocks;
 
 /// <summary>
-/// The fold state of a foldable alert (<c>&gt; [!KIND]-</c> / <c>&gt; [!KIND]+</c>). Clicking (tapping) the
-/// header, or pressing Enter or Space while it has focus, shows or hides the body. The alert's
+/// The fold state of a foldable alert (<c>&gt; [!KIND]-</c> / <c>&gt; [!KIND]+</c>), or of an HTML
+/// <c>&lt;details&gt;</c> element (see <see cref="DetailsBlockRenderer"/>). Clicking (tapping) the
+/// header, or pressing Enter or Space while it has focus, shows or hides the body. The block's
 /// <see cref="Border"/> carries the <c>:expanded</c> pseudo-class while the body is shown, and the
-/// header's chevron (<c>markdown-alert-chevron</c>) points right when collapsed and down when expanded.
+/// header's chevron (<c>markdown-alert-chevron</c> / <c>markdown-details-chevron</c>) points right when
+/// collapsed and down when expanded.
 /// </summary>
 internal sealed class CollapsibleAlert
 {
@@ -78,8 +80,8 @@ internal sealed class CollapsibleAlert
     public static CollapsibleAlert? Get(Border border) => border.GetValue(StateProperty);
 
     /// <summary>
-    /// Expands every collapsed alert that contains <paramref name="control"/>, so that it can be shown
-    /// (e.g. a heading navigated to by its anchor). Returns <c>true</c> when an alert was expanded.
+    /// Expands every collapsed alert or details element that contains <paramref name="control"/>, so that it
+    /// can be shown (e.g. a heading navigated to by its anchor). Returns <c>true</c> when one was expanded.
     /// </summary>
     public static bool ExpandAncestors(Control control)
     {

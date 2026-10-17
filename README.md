@@ -104,7 +104,25 @@ for the whole application with a style:
 <mv:MarkdownViewer ShowCodeBlockLanguage="False" ShowCodeBlockCopyButton="False" />
 ```
 
+Line numbers, wrapping long lines, and a maximum height past which a block scrolls inside itself
+are opt-in:
+
+```xml
+<mv:MarkdownViewer ShowCodeBlockLineNumbers="True" WrapCodeBlockLines="True" CodeBlockMaxHeight="400" />
+```
+
 See [Code block toolbar](docs/configuration.md#code-block-toolbar) for details.
+
+### Custom fenced blocks
+
+Render the fenced code blocks of a language as your own control, without writing a Markdig
+renderer. The factory gets the block's content and its info string:
+
+```csharp
+viewer.UseFenceRenderer("chart", (code, info) => new MyChart(code));   // ```chart blocks
+```
+
+See [Custom fenced blocks](docs/configuration.md#custom-fenced-blocks) for details.
 
 ### Using a custom Markdig pipeline
 
@@ -146,6 +164,7 @@ MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
 MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
 MarkdownViewerDefaults.Extensions.AddSvg();
 MarkdownViewerDefaults.Extensions.AddMermaid();
+MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new MyChart(code));
 ```
 
 Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an extension object shared between the defaults list and an instance list is only registered once per render.
@@ -159,7 +178,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Headings H1–H6 | CommonMark |
 | Bold, italic | CommonMark |
 | Inline code | CommonMark |
-| Fenced code blocks | CommonMark |
+| Fenced code blocks | CommonMark; any language can render as your own control ([custom fenced blocks](#custom-fenced-blocks)) |
 | Blockquotes | CommonMark |
 | Ordered and unordered lists | CommonMark, tight and loose |
 | Links and autolinks | CommonMark + extension |
@@ -182,8 +201,9 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Footnotes | `[^1]` |
 | CJK-friendly emphasis | parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation |
 | YAML front matter | `---` metadata block at the top of a document is parsed and hidden |
+| Collapsible details | HTML `<details>` / `<summary>`, as on GitHub (also `UseHtmlDetails()` on its own) |
 
-`UseSupportedExtensions()`, the previous default, enables the same features except alerts and footnotes, and adds subscript (`~text~`), superscript (`^text^`), underline (`++text++`), highlight (`==text==`) and grid tables.
+`UseSupportedExtensions()`, the previous default, enables the same features except alerts, footnotes and details, and adds subscript (`~text~`), superscript (`^text^`), underline (`++text++`), highlight (`==text==`) and grid tables.
 
 **Subscript is not available on top of `UseGitHubExtensions()`:** there `~text~` is always strikethrough, as on GitHub, even with `UseEmphasisExtras()`. For subscript, build the pipeline from `UseSupportedExtensions()` and add `UseAlertBlocks()` / `UseFootnotes()` if needed. See [Markdig Pipeline](docs/configuration.md#markdig-pipeline).
 
@@ -250,7 +270,7 @@ The extension inserts `SvgImageLoader` at the front of the image loader chain. R
 
 ### LaTeX Math (`MarkView.Avalonia.Math`)
 
-Renders `$...$` (inline) and `$$...$$` (block) LaTeX math using CSharpMath's SkiaSharp renderer — pure .NET, no browser or WebView required.
+Renders `$...$` and `\(...\)` (inline) and `$$...$$` and `\[...\]` (display) LaTeX math using CSharpMath's SkiaSharp renderer — pure .NET, no browser or WebView required. The bracket delimiters, which LLMs commonly emit, can be turned off with `viewer.UseMath(bracketDelimiters: false)`.
 
 ```bash
 dotnet add package MarkView.Avalonia.Math
@@ -330,6 +350,10 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-code-header` | Code block toolbar | `Border` |
 | `markdown-code-language` | Code block language label | `TextBlock` |
 | `markdown-code-copy` | Code block copy button | `Button` |
+| `markdown-code-line-numbers` | Code block line numbers | `TextBlock` |
+| `markdown-code-scroll` | Scrolls a code block taller than `CodeBlockMaxHeight` | `ScrollViewer` |
+| `markdown-custom-fence` | Control a fence renderer returned (`UseFenceRenderer`) | `Border` |
+| `markdown-fence-<language>` | The same, by fence language in lower case | `Border` |
 | `markdown-code-inline` | Inline code | `Border` |
 | `markdown-blockquote` | Blockquotes | `Border` |
 | `markdown-list` | Lists | `StackPanel` |
@@ -408,6 +432,18 @@ See [Accessibility](docs/accessibility.md).
 | Limitation | Detail |
 |---|---|
 | Anchor scroll is instant | `BringIntoView()` jumps without animation. Smooth scrolling is a future improvement. |
+
+## Versioning
+
+All five packages are released together under the same version, `12.MAJOR.MINOR`:
+
+| Part | Meaning |
+|---|---|
+| `12` | The Avalonia major version the packages are built for. It changes only with Avalonia's, so MarkView for Avalonia 13 will start at 13.0.0. |
+| `MAJOR` | Incremented for breaking changes: a removed or renamed API, or a change of behaviour that needs code changes. |
+| `MINOR` | Incremented for every other release: new features and fixes. |
+
+NuGet and update tools such as Dependabot read the version as `MAJOR.MINOR.PATCH`, so they treat a breaking release (12.3 → 12.4) as a minor update. To receive only compatible updates, use a floating version that fixes the second number, such as `12.4.*`, rather than `12.*`. The release notes of each breaking release list what changed and how to update.
 
 ## License
 

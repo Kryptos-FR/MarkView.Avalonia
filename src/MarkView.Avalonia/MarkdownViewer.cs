@@ -98,6 +98,25 @@ public partial class MarkdownViewer : ContentControl
         AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(ShowCodeBlockCopyButton), true);
 
     /// <summary>
+    /// Defines the <see cref="ShowCodeBlockLineNumbers"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> ShowCodeBlockLineNumbersProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(ShowCodeBlockLineNumbers));
+
+    /// <summary>
+    /// Defines the <see cref="WrapCodeBlockLines"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> WrapCodeBlockLinesProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(WrapCodeBlockLines));
+
+    /// <summary>
+    /// Defines the <see cref="CodeBlockMaxHeight"/> property.
+    /// </summary>
+    public static readonly StyledProperty<double> CodeBlockMaxHeightProperty =
+        AvaloniaProperty.Register<MarkdownViewer, double>(nameof(CodeBlockMaxHeight), double.PositiveInfinity,
+            validate: value => value >= 0);
+
+    /// <summary>
     /// Defines the <see cref="AreTaskListsInteractive"/> property.
     /// </summary>
     public static readonly StyledProperty<bool> AreTaskListsInteractiveProperty =
@@ -191,6 +210,41 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets whether code blocks show the number of each line in a gutter next to the code.
+    /// The numbers are not part of the code: text selection and the copy button never include them.
+    /// Defaults to <c>false</c>. Can be set from a style, e.g. for every viewer of an application.
+    /// </summary>
+    public bool ShowCodeBlockLineNumbers
+    {
+        get => GetValue(ShowCodeBlockLineNumbersProperty);
+        set => SetValue(ShowCodeBlockLineNumbersProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether code blocks wrap lines longer than the block's width. When <c>false</c>
+    /// (the default) code lines never wrap and run past the block's right edge, so they can only be
+    /// read in full when the viewer scrolls horizontally.
+    /// Can be set from a style, e.g. for every viewer of an application.
+    /// </summary>
+    public bool WrapCodeBlockLines
+    {
+        get => GetValue(WrapCodeBlockLinesProperty);
+        set => SetValue(WrapCodeBlockLinesProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum height of a code block, its toolbar excluded. A taller block keeps
+    /// this height and scrolls vertically inside itself; once it reaches either end, the mouse wheel
+    /// scrolls the document again. Defaults to <see cref="double.PositiveInfinity"/> (no limit).
+    /// Can be set from a style, e.g. for every viewer of an application.
+    /// </summary>
+    public double CodeBlockMaxHeight
+    {
+        get => GetValue(CodeBlockMaxHeightProperty);
+        set => SetValue(CodeBlockMaxHeightProperty, value);
+    }
+
+    /// <summary>
     /// Gets or sets whether task-list items (<c>- [ ]</c> / <c>- [x]</c>) render a checkbox the user can
     /// toggle, raising <see cref="TaskToggled"/>. When <c>false</c> (the default) they render a static
     /// check glyph. The viewer never rewrites <see cref="Markdown"/> itself: the host writes the change
@@ -279,6 +333,9 @@ public partial class MarkdownViewer : ContentControl
         ImageResizeModeProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ShowCodeBlockLanguageProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ShowCodeBlockCopyButtonProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        ShowCodeBlockLineNumbersProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        WrapCodeBlockLinesProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        CodeBlockMaxHeightProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         AreTaskListsInteractiveProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
@@ -386,7 +443,7 @@ public partial class MarkdownViewer : ContentControl
         RenderMarkdown();
     }
 
-    private void RenderMarkdown()
+    internal void RenderMarkdown()
     {
         var markdown = _sourceMarkdown ?? Markdown;
         _renderedMarkdown = markdown;
@@ -414,6 +471,9 @@ public partial class MarkdownViewer : ContentControl
             ImageResizeMode = ImageResizeMode,
             ShowCodeBlockLanguage = ShowCodeBlockLanguage,
             ShowCodeBlockCopyButton = ShowCodeBlockCopyButton,
+            ShowCodeBlockLineNumbers = ShowCodeBlockLineNumbers,
+            WrapCodeBlockLines = WrapCodeBlockLines,
+            CodeBlockMaxHeight = CodeBlockMaxHeight,
             AreTaskListsInteractive = AreTaskListsInteractive,
         };
         renderer.LinkClicked += OnLinkClicked;
@@ -574,8 +634,8 @@ public partial class MarkdownViewer : ContentControl
                     var text = MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!, out var embeddedText);
                     Register(layer, new IndexEntry(tb, text, "\n", embeddedText), ref marker);
                     break;
-                case Border { Child: TextBlock codeTb } border
-                    when border.Classes.Contains("markdown-code-block"):
+                case Border border when border.Classes.Contains("markdown-code-block")
+                    && CodeBlockToolbar.FindCode(border) is { } codeTb:
                     Register(layer, new IndexEntry(codeTb,
                         codeTb.Inlines != null
                             ? MarkdownSelectableTextBlock.ExtractPlainText(codeTb.Inlines)
@@ -872,7 +932,7 @@ public partial class MarkdownViewer : ContentControl
         if (!_anchors.TryGetValue(anchorId, out var control))
             return;
 
-        // A heading inside a collapsed alert has no position until the alert is expanded and laid out.
+        // A heading inside a collapsed alert or details element has no position until it is expanded and laid out.
         if (CollapsibleAlert.ExpandAncestors(control))
             control.UpdateLayout();
 

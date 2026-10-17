@@ -117,7 +117,7 @@ If rendering fails, the extension falls back to a plain-text block containing th
 **Package:** `MarkView.Avalonia.Math`
 **[README](../src/MarkView.Avalonia.Math/README.md)**
 
-Renders `$...$` (inline) and `$$...$$` (block) LaTeX math via CSharpMath's SkiaSharp renderer.
+Renders `$...$` and `\(...\)` (inline) and `$$...$$` and `\[...\]` (display) LaTeX math via CSharpMath's SkiaSharp renderer.
 
 ### Activation
 
@@ -127,9 +127,24 @@ viewer.UseMath();
 MarkdownViewerDefaults.Extensions.AddMath();
 MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
     .UseGitHubExtensions()
-    .UseMathematics()
+    .UseMathematics()            // $...$ and $$...$$
+    .UseMathBracketDelimiters()  // \(...\) and \[...\]
     .Build();
 ```
+
+### Bracket delimiters
+
+`\(...\)` and `\[...\]`, which LLMs emit constantly, are enabled by `UseMath()` along with the dollar
+delimiters (`viewer.UseMath(bracketDelimiters: false)` leaves them out). `\(...\)` stays on one line;
+`\[...\]` may span lines, and renders as a block when it has its lines to itself, even right under a
+line of text, or inline when it shares a line with text. Code spans and code blocks are not affected.
+
+Since CommonMark reads `\(` and `\[` as escaped punctuation, enabling them changes how such escapes
+render, but only in a viewer with math enabled: an opening glued to a letter or digit (`arr\[i\]`),
+left unclosed, or around nothing (`\(\)`) is still an escape. As the formula's lines are first read
+as a paragraph, a blank line or a line that starts a list item or heading inside it leaves it
+unclosed. See the [package README](../src/MarkView.Avalonia.Math/README.md#latex-bracket-delimiters)
+for details.
 
 ### Theme awareness
 
@@ -152,4 +167,4 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 MarkdownViewerDefaults.Extensions.AddMath();
 ```
 
-`MermaidBlockRenderer` is inserted immediately before the first renderer that already accepts a `FencedCodeBlock` (rather than always at index 0 — this keeps registration order-independent relative to sibling extensions like `MarkView.Avalonia.Math`'s `MathBlockRenderer`) and intercepts every `FencedCodeBlock`. Mermaid blocks are rendered as diagrams; all other fenced blocks pass through to `TextMateCodeBlockRenderer` (or the default `CodeBlockRenderer` if the SyntaxHighlighting extension is not active).
+`MermaidBlockRenderer` is inserted immediately before the first renderer that already accepts a `FencedCodeBlock` (rather than always at index 0 — this keeps registration order-independent relative to sibling extensions like `MarkView.Avalonia.Math`'s `MathBlockRenderer`) and intercepts every `FencedCodeBlock`. Mermaid blocks are rendered as diagrams; all other fenced blocks pass through to `TextMateCodeBlockRenderer` (or the default `CodeBlockRenderer` if the SyntaxHighlighting extension is not active). A [fence renderer](custom-extensions.md#rendering-a-fence-language-as-your-own-control) (`UseFenceRenderer`) is placed ahead of all of them when rendering starts, so it wins for its language whatever the registration order.

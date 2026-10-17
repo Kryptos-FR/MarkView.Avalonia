@@ -54,6 +54,25 @@ public class AvaloniaRenderer : RendererBase
     public bool ShowCodeBlockCopyButton { get; set; } = true;
 
     /// <summary>
+    /// Whether code blocks show the number of each line in a gutter next to the code. The numbers
+    /// are not part of the code: text selection and the copy button never include them.
+    /// Defaults to <c>false</c>.
+    /// </summary>
+    public bool ShowCodeBlockLineNumbers { get; set; }
+
+    /// <summary>
+    /// Whether code blocks wrap lines longer than the block's width instead of letting them run
+    /// past it. Defaults to <c>false</c>.
+    /// </summary>
+    public bool WrapCodeBlockLines { get; set; }
+
+    /// <summary>
+    /// The maximum height of a code block (toolbar excluded); a taller block scrolls vertically
+    /// inside itself. Defaults to <see cref="double.PositiveInfinity"/> (no limit).
+    /// </summary>
+    public double CodeBlockMaxHeight { get; set; } = double.PositiveInfinity;
+
+    /// <summary>
     /// When <c>true</c>, task-list items render a clickable checkbox that raises
     /// <see cref="TaskToggled"/> when toggled; otherwise a static check glyph.
     /// Defaults to <c>false</c>.
@@ -124,6 +143,12 @@ public class AvaloniaRenderer : RendererBase
             ObjectRenderers.Remove(existing);
         ObjectRenderers.Add(replacement);
     }
+
+    /// <summary>
+    /// Factories of the controls that replace fenced code blocks, by language (case-insensitive).
+    /// Filled by <see cref="FenceRendererExtension"/>.
+    /// </summary>
+    internal Dictionary<string, FenceRendererFactory> FenceRenderers { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Raised when a hyperlink is clicked.
@@ -199,8 +224,30 @@ public class AvaloniaRenderer : RendererBase
         _anchors.Clear();
         _headingEntries.Clear();
         SlugGenerator.Reset();
+        PlaceCustomFenceRenderer();
         Write(markdownObject);
         return RootPanel;
+    }
+
+    // Placed when rendering starts, after every extension and pipeline.Setup() have installed their
+    // renderers, so a fence renderer wins over the other renderers of fenced code blocks (Mermaid,
+    // syntax highlighting, the plain code block) whatever order they were registered in. A renderer
+    // of a narrower type (MathBlock) that already precedes them keeps its place.
+    private void PlaceCustomFenceRenderer()
+    {
+        if (FenceRenderers.Count == 0)
+            return;
+
+        var insertAt = ObjectRenderers.Count;
+        for (var i = 0; i < ObjectRenderers.Count; i++)
+        {
+            if (ObjectRenderers[i].Accept(this, typeof(FencedCodeBlock)))
+            {
+                insertAt = i;
+                break;
+            }
+        }
+        ObjectRenderers.Insert(insertAt, new CustomFenceRenderer());
     }
 
     /// <summary>
@@ -222,6 +269,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new AlertBlockRenderer());
         ObjectRenderers.Add(new QuoteBlockRenderer());
         ObjectRenderers.Add(new HtmlBlockRenderer());
+        ObjectRenderers.Add(new DetailsBlockRenderer());
         ObjectRenderers.Add(new TableRenderer());
         ObjectRenderers.Add(new FootnoteGroupRenderer());
         ObjectRenderers.Add(new FigureRenderer());

@@ -76,6 +76,43 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         ---
 
+        ## Collapsible Details
+
+        HTML `<details>` / `<summary>` blocks fold like on GitHub (part of `UseGitHubExtensions()`, or `UseHtmlDetails()` on its own). Separate the tags from the markdown inside with blank lines:
+
+        <details>
+        <summary>Click to expand</summary>
+
+        The body is ordinary **markdown**, hidden from selection and copy until expanded:
+
+        ```bash
+        dotnet add package MarkView.Avalonia
+        ```
+
+        <details>
+        <summary>Details can nest</summary>
+
+        An inner block, collapsed again.
+
+        </details>
+
+        </details>
+
+        <details open>
+        <summary>Starts expanded with <code>&lt;details open&gt;</code></summary>
+
+        Click the summary, or focus it and press Enter or Space, to fold it. Lists work too, as long as
+        a blank line separates them from the tags:
+
+        - one blank line after `</summary>`
+        - and one before `</details>`
+
+        Without them, the list belongs to the HTML block and shows as plain text, as on GitHub.
+
+        </details>
+
+        ---
+
         ## Abbreviations
 
         Define abbreviations once; every occurrence in the document gets a tooltip automatically.
@@ -217,6 +254,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isLightTheme;
     private bool _isCustomStyled;
     private bool _isColorExtensionSelected;
+    private bool _isCodeHeightLimited;
 
     public int SelectedIndex
     {
@@ -237,6 +275,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Application.Current!.RequestedThemeVariant = value ? ThemeVariant.Light : ThemeVariant.Dark;
         }
     }
+
+    /// <summary>Caps code blocks at <see cref="LimitedCodeBlockHeight"/>, past which they scroll.</summary>
+    public bool IsCodeHeightLimited
+    {
+        get => _isCodeHeightLimited;
+        set
+        {
+            if (SetField(ref _isCodeHeightLimited, value))
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CodeBlockMaxHeight)));
+        }
+    }
+
+    private const double LimitedCodeBlockHeight = 160;
+
+    public double CodeBlockMaxHeight => _isCodeHeightLimited ? LimitedCodeBlockHeight : double.PositiveInfinity;
 
     public bool IsCustomStyled
     {

@@ -3,8 +3,8 @@
     <RootNamespace>MarkView.Avalonia.Svg</RootNamespace>
     <IsPackable>true</IsPackable>
     <PackageId>MarkView.Avalonia.Svg</PackageId>
-    <Description>SVG image rendering extension for MarkView.Avalonia.</Description>
-    <PackageTags>avalonia;markdown;svg</PackageTags>
+    <Description>SVG image rendering extension for MarkView.Avalonia, the markdown viewer for Avalonia UI 12.</Description>
+    <PackageTags>avalonia;avalonia12;markdown;svg</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>

@@ -3,8 +3,8 @@
     <RootNamespace>MarkView.Avalonia.Math</RootNamespace>
     <IsPackable>true</IsPackable>
     <PackageId>MarkView.Avalonia.Math</PackageId>
-    <Description>LaTeX math rendering extension for MarkView.Avalonia.</Description>
-    <PackageTags>avalonia;markdown;latex;math;csharpmath</PackageTags>
+    <Description>LaTeX math rendering extension for MarkView.Avalonia, the markdown viewer for Avalonia UI 12.</Description>
+    <PackageTags>avalonia;avalonia12;markdown;latex;math;csharpmath</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>

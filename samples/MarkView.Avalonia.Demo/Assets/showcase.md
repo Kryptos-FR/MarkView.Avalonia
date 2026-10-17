@@ -16,6 +16,7 @@
 - [SVG Image](#svg-image)
 - [Mermaid Diagram](#mermaid-diagram)
 - [Math](#math)
+- [Custom Fenced Blocks](#custom-fenced-blocks)
 
 ---
 
@@ -127,6 +128,34 @@ data_uri = f"data:image/svg+xml;base64,{encoded}"
 print(data_uri)
 ```
 
+### A long block
+
+Turn on **Line numbers**, **Wrap code** or **Short code blocks** above to see the code block options.
+
+```csharp
+// A long line, which runs past the block unless "Wrap code" is on: var viewer = new MarkdownViewer { ShowCodeBlockLineNumbers = true, WrapCodeBlockLines = true, CodeBlockMaxHeight = 400 };
+public static class Fibonacci
+{
+    public static IEnumerable<long> Sequence()
+    {
+        long previous = 0, current = 1;
+        while (true)
+        {
+            yield return previous;
+            (previous, current) = (current, previous + current);
+        }
+    }
+
+    public static long Nth(int n) => Sequence().Skip(n).First();
+
+    public static void Main()
+    {
+        foreach (var number in Sequence().Take(10))
+            Console.WriteLine(number);
+    }
+}
+```
+
 ---
 
 ## Bitmap Image
@@ -191,6 +220,40 @@ Block math renders as its own centred element:
 $$
 \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n = e = \sum_{k=0}^{\infty} \frac{1}{k!}
 $$
+
+The LaTeX bracket delimiters that LLMs tend to write work too: the roots of \(ax^2 + bx + c = 0\) are
+\[
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+\]
+for any \(a \neq 0\).
+
+---
+
+## Custom Fenced Blocks
+
+An application can render the fenced blocks of a language as its own control, without writing a
+Markdig renderer. This demo registers `palette`, which shows a list of colours as swatches:
+
+```palette
+#3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
+```
+
+The factory also receives the rest of the info string, so a fence can take arguments. Here
+`size=24` makes the swatches smaller:
+
+```palette size=24
+#3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
+```
+
+````markdown
+```palette
+#3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
+```
+
+```palette size=24
+#3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
+```
+````
 
 ---
 

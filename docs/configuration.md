@@ -8,10 +8,13 @@
 | `Source` | `Uri?` | `null` | URI of a markdown document to load and render. Takes precedence over `Markdown` when set. Supports `avares://`, `file://`, and `http/https`. |
 | `Pipeline` | `MarkdownPipeline?` | `null` | The Markdig pipeline. `null` falls back to `MarkdownViewerDefaults.Pipeline`, or the built-in default (`UseGitHubExtensions`). |
 | `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
-| `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. |
+| `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. See also [Custom fenced blocks](#custom-fenced-blocks). |
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
 | `ShowCodeBlockLanguage` | `bool` | `true` | Shows the language of a fenced code block (e.g. `csharp`) in a toolbar above the code. See [Code block toolbar](#code-block-toolbar). |
 | `ShowCodeBlockCopyButton` | `bool` | `true` | Shows a button in a toolbar above each code block that copies the code to the clipboard. See [Code block toolbar](#code-block-toolbar). |
+| `ShowCodeBlockLineNumbers` | `bool` | `false` | Shows the number of each line in a gutter next to the code. Selection and copy never include the numbers. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
+| `WrapCodeBlockLines` | `bool` | `false` | Wraps code lines longer than the block's width instead of letting them run past it. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
+| `CodeBlockMaxHeight` | `double` | `PositiveInfinity` | Maximum height of a code block (toolbar excluded); a taller block scrolls vertically inside itself. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `AreTaskListsInteractive` | `bool` | `false` | Renders task-list items as checkboxes the user can toggle, raising `TaskToggled`. Setting it re-renders the document. See [Interactive task lists](#interactive-task-lists). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
@@ -26,7 +29,7 @@ The pipeline controls which Markdig extensions parse the input markdown. Build o
 viewer.Pipeline = new MarkdownPipelineBuilder()
     .UseGitHubExtensions()      // what GitHub renders: tables, task lists, ~~strike~~ and ~strike~,
                                 // autolinks, emoji shortcodes, alerts, footnotes, CJK-friendly emphasis,
-                                // YAML front matter (hidden). The viewer's default pipeline.
+                                // YAML front matter (hidden), <details> blocks. The viewer's default pipeline.
     .UseAbbreviations()         // *[HTML]: HyperText Markup Language
     .UseCitations()             // ""quoted text""
     .UseFigures()               // ^^^ figure blocks
@@ -54,8 +57,9 @@ MarkView.Avalonia has two helpers that enable a base set of extensions. Both tak
 - `Footnotes` — `[^1]` references and their notes
 - `CjkFriendlyEmphasis` — parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation
 - `YamlFrontMatter` — `---` metadata block at the top of a document is parsed and hidden, not shown as garbled text
+- `HtmlDetails` — HTML `<details>` / `<summary>` blocks fold as on GitHub (see [HTML details blocks](#html-details-blocks)); MarkView's `UseHtmlDetails()` adds them to another pipeline
 
-Math and Mermaid diagrams, which GitHub also renders, come from their own packages (`UseMath()`, `UseMermaid()`).
+Math (`$...$`, and the `\(...\)`/`\[...\]` delimiters LLMs emit) and Mermaid diagrams, which GitHub also renders, come from their own packages (`UseMath()`, `UseMermaid()`).
 
 > [!NOTE]
 > **Subscript and `UseGitHubExtensions()` don't mix.** `~text~` is either strikethrough (GitHub) or subscript (Markdig's emphasis extras), and with `UseGitHubExtensions()` it is always strikethrough, even if `UseEmphasisExtras()` is added after it. Adding `UseEmphasisExtras()` still gives superscript `^`, underline `++` and highlight `==`.
@@ -70,7 +74,7 @@ Math and Mermaid diagrams, which GitHub also renders, come from their own packag
 >     .Build();
 > ```
 
-`UseSupportedExtensions()` was the default before `UseGitHubExtensions()`. It enables the other emphasis extras and grid tables, but not alerts or footnotes:
+`UseSupportedExtensions()` was the default before `UseGitHubExtensions()`. It enables the other emphasis extras and grid tables, but not alerts, footnotes or details blocks:
 
 - `EmphasisExtras` — strikethrough `~~`, subscript `~`, superscript `^`, underline `++`, highlight `==`
 - `AutoLinks`, `PipeTables`, `TaskLists`, `CjkFriendlyEmphasis`, `YamlFrontMatter` and emoji shortcodes, as above
@@ -124,6 +128,32 @@ The default pipeline renders GitHub alerts. MarkView's `UseExtendedAlertBlocks()
 - The body of a collapsed alert cannot be selected or copied. `ScrollToAnchor` (and so in-document links and table-of-contents navigation) expands the collapsed alerts around a heading before scrolling to it.
 - The extras need `UseExtendedAlertBlocks()`; a pipeline built with only Markdig's `UseAlertBlocks()`/`UseAdvancedExtensions()` parses plain alerts. The two can be combined in either order. See [Theming](theming.md#alert-blocks) for the style classes.
 
+### HTML details blocks
+
+The default pipeline renders HTML `<details>` / `<summary>` elements as collapsible blocks, as GitHub does. To add them to a pipeline built from something else, call MarkView's `UseHtmlDetails()`:
+
+```markdown
+<details>
+<summary>Click to expand</summary>
+
+Ordinary **markdown**: paragraphs, lists, code blocks, headings, even nested `<details>`.
+
+</details>
+
+<details open>
+<summary>Starts expanded</summary>
+
+Shown until the summary is clicked.
+
+</details>
+```
+
+- Click the summary, or focus it and press Enter or Space, to show or hide the body. It starts hidden unless the tag has the `open` attribute. Without a `<summary>`, the summary reads "Details", as in browsers.
+- Leave a blank line between the tags and the markdown inside: as on GitHub, text on lines right next to the tags belongs to the same HTML block and is not parsed as markdown. MarkView shows such text as plain text (tags removed, entities decoded, `<br>` as a line break), and the summary as plain text too: `<summary><b>Title</b></summary>` reads "Title", not bold.
+- A `<details>` without its `</details>` (or the reverse), or one whose closing tag is in another container (e.g. opened outside a list and closed inside it), is left as raw HTML, which the viewer doesn't render, as before. Other HTML blocks are unchanged too, inside a details block or not.
+- As with [foldable alerts](#alert-blocks), the body of a collapsed details block cannot be selected or copied, and `ScrollToAnchor` expands the details blocks around a heading before scrolling to it. See [Theming](theming.md#details-blocks) for the style classes.
+- A pipeline that disables HTML (Markdig's `DisableHtml()`) has no details blocks either.
+
 ### Convenience extension methods
 
 For simple use cases, call a single method instead of building the pipeline manually:
@@ -154,6 +184,7 @@ MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
 MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
 MarkdownViewerDefaults.Extensions.AddSvg();
 MarkdownViewerDefaults.Extensions.AddMermaid();
+MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new MyChart(code));
 ```
 
 **Priority rules:**
@@ -161,6 +192,7 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 1. `viewer.Pipeline` is used if set; otherwise `MarkdownViewerDefaults.Pipeline`; otherwise the built-in default.
 2. `MarkdownViewerDefaults.Extensions` are registered first, then `viewer.Extensions`.
 3. If the same extension object appears in both lists it is registered only once (reference equality check).
+4. For [fence renderers](#custom-fenced-blocks), the last one registered for a language wins, so a viewer's own overrides a default one.
 
 ## Source property
 
@@ -310,7 +342,7 @@ viewer.ScrollToAnchor("fn-1");            // matches footnote [^1]
 
 Anchors are generated from heading text using GitHub-compatible slug rules (lowercase, spaces to hyphens, non-alphanumeric stripped). Headings with identical slugs are disambiguated with a numeric suffix (`-1`, `-2`, …).
 
-A heading inside a collapsed [foldable alert](#alert-blocks) is still listed in `TableOfContents`; scrolling to its anchor expands the alert first.
+A heading inside a collapsed [foldable alert](#alert-blocks) or [details block](#html-details-blocks) is still listed in `TableOfContents`; scrolling to its anchor expands it first.
 
 ## Table of contents
 
@@ -418,3 +450,65 @@ The toolbar applies to the built-in code block renderer and to the code blocks o
 `SyntaxHighlighting` and `Mermaid` (non-diagram fences) packages. Mermaid diagrams and math
 blocks have no toolbar. Text selection skips the toolbar, so selecting and copying across a
 code block copies only the code. See [Theming](theming.md#code-block-toolbar) to restyle it.
+
+### Line numbers, wrapping and height
+
+Three more options change how the code itself is laid out. All are off by default:
+
+```xml
+<mv:MarkdownViewer ShowCodeBlockLineNumbers="True" WrapCodeBlockLines="True" CodeBlockMaxHeight="400" />
+```
+
+```csharp
+viewer.ShowCodeBlockLineNumbers = true;
+viewer.WrapCodeBlockLines = true;
+viewer.CodeBlockMaxHeight = 400;
+```
+
+Like the toolbar's, they can be set for every viewer of the application with a style, and
+changing one re-renders the document. They apply to the same code blocks as the toolbar.
+
+- **`ShowCodeBlockLineNumbers`** puts the number of each line in a gutter on the left of the
+  code. The numbers are not part of the code: dragging a selection over the block, `Ctrl+A` and
+  the copy button all copy the code alone, and the gutter itself cannot be selected. With
+  wrapping on, a wrapped line is numbered once, on its first row.
+- **`WrapCodeBlockLines`** wraps lines longer than the block. Without it, code never wraps:
+  long lines run past the block's right edge and are cut off by the viewer, unless the viewer
+  scrolls horizontally (`ScrollViewer.HorizontalScrollBarVisibility="Auto"` on the
+  `MarkdownViewer`, see [Image sizing](#image-sizing)). Wrapping needs a width to wrap at, so it
+  has no effect while the viewer scrolls horizontally.
+- **`CodeBlockMaxHeight`** caps the height of each code block, padding included and toolbar
+  excluded (the toolbar stays in view). A taller block keeps that height and scrolls vertically
+  inside itself; shorter blocks are unchanged. Horizontal scrolling is unaffected: it stays
+  with the viewer, as without a maximum height. The mouse wheel over a block scrolls the block
+  first; once the block has reached its top or bottom, the wheel scrolls the document again
+  (Avalonia's scroll chaining), so a long block never traps it. Must be zero or more; the
+  default, `double.PositiveInfinity`, means no limit.
+
+Wrapping is a viewer property only, with no wrap toggle in the toolbar, to keep the toolbar
+small; a host that wants one can bind its own toggle to `WrapCodeBlockLines`. See
+[Theming](theming.md#line-numbers-and-scrolling-code) to restyle the gutter and the scroll viewer.
+
+## Custom fenced blocks
+
+Fenced code blocks of a language can render as your own control instead of code, without writing
+a Markdig renderer:
+
+```csharp
+viewer.UseFenceRenderer("chart", (code, info) => new MyChart(code));
+// for every viewer of the application:
+MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new MyChart(code));
+```
+
+The factory receives the block's content (`code`, without the fences) and its whole info string
+(`info`, e.g. `chart {height=200}` for ```` ```chart {height=200} ````), and returns a new control,
+or `null` to render that block as code. The language is matched case-insensitively, and a fence
+renderer takes precedence over Mermaid diagrams, syntax highlighting and the plain code block,
+whatever order they were registered in. A factory that throws renders its block as code and logs
+a warning. `UseFenceRenderer` replaces the viewer's earlier fence renderer for the same language
+and re-renders the document.
+
+The control is wrapped in a `Border` with the `markdown-custom-fence` and `markdown-fence-<language>`
+classes, and text selection copies it as its fenced source. See
+[Writing custom extensions](custom-extensions.md#rendering-a-fence-language-as-your-own-control)
+for the details, including how to follow theme changes.

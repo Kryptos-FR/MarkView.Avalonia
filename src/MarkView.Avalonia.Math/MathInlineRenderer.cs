@@ -8,24 +8,32 @@ using Avalonia.Media;
 
 using Markdig.Extensions.Mathematics;
 
+using MarkView.Avalonia.Math.Parsing;
 using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia.Math;
 
 /// <summary>
-/// Renders Markdig <see cref="MathInline"/> nodes (<c>$...$</c>) as an inline image
+/// Renders Markdig <see cref="MathInline"/> nodes (<c>$...$</c>, and <c>\(...\)</c> or an in-line
+/// <c>\[...\]</c> once <c>UseMathBracketDelimiters()</c> is enabled) as an inline image
 /// produced by CSharpMath.SkiaSharp.
 /// </summary>
 public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
 {
     protected override void Write(AvaloniaRenderer renderer, MathInline obj)
     {
-        var source = obj.Content.ToString();
+        // A formula spanning lines inside a paragraph keeps the document's line endings.
+        var source = obj.Content.ToString().ReplaceLineEndings("\n");
 
         var image = new Image { Stretch = Stretch.None };
         image.Classes.Add("markdown-math-inline");
         AutomationProperties.SetName(image, source);
-        MarkdownSelection.SetCopyText(image, $"${source}$");
+        MarkdownSelection.SetCopyText(image, obj switch
+        {
+            BracketMathInline { IsDisplay: true } => $"\\[{source}\\]",
+            BracketMathInline => $"\\({source}\\)",
+            _ => $"${source}$",
+        });
 
         if (!TryApplyTheme())
         {
