@@ -251,6 +251,11 @@
   <Style Selector="Border.markdown-table-header :is(TextBlock)">
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
+  <!-- Header cells are centred, as browsers draw <th>. A column's own alignment (colons in the delimiter
+       row) is set on the cell itself, so it wins over this style. -->
+  <Style Selector="Border.markdown-table-header > StackPanel">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
   <Style Selector="Border.markdown-table-row-even">
     <Setter Property="Background" Value="{DynamicResource MarkdownTableRowAlternateBackground}" />
   </Style>

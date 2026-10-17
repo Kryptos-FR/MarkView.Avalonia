@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
+using Avalonia.Layout;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -229,6 +230,20 @@ public class GitHubThemeTests
         var block = f.Single<Border>("markdown-code-block");
         Assert.Equal(new Thickness(16), block.Padding);
         Assert.Equal(new CornerRadius(6), block.CornerRadius);
+    }
+
+    [AvaloniaFact]
+    public void Header_cells_are_centred_unless_their_column_is_aligned()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        using var f = Show("| Plain | Left | Right |\n|---|:--|--:|\n| a | b | c |");
+
+        StackPanel Content(int row, int column) => Assert.IsType<StackPanel>(f.Cell(row, column).Child);
+        Assert.Equal(HorizontalAlignment.Center, Content(0, 0).HorizontalAlignment);
+        Assert.Equal(HorizontalAlignment.Left, Content(0, 1).HorizontalAlignment);
+        Assert.Equal(HorizontalAlignment.Right, Content(0, 2).HorizontalAlignment);
+        // Body cells keep the default
+        Assert.Equal(HorizontalAlignment.Stretch, Content(1, 0).HorizontalAlignment);
     }
 
     [AvaloniaFact]

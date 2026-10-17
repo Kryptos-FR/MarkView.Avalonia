@@ -77,7 +77,7 @@ What it changes:
 | Code blocks | GitHub's code background, 16px padding, 6px corners, 13.6px monospace (SF Mono, Menlo, Consolas, Liberation Mono). The toolbar takes the code's background, so the language label and the outlined copy button sit inside the block's top edge |
 | Inline code | Monospace on a translucent grey, in the text colour, at 85% of the paragraph's size (full size in a heading) |
 | Blockquotes | A 4px grey bar, secondary text colour, no dimming |
-| Tables | A 1px grid on every side of every cell, 6×13px cell padding, a semibold header row without background, and every second body row striped |
+| Tables | A 1px grid on every side of every cell, 6×13px cell padding, a semibold header row without background, centred unless the column has its own alignment (`:--`, `:-:`, `--:`), and every second body row striped |
 | Horizontal rules | A 4px grey bar, 24px above and below |
 | Alerts | GitHub's note, tip, important, warning and caution colours for the 4px bar and the title (at body size), and no background |
 | Task lists | Check boxes in the secondary text colour, like GitHub's read-only ones |
