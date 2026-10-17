@@ -57,6 +57,15 @@
           <!-- Find matches: Primer yellow and orange, distinct from highlighted (==…==) text -->
           <SolidColorBrush x:Key="MarkdownFindMatchBackground">#693E00</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#762D0A</SolidColorBrush>
+          <!-- Image that could not be loaded: secondary text on the code background -->
+          <SolidColorBrush x:Key="MarkdownImageFailedForeground">#9198A1</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBackground">#151B23</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBorder">#656C76</SolidColorBrush>
+          <!-- Image lightbox, as in the default theme -->
+          <SolidColorBrush x:Key="MarkdownImageLightboxBackdrop">#E0000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
         </ResourceDictionary>
         <!-- Primer "light default" -->
         <ResourceDictionary x:Key="Light">
@@ -98,6 +107,13 @@
           <SolidColorBrush x:Key="MarkdownKbdBorder">#818B98</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownFindMatchBackground">#FAE17D</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#FFB77C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedForeground">#59636E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBackground">#F6F8FA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBorder">#818B98</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxBackdrop">#CC000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
