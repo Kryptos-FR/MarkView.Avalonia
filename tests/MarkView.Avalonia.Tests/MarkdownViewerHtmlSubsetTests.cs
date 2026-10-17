@@ -51,7 +51,7 @@ public class MarkdownViewerHtmlSubsetTests
 
         viewer.SelectAll();
 
-        Assert.Equal($"Logo{Environment.NewLine}Fast viewer\nPress Ctrl+C to copy H2O, x2, a < b and this.", viewer.GetSelectedText());
+        Assert.Equal("Logo\nFast viewer\nPress Ctrl+C to copy H2O, x2, a < b and this.", viewer.GetSelectedText());
     }
 
     [AvaloniaFact]
