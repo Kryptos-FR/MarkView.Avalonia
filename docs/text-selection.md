@@ -43,8 +43,8 @@ Non-text content is copied as a text equivalent:
 | Content | Highlighted | Copied as |
 |---------|-------------|-----------|
 | Image (including linked images and YouTube thumbnails) | With the surrounding text | Its alt text; nothing when it has none |
-| Inline math (`MarkView.Avalonia.Math`) | With the surrounding text | Its source between `$` delimiters |
-| Display math (`MarkView.Avalonia.Math`) | As a whole block | Its source between `$$` lines |
+| Inline math (`MarkView.Avalonia.Math`) | With the surrounding text | Its source between its own delimiters: `$...$`, `\(...\)`, or `\[...\]` within a line |
+| Display math (`MarkView.Avalonia.Math`) | As a whole block | Its source between `$$` lines, or `\[` and `\]` lines |
 | Mermaid diagram (`MarkView.Avalonia.Mermaid`) | As a whole block | Its source in a ```` ```mermaid ```` fence |
 
 Hidden content is not selectable: the body of a collapsed [foldable alert](configuration.md#alert-blocks) (`> [!NOTE]-`) is skipped by hit-testing, highlighting and copy (`Ctrl+A` then `Ctrl+C` copies the text around it) until the alert is expanded. The same applies to any block a custom renderer hides with `IsVisible`. An alert's header is not selectable; clicking it toggles the alert instead of starting a selection.

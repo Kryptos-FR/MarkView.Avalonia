@@ -192,4 +192,35 @@ public class MathExtensionTests
         var image = Assert.IsType<Image>(textBlock.Inlines!.OfType<InlineUIContainer>().Single().Child);
         Assert.Contains("markdown-math-inline", image.Classes);
     }
+
+    private static StackPanel RenderedPanel(MarkdownViewer viewer) =>
+        Assert.IsType<StackPanel>(Assert.IsType<Grid>(viewer.Content).Children[0]);
+
+    [AvaloniaFact]
+    public void UseMath_enables_the_bracket_delimiters()
+    {
+        var viewer = new MarkdownViewer();
+        viewer.UseMath();
+        viewer.Markdown = "Energy \\(E=mc^2\\) here\n\n\\[x^2\\]";
+
+        var panel = RenderedPanel(viewer);
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(panel.Children[0]);
+        Assert.IsType<Image>(textBlock.Inlines!.OfType<InlineUIContainer>().Single().Child);
+        var border = Assert.IsType<Border>(panel.Children[1]);
+        Assert.Contains("markdown-math-block", border.Classes);
+    }
+
+    [AvaloniaFact]
+    public void UseMath_without_bracket_delimiters_keeps_them_CommonMark_escapes()
+    {
+        var viewer = new MarkdownViewer();
+        var result = viewer.UseMath(bracketDelimiters: false);
+        viewer.Markdown = "Energy \\(E=mc^2\\) and $x$";
+
+        Assert.Same(viewer, result);
+        Assert.IsType<MathExtension>(Assert.Single(viewer.Extensions));
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(RenderedPanel(viewer).Children));
+        Assert.Equal("Energy (E=mc^2) and ", string.Concat(textBlock.Inlines!.OfType<Run>().Select(r => r.Text)));
+        Assert.Single(textBlock.Inlines!.OfType<InlineUIContainer>());
+    }
 }

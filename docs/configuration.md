@@ -53,7 +53,7 @@ MarkView.Avalonia has two helpers that enable a base set of extensions. Both tak
 - `CjkFriendlyEmphasis` — parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation
 - `YamlFrontMatter` — `---` metadata block at the top of a document is parsed and hidden, not shown as garbled text
 
-Math and Mermaid diagrams, which GitHub also renders, come from their own packages (`UseMath()`, `UseMermaid()`).
+Math (`$...$`, and the `\(...\)`/`\[...\]` delimiters LLMs emit) and Mermaid diagrams, which GitHub also renders, come from their own packages (`UseMath()`, `UseMermaid()`).
 
 > [!NOTE]
 > **Subscript and `UseGitHubExtensions()` don't mix.** `~text~` is either strikethrough (GitHub) or subscript (Markdig's emphasis extras), and with `UseGitHubExtensions()` it is always strikethrough, even if `UseEmphasisExtras()` is added after it. Adding `UseEmphasisExtras()` still gives superscript `^`, underline `++` and highlight `==`.

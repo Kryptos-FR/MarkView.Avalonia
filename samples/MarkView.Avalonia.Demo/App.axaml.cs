@@ -28,6 +28,7 @@ public class App : Application
             .UseHardlineBreaks()
             .UseMediaLinks()
             .UseMathematics()
+            .UseMathBracketDelimiters()
             .UseDefinitionLists()
             .UseCustomContainers()
             .UseFooters()

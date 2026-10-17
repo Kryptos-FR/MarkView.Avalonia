@@ -7,12 +7,14 @@ using Avalonia.Media;
 
 using Markdig.Extensions.Mathematics;
 
+using MarkView.Avalonia.Math.Parsing;
 using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia.Math;
 
 /// <summary>
-/// Renders Markdig <see cref="MathBlock"/> nodes (<c>$$...$$</c>) as a centred image
+/// Renders Markdig <see cref="MathBlock"/> nodes (<c>$$...$$</c>, and <c>\[...\]</c> on lines of its own
+/// once <c>UseMathBracketDelimiters()</c> is enabled) as a centred image
 /// produced by CSharpMath.SkiaSharp.
 /// </summary>
 public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
@@ -29,7 +31,7 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
 
         var border = new Border { Child = image };
         border.Classes.Add("markdown-math-block");
-        MarkdownSelection.SetCopyText(border, $"$$\n{source}\n$$");
+        MarkdownSelection.SetCopyText(border, obj is BracketMathBlock ? $"\\[\n{source}\n\\]" : $"$$\n{source}\n$$");
 
         ThemeTracking.ReapplyOnThemeChange(border, ApplyTheme);
 
