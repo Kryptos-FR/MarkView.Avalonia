@@ -426,6 +426,6 @@ public class SelectionLayerRenderingTests
 
         f.Layer.SelectAll();
         await f.Layer.CopyToClipboardAsync(f.Window);
-        Assert.Equal("Alpha\nBeta\nGamma", await clipboard.TryGetTextAsync());
+        Assert.Equal("Alpha\nBeta\nGamma".ReplaceLineEndings(), await clipboard.TryGetTextAsync());
     }
 }

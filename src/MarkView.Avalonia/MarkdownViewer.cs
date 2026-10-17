@@ -856,10 +856,10 @@ public partial class MarkdownViewer : ContentControl
     /// <summary>Clears the current selection.</summary>
     public void ClearSelection() => _selectionLayer?.ClearSelection();
 
-    /// <summary>Returns the currently selected plain text.</summary>
+    /// <summary>Returns the currently selected plain text, with lines separated by <c>'\n'</c>.</summary>
     public string GetSelectedText() => _selectionLayer?.GetSelectedText() ?? string.Empty;
 
-    /// <summary>Copies selected text to the clipboard.</summary>
+    /// <summary>Copies selected text to the clipboard, with the platform's line endings.</summary>
     public Task CopyToClipboardAsync()
     {
         var topLevel = TopLevel.GetTopLevel(this);

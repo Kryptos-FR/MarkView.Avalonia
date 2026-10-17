@@ -118,8 +118,6 @@ public class MermaidCodeBlockOptionsTests
 
         viewer.SelectAll();
 
-        // Blocks are joined by '\n', and so is the diagram's source; the lines inside a code block
-        // keep the platform's line ending.
-        Assert.Equal($"Intro\nfirst{Environment.NewLine}second\n```mermaid\ngraph TD\n  A --> B\n```\nOutro", viewer.GetSelectedText());
+        Assert.Equal("Intro\nfirst\nsecond\n```mermaid\ngraph TD\n  A --> B\n```\nOutro", viewer.GetSelectedText());
     }
 }

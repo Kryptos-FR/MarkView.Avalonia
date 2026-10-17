@@ -154,7 +154,7 @@ public class CodeBlockToolbarTests
             Dispatcher.UIThread.RunJobs();
 
             Assert.True(click.Handled);
-            Assert.Equal("var x = 1;\nvar y = 2;", await window.Clipboard!.TryGetTextAsync());
+            Assert.Equal("var x = 1;\nvar y = 2;".ReplaceLineEndings(), await window.Clipboard!.TryGetTextAsync());
             Assert.Contains("copied", button.Classes);
 
             await AsyncTestHelpers.WaitUntilAsync(() => !button.Classes.Contains("copied"),

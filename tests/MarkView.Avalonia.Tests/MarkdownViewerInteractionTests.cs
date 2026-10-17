@@ -216,7 +216,7 @@ public class MarkdownViewerInteractionTests
 
         f.Window.KeyPress(copy.Key, (RawInputModifiers)copy.KeyModifiers, PhysicalKey.None, null);
         await Dispatcher.UIThread.InvokeAsync(() => { });
-        Assert.Equal("Alpha\nBeta", await f.Window.Clipboard!.TryGetTextAsync());
+        Assert.Equal("Alpha\nBeta".ReplaceLineEndings(), await f.Window.Clipboard!.TryGetTextAsync());
     }
 
     [AvaloniaFact]

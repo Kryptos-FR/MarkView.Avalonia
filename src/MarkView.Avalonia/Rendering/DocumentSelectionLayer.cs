@@ -91,7 +91,10 @@ internal sealed class DocumentSelectionLayer : Control
         InvalidateVisual();
     }
 
-    /// <summary>Returns selected plain text in reading order with separators between entries.</summary>
+    /// <summary>
+    /// Returns selected plain text in reading order with separators between entries. Lines are
+    /// separated by <c>'\n'</c>, whatever line endings the text and copy texts it is made of use.
+    /// </summary>
     public string GetSelectedText()
     {
         if (_anchor is null || _focus is null) return string.Empty;
@@ -115,7 +118,9 @@ internal sealed class DocumentSelectionLayer : Control
             if (selEnd > entry.AbsEnd && entry.Separator.Length > 0)
                 sb.Append(entry.Separator);
         }
-        return sb.ToString();
+        // Code block lines are written with the platform's line ending (LineBreak inlines), and a
+        // copy text keeps whatever its renderer gave it.
+        return sb.ToString().ReplaceLineEndings("\n");
     }
 
     /// <summary>
@@ -137,12 +142,12 @@ internal sealed class DocumentSelectionLayer : Control
         }
     }
 
-    /// <summary>Copies selected text to the clipboard.</summary>
+    /// <summary>Copies selected text to the clipboard, with the platform's line endings.</summary>
     public async Task CopyToClipboardAsync(TopLevel topLevel)
     {
         var text = GetSelectedText();
         if (!string.IsNullOrEmpty(text) && topLevel.Clipboard is { } clipboard)
-            await clipboard.SetTextAsync(text);
+            await clipboard.SetTextAsync(text.ReplaceLineEndings());
     }
 
     // ── Pointer event integration ─────────────────────────────────────────────

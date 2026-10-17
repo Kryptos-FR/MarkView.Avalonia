@@ -399,9 +399,7 @@ public class CodeBlockOptionsTests
 
         viewer.SelectAll();
 
-        // Blocks are joined by '\n'; the lines inside a code block keep the platform's line ending.
-        var nl = Environment.NewLine;
-        Assert.Equal($"Intro\nvar x = 1;{nl}var y = 2;{nl}var z = 3;\n• item\nnested\nOutro", viewer.GetSelectedText());
+        Assert.Equal("Intro\nvar x = 1;\nvar y = 2;\nvar z = 3;\n• item\nnested\nOutro", viewer.GetSelectedText());
     }
 
     // ── Selection inside a block with a maximum height ───────────────────────
