@@ -95,7 +95,7 @@ public class MarkdownExtensionsTests : RenderTestBase
     {
         var result = Render("x<sup>2</sup>", _pipeline);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
-        Assert.Contains(textBlock.Inlines!, i => i is Span span && span.Classes.Contains("markdown-html-sup"));
+        Assert.Contains(textBlock.Inlines!, i => i is Span span && span.Classes.Contains("markdown-superscript"));
     }
 
     [Fact]

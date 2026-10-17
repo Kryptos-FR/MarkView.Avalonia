@@ -160,5 +160,6 @@ public class EmphasisTests : RenderTestBase
 
         var span = text.Inlines!.OfType<Span>().Single(s => s.BaselineAlignment == baseline);
         Assert.Equal(feature, Assert.Single(span.FontFeatures!).Tag);
+        Assert.Equal([baseline == BaselineAlignment.Subscript ? "markdown-subscript" : "markdown-superscript"], span.Classes);
     }
 }

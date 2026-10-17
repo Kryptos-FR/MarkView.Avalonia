@@ -219,13 +219,7 @@
     <Setter Property="Background" Value="{DynamicResource MarkdownMarkedBackground}"/>
   </Style>
 
-  <!-- HTML subset (UseHtmlSubset): <sub>/<sup> on a smaller font, <kbd> as a key -->
-  <Style Selector="Span.markdown-html-sub">
-    <Setter Property="FontSize" Value="11"/>
-  </Style>
-  <Style Selector="Span.markdown-html-sup">
-    <Setter Property="FontSize" Value="11"/>
-  </Style>
+  <!-- HTML subset (UseHtmlSubset): <kbd> as a key -->
   <Style Selector="Border.markdown-html-kbd">
     <Setter Property="Background" Value="{DynamicResource MarkdownKbdBackground}"/>
     <Setter Property="BorderBrush" Value="{DynamicResource MarkdownKbdBorder}"/>

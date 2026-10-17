@@ -13,48 +13,10 @@ public sealed class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInli
 {
     protected override void Write(AvaloniaRenderer renderer, EmphasisInline obj)
     {
-        Span span = obj.DelimiterChar switch
-        {
-            // bold
-            '*' or '_' when obj.DelimiterCount == 2 => new Bold(),
-            // italic
-            '*' or '_' => new Italic(),
-            // strikethrough
-            '~' when obj.DelimiterCount == 2 => new Span
-            {
-                TextDecorations = TextDecorations.Strikethrough
-            },
-            // subscript
-            '~' => new Span
-            {
-                BaselineAlignment = BaselineAlignment.Subscript,
-                FontFeatures = [FontFeature.Parse("subs")]
-            },
-            // superscript
-            '^' => new Span
-            {
-                BaselineAlignment = BaselineAlignment.Superscript,
-                FontFeatures = [FontFeature.Parse("sups")]
-            },
-            // underline
-            '+' when obj.DelimiterCount == 2 => new Underline(),
-            // marked
-            '=' when obj.DelimiterCount == 2 => new Span
-            {
-                Classes = { "markdown-marked" }
-            },
-            // citation
-            '"' when obj.DelimiterCount == 2 => new Span
-            {
-                Classes = { "markdown-citation" }
-            },
-            // inline custom container (::text::)
-            ':' when obj is CustomContainerInline => new Span
-            {
-                Classes = { "markdown-custom-inline" }
-            },
-            _ => new Span(),
-        };
+        // inline custom container (::text::)
+        var span = obj is CustomContainerInline && obj.DelimiterChar == ':'
+            ? new Span { Classes = { "markdown-custom-inline" } }
+            : CreateSpan(obj.DelimiterChar, obj.DelimiterCount);
 
         renderer.Push(span.Inlines);
         renderer.WriteChildren(obj);
@@ -62,4 +24,49 @@ public sealed class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInli
 
         renderer.WriteInline(span);
     }
+
+    /// <summary>
+    /// The span an emphasis written with <paramref name="delimiterCount"/> <paramref name="delimiterChar"/>
+    /// characters renders as. HTML formatting elements render as the same spans (see
+    /// <see cref="HtmlElementInlineRenderer"/>), so both syntaxes look and style alike.
+    /// </summary>
+    internal static Span CreateSpan(char delimiterChar, int delimiterCount) => delimiterChar switch
+    {
+        // bold
+        '*' or '_' when delimiterCount == 2 => new Bold(),
+        // italic
+        '*' or '_' => new Italic(),
+        // strikethrough
+        '~' when delimiterCount == 2 => new Span
+        {
+            TextDecorations = TextDecorations.Strikethrough
+        },
+        // subscript: the font's subscript glyphs, on the subscript baseline
+        '~' => new Span
+        {
+            BaselineAlignment = BaselineAlignment.Subscript,
+            FontFeatures = [FontFeature.Parse("subs")],
+            Classes = { "markdown-subscript" },
+        },
+        // superscript
+        '^' => new Span
+        {
+            BaselineAlignment = BaselineAlignment.Superscript,
+            FontFeatures = [FontFeature.Parse("sups")],
+            Classes = { "markdown-superscript" },
+        },
+        // underline
+        '+' when delimiterCount == 2 => new Underline(),
+        // marked
+        '=' when delimiterCount == 2 => new Span
+        {
+            Classes = { "markdown-marked" }
+        },
+        // citation
+        '"' when delimiterCount == 2 => new Span
+        {
+            Classes = { "markdown-citation" }
+        },
+        _ => new Span(),
+    };
 }

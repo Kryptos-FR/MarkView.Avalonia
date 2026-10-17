@@ -3,7 +3,6 @@
 
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
-using Avalonia.Media;
 
 using MarkView.Avalonia.Parsing;
 
@@ -13,8 +12,7 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// Renders an inline HTML formatting element (<see cref="HtmlElementInline"/>) like its markdown counterpart:
 /// <c>&lt;b&gt;</c> as <see cref="Bold"/>, <c>&lt;i&gt;</c> as <see cref="Italic"/>, <c>&lt;del&gt;</c> struck
 /// through, <c>&lt;ins&gt;</c> as <see cref="Underline"/>, <c>&lt;mark&gt;</c> as a <c>markdown-marked</c> span;
-/// <c>&lt;sub&gt;</c> and <c>&lt;sup&gt;</c> as <c>markdown-html-sub</c> / <c>markdown-html-sup</c> spans on the
-/// subscript or superscript baseline; and <c>&lt;kbd&gt;</c> as a key (<see cref="HtmlKeyboardKey"/>).
+/// <c>&lt;sub&gt;</c> and <c>&lt;sup&gt;</c> as <c>~sub~</c> and <c>^sup^</c> are; and <c>&lt;kbd&gt;</c> as a key (<see cref="HtmlKeyboardKey"/>).
 /// </summary>
 internal sealed class HtmlElementInlineRenderer : AvaloniaObjectRenderer<HtmlElementInline>
 {
@@ -26,23 +24,16 @@ internal sealed class HtmlElementInlineRenderer : AvaloniaObjectRenderer<HtmlEle
             return;
         }
 
-        Span span = obj.Kind switch
+        // An alias of the markdown emphasis it stands for, so both render and style alike.
+        var span = obj.Kind switch
         {
-            HtmlElementKind.Bold => new Bold(),
-            HtmlElementKind.Italic => new Italic(),
-            HtmlElementKind.Strikethrough => new Span { TextDecorations = TextDecorations.Strikethrough },
-            HtmlElementKind.Underline => new Underline(),
-            HtmlElementKind.Mark => new Span { Classes = { "markdown-marked" } },
-            HtmlElementKind.Subscript => new Span
-            {
-                BaselineAlignment = BaselineAlignment.Subscript,
-                Classes = { "markdown-html-sub" },
-            },
-            _ => new Span
-            {
-                BaselineAlignment = BaselineAlignment.Superscript,
-                Classes = { "markdown-html-sup" },
-            },
+            HtmlElementKind.Bold => EmphasisInlineRenderer.CreateSpan('*', 2),
+            HtmlElementKind.Italic => EmphasisInlineRenderer.CreateSpan('*', 1),
+            HtmlElementKind.Strikethrough => EmphasisInlineRenderer.CreateSpan('~', 2),
+            HtmlElementKind.Underline => EmphasisInlineRenderer.CreateSpan('+', 2),
+            HtmlElementKind.Mark => EmphasisInlineRenderer.CreateSpan('=', 2),
+            HtmlElementKind.Subscript => EmphasisInlineRenderer.CreateSpan('~', 1),
+            _ => EmphasisInlineRenderer.CreateSpan('^', 1),
         };
 
         renderer.Push(span.Inlines);

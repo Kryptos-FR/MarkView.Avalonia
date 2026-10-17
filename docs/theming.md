@@ -213,8 +213,10 @@ scope them with a class, or reset them on `ToggleButton.markdown-task-toggle`.
 | Class | Control | Element |
 |-------|---------|---------|
 | `markdown-marked` | `Span` | Highlighted text (`==text==`) |
+| `markdown-subscript` | `Span` | Subscript (`~text~`, `<sub>`): the font's `subs` glyphs on the subscript baseline |
+| `markdown-superscript` | `Span` | Superscript (`^text^`, `<sup>`): the font's `sups` glyphs on the superscript baseline |
 
-Subscript, superscript, underline (inserted), bold, italic, and strikethrough use standard Avalonia inline properties (`BaselineAlignment`, `FontFeatures`, `TextDecorations`) and do not have dedicated style classes.
+Underline (inserted), bold, italic, and strikethrough use standard Avalonia inlines and properties (`Underline`, `Bold`, `Italic`, `TextDecorations`) and do not have dedicated style classes.
 
 ### Citations
 
@@ -286,12 +288,10 @@ The summary is focusable and toggles the body on click, Enter or Space; the body
 
 ### HTML subset
 
-The HTML elements of the [HTML subset](configuration.md#html-subset). The others render with the controls and classes of their markdown counterparts: `<b>`, `<i>`, `<ins>`, `<del>` as `Bold`, `Italic`, `Underline` and a struck-through `Span`; `<mark>` as `Span.markdown-marked`; `<code>` as `markdown-code-inline`; `<a>` as `markdown-link`; `<img>` as `markdown-image`; `<p>` and headings as `markdown-paragraph` and `markdown-h1`…`markdown-h6`; `<hr>` as `markdown-thematic-break`.
+The HTML elements of the [HTML subset](configuration.md#html-subset). The others render with the controls and classes of their markdown counterparts: `<b>`, `<i>`, `<ins>`, `<del>` as `Bold`, `Italic`, `Underline` and a struck-through `Span`; `<mark>` as `Span.markdown-marked`; `<sub>` and `<sup>` as `markdown-subscript` and `markdown-superscript`; `<code>` as `markdown-code-inline`; `<a>` as `markdown-link`; `<img>` as `markdown-image`; `<p>` and headings as `markdown-paragraph` and `markdown-h1`…`markdown-h6`; `<hr>` as `markdown-thematic-break`.
 
 | Class | Control | Element |
 |-------|---------|---------|
-| `markdown-html-sub` | `Span` | `<sub>`, on the subscript baseline; the default theme sets a smaller `FontSize` |
-| `markdown-html-sup` | `Span` | `<sup>`, on the superscript baseline; the default theme sets a smaller `FontSize` |
 | `markdown-html-kbd` | `Border` | `<kbd>`: a key around a `TextBlock` of its text, which sits on the line's baseline |
 | `markdown-html-align` | `StackPanel` | Blocks aligned by an `align` attribute: a `<div align>` and the blocks in it, or the paragraph or heading of a `<p align>` / `<h1 align>`. Its inherited `TextBlock.TextAlignment` aligns the text inside it, set by the control |
 | `markdown-html-align-left`, `-center`, `-right`, `-justify` | `StackPanel` | The same panel, by alignment |

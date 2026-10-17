@@ -79,15 +79,16 @@ public class HtmlSubsetInlineTests : RenderTestBase
     }
 
     [AvaloniaTheory]
-    [InlineData("sub", BaselineAlignment.Subscript)]
-    [InlineData("sup", BaselineAlignment.Superscript)]
-    public void Sub_and_sup_render_on_their_baseline_with_their_class(string name, BaselineAlignment baseline)
+    [InlineData("sub", BaselineAlignment.Subscript, "subs", "markdown-subscript")]
+    [InlineData("sup", BaselineAlignment.Superscript, "sups", "markdown-superscript")]
+    public void Sub_and_sup_render_like_their_markdown_emphasis(string name, BaselineAlignment baseline, string feature, string className)
     {
         var inlines = Inlines($"x<{name}>2</{name}>");
 
         var span = Assert.IsType<Span>(inlines[1], exactMatch: true);
         Assert.Equal(baseline, span.BaselineAlignment);
-        Assert.Equal([$"markdown-html-{name}"], span.Classes);
+        Assert.Equal(feature, Assert.Single(span.FontFeatures!).Tag);
+        Assert.Equal([className], span.Classes);
         Assert.Equal("2", Text(span));
     }
 
