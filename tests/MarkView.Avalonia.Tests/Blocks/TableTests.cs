@@ -219,6 +219,41 @@ public class TableTests : RenderTestBase
         Assert.Equal(["1", "2", "3"], bodyCells.Select(CellText));
     }
 
+    [AvaloniaFact]
+    public void Every_second_body_row_has_the_even_row_class()
+    {
+        var grid = Assert.IsType<Grid>(Assert.Single(RenderWithTables("""
+            | A | B |
+            |---|---|
+            | 1 | 2 |
+            | 3 | 4 |
+            | 5 | 6 |
+            | 7 | 8 |
+            """).Children));
+
+        var cells = grid.Children.Cast<Border>().ToArray();
+        // Counted from the first row below the header, as CSS counts "tbody tr:nth-child(even)"
+        Assert.Equal([2, 2, 4, 4], cells.Where(c => c.Classes.Contains("markdown-table-row-even")).Select(Grid.GetRow));
+    }
+
+    [AvaloniaFact]
+    public void Header_rows_are_not_counted_as_body_rows()
+    {
+        const string markdown = """
+            +---+
+            | A |
+            +===+
+            | 1 |
+            +---+
+            | 2 |
+            +---+
+            """;
+        var grid = Assert.IsType<Grid>(Assert.Single(Render(markdown, new MarkdownPipelineBuilder().UseGridTables().Build()).Children));
+
+        var cells = grid.Children.Cast<Border>().ToArray();
+        Assert.Equal([2], cells.Where(c => c.Classes.Contains("markdown-table-row-even")).Select(Grid.GetRow));
+    }
+
     private static string CellText(Border cell) =>
         string.Concat(Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(Assert.IsType<StackPanel>(cell.Child).Children)).Inlines!.OfType<Run>().Select(r => r.Text));
 }
