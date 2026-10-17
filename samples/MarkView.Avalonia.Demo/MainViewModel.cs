@@ -5,7 +5,6 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 using Avalonia;
-using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Styling;
 
 namespace MarkView.Avalonia.Demo;
@@ -257,7 +256,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isColorExtensionSelected;
     private bool _isCodeHeightLimited;
     private int _themePresetIndex;
-    private StyleInclude? _gitHubTheme;
+    private GitHubPreset? _gitHubTheme;
 
     public int SelectedIndex
     {
@@ -290,7 +289,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (value == 1)
             {
                 // Right after MarkdownTheme.axaml, which it builds on, so the app's own styles below still win.
-                _gitHubTheme ??= new StyleInclude((Uri?)null) { Source = new Uri("avares://MarkView.Avalonia/Themes/GitHubTheme.axaml") };
+                _gitHubTheme ??= new GitHubPreset();
                 // App.axaml's StyleInclude is compiled into the theme's own Styles, so it is found by one of its resources.
                 var markdownTheme = styles.First(s => s.TryGetResource("MarkdownCodeBlockBackground", ThemeVariant.Dark, out _));
                 styles.Insert(styles.IndexOf(markdownTheme) + 1, _gitHubTheme);
