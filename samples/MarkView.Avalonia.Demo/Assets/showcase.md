@@ -210,8 +210,19 @@ Markdig renderer. This demo registers `palette`, which shows a list of colours a
 #3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
 ```
 
+The factory also receives the rest of the info string, so a fence can take arguments. Here
+`size=24` makes the swatches smaller:
+
+```palette size=24
+#3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
+```
+
 ````markdown
 ```palette
+#3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
+```
+
+```palette size=24
 #3B82F6 #10B981 #F59E0B #EF4444 #8B5CF6
 ```
 ````
