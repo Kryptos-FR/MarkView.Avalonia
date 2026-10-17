@@ -190,7 +190,8 @@ internal static class CodeBlockToolbar
 
             try
             {
-                await clipboard.SetTextAsync(code);
+                // Like a copied selection, the code gets the platform's line endings.
+                await clipboard.SetTextAsync(code.ReplaceLineEndings());
             }
             catch (Exception)
             {

@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 
 using MarkView.Avalonia.Extensions;
+using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Tests.Shared;
 
 using Xunit;
@@ -119,5 +120,21 @@ public class MarkdownViewerFenceRendererTests
         viewer.SelectAll();
 
         Assert.Equal("before\n```chart\n1 2 3\n```\nafter", viewer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Copy_text_with_CRLF_line_endings_is_selected_with_line_feeds()
+    {
+        var viewer = new MarkdownViewer().UseFenceRenderer("chart", (_, _) =>
+        {
+            var control = new Button();
+            MarkdownSelection.SetCopyText(control, "1\r\n2");
+            return control;
+        });
+        viewer.Markdown = ChartDocument;
+
+        viewer.SelectAll();
+
+        Assert.Equal("before\n1\n2\nafter", viewer.GetSelectedText());
     }
 }
