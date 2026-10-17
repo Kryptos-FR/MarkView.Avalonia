@@ -66,7 +66,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         > The title replaces the kind name in the header.
 
         > [!NOTE]- Click to expand
-        > This alert starts collapsed. Its content is hidden from selection and copy until expanded.
+        > This alert starts collapsed. Its content is hidden from selection and copy until expanded,
+        > but finding text in it (try "hidden") expands it.
 
         > [!WARNING]+ Click to collapse
         > This alert starts expanded.

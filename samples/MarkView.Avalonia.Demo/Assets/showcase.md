@@ -2,6 +2,7 @@
 
 > Welcome to the **MarkView.Avalonia** feature showcase. This document demonstrates every
 > rendering capability supported by the viewer and its extension packages.
+> Press **Ctrl+F** to find text in it with the find box above.
 
 ## Table of Contents
 

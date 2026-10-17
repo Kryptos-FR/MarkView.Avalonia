@@ -25,84 +25,106 @@
 
     <!-- Top bar -->
     <Border DockPanel.Dock="Top" Padding="12,8">
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <!-- Outline -->
-        <ToggleButton x:Name="OutlineToggle"
-                      Width="32" Height="32" Padding="4">
-          <PathIcon Data="{StaticResource text_bullet_list_tree_regular}" />
-        </ToggleButton>
-        <Popup x:Name="OutlinePopup"
-               IsOpen="{Binding #OutlineToggle.IsChecked, Mode=TwoWay}" IsLightDismissEnabled="True"
-               PlacementTarget="{Binding #OutlineToggle}">
-          <Border Background="{DynamicResource MenuFlyoutPresenterBackground}"
-                  BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
-                  BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
-                  CornerRadius="{DynamicResource OverlayCornerRadius}"
-                  Padding="8" MinWidth="260" MaxWidth="360" MaxHeight="420">
-            <DockPanel>
-              <TextBox x:Name="OutlineFilterBox" DockPanel.Dock="Top"
-                       PlaceholderText="Filter headings" Margin="0,0,0,8" />
-              <ScrollViewer>
-                <ListBox x:Name="OutlineList"
-                         Background="Transparent"
-                         SelectionChanged="OnOutlineSelectionChanged">
-                  <ListBox.ItemsSource>
-                    <MultiBinding Converter="{StaticResource OutlineFilterConverter}">
-                      <Binding ElementName="MarkdownView" Path="TableOfContents" />
-                      <Binding ElementName="OutlineFilterBox" Path="Text" />
-                    </MultiBinding>
-                  </ListBox.ItemsSource>
-                  <ListBox.ItemTemplate>
-                    <DataTemplate DataType="local:OutlineRow">
-                      <TextBlock Text="{Binding Entry.Text}" Margin="{Binding Indent}"
-                                 TextTrimming="CharacterEllipsis" />
-                    </DataTemplate>
-                  </ListBox.ItemTemplate>
-                </ListBox>
-              </ScrollViewer>
-            </DockPanel>
-          </Border>
-        </Popup>
-        <Button Content="←"
-                Click="OnGoBackClicked"
-                IsEnabled="{Binding CanGoBack}"
-                ToolTip.Tip="Go back"
-                VerticalAlignment="Center" />
-        <Button Content="→"
-                Click="OnGoForwardClicked"
-                IsEnabled="{Binding CanGoForward}"
-                ToolTip.Tip="Go forward"
-                VerticalAlignment="Center" />
-        <Button Content="Open file…"
-                Click="OnOpenFileClicked"
-                VerticalAlignment="Center" />
-        <ToggleButton IsChecked="{Binding IsLightTheme}"
-                      Content="Light theme"
-                      VerticalAlignment="Center" />
-        <ComboBox SelectedIndex="{Binding ThemePresetIndex}"
-                  ToolTip.Tip="Theme preset"
-                  AutomationProperties.Name="Theme preset"
-                  VerticalAlignment="Center">
-          <ComboBoxItem Content="Default theme" />
-          <ComboBoxItem Content="GitHub theme" />
-        </ComboBox>
-        <ToggleButton IsChecked="{Binding #MarkdownView.AreTaskListsInteractive}"
-                      Content="Clickable tasks"
-                      ToolTip.Tip="Render task-list items as checkboxes you can toggle"
-                      VerticalAlignment="Center" />
-        <ToggleButton IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers}"
-                      Content="Line numbers"
-                      ToolTip.Tip="Number the lines of code blocks"
-                      VerticalAlignment="Center" />
-        <ToggleButton IsChecked="{Binding #MarkdownView.WrapCodeBlockLines}"
-                      Content="Wrap code"
-                      ToolTip.Tip="Wrap code lines longer than their block"
-                      VerticalAlignment="Center" />
-        <ToggleButton IsChecked="{Binding IsCodeHeightLimited}"
-                      Content="Short code blocks"
-                      ToolTip.Tip="Cap code blocks at 160 pixels; taller blocks scroll inside themselves"
-                      VerticalAlignment="Center" />
-      </StackPanel>
+      <DockPanel>
+        <!-- Find in document: Ctrl+F focuses the box, Enter / Shift+Enter move between matches, Esc clears -->
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" Margin="8,0,0,0">
+          <TextBox x:Name="FindBox" Width="180" VerticalAlignment="Center"
+                   PlaceholderText="Find (Ctrl+F)"
+                   AutomationProperties.Name="Find in document"
+                   TextChanged="OnFindTextChanged" KeyDown="OnFindBoxKeyDown" />
+          <Button x:Name="FindPreviousButton" Click="OnFindPreviousClicked" IsEnabled="False"
+                  Width="32" Height="32" Padding="0" VerticalAlignment="Center"
+                  ToolTip.Tip="Previous match (Shift+Enter)" AutomationProperties.Name="Previous match">
+            <Path Data="M3,10 L8,5 L13,10" Width="16" Height="16" StrokeThickness="1.5"
+                  Stroke="{Binding $parent[Button].Foreground}" />
+          </Button>
+          <Button x:Name="FindNextButton" Click="OnFindNextClicked" IsEnabled="False"
+                  Width="32" Height="32" Padding="0" VerticalAlignment="Center"
+                  ToolTip.Tip="Next match (Enter)" AutomationProperties.Name="Next match">
+            <Path Data="M3,6 L8,11 L13,6" Width="16" Height="16" StrokeThickness="1.5"
+                  Stroke="{Binding $parent[Button].Foreground}" />
+          </Button>
+          <TextBlock x:Name="FindStatus" MinWidth="72" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <!-- Outline -->
+          <ToggleButton x:Name="OutlineToggle"
+                        Width="32" Height="32" Padding="4">
+            <PathIcon Data="{StaticResource text_bullet_list_tree_regular}" />
+          </ToggleButton>
+          <Popup x:Name="OutlinePopup"
+                 IsOpen="{Binding #OutlineToggle.IsChecked, Mode=TwoWay}" IsLightDismissEnabled="True"
+                 PlacementTarget="{Binding #OutlineToggle}">
+            <Border Background="{DynamicResource MenuFlyoutPresenterBackground}"
+                    BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
+                    BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
+                    CornerRadius="{DynamicResource OverlayCornerRadius}"
+                    Padding="8" MinWidth="260" MaxWidth="360" MaxHeight="420">
+              <DockPanel>
+                <TextBox x:Name="OutlineFilterBox" DockPanel.Dock="Top"
+                         PlaceholderText="Filter headings" Margin="0,0,0,8" />
+                <ScrollViewer>
+                  <ListBox x:Name="OutlineList"
+                           Background="Transparent"
+                           SelectionChanged="OnOutlineSelectionChanged">
+                    <ListBox.ItemsSource>
+                      <MultiBinding Converter="{StaticResource OutlineFilterConverter}">
+                        <Binding ElementName="MarkdownView" Path="TableOfContents" />
+                        <Binding ElementName="OutlineFilterBox" Path="Text" />
+                      </MultiBinding>
+                    </ListBox.ItemsSource>
+                    <ListBox.ItemTemplate>
+                      <DataTemplate DataType="local:OutlineRow">
+                        <TextBlock Text="{Binding Entry.Text}" Margin="{Binding Indent}"
+                                   TextTrimming="CharacterEllipsis" />
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </ScrollViewer>
+              </DockPanel>
+            </Border>
+          </Popup>
+          <Button Content="←"
+                  Click="OnGoBackClicked"
+                  IsEnabled="{Binding CanGoBack}"
+                  ToolTip.Tip="Go back"
+                  VerticalAlignment="Center" />
+          <Button Content="→"
+                  Click="OnGoForwardClicked"
+                  IsEnabled="{Binding CanGoForward}"
+                  ToolTip.Tip="Go forward"
+                  VerticalAlignment="Center" />
+          <Button Content="Open file…"
+                  Click="OnOpenFileClicked"
+                  VerticalAlignment="Center" />
+          <ToggleButton IsChecked="{Binding IsLightTheme}"
+                        Content="Light theme"
+                        VerticalAlignment="Center" />
+          <ComboBox SelectedIndex="{Binding ThemePresetIndex}"
+                    ToolTip.Tip="Theme preset"
+                    AutomationProperties.Name="Theme preset"
+                    VerticalAlignment="Center">
+            <ComboBoxItem Content="Default theme" />
+            <ComboBoxItem Content="GitHub theme" />
+          </ComboBox>
+          <ToggleButton IsChecked="{Binding #MarkdownView.AreTaskListsInteractive}"
+                        Content="Clickable tasks"
+                        ToolTip.Tip="Render task-list items as checkboxes you can toggle"
+                        VerticalAlignment="Center" />
+          <ToggleButton IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers}"
+                        Content="Line numbers"
+                        ToolTip.Tip="Number the lines of code blocks"
+                        VerticalAlignment="Center" />
+          <ToggleButton IsChecked="{Binding #MarkdownView.WrapCodeBlockLines}"
+                        Content="Wrap code"
+                        ToolTip.Tip="Wrap code lines longer than their block"
+                        VerticalAlignment="Center" />
+          <ToggleButton IsChecked="{Binding IsCodeHeightLimited}"
+                        Content="Short code blocks"
+                        ToolTip.Tip="Cap code blocks at 160 pixels; taller blocks scroll inside themselves"
+                        VerticalAlignment="Center" />
+        </StackPanel>
+      </DockPanel>
     </Border>
 
     <!-- Page content -->

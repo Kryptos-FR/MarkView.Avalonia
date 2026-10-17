@@ -506,6 +506,18 @@ or the numbers drift away from their lines.
 |---|---|---|---|
 | `MarkdownCodeLineNumberForeground` | `#8A8A8A` | `#6A6A6A` | Line numbers; 4.8:1 (Dark) and 4.9:1 (Light) contrast on `MarkdownCodeBlockBackground`, above the 4.5:1 WCAG AA minimum for text |
 
+### Find highlights
+
+[Find matches](find-in-document.md) are drawn on top of the document by the selection overlay, not
+by a style class, so their colours come from resources only. The highlight is opaque and the text
+it covers is drawn again over it in its own colours; see
+[Highlight colours](find-in-document.md#highlight-colours) for their contrast with the default text.
+
+| Resource key | Dark | Light | Use |
+|---|---|---|---|
+| `MarkdownFindMatchBackground` | `#453A00` | `#FFF176` | Every find match but the current one |
+| `MarkdownFindCurrentMatchBackground` | `#652A00` | `#FFC584` | The current find match |
+
 ## Template customisation
 
 `MarkdownViewer`'s default `ControlTemplate` (in `MarkdownTheme.axaml`) wraps
