@@ -213,6 +213,34 @@ public class AutomationRoleTests : RenderTestBase
         Assert.True(peer.IsContentElement(), $"{control.GetType().Name} should be in the content view.");
     }
 
+    [AvaloniaFact]
+    public void Viewer_is_a_document_named_by_its_first_heading()
+    {
+        var viewer = ShowViewer("Intro\n\n# Release notes\n\n## Fixes");
+        var peer = Peer(viewer);
+
+        Assert.Equal(AutomationControlType.Document, peer.GetAutomationControlType());
+        Assert.True(peer.IsControlElement());
+        Assert.True(peer.IsContentElement());
+        Assert.Equal("Release notes", peer.GetName());
+
+        AutomationProperties.SetName(viewer, "Help");
+        Assert.Equal("Help", peer.GetName());
+    }
+
+    [AvaloniaFact]
+    public void Viewer_without_headings_has_no_name()
+    {
+        Assert.Equal(string.Empty, Peer(ShowViewer("Just text")).GetName());
+    }
+
+    private static MarkdownViewer ShowViewer(string markdown)
+    {
+        var viewer = new MarkdownViewer { Markdown = markdown };
+        new Window { Width = 400, Height = 300, Content = viewer }.Show();
+        return viewer;
+    }
+
     private static IEnumerable<T> FindAll<T>(Control root) where T : Control
     {
         if (root is T match) yield return match;
