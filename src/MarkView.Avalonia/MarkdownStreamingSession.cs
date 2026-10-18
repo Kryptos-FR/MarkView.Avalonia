@@ -136,12 +136,19 @@ public sealed class MarkdownStreamingSession : IDisposable
 
     /// <summary>
     /// Ends the session as <see cref="Complete"/> does, and returns a task that completes once the final
-    /// update is applied (at once when the session already ended). The task is faulted when an update
-    /// threw.
+    /// update is applied (at once when the session already ended). Never throws: when an update throws,
+    /// on the UI thread or not, the returned task is faulted with that exception instead.
     /// </summary>
     public Task CompleteAsync()
     {
-        Complete();
+        try
+        {
+            Complete();
+        }
+        // A failed update has already faulted the task; the exception is reported through it.
+        catch (Exception) when (_completion.Task.IsFaulted)
+        {
+        }
         return _completion.Task;
     }
 
@@ -181,7 +188,10 @@ public sealed class MarkdownStreamingSession : IDisposable
         catch (Exception ex)
         {
             _completion.TrySetException(ex);
-            _viewer.EndStreamingSession();
+            // Finished here rather than through the viewer: a final update has already released the
+            // viewer's session (an Updated handler threw), and the viewer may have begun another since.
+            Finish();
+            _viewer.EndStreamingSession(this);
             throw;
         }
 
@@ -212,6 +222,9 @@ public sealed class MarkdownStreamingSession : IDisposable
         lock (_gate)
             _text.Remove(start, length).Insert(start, replacement);
     }
+
+    /// <summary>Whether the update timer is running, for tests.</summary>
+    internal bool IsTimerRunning => _timer?.IsEnabled == true;
 
     /// <summary>Starts the update timer, creating it on first use. UI thread.</summary>
     private void StartTimer()

@@ -81,9 +81,9 @@ public partial class MarkdownViewer
     {
         Dispatcher.UIThread.VerifyAccess();
         if (_streamingSession is not null)
-            throw new InvalidOperationException("a streaming session is already active");
+            throw new InvalidOperationException("A streaming session is already active.");
         if (Source is not null)
-            throw new InvalidOperationException("streaming appends to Markdown, not to Source");
+            throw new InvalidOperationException("Streaming appends to Markdown, not to Source.");
         var interval = updateInterval ?? DefaultStreamingUpdateInterval;
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(interval, TimeSpan.Zero, nameof(updateInterval));
 
@@ -151,11 +151,21 @@ public partial class MarkdownViewer
 
     /// <summary>
     /// Ends the active session, if any, without a final update: the viewer is about to render something
-    /// else. Called first by <see cref="RenderMarkdown"/>.
+    /// else. Called first by <see cref="RenderMarkdown"/> and when <see cref="Source"/> changes.
     /// </summary>
     internal void EndStreamingSession()
     {
-        if (_streamingSession is not { } session)
+        if (_streamingSession is { } session)
+            EndStreamingSession(session);
+    }
+
+    /// <summary>
+    /// Ends <paramref name="session"/> without a final update if it is still the viewer's active session;
+    /// does nothing otherwise (it already ended, and another session may have begun since).
+    /// </summary>
+    internal void EndStreamingSession(MarkdownStreamingSession session)
+    {
+        if (!ReferenceEquals(_streamingSession, session))
             return;
         session.Abandon();
         _streamingSession = null;

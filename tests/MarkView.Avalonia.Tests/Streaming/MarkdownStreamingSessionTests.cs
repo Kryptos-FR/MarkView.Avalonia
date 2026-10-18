@@ -109,7 +109,7 @@ public class MarkdownStreamingSessionTests
 
         var ex = Assert.Throws<InvalidOperationException>(() => viewer.BeginStreaming());
 
-        Assert.Equal("a streaming session is already active", ex.Message);
+        Assert.Equal("A streaming session is already active.", ex.Message);
         session.Append("still works");
         session.ApplyPendingUpdate();
         Assert.Equal("still works", viewer.Markdown);
@@ -124,7 +124,7 @@ public class MarkdownStreamingSessionTests
 
         var ex = Assert.Throws<InvalidOperationException>(() => viewer.BeginStreaming());
 
-        Assert.Equal("streaming appends to Markdown, not to Source", ex.Message);
+        Assert.Equal("Streaming appends to Markdown, not to Source.", ex.Message);
         Assert.False(viewer.IsStreaming);
     }
 
@@ -371,6 +371,55 @@ public class MarkdownStreamingSessionTests
     }
 
     [AvaloniaFact]
+    public void Setting_Source_completes_the_session_silently()
+    {
+        var viewer = Viewer();
+        var session = viewer.BeginStreaming();
+        var updates = CountUpdates(session);
+        session.Append("a");
+        session.ApplyPendingUpdate();
+
+        viewer.Source = new Uri("avares://MarkView.Avalonia.Tests/TestAssets/test.md");
+
+        Assert.True(session.IsCompleted);
+        Assert.False(viewer.IsStreaming);
+        Assert.Throws<InvalidOperationException>(() => session.Append("x"));
+        Assert.True(session.CompleteAsync().IsCompletedSuccessfully);
+        Assert.Single(updates);
+        var heading = Assert.IsType<MarkdownSelectableTextBlock>(Root(viewer).Children[0]);
+        Assert.Equal("Test Heading", MarkdownSelectableTextBlock.ExtractPlainText(heading.Inlines!));
+    }
+
+    [AvaloniaFact]
+    public async Task Setting_Source_ends_the_session_before_the_load_renders()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.md");
+        await File.WriteAllTextAsync(path, "# Loaded");
+        try
+        {
+            var viewer = Viewer();
+            var session = viewer.BeginStreaming();
+            session.Append("a");
+            session.ApplyPendingUpdate();
+            var streamed = viewer.Content;
+
+            // A file is loaded asynchronously, so nothing has rendered yet when the setter returns.
+            viewer.Source = new Uri(path);
+
+            Assert.True(session.IsCompleted);
+            Assert.False(viewer.IsStreaming);
+            Assert.Same(streamed, viewer.Content);
+            await AsyncTestHelpers.WaitUntilAsync(() => !ReferenceEquals(streamed, viewer.Content));
+            var heading = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(Root(viewer).Children));
+            Assert.Equal("Loaded", MarkdownSelectableTextBlock.ExtractPlainText(heading.Inlines!));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [AvaloniaFact]
     public void Markdown_set_to_the_same_text_does_not_complete_the_session()
     {
         var viewer = Viewer();
@@ -428,7 +477,118 @@ public class MarkdownStreamingSessionTests
         Assert.NotSame(session, viewer.BeginStreaming());
     }
 
+    [AvaloniaFact]
+    public void CompleteAsync_on_the_UI_thread_returns_a_faulted_task_when_the_update_throws()
+    {
+        var viewer = Viewer();
+        viewer.Extensions.Add(new ThrowingParagraphExtension());
+        var session = viewer.BeginStreaming();
+        session.Append("x");
+
+        var completion = session.CompleteAsync();
+
+        Assert.True(completion.IsFaulted);
+        var ex = Assert.IsType<InvalidOperationException>(completion.Exception!.InnerException);
+        Assert.Equal("paragraph renderer failed", ex.Message);
+        Assert.True(session.IsCompleted);
+        Assert.False(viewer.IsStreaming);
+        Assert.Same(completion, session.CompleteAsync());
+    }
+
+    [AvaloniaFact]
+    public async Task Updated_throwing_on_the_final_update_finishes_the_session()
+    {
+        var viewer = Viewer();
+        var session = viewer.BeginStreaming();
+        var updates = 0;
+        session.Updated += (_, _) =>
+        {
+            updates++;
+            throw new InvalidOperationException("handler failed");
+        };
+        session.Append("a");
+
+        var ex = Assert.Throws<InvalidOperationException>(session.Complete);
+        var content = viewer.Content;
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.Equal("handler failed", ex.Message);
+        Assert.Same(content, viewer.Content);
+        Assert.Equal(1, updates);
+        Assert.True(session.IsCompleted);
+        Assert.False(viewer.IsStreaming);
+        Assert.False(session.IsTimerRunning);
+        Assert.True(session.CompleteAsync().IsFaulted);
+        Assert.Same(ex, session.CompleteAsync().Exception!.InnerException);
+    }
+
+    [AvaloniaFact]
+    public async Task Session_begun_after_a_failed_final_update_keeps_streaming()
+    {
+        var viewer = Viewer();
+        var first = viewer.BeginStreaming();
+        first.Updated += (_, _) => throw new InvalidOperationException("handler failed");
+        first.Append("a");
+        Assert.Throws<InvalidOperationException>(first.Complete);
+
+        var second = viewer.BeginStreaming();
+        // Past the first session's update interval: it must not apply its final update again.
+        await AsyncTestHelpers.PumpAsync();
+        second.Append("b");
+        second.ApplyPendingUpdate();
+
+        Assert.True(viewer.IsStreaming);
+        Assert.False(second.IsCompleted);
+        Assert.Equal("ab", viewer.Markdown);
+    }
+
+    [AvaloniaFact]
+    public void Session_begun_in_a_throwing_Updated_handler_is_not_ended_by_the_failure()
+    {
+        var viewer = Viewer();
+        var first = viewer.BeginStreaming();
+        MarkdownStreamingSession? second = null;
+        first.Updated += (_, _) =>
+        {
+            second = viewer.BeginStreaming();
+            throw new InvalidOperationException("handler failed");
+        };
+        first.Append("a");
+
+        Assert.Throws<InvalidOperationException>(first.Complete);
+
+        Assert.NotNull(second);
+        Assert.False(second.IsCompleted);
+        Assert.True(viewer.IsStreaming);
+        second.Append("b");
+        second.ApplyPendingUpdate();
+        Assert.Equal("ab", viewer.Markdown);
+        Assert.True(viewer.IsStreaming);
+    }
+
     // ── The timer ─────────────────────────────────────────────────────────────
+
+    [AvaloniaFact]
+    public async Task Timer_start_posted_before_Complete_does_not_start_a_timer()
+    {
+        var viewer = Viewer();
+        var session = viewer.BeginStreaming();
+        var updates = CountUpdates(session);
+        // An append from another thread posts the timer start to the UI thread, which is busy running this
+        // test, so the post only runs once the test yields, after Complete has finished the session.
+        var writer = new Thread(() => session.Append("x"));
+        writer.Start();
+        writer.Join();
+
+        session.Complete();
+        Assert.Single(updates);
+        Assert.False(session.IsTimerRunning);
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.Single(updates);
+        Assert.False(session.IsTimerRunning);
+        Assert.Equal("x", viewer.Markdown);
+    }
 
     [AvaloniaFact]
     public async Task Real_timer_applies_an_update()

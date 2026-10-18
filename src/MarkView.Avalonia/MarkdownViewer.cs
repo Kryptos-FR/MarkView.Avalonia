@@ -408,6 +408,8 @@ public partial class MarkdownViewer : ContentControl
 
     private void OnSourceChanged()
     {
+        // The session appends to Markdown, which Source replaces: it ends now, not when the load renders.
+        EndStreamingSession();
         _sourceLoadCts?.Cancel();
         _sourceLoadCts = null;
         _sourceMarkdown = null;
