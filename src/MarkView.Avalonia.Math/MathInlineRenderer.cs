@@ -46,6 +46,7 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
         }
 
         ThemeTracking.ReapplyOnThemeChange(image, () => TryApplyTheme());
+        MathFormulaRenderer.RerenderOnTextScaleChange(image, () => TryApplyTheme());
 
         renderer.WriteInline(image);
 
@@ -53,7 +54,7 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
         {
             try
             {
-                image.Source = MathFormulaRenderer.Render(source, MathFormulaRenderer.GetThemeTextColor());
+                image.Source = MathFormulaRenderer.Render(source, MathFormulaRenderer.GetThemeTextColor(), MathFormulaRenderer.FontSizeIn(image));
                 return true;
             }
             catch (Exception)

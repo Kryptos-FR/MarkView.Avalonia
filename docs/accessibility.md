@@ -1,6 +1,6 @@
 # Accessibility
 
-`MarkdownViewer` exposes the structure of the rendered document to screen readers, lets keyboard users reach and open every link and interactive element, ships default colours that meet WCAG 2.2 AA contrast, and switches to a high-contrast palette when the operating system asks for one. Screen reader and keyboard support don't change how the document looks or behaves with the mouse.
+`MarkdownViewer` exposes the structure of the rendered document to screen readers, lets keyboard users reach and open every link and interactive element, follows the text size chosen in the system settings, ships default colours that meet WCAG 2.2 AA contrast, and switches to a high-contrast palette when the operating system asks for one. Screen reader and keyboard support don't change how the document looks or behaves with the mouse.
 
 ## Screen readers
 
@@ -74,6 +74,43 @@ Links use `MarkdownLinkForeground`, a shade of the OS accent colour rather than 
 - `SystemAccentColorLight2` in Dark.
 
 This follows WinUI, and keeps links above 4.5:1 for typical accent colours. Very light accents, such as gold or yellow, can still fall slightly short in Light. Links are always underlined, so they never rely on colour alone. These shades come from FluentTheme; with another base theme, define `MarkdownLinkForeground` yourself.
+
+## Text size
+
+Users who need larger text set it once for the whole system, and `MarkdownViewer` follows that setting: every font size of the document is multiplied by `SystemTextScale.Factor`. Avalonia doesn't expose this setting, so MarkView reads it where the platform allows:
+
+| Platform | Setting | Read |
+|---|---|---|
+| Windows | Settings → Accessibility → Text size (100–225%) | At startup, and again each time a window showing a viewer is activated (the user comes back from Settings) |
+| Browser | The browser's default font size (Chrome: Settings → Appearance → Font size), relative to 16px. Page zoom (Ctrl +) is already applied by Avalonia as render scaling. | At startup |
+| Android, iOS, Linux | Font size / Dynamic Type / GNOME's text scaling factor | Not read: set `SystemTextScale.Factor` from the platform's API (below) |
+| macOS | No system-wide text size | — |
+
+On top of it, `TextScale` scales one viewer, for instance for an in-app text size setting or a zoom control; `EffectiveTextScale` is the product of both. Set `FollowSystemTextScale="False"` for a viewer whose text must keep its designed size.
+
+```xml
+<mv:MarkdownViewer TextScale="1.25" Source="avares://MyApp/notes.md" />
+```
+
+What scales:
+
+- every font size in the document, whoever set it: the viewer's own (the body text), the theme's heading, code and alert sizes, theme presets, and your own styles. Text that inherits a size is never scaled twice;
+- what is drawn at the text's size: alert and fold chevrons, task check boxes, the broken-image glyph;
+- math formulas, drawn again at the new size rather than stretched.
+
+What doesn't: images, Mermaid diagrams, spacing, borders and other sizes in pixels, as with the system setting in native apps. The viewer's own `FontSize` property keeps its value, and only the rendered document scales.
+
+On platforms MarkView doesn't read, pass the platform's value to `SystemTextScale.Factor`, which updates every viewer that follows it. Once set by the application, the value is no longer read from the platform.
+
+```csharp
+// Android (MainActivity): Configuration.FontScale is 1 at the default size.
+SystemTextScale.Factor = Resources!.Configuration!.FontScale;
+// …and again in OnConfigurationChanged(Configuration newConfig).
+
+// iOS (AppDelegate): how much Dynamic Type enlarges 17pt body text.
+SystemTextScale.Factor = UIFontMetrics.DefaultMetrics.GetScaledValue(17) / 17;
+// …and again on UIApplication.ContentSizeCategoryChangedNotification.
+```
 
 ## High contrast
 

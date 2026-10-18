@@ -21,6 +21,9 @@
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
 | `HighContrastMode` | `HighContrastMode` | `System` | When to use the high-contrast palette: follow the OS (`System`), `Enabled` or `Disabled`. See [Accessibility](accessibility.md#high-contrast). |
 | `IsHighContrast` | `bool` | `false` | Get-only. Whether the high-contrast palette is in use; mirrors the `:high-contrast` pseudo-class. |
+| `TextScale` | `double` | `1` | Factor applied to every font size of the document, on top of the system text size: `1.5` shows the text 50% larger. See [Accessibility](accessibility.md#text-size). |
+| `FollowSystemTextScale` | `bool` | `true` | Whether the font sizes follow the text size chosen in the operating system's settings (`SystemTextScale.Factor`). See [Accessibility](accessibility.md#text-size). |
+| `EffectiveTextScale` | `double` | `1` | Get-only. The factor in use: `TextScale`, times the system text scale while `FollowSystemTextScale` is `true`. |
 
 ## Markdig Pipeline
 
