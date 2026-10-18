@@ -148,4 +148,36 @@ public class MarkdigStreamingFactsTests
         var alone = Assert.IsType<ParagraphBlock>(Parse("x[^1]")[0]);
         Assert.DoesNotContain(Descendants(alone), d => d is FootnoteLink);
     }
+
+    [Fact]
+    public void Atx_heading_at_end_of_input_is_closed()
+    {
+        var document = Parse("# title");
+        Assert.False(document[0].IsOpen);
+        Assert.Equal(6, document[0].Span.End);
+    }
+
+    [Fact]
+    public void Paragraph_span_excludes_its_trailing_line_break()
+    {
+        Assert.Equal(2, Parse("abc\n")[0].Span.End);
+        Assert.Equal(2, Parse("abc\n\n")[0].Span.End);
+    }
+
+    [Fact]
+    public void Code_span_closer_must_have_the_same_length()
+    {
+        var paragraph = Assert.IsType<ParagraphBlock>(Parse("``a` b``")[0]);
+        Assert.Single(Descendants(paragraph).OfType<CodeInline>());
+        Assert.Empty(Descendants(Assert.IsType<ParagraphBlock>(Parse("``a`")[0])).OfType<CodeInline>());
+    }
+
+    [Fact]
+    public void Open_fence_span_stops_at_its_opening_line()
+    {
+        // The span of an open fence is not extended over its content lines; only its lines reach the end.
+        var fence = Assert.IsType<FencedCodeBlock>(Parse("```\ncode")[0]);
+        Assert.Equal(3, fence.Span.End);
+        Assert.Equal(7, fence.Lines.Lines[0].Slice.End);
+    }
 }
