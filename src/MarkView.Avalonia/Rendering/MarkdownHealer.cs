@@ -254,7 +254,11 @@ internal static class MarkdownHealer
         for (var i = EndOf(last) + 1; i < text.Length; i++)
         {
             var c = text[i];
-            if (!IsWhitespace(c) || (c == '\n' && ++lineBreaks > 1))
+            if (!IsWhitespace(c))
+                return null;
+            // Markdig ends a line at "\n", "\r\n" or a lone "\r".
+            var lineBreak = c == '\n' || (c == '\r' && (i + 1 == text.Length || text[i + 1] != '\n'));
+            if (lineBreak && ++lineBreaks > 1)
                 return null;
         }
         return last;

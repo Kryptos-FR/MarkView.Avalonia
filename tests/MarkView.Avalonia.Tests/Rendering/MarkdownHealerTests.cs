@@ -471,17 +471,19 @@ public class MarkdownHealerTests
         Assert.Equal(3, tail.Span.Start);
     }
 
-    [Fact]
-    public void TailBlock_allows_one_trailing_line_break()
-    {
-        var text = "a\n\nb\n";
+    [Theory]
+    [InlineData("a\n\nb\n")]
+    [InlineData("a\n\nb\r\n")]
+    [InlineData("a\n\nb\r")]
+    public void TailBlock_allows_one_trailing_line_break(string text) =>
         Assert.Equal(3, MarkdownHealer.TailBlock(Parse(text), text)!.Span.Start);
-    }
 
     [Theory]
     [InlineData("")]
     [InlineData("a\n\n")]
     [InlineData("a\r\n\r\n")]
+    [InlineData("a\r\n\r")]
+    [InlineData("a\r\r")]
     public void TailBlock_is_null_after_a_blank_line_or_for_an_empty_text(string text) =>
         Assert.Null(MarkdownHealer.TailBlock(Parse(text), text));
 
