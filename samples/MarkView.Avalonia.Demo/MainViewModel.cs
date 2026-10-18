@@ -253,6 +253,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isReplaying;
 
     private Uri? _source;
+    private Uri? _baseUri;
     private string? _markdown;
     private int _selectedIndex;
     private bool _isLightTheme;
@@ -338,8 +339,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
         private set
         {
             _isReplaying = false;
+            // A replay's base belongs to the page it replayed; the viewer infers the new page's from its Source.
+            BaseUri = null;
             SetField(ref _source, value);
         }
+    }
+
+    /// <summary>
+    /// The folder relative links and images resolve against while a page is replayed. The viewer infers
+    /// it from <see cref="Source"/> otherwise, and a replay unbinds the page from <see cref="Source"/>.
+    /// </summary>
+    public Uri? BaseUri
+    {
+        get => _baseUri;
+        private set => SetField(ref _baseUri, value);
     }
 
     public string? Markdown
@@ -493,14 +506,26 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// <summary>
     /// Empties the page so the viewer can stream its text back in. <c>BeginStreaming</c> refuses a
     /// viewer whose <c>Source</c> is set, so the page is unbound from <see cref="Source"/> first and
-    /// the viewer cleared. The history is left alone: the entry pushed when the page loaded is still
-    /// what Back and Forward restore.
+    /// the viewer cleared; the page's folder stays its <see cref="BaseUri"/>, so the relative links and
+    /// images of the streamed text still resolve. The history is left alone: the entry pushed when the
+    /// page loaded is still what Back and Forward restore.
     /// </summary>
     public void BeginReplay()
     {
+        var source = Source;
         Source = null;
+        BaseUri = FolderOf(source);
         Markdown = "";
         _isReplaying = true;
+    }
+
+    /// <summary>The folder of a document, with the trailing slash, or <c>null</c> without a document.</summary>
+    private static Uri? FolderOf(Uri? document)
+    {
+        if (document is null) return null;
+        var absolute = document.AbsoluteUri;
+        var lastSlash = absolute.LastIndexOf('/');
+        return lastSlash > 0 ? new Uri(absolute[..(lastSlash + 1)]) : null;
     }
 
     /// <summary>

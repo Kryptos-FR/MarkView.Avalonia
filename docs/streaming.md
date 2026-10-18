@@ -26,7 +26,9 @@ async Task ShowAnswerAsync(MarkdownViewer viewer, IAsyncEnumerable<string> chunk
 `BeginStreaming` appends to the current `Markdown`. Set it to an empty string (or `null`) first to
 stream a new document; leave it as it is to continue one. Call it on the UI thread. It throws
 `InvalidOperationException` when a session is already active on the viewer, or when `Source` is
-set: streaming appends to `Markdown`, not to a file or a URL.
+set: streaming appends to `Markdown`, not to a file or a URL. To stream the text of a document
+that has a location, set `BaseUri` to its folder before `BeginStreaming()`, so its relative links
+and images resolve as they would with `Source` (the demo's replay does this).
 
 Use one viewer per answer when you can, for example one per chat message. A viewer has one session
 at a time, and a new one starts from the viewer's current text.

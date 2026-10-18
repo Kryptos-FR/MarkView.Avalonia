@@ -179,7 +179,7 @@
     <!-- Page content -->
     <Grid>
       <mv:MarkdownViewer x:Name="MarkdownView"
-                         Source="{Binding Source}" Markdown="{Binding Markdown}"
+                         Source="{Binding Source}" Markdown="{Binding Markdown}" BaseUri="{Binding BaseUri}"
                          AutoScrollToEnd="True"
                          Classes.custom-styled="{Binding IsCustomStyled}"
                          CodeBlockMaxHeight="{Binding CodeBlockMaxHeight}"
