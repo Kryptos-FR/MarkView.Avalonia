@@ -449,6 +449,10 @@ viewer.ClearFind();
 
 See [Find in Document](docs/find-in-document.md) for what is searched and the highlight colours.
 
+## Streaming
+
+- Streaming: `BeginStreaming()` renders text as it arrives, re-rendering only the open tail — see [docs/streaming.md](docs/streaming.md)
+
 ## Accessibility
 
 - **Keyboard.** `Tab` / `Shift+Tab` move through the document's links and interactive elements in reading order, with a focus ring, and `Enter` opens the focused link.
