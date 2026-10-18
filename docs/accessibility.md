@@ -82,6 +82,7 @@ Avalonia reports whether the operating system asks for high contrast. It detects
 - paints the viewer in solid `MarkdownHighContrastBackground` / `MarkdownHighContrastForeground`;
 - draws links in `MarkdownHighContrastLink`, and `==marked==` text in `MarkdownHighContrastHighlightForeground` on `MarkdownHighContrastHighlightBackground`;
 - gives code blocks (their header included), tables, blockquotes, figures, separators and alerts solid `MarkdownHighContrastBorder` borders, and draws the code, its line numbers and the header's label and copy icon in `MarkdownHighContrastForeground`;
+- draws the placeholder of an image that could not be loaded in `MarkdownHighContrastForeground` on `MarkdownHighContrastBackground`, with a `MarkdownHighContrastBorder` outline;
 - drops the per-kind alert colours (the titles carry the kind) and all opacity dimming.
 
 | Resource key | Dark | Light |

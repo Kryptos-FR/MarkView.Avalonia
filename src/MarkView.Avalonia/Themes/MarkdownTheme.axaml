@@ -611,6 +611,12 @@
   <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(TextBlock).markdown-figure-caption">
     <Setter Property="Opacity" Value="1" />
   </Style>
+  <!-- An image that could not be loaded: its alt text and glyph on the page colours, in a solid outline -->
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-image-failed">
+    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBackground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
+  </Style>
   <Style Selector=":is(mv|MarkdownViewer):high-contrast Separator.markdown-thematic-break">
     <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBorder}" />
   </Style>

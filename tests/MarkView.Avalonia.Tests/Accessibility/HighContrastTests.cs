@@ -154,6 +154,26 @@ public class HighContrastTests
     }
 
     [AvaloniaTheory]
+    [InlineData("Light", "#FFFFFF", "#000000")]
+    [InlineData("Dark", "#000000", "#FFFFFF")]
+    public async Task High_contrast_palette_covers_an_image_that_could_not_be_loaded(string variant, string background, string foreground)
+    {
+        using var _ = new ThemeScope(variant == "Light" ? ThemeVariant.Light : ThemeVariant.Dark);
+        var viewer = ShowViewer("![A diagram](unknown://diagram.png)", HighContrastMode.Enabled, withTheme: true);
+
+        Border? Placeholder() => viewer.GetVisualDescendants().OfType<Border>().SingleOrDefault(b => b.Classes.Contains("markdown-image-failed"));
+        await AsyncTestHelpers.WaitUntilAsync(() => Placeholder() is not null);
+
+        static Color ColorOf(IBrush? brush) => Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;
+        var placeholder = Placeholder()!;
+        Assert.Equal(Color.Parse(background), ColorOf(placeholder.Background));
+        Assert.Equal(Color.Parse(foreground), ColorOf(placeholder.BorderBrush));
+        // The alt text and the broken-image glyph are drawn in the placeholder's text colour.
+        Assert.Equal(Color.Parse(foreground), ColorOf(placeholder.GetValue(TextElement.ForegroundProperty)));
+        Assert.All(placeholder.GetVisualDescendants().OfType<TextBlock>(), t => Assert.Equal(Color.Parse(foreground), ColorOf(t.Foreground)));
+    }
+
+    [AvaloniaTheory]
     [InlineData("Light", "#FFFFFF", "#0E1116", "#0349B4", "#20252C", "#744500", "#FFFFFF")]
     [InlineData("Dark", "#0A0C10", "#F0F3F6", "#71B7FF", "#B7BDC8", "#F0B72F", "#0A0C10")]
     public void High_contrast_wins_over_the_GitHub_preset(string variant, string background, string foreground,
