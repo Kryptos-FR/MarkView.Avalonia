@@ -117,6 +117,36 @@ public class LiveDocumentTests
     }
 
     [AvaloniaFact]
+    public void Block_of_another_type_with_the_same_span_is_re_rendered()
+    {
+        var live = Live();
+        Update(live, "xyz");
+        var paragraph = live.RootPanel.Children[0];
+
+        var result = Update(live, "***");
+
+        Assert.Equal(0, result.ReusedBlocks);
+        Assert.Equal(1, live.RootPanel.Children.Count);
+        Assert.NotSame(paragraph, live.RootPanel.Children[0]);
+        Assert.IsNotType<TextBlock>(live.RootPanel.Children[0]);
+    }
+
+    [AvaloniaFact]
+    public void Block_with_the_same_end_but_another_start_is_re_rendered()
+    {
+        var live = Live();
+        Update(live, "a\n\n\nb");
+        var second = live.RootPanel.Children[1];
+
+        var result = Update(live, "a\n\nbb");
+
+        Assert.Equal(1, result.ReusedBlocks);
+        Assert.NotSame(second, live.RootPanel.Children[1]);
+        live.SelectionLayer.SelectAll();
+        Assert.Equal("a\nbb", live.SelectionLayer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
     public void Link_stops_follow_the_tail()
     {
         var live = Live();

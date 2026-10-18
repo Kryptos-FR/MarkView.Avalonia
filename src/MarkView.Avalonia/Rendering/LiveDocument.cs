@@ -79,9 +79,8 @@ internal sealed class LiveDocument
     public UpdateResult Update(MarkdownDocument document, IInputElement? focusedElement = null)
     {
         var labels = CollectLabels(document);
+        // Before the first update there are no records, so ReusablePrefix returns 0 by itself.
         var labelsUnchanged = labels.SequenceEqual(_labels, StringComparer.Ordinal);
-        // Stryker disable once all : before the first update there are no records, so ReusablePrefix returns 0 as well
-        labelsUnchanged &= Document is not null;
         var reused = labelsUnchanged ? ReusablePrefix(document) : 0;
 
         // The state the first `reused` blocks produced: the sum of their counts.
@@ -185,7 +184,8 @@ internal sealed class LiveDocument
                 break;
             if (record.SpanEnd != block.Span.End)
                 break;
-            // Stryker disable once all : in append-only text a block that was closed and still ends where it did cannot have changed type or start (no counterexample in randomised comparison of parses); the check is kept as a guard
+            // Append-only text never changes a closed block's type or start without moving its end; a
+            // patched or replaced text can ("xyz" → "***", "\n\nb" → "\nbb"), so both are checked.
             if (record.BlockType != block.GetType() || record.SpanStart != block.Span.Start)
                 break;
             k++;
