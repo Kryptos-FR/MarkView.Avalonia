@@ -1,15 +1,18 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 
 using Markdig;
+
+using MarkView.Avalonia.Rendering;
 
 using Xunit;
 
 namespace MarkView.Avalonia.Tests;
 
-public class MarkdownViewerSelectionRegistrationTests
+public class MarkdownViewerSelectionRegistrationTests : RenderTestBase
 {
     private static string SelectAllText(string markdown, MarkdownPipeline? pipeline = null)
     {
@@ -299,5 +302,45 @@ public class MarkdownViewerSelectionRegistrationTests
     public void Block_control_with_copy_text_opening_a_list_item_is_prefixed_with_the_marker()
     {
         Assert.Equal("• <break>", SelectAllTextWithCopyableBreaks("- ***"));
+    }
+
+    [AvaloniaFact]
+    public void Registering_blocks_from_an_index_skips_the_earlier_children()
+    {
+        var root = Render("a\n\nb\n\nc");
+        Assert.Equal(3, root.Children.Count);
+        var layer = new DocumentSelectionLayer();
+
+        MarkdownViewer.RegisterBlocks(layer, root, 1);
+        layer.SelectAll();
+
+        Assert.Equal(2, layer.EntryCount);
+        Assert.Equal("b\nc", layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Registering_blocks_from_the_child_count_registers_nothing()
+    {
+        var root = Render("a\n\nb");
+        var layer = new DocumentSelectionLayer();
+
+        MarkdownViewer.RegisterBlocks(layer, root, root.Children.Count);
+
+        Assert.Equal(0, layer.EntryCount);
+    }
+
+    [AvaloniaFact]
+    public void Registering_blocks_from_an_index_keeps_the_offsets_of_the_layer()
+    {
+        var root = Render("a\n\nb\n\nc");
+        var layer = new DocumentSelectionLayer();
+
+        MarkdownViewer.RegisterBlocks(layer, root, 0);
+        layer.TruncateTo(1);
+        MarkdownViewer.RegisterBlocks(layer, root, 1);
+        layer.SelectAll();
+
+        Assert.Equal(3, layer.EntryCount);
+        Assert.Equal("a\nb\nc", layer.GetSelectedText());
     }
 }

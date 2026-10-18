@@ -676,10 +676,17 @@ public partial class MarkdownViewer : ContentControl
 
     // ── Block registration ────────────────────────────────────────────────────
 
-    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel)
+    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel) =>
+        RegisterBlocks(layer, panel, 0);
+
+    /// <summary>
+    /// Registers the selectable blocks of <c>panel.Children[startIndex..]</c> in document order, with no
+    /// enclosing list item's marker.
+    /// </summary>
+    internal static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, int startIndex)
     {
         TextBlock? marker = null;
-        RegisterBlocks(layer, panel, ref marker);
+        RegisterBlocks(layer, panel, ref marker, startIndex);
     }
 
     /// <summary>
@@ -687,11 +694,13 @@ public partial class MarkdownViewer : ContentControl
     /// A non-null <paramref name="marker"/> (the enclosing list item's bullet, number or
     /// check glyph) is registered as its own entry just before the first registered entry,
     /// then is cleared, so a list item without selectable content contributes no marker.
+    /// Only <c>panel.Children[startIndex..]</c> are registered.
     /// </summary>
-    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, ref TextBlock? marker)
+    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, ref TextBlock? marker, int startIndex = 0)
     {
-        foreach (var child in panel.Children)
+        for (var i = startIndex; i < panel.Children.Count; i++)
         {
+            var child = panel.Children[i];
             switch (child)
             {
                 // A control a renderer gave copy text to (a formula, a diagram) is selected as a whole,
