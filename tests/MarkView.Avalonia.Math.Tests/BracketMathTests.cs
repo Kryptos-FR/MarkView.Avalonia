@@ -44,7 +44,7 @@ public class BracketMathTests
 
     private static void AssertFormulaBlock(Control control)
     {
-        var border = Assert.IsType<Border>(control);
+        var border = MathBlockAssert.MathBorder(control);
         Assert.Contains("markdown-math-block", border.Classes);
         Assert.NotNull(Assert.IsType<Image>(border.Child).Source);
     }
@@ -462,7 +462,7 @@ public class BracketMathTests
     {
         var nested = new string('{', 60) + "x" + new string('}', 60);
 
-        var border = Assert.IsType<Border>(Assert.Single(Render($"\\[{nested}\\]").Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(Render($"\\[{nested}\\]").Children));
 
         Assert.Contains("markdown-math-fallback", border.Classes);
     }

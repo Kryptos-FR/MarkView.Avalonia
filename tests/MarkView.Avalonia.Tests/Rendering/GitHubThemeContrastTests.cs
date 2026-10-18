@@ -52,6 +52,9 @@ public class GitHubThemeContrastTests
             data.Add(variant, "MarkdownCodeLineNumberForeground", "MarkdownCodeBlockBackground", Text);
             // The copy icon under the pointer, drawn in the code's colour by the default theme
             data.Add(variant, "MarkdownCodeBlockForeground", "MarkdownCodeCopyButtonHoverBackground over MarkdownCodeHeaderBackground", NonText);
+            // The copy icon of a display formula (MarkView.Avalonia.Math), on the page, and its hover.
+            data.Add(variant, "MarkdownCodeHeaderForeground", "Page", NonText);
+            data.Add(variant, "MarkdownCodeBlockForeground", "MarkdownCodeCopyButtonHoverBackground over Page", NonText);
             data.Add(variant, "MarkdownBlockquoteBorder", "Page", NonText);
             data.Add(variant, "MarkdownTableBorder", "Page", NonText);
             data.Add(variant, "MarkdownTableBorder", "MarkdownTableRowAlternateBackground", NonText);

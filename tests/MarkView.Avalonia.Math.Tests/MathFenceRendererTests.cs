@@ -24,7 +24,7 @@ public class MathFenceRendererTests
         viewer.Markdown = "$$\nx^2\n$$\n\n```chart\nx\n```";
 
         var blocks = Assert.IsType<StackPanel>(Assert.IsType<Grid>(viewer.Content).Children[0]).Children;
-        Assert.Contains("markdown-math-block", blocks[0].Classes);
+        Assert.Contains("markdown-math-block", MathBlockAssert.MathBorder(blocks[0]).Classes);
         Assert.Contains("markdown-custom-fence", blocks[1].Classes);
     }
 }

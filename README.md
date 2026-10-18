@@ -97,11 +97,14 @@ viewer.ScrollToAnchor("my-heading");  // scrolls to the heading's anchor positio
 
 ### Code block toolbar
 
-Code blocks show their language and a copy button above the code. Turn either off per viewer or
-for the whole application with a style:
+Code blocks show their language and a copy button above the code, and display formulas
+(`MarkView.Avalonia.Math`) a copy button for their TeX source in their top right corner. Turn
+either off per viewer or for the whole application with a style, or show the copy buttons only
+while the pointer is over their block:
 
 ```xml
 <mv:MarkdownViewer ShowCodeBlockLanguage="False" ShowCodeBlockCopyButton="False" />
+<mv:MarkdownViewer ShowCodeBlockCopyButtonOnHover="True" />
 ```
 
 Line numbers, wrapping long lines, and a maximum height past which a block scrolls inside itself
@@ -361,7 +364,7 @@ Override any style class in your own `Styles` to customise appearance:
 | `markdown-code-container` | Code block with its toolbar | `StackPanel` |
 | `markdown-code-header` | Code block toolbar | `Border` |
 | `markdown-code-language` | Code block language label | `TextBlock` |
-| `markdown-code-copy` | Code block copy button | `Button` |
+| `markdown-code-copy` | Code block and display formula copy button | `Button` |
 | `markdown-code-line-numbers` | Code block line numbers | `TextBlock` |
 | `markdown-code-scroll` | Scrolls a code block taller than `CodeBlockMaxHeight` | `ScrollViewer` |
 | `markdown-custom-fence` | Control a fence renderer returned (`UseFenceRenderer`) | `Border` |

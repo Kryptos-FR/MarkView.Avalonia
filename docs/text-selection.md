@@ -125,14 +125,14 @@ The event args carry no text, so raising the event allocates no string. `Selecte
 
 ## Changing what is copied
 
-`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C`, `CopyToClipboardAsync()` or `CopyAsMarkdownAsync()`), when a code block's [copy button](configuration.md#code-block-toolbar) is clicked, and when the [context menu](#context-menu) copies a link. It is not raised when there is nothing to copy.
+`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C`, `CopyToClipboardAsync()` or `CopyAsMarkdownAsync()`), when the [copy button](configuration.md#code-block-toolbar) of a code block or a [display formula](configuration.md#copying-a-formula) is clicked, and when the [context menu](#context-menu) copies a link. It is not raised when there is nothing to copy.
 
 | Property | Meaning |
 |----------|---------|
-| `Origin` | What is copied: `MarkdownCopyOrigin.Selection`, `MarkdownCopyOrigin.SelectionAsMarkdown`, `MarkdownCopyOrigin.CodeBlock` or `MarkdownCopyOrigin.Link` |
+| `Origin` | What is copied: `MarkdownCopyOrigin.Selection`, `MarkdownCopyOrigin.SelectionAsMarkdown`, `MarkdownCopyOrigin.CodeBlock`, `MarkdownCopyOrigin.MathBlock` (a display formula's TeX source) or `MarkdownCopyOrigin.Link` |
 | `Text` | The text to write, lines separated by `\n`. Set it to change what is written; it is written with the platform's line endings. Set to `null` or `""`, nothing is written. |
 | `Html` | The [HTML](#html-on-the-clipboard) written next to the text, for `Selection` only; `null` otherwise, and when `IsHtmlCopyEnabled` is off or the platform has no HTML format. Set it to change or drop the HTML. |
-| `Cancel` | Set to `true` to write nothing, for instance when the application writes the clipboard itself. A code block's copy button then shows no confirmation. |
+| `Cancel` | Set to `true` to write nothing, for instance when the application writes the clipboard itself. A copy button then shows no confirmation. |
 
 ```csharp
 viewer.CopyingToClipboard += (_, e) =>

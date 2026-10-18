@@ -11,6 +11,7 @@ using Markdig.Renderers;
 
 using MarkView.Avalonia.Math.Parsing;
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Blocks;
 
 namespace MarkView.Avalonia.Math;
 
@@ -19,7 +20,9 @@ namespace MarkView.Avalonia.Math;
 /// once <c>UseMathBracketDelimiters()</c> is enabled) as a centred image
 /// produced by CSharpMath.SkiaSharp. While a document is streaming, a block that is still provisional
 /// (see <see cref="AvaloniaRenderer.IsProvisional"/>) is rendered as a plain code block, its source as
-/// text, until a blank line or another block follows it.
+/// text, until a blank line or another block follows it. With <see cref="AvaloniaRenderer.ShowCodeBlockCopyButton"/>,
+/// the formula is written inside a <c>markdown-math-container</c> grid, with a copy button for its TeX source
+/// in the top right corner.
 /// </summary>
 public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
 {
@@ -48,7 +51,7 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
         ThemeTracking.ReapplyOnThemeChange(border, ApplyTheme);
 
         ApplyTheme();
-        renderer.WriteBlock(border);
+        renderer.WriteBlock(renderer.ShowCodeBlockCopyButton ? WithCopyButton(border, source) : border);
 
         void ApplyTheme()
         {
@@ -66,6 +69,23 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
                 border.Classes.Add("markdown-math-fallback");
             }
         }
+    }
+
+    /// <summary>
+    /// Puts <paramref name="border"/> in a <c>markdown-math-container</c> grid, under a copy button for
+    /// <paramref name="source"/> in its top right corner. The button is a <c>markdown-code-copy</c> like a
+    /// code block's, so it looks and behaves the same; its <c>markdown-math-copy</c> class gives it its
+    /// own tooltip and accessible name. Text selection skips it, as it does a code block's toolbar.
+    /// </summary>
+    private static Grid WithCopyButton(Border border, string source)
+    {
+        var button = CodeBlockToolbar.CreateCopyButton(source, MarkdownCopyOrigin.MathBlock);
+        // Its place in the corner comes from the theme, like the rest of its look.
+        button.Classes.Add("markdown-math-copy");
+
+        var container = new Grid { Children = { border, button } };
+        container.Classes.Add("markdown-math-container");
+        return container;
     }
 
     /// <summary>

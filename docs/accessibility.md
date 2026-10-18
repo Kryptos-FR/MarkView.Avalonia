@@ -30,7 +30,7 @@ Avalonia forwards automation peers to each platform's accessibility API: UI Auto
 | Math formula (`MarkView.Avalonia.Math`) | `Image`, named by its TeX source |
 | Mermaid diagram (`MarkView.Avalonia.Mermaid`) | `Image`, named by its diagram source |
 
-The help texts and the lightbox's fallback name are set by `MarkdownTheme.axaml` styles (`Image.markdown-image-zoomable`, `Border.markdown-image-failed`, `.markdown-image-lightbox`), as is the copy button's name, so they can be translated.
+The help texts and the lightbox's fallback name are set by `MarkdownTheme.axaml` styles (`Image.markdown-image-zoomable`, `Border.markdown-image-failed`, `.markdown-image-lightbox`), as are the copy buttons' names ("Copy code", "Copy formula"), so they can be translated.
 
 To give the document a name of your own, set `AutomationProperties.Name`:
 
@@ -49,7 +49,7 @@ Avalonia 12.1.3 has the following gaps:
 
 ## Keyboard
 
-The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a code block's copy button, an interactive task's check box, a zoomable image or Mermaid diagram, a video embed. `Enter` or `Space` folds or unfolds a focused alert or `<details>` block and ticks a focused task; `Enter` or `Space` on the copy button copies the code, and on an image opens it in the lightbox. In the lightbox, `Tab` moves between the lightbox, its close button and its zoom buttons only; `+` and `-` zoom, `0` fits the picture again, the arrow keys pan it, and `Escape` closes the lightbox and gives the focus back to the image.
+The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a code block's or a display formula's copy button, an interactive task's check box, a zoomable image or Mermaid diagram, a video embed. `Enter` or `Space` folds or unfolds a focused alert or `<details>` block and ticks a focused task; `Enter` or `Space` on a copy button copies the code or the formula's TeX source, and on an image opens it in the lightbox. In the lightbox, `Tab` moves between the lightbox, its close button and its zoom buttons only; `+` and `-` zoom, `0` fits the picture again, the arrow keys pan it, and `Escape` closes the lightbox and gives the focus back to the image.
 
 | Key | Action |
 |---|---|
@@ -67,7 +67,7 @@ Links stay inline text, so they wrap and select as before. An invisible stand-in
 The default palette in `MarkdownTheme.axaml` meets WCAG 2.2 AA on FluentTheme's page colours (white with black text, and black with white text):
 
 - **4.5:1** for text: code, code block line numbers, inline code, the code block header (language label and copy icon), `==marked==` text, alert titles and alert bodies, `<kbd>` keys, the text of an image that could not be loaded, and body text, code and inline code on [find](find-in-document.md#highlight-colours) highlights.
-- **3:1** for borders that carry meaning (1.4.11): blockquote bars, table cell borders, the outlines of `<kbd>` keys and of an image that could not be loaded, and the image lightbox's close button.
+- **3:1** for borders and icons that carry meaning (1.4.11): blockquote bars, table cell borders, the outlines of `<kbd>` keys and of an image that could not be loaded, the image lightbox's close button, and a display formula's copy icon, which sits on the page rather than on the code block header.
 
 `ThemeContrastTests` checks every pair against the colours in the theme file, so a brush change that drops below these ratios fails the build.
 

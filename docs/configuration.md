@@ -11,7 +11,8 @@
 | `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. See also [Custom fenced blocks](#custom-fenced-blocks). |
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
 | `ShowCodeBlockLanguage` | `bool` | `true` | Shows the language of a fenced code block (e.g. `csharp`) in a toolbar above the code. See [Code block toolbar](#code-block-toolbar). |
-| `ShowCodeBlockCopyButton` | `bool` | `true` | Shows a button in a toolbar above each code block that copies the code to the clipboard. See [Code block toolbar](#code-block-toolbar). |
+| `ShowCodeBlockCopyButton` | `bool` | `true` | Shows a button in a toolbar above each code block that copies the code to the clipboard, and one in the corner of each display formula that copies its TeX source. See [Code block toolbar](#code-block-toolbar). |
+| `ShowCodeBlockCopyButtonOnHover` | `bool` | `false` | Shows those copy buttons only while the pointer is over their block or they have keyboard focus. Restyles them without re-rendering. See [Showing copy buttons on hover](#showing-copy-buttons-on-hover). |
 | `ShowCodeBlockLineNumbers` | `bool` | `false` | Shows the number of each line in a gutter next to the code. Selection and copy never include the numbers. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `WrapCodeBlockLines` | `bool` | `false` | Wraps code lines longer than the block's width instead of letting them run past it. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `CodeBlockMaxHeight` | `double` | `PositiveInfinity` | Maximum height of a code block (toolbar excluded); a taller block scrolls vertically inside itself. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
@@ -596,9 +597,34 @@ The toolbar is only added when it has something to show: a block without a langu
 rendered exactly as before, with no toolbar. Changing either property re-renders the document.
 
 The toolbar applies to the built-in code block renderer and to the code blocks of the
-`SyntaxHighlighting` and `Mermaid` (non-diagram fences) packages. Mermaid diagrams and math
-blocks have no toolbar. Text selection skips the toolbar, so selecting and copying across a
-code block copies only the code. See [Theming](theming.md#code-block-toolbar) to restyle it.
+`SyntaxHighlighting` and `Mermaid` (non-diagram fences) packages. Mermaid diagrams have no
+toolbar. Text selection skips the toolbar, so selecting and copying across a code block copies
+only the code. See [Theming](theming.md#code-block-toolbar) to restyle it.
+
+### Copying a formula
+
+With the `Math` package, `ShowCodeBlockCopyButton` also gives each display formula (`$$…$$`, and
+`\[…\]` on lines of its own) a copy button in its top right corner. It copies the formula's TeX
+source without its delimiters, as the code block button copies the code without its fence, and
+shows the same check mark. The formula keeps a margin on both sides as wide as the button, so it
+stays centred and never runs under it. Inline formulas (`$…$`) have no button; selecting them
+copies their source. Like the code block button, the copy goes through
+[`CopyingToClipboard`](text-selection.md#changing-what-is-copied), with `MarkdownCopyOrigin.MathBlock` as its
+origin.
+
+### Showing copy buttons on hover
+
+```xml
+<mv:MarkdownViewer ShowCodeBlockCopyButtonOnHover="True" />
+```
+
+With `ShowCodeBlockCopyButtonOnHover`, the copy buttons of code blocks and formulas are hidden
+until the pointer is over their block. A hidden button keeps its place, so nothing moves when
+it shows, and stays a Tab stop with its accessible name: it shows while it has keyboard focus,
+and while it shows its check mark after a copy. The language label is not affected. Changing the
+property only restyles the buttons, through the viewer's `:copy-on-hover` pseudo-class, so it
+does not re-render the document. Touch screens have no hover, so keep the default on devices
+used by touch alone.
 
 ### Line numbers, wrapping and height
 

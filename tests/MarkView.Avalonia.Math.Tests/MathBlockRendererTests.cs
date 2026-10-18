@@ -35,14 +35,14 @@ public class MathBlockRendererTests
     public void Math_block_renders_border_with_math_block_class()
     {
         var result = Render("$$\nx^2\n$$");
-        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(result.Children));
         Assert.Contains("markdown-math-block", border.Classes);
     }
 
     [AvaloniaFact]
     public void Math_block_image_is_named_by_its_TeX_source()
     {
-        var border = Assert.IsType<Border>(Assert.Single(Render("$$\nx^2\n$$").Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(Render("$$\nx^2\n$$").Children));
         var peer = ControlAutomationPeer.CreatePeerForElement(Assert.IsType<Image>(border.Child));
         Assert.Equal(AutomationControlType.Image, peer.GetAutomationControlType());
         Assert.Equal("x^2", peer.GetName());
@@ -52,7 +52,7 @@ public class MathBlockRendererTests
     public void Math_block_border_contains_image()
     {
         var result = Render("$$\nx^2\n$$");
-        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(result.Children));
         Assert.IsType<Image>(border.Child);
     }
 
@@ -60,7 +60,7 @@ public class MathBlockRendererTests
     public void Math_block_image_has_non_null_bitmap_source()
     {
         var result = Render("$$\nx^2\n$$");
-        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(result.Children));
         var image = Assert.IsType<Image>(border.Child);
         Assert.NotNull(image.Source);
     }
@@ -70,7 +70,7 @@ public class MathBlockRendererTests
     {
         var nested = new string('{', 60) + "x" + new string('}', 60); // 60 > MaxBraceNestingDepth (50) — throws before ever touching CSharpMath
         var result = Render($"$$\n{nested}\n$$");
-        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(result.Children));
         Assert.Contains("markdown-math-fallback", border.Classes);
     }
 
@@ -81,7 +81,7 @@ public class MathBlockRendererTests
         """;
 
     private static Image BlockImage(StackPanel root) =>
-        Assert.IsType<Image>(Assert.IsType<Border>(Assert.Single(root.Children)).Child);
+        Assert.IsType<Image>(MathBlockAssert.MathBorder(Assert.Single(root.Children)).Child);
 
     [AvaloniaFact]
     public void Theme_switch_re_bakes_the_formula_image()
@@ -123,7 +123,7 @@ public class MathBlockRendererTests
     [AvaloniaFact]
     public void Empty_math_block_renders_an_image_without_a_fallback()
     {
-        var border = Assert.IsType<Border>(Assert.Single(Render("""
+        var border = MathBlockAssert.MathBorder(Assert.Single(Render("""
             $$
             $$
             """).Children));
@@ -186,7 +186,7 @@ public class MathBlockRendererTests
             y
             $$
             """;
-        var border = Assert.IsType<Border>(Assert.Single(Render(markdown).Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(Render(markdown).Children));
 
         var panel = Assert.IsType<StackPanel>(border.Child);
         Assert.Equal(4, panel.Spacing);
