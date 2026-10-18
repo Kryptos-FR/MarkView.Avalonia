@@ -166,6 +166,9 @@
               <MenuItem Header="Short code blocks" ToggleType="CheckBox"
                         IsChecked="{Binding IsCodeHeightLimited, Mode=TwoWay}"
                         ToolTip.Tip="Cap code blocks at 160 pixels; taller blocks scroll inside themselves" />
+              <Separator />
+              <MenuItem Header="Stream the document" Click="OnStreamClicked"
+                        ToolTip.Tip="Replay the page through a streaming session, 40 characters every 20 ms, following the end" />
             </MenuFlyout>
           </DropDownButton.Flyout>
         </DropDownButton>
@@ -176,6 +179,7 @@
     <Grid>
       <mv:MarkdownViewer x:Name="MarkdownView"
                          Source="{Binding Source}" Markdown="{Binding Markdown}"
+                         AutoScrollToEnd="True"
                          Classes.custom-styled="{Binding IsCustomStyled}"
                          CodeBlockMaxHeight="{Binding CodeBlockMaxHeight}"
                          IsVisible="{Binding !IsColorExtensionSelected}"

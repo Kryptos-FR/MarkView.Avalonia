@@ -8,6 +8,22 @@ namespace MarkView.Avalonia.Demo.Views;
 
 public partial class MainView : UserControl
 {
+    /// <summary>The number of characters each step of the Stream command appends.</summary>
+    private const int StreamChunkSize = 40;
+
+    /// <summary>The pause between two steps of the Stream command.</summary>
+    private static readonly TimeSpan StreamChunkInterval = TimeSpan.FromMilliseconds(20);
+
+    // Cancels the replay in progress; replaced by each click on Stream.
+    private CancellationTokenSource? _streamCts;
+
+    // The replay in progress or last started, which a new one waits for: a viewer has one session at a time.
+    private Task? _streamTask;
+
+    // The whole text of the page last replayed. A replay empties the page's Markdown, so a second click
+    // on the replayed page reads its text from here instead.
+    private string? _replayText;
+
     public MainView()
     {
         InitializeComponent();
@@ -123,6 +139,54 @@ public partial class MainView : UserControl
                 using var reader = new StreamReader(stream);
                 var markdown = await reader.ReadToEndAsync();
                 ((MainViewModel)DataContext!).LoadMarkdownContent(markdown);
+            }
+        }
+    }
+
+    // ── Streaming replay ─────────────────────────────────────────────────────
+
+    private async void OnStreamClicked(object? sender, RoutedEventArgs e)
+    {
+        var viewModel = (MainViewModel)DataContext!;
+        _streamCts?.Cancel();
+        var cts = _streamCts = new CancellationTokenSource();
+        var replay = _streamTask = ReplayAsync(viewModel, _streamTask, cts);
+        await replay;
+    }
+
+    private async Task ReplayAsync(MainViewModel viewModel, Task? previous, CancellationTokenSource cts)
+    {
+        var token = cts.Token;
+        // The replay a click interrupted ends its session as it unwinds; WhenAny does not rethrow its failure.
+        if (previous is not null)
+            await Task.WhenAny(previous);
+        if (token.IsCancellationRequested)
+            return;
+
+        // The page is emptied while (and after) a replay, so a click on that state replays the saved text.
+        var text = viewModel is { Source: null, Markdown: "" } && _replayText is not null
+            ? _replayText
+            : await viewModel.ReadCurrentMarkdownAsync();
+        if (text is null || token.IsCancellationRequested)
+            return;
+
+        _replayText = text;
+        viewModel.BeginReplay();
+        using var session = MarkdownView.BeginStreaming();
+        var position = 0;
+        // The viewer ends the session itself when the page changes (another tab, a file), which stops the loop.
+        while (position < text.Length && !token.IsCancellationRequested && MarkdownView.IsStreaming)
+        {
+            var length = int.Min(StreamChunkSize, text.Length - position);
+            session.Append(text.AsSpan(position, length));
+            position += length;
+            try
+            {
+                await Task.Delay(StreamChunkInterval, token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
             }
         }
     }

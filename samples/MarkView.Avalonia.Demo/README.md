@@ -45,6 +45,7 @@ The **View options** menu (the sliders icon) toggles the viewer settings that ch
 - **Code line numbers**: `ShowCodeBlockLineNumbers`.
 - **Wrap long code lines**: `WrapCodeBlockLines`.
 - **Short code blocks**: `CodeBlockMaxHeight` at 160 pixels, so taller blocks scroll inside themselves.
+- **Stream the document**: replays the current page through `BeginStreaming()` in 40-character chunks every 20 ms with `AutoScrollToEnd` on, so you can watch healing and provisional rendering work; switching page or opening a file stops it.
 
 ## How the Demo Is Configured
 

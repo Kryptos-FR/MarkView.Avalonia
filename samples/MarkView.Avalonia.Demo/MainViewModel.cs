@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 using Avalonia;
+using Avalonia.Platform;
 using Avalonia.Styling;
 
 namespace MarkView.Avalonia.Demo;
@@ -441,6 +442,46 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Source = null;
         Markdown = markdown;
         PushEntry(null, markdown);
+    }
+
+    /// <summary>
+    /// Reads the markdown the current page shows: <see cref="Markdown"/> when it is set, otherwise the
+    /// text behind <see cref="Source"/> (an <c>avares:</c> resource or a file, without any fragment).
+    /// </summary>
+    /// <returns>
+    /// The markdown, or <c>null</c> when the page has neither (the Color Extension page, whose content
+    /// is not markdown from this view model).
+    /// </returns>
+    public async Task<string?> ReadCurrentMarkdownAsync()
+    {
+        if (Markdown is not null)
+            return Markdown;
+
+        switch (Source)
+        {
+            case { Scheme: "avares" } resource:
+            {
+                await using var stream = AssetLoader.Open(new Uri(resource.GetLeftPart(UriPartial.Path)));
+                using var reader = new StreamReader(stream);
+                return await reader.ReadToEndAsync();
+            }
+            case { IsFile: true } file:
+                return await File.ReadAllTextAsync(file.LocalPath);
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// Empties the page so the viewer can stream its text back in. <c>BeginStreaming</c> refuses a
+    /// viewer whose <c>Source</c> is set, so the page is unbound from <see cref="Source"/> first and
+    /// the viewer cleared. The history is left alone: the entry pushed when the page loaded is still
+    /// what Back and Forward restore.
+    /// </summary>
+    public void BeginReplay()
+    {
+        Source = null;
+        Markdown = "";
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
