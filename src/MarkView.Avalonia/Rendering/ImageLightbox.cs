@@ -75,9 +75,8 @@ internal sealed class ImageLightbox : Panel
     private Point _pressPosition;
     private Point _lastPosition;
     private bool _dragging;
+    // The scale of the pinch in progress, or null.
     private double? _pinchScale;
-    // Set once a pinch or drag moved the picture, so the release that ends it does not close the lightbox.
-    private bool _gestured;
 
     static ImageLightbox()
     {
@@ -102,17 +101,13 @@ internal sealed class ImageLightbox : Panel
         if (AutomationProperties.GetName(picture) is { Length: > 0 } name)
             AutomationProperties.SetName(this, name);
 
-        // Arranged at the picture's zoomed size and position by ArrangeOverride.
-        Image = new Image
-        {
-            Source = picture.Source,
-            Stretch = Stretch.Fill,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch,
-        };
+        // Arranged at the picture's zoomed size and position by ArrangeOverride. Neither it nor its
+        // backing is hit-testable, so a press anywhere captures the pointer to the lightbox itself,
+        // which then sees the pointer's capture lost too.
+        Image = new Image { Source = picture.Source, Stretch = Stretch.Fill, IsHitTestVisible = false };
         Image.Classes.Add("markdown-image-lightbox-image");
 
-        Backing = new Border { Background = ImageZoom.GetBackground(picture) };
+        Backing = new Border { Background = ImageZoom.GetBackground(picture), IsHitTestVisible = false };
         Backing.Classes.Add("markdown-image-lightbox-backing");
 
         CloseButton = CreateButton(new CloseGlyph(), "markdown-image-lightbox-close", () => CloseRequested?.Invoke());
@@ -150,6 +145,14 @@ internal sealed class ImageLightbox : Panel
         AddHandler(PinchEvent, OnPinch);
         AddHandler(PinchEndedEvent, (_, _) => _pinchScale = null);
         AddHandler(PointerTouchPadGestureMagnifyEvent, OnMagnify);
+        AttachedToVisualTree += OnAttached;
+        DetachedFromVisualTree += OnDetached;
+        KeyDown += OnKeyDown;
+        PointerPressed += OnPointerPressed;
+        PointerMoved += OnPointerMoved;
+        PointerReleased += OnPointerReleased;
+        PointerCaptureLost += OnPointerCaptureLost;
+        PointerWheelChanged += OnPointerWheelChanged;
     }
 
     /// <summary>What had focus when the lightbox opened, to focus again when it closes.</summary>
@@ -190,15 +193,15 @@ internal sealed class ImageLightbox : Panel
 
     private Size NaturalSize => Image.Source?.Size ?? default;
 
-    private bool HasPicture => NaturalSize is { Width: > 0, Height: > 0 };
 
     private double FitZoom
     {
         get
         {
             var natural = NaturalSize;
+            if (natural.Width <= 0 || natural.Height <= 0) return 0;
             var fit = Math.Min(_view.Width / natural.Width, _view.Height / natural.Height);
-            return Math.Max(0, Math.Min(fit, _enlargeToFit ? MaxFitEnlargement : 1));
+            return Math.Min(fit, _enlargeToFit ? MaxFitEnlargement : 1);
         }
     }
 
@@ -242,22 +245,25 @@ internal sealed class ImageLightbox : Panel
     /// </summary>
     public void ZoomBy(double factor, Point origin)
     {
-        if (!HasPicture || _view.Width <= 0 || _view.Height <= 0) return;
+        // Nothing to zoom before the lightbox is laid out, or without a picture.
         var fit = FitZoom;
+        if (fit <= 0) return;
         var zoom = Math.Clamp(_zoom * factor, MinZoom, MaxZoom);
         // Zooming back and forth by the same steps returns to the fitted size despite rounding.
+        // Stryker disable once Equality : equal to within 1e-9 times the fitted zoom is not a case rounding produces
         if (Math.Abs(zoom - fit) < fit * 1e-9) zoom = fit;
-        if (zoom == _zoom) return;
         var centre = _view.Center + _pan;
         _pan = origin + (centre - origin) * (zoom / _zoom) - _view.Center;
         _zoom = zoom;
         _isFitted = zoom == fit;
-        if (_isFitted) _pan = default;
-        ClampPan();
+        // Clamped once arranged.
         InvalidateArrange();
     }
 
-    /// <summary>Moves the picture by <paramref name="delta"/>, as far as it stays over the lightbox.</summary>
+    /// <summary>
+    /// Moves the picture by <paramref name="delta"/>, as far as it stays over the lightbox. Clamped at
+    /// once, so that a drag back from past an edge moves the picture straight away.
+    /// </summary>
     public void PanBy(Vector delta)
     {
         _pan += delta;
@@ -299,7 +305,8 @@ internal sealed class ImageLightbox : Panel
     {
         // The picture's margin keeps it off the lightbox's edges when it is fitted.
         _view = new Rect(finalSize).Deflate(Image.Margin);
-        if (HasPicture)
+        // Without a picture, or room to show it, there is nothing to zoom.
+        if (FitZoom > 0)
         {
             if (_isFitted)
             {
@@ -329,19 +336,15 @@ internal sealed class ImageLightbox : Panel
         return finalSize;
     }
 
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        base.OnAttachedToVisualTree(e);
         Image.Source = _picture.Source;
         Backing.Background = ImageZoom.GetBackground(_picture);
         _picture.PropertyChanged += OnPicturePropertyChanged;
     }
 
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        base.OnDetachedFromVisualTree(e);
+    private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) =>
         _picture.PropertyChanged -= OnPicturePropertyChanged;
-    }
 
     // A diagram is rendered again in the colours of a new theme; a picture removed from the document
     // (whose lightbox is about to close) keeps showing.
@@ -354,10 +357,8 @@ internal sealed class ImageLightbox : Panel
         InvalidateArrange();
     }
 
-    protected override void OnKeyDown(KeyEventArgs e)
+    private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        base.OnKeyDown(e);
-        if (e.Handled) return;
         var pan = new Vector(_view.Width, _view.Height) * KeyPanFraction;
         switch (e.Key)
         {
@@ -375,26 +376,24 @@ internal sealed class ImageLightbox : Panel
         e.Handled = true;
     }
 
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    // A second touch, which may start a pinch, leaves the first one's press as it is.
+    private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        base.OnPointerPressed(e);
-        if (e.Handled || _pressPointer is not null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        if (_pressPointer is not null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
         _pressPointer = e.Pointer;
         _pressPosition = _lastPosition = e.GetPosition(this);
         _dragging = false;
-        _gestured = false;
     }
 
-    protected override void OnPointerMoved(PointerEventArgs e)
+    private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
-        base.OnPointerMoved(e);
-        if (e.Pointer != _pressPointer || _pinchScale is not null) return;
+        if (e.Pointer != _pressPointer) return;
         var position = e.GetPosition(this);
         if (!_dragging)
         {
             var moved = position - _pressPosition;
             if (Math.Sqrt(moved.X * moved.X + moved.Y * moved.Y) < DragThreshold) return;
-            _dragging = _gestured = true;
+            _dragging = true;
             Cursor = new Cursor(StandardCursorType.SizeAll);
         }
         PanBy(position - _lastPosition);
@@ -402,41 +401,38 @@ internal sealed class ImageLightbox : Panel
         e.Handled = true;
     }
 
-    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
-        base.OnPointerReleased(e);
         if (e.Pointer != _pressPointer) return;
-        var gestured = _gestured;
+        var dragged = _dragging;
         EndPress();
-        if (e.Handled || gestured || e.InitialPressMouseButton != MouseButton.Left) return;
+        if (dragged || e.InitialPressMouseButton != MouseButton.Left) return;
         // A click, as on a foldable alert header: the press implicitly captured the pointer to the
-        // lightbox (or the picture in it), so a release here started here.
+        // lightbox, so a release here started here.
         if (!new Rect(Bounds.Size).Contains(e.GetPosition(this)) || IsOnToolbar(e.Source)) return;
         CloseRequested?.Invoke();
         e.Handled = true;
     }
 
-    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    // Also when a pinch starts: its recognizer captures both touches.
+    private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
     {
-        base.OnPointerCaptureLost(e);
-        if (e.Pointer == _pressPointer && _pinchScale is null)
+        if (e.Pointer == _pressPointer)
             EndPress();
     }
 
     private void EndPress()
     {
         _pressPointer = null;
-        _dragging = false;
         Cursor = null;
     }
 
     private bool IsOnToolbar(object? source) =>
         source is Visual visual && (visual == Toolbar || Toolbar.IsVisualAncestorOf(visual));
 
-    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
     {
-        base.OnPointerWheelChanged(e);
-        if (e.Handled || e.Delta.Y == 0) return;
+        // A sideways scroll (Delta.Y is 0) zooms by a factor of 1, so not at all.
         ZoomBy(Math.Pow(WheelZoomStep, e.Delta.Y), e.GetPosition(this));
         e.Handled = true;
     }
@@ -446,7 +442,7 @@ internal sealed class ImageLightbox : Panel
     {
         var previous = _pinchScale ?? 1;
         _pinchScale = e.Scale;
-        _gestured = true;
+        // After the two touches met, the scale starts again from nothing.
         if (previous > 0)
             ZoomBy(e.Scale / previous, e.ScaleOrigin);
         e.Handled = true;
