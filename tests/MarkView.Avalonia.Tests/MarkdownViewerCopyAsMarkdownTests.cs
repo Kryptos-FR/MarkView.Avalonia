@@ -1,6 +1,8 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Text.RegularExpressions;
+
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
@@ -30,25 +32,32 @@ public class MarkdownViewerCopyAsMarkdownTests
         /// </summary>
         public void Select(string text, int occurrence = 0)
         {
-            var flat = string.Concat(Layer.Entries.Select(e => e.PlainText + e.Separator));
-            var index = -1;
+            var flat = FlatText;
+            Match match = Match.Empty;
             for (var i = 0; i <= occurrence; i++)
             {
-                index = flat.IndexOf(text, index + 1, StringComparison.Ordinal);
-                Assert.True(index >= 0, $"'{text}' not found in '{flat}'");
+                match = Find(flat, text, i == 0 ? 0 : match.Index + 1);
+                Assert.True(match.Success, $"'{text}' not found in '{flat}'");
             }
-            Layer.SetSelectionForTest(index, index + text.Length);
+            Layer.SetSelectionForTest(match.Index, match.Index + match.Length);
         }
 
         /// <summary>Selects from the start of <paramref name="from"/> to the end of <paramref name="to"/>.</summary>
         public void Select(string from, string to)
         {
-            var flat = string.Concat(Layer.Entries.Select(e => e.PlainText + e.Separator));
-            var start = flat.IndexOf(from, StringComparison.Ordinal);
-            var end = flat.IndexOf(to, start, StringComparison.Ordinal);
-            Assert.True(start >= 0 && end >= 0, $"'{from}' … '{to}' not found in '{flat}'");
-            Layer.SetSelectionForTest(start, end + to.Length);
+            var flat = FlatText;
+            var start = Find(flat, from, 0);
+            var end = start.Success ? Find(flat, to, start.Index) : Match.Empty;
+            Assert.True(start.Success && end.Success, $"'{from}' … '{to}' not found in '{flat}'");
+            Layer.SetSelectionForTest(start.Index, end.Index + end.Length);
         }
+
+        private string FlatText => string.Concat(Layer.Entries.Select(e => e.PlainText + e.Separator));
+
+        // A line break inside a block is Environment.NewLine in the flat text ("\r\n" on Windows), so a "\n" in
+        // the searched text matches either.
+        private static Match Find(string flat, string text, int start) =>
+            new Regex(string.Join(@"\r?\n", text.Split('\n').Select(Regex.Escape))).Match(flat, start);
 
         public void Dispose() => Window.Close();
     }
