@@ -20,10 +20,6 @@ public partial class MainView : UserControl
     // The replay in progress or last started, which a new one waits for: a viewer has one session at a time.
     private Task? _streamTask;
 
-    // The whole text of the page last replayed. A replay empties the page's Markdown, so a second click
-    // on the replayed page reads its text from here instead.
-    private string? _replayText;
-
     public MainView()
     {
         InitializeComponent();
@@ -163,31 +159,35 @@ public partial class MainView : UserControl
         if (token.IsCancellationRequested)
             return;
 
-        // The page is emptied while (and after) a replay, so a click on that state replays the saved text.
-        var text = viewModel is { Source: null, Markdown: "" } && _replayText is not null
-            ? _replayText
-            : await viewModel.ReadCurrentMarkdownAsync();
+        var text = await viewModel.ReadCurrentMarkdownAsync();
         if (text is null || token.IsCancellationRequested)
             return;
 
-        _replayText = text;
         viewModel.BeginReplay();
-        using var session = MarkdownView.BeginStreaming();
-        var position = 0;
-        // The viewer ends the session itself when the page changes (another tab, a file), which stops the loop.
-        while (position < text.Length && !token.IsCancellationRequested && MarkdownView.IsStreaming)
+        try
         {
-            var length = int.Min(StreamChunkSize, text.Length - position);
-            session.Append(text.AsSpan(position, length));
-            position += length;
-            try
+            using var session = MarkdownView.BeginStreaming();
+            var position = 0;
+            // The viewer ends the session itself when the page changes (another tab, a file), which stops the loop.
+            while (position < text.Length && !token.IsCancellationRequested && MarkdownView.IsStreaming)
             {
-                await Task.Delay(StreamChunkInterval, token);
+                var length = int.Min(StreamChunkSize, text.Length - position);
+                session.Append(text.AsSpan(position, length));
+                position += length;
+                try
+                {
+                    await Task.Delay(StreamChunkInterval, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
             }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
+        }
+        finally
+        {
+            // After the session is disposed: the view model gets the page's text back, unless the page changed.
+            viewModel.EndReplay(text);
         }
     }
 

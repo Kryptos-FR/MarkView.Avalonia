@@ -249,6 +249,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly List<(int SelectedIndex, Uri? Source, string? Markdown)> _history = [];
     private int _historyIndex = -1;
     private bool _navigating;
+    // Whether the page is empty only because a replay emptied it; any other assignment to the page ends that.
+    private bool _isReplaying;
 
     private Uri? _source;
     private string? _markdown;
@@ -333,13 +335,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public Uri? Source
     {
         get => _source;
-        private set => SetField(ref _source, value);
+        private set
+        {
+            _isReplaying = false;
+            SetField(ref _source, value);
+        }
     }
 
     public string? Markdown
     {
         get => _markdown;
-        private set => SetField(ref _markdown, value);
+        private set
+        {
+            _isReplaying = false;
+            SetField(ref _markdown, value);
+        }
     }
 
     public bool CanGoBack => _historyIndex > 0;
@@ -482,6 +492,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         Source = null;
         Markdown = "";
+        _isReplaying = true;
+    }
+
+    /// <summary>
+    /// Restores the page's text once the replay ends so the view model and the viewer agree again. The
+    /// binding hands the viewer the text it already shows after a completed replay (an equal value, so
+    /// nothing is re-rendered), or the whole text after an interrupted one. Does nothing when the page
+    /// has changed since <see cref="BeginReplay"/> (another tab, a file, Back or Forward), so a replay
+    /// never overwrites the page that interrupted it.
+    /// </summary>
+    /// <param name="text">The text the replay streamed.</param>
+    public void EndReplay(string text)
+    {
+        if (!_isReplaying)
+            return;
+        Markdown = text;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
