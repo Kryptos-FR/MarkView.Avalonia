@@ -168,7 +168,8 @@
                         ToolTip.Tip="Cap code blocks at 160 pixels; taller blocks scroll inside themselves" />
               <Separator />
               <MenuItem Header="Stream the document" Click="OnStreamClicked"
-                        ToolTip.Tip="Replay the page through a streaming session, 40 characters every 20 ms, following the end" />
+                        IsEnabled="{Binding !IsColorExtensionSelected}"
+                        ToolTip.Tip="Replay the page through a streaming session, 40 characters every 20 ms, following the end. Changing the page, opening a file or changing a view option stops the replay." />
             </MenuFlyout>
           </DropDownButton.Flyout>
         </DropDownButton>

@@ -460,7 +460,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// </summary>
     /// <returns>
     /// The markdown, or <c>null</c> when the page has neither (the Color Extension page, whose content
-    /// is not markdown from this view model).
+    /// is not markdown from this view model) or when its file can no longer be read (moved or locked).
     /// </returns>
     public async Task<string?> ReadCurrentMarkdownAsync()
     {
@@ -476,7 +476,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 return await reader.ReadToEndAsync();
             }
             case { IsFile: true } file:
-                return await File.ReadAllTextAsync(file.LocalPath);
+                try
+                {
+                    return await File.ReadAllTextAsync(file.LocalPath);
+                }
+                catch (IOException)
+                {
+                    // A moved or locked file; the viewer swallows the same failure when it loads the page.
+                    return null;
+                }
             default:
                 return null;
         }
@@ -496,11 +504,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Restores the page's text once the replay ends so the view model and the viewer agree again. The
-    /// binding hands the viewer the text it already shows after a completed replay (an equal value, so
-    /// nothing is re-rendered), or the whole text after an interrupted one. Does nothing when the page
-    /// has changed since <see cref="BeginReplay"/> (another tab, a file, Back or Forward), so a replay
-    /// never overwrites the page that interrupted it.
+    /// Restores the page's text once the replay ends so the view model and the viewer agree again. After
+    /// a completed replay the viewer normally already shows that text, so nothing changes; after an
+    /// interrupted one (a second click, a view option toggled, a task toggled mid-replay) the restored
+    /// text is rendered once. Does nothing when the page has changed since <see cref="BeginReplay"/>
+    /// (another tab, a file, Back or Forward), so a replay never overwrites the page that interrupted it.
     /// </summary>
     /// <param name="text">The text the replay streamed.</param>
     public void EndReplay(string text)

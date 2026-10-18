@@ -145,6 +145,7 @@ public partial class MainView : UserControl
     {
         var viewModel = (MainViewModel)DataContext!;
         _streamCts?.Cancel();
+        _streamCts?.Dispose();
         var cts = _streamCts = new CancellationTokenSource();
         var replay = _streamTask = ReplayAsync(viewModel, _streamTask, cts);
         await replay;
