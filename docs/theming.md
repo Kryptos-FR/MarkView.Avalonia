@@ -139,6 +139,67 @@ and redefines the default theme's keys as follows:
 
 **Next to the extension packages.** Their themes stay as they are. Syntax highlighting (`MarkView.Avalonia.SyntaxHighlighting`) keeps its TextMate colours, Dark+ and Light+ by default, drawn on the preset's code background: GitHub's own highlighting colours differ, but Dark+ and Light+ have at least the same contrast on it as on the default theme's (the light background is a little lighter, the dark one a little darker). Mermaid diagrams keep the colours of `MermaidTheme.axaml`: in the light variant their white background matches the page, while in the dark one their `#18181B` background shows as a slightly lighter card on GitHub's `#0D1117`; redefine `MarkdownMermaidBackground` in the `Dark` dictionary to blend it in. Math formulas follow the theme variant on their own.
 
+### Chat
+
+`ChatTheme.axaml` makes the document compact, for chat messages and other narrow surfaces, in the style of AI chat applications. Unlike the GitHub preset, it leaves the page to the host: the viewer keeps a transparent background and inherits the font family, font size and text colour of the bubble or window around it.
+
+```xml
+<Application.Styles>
+  <FluentTheme />
+  <StyleInclude Source="avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml" />
+  <StyleInclude Source="avares://MarkView.Avalonia/Themes/ChatTheme.axaml" />
+</Application.Styles>
+```
+
+What it changes:
+
+| Element | Chat look |
+|---|---|
+| Document | Nothing on `MarkdownViewer` itself. Blocks are only 8px apart (the document's block spacing), with no extra margin around paragraphs, lists, quotes, alerts, tables, images or code; paragraphs get 3px of extra line spacing |
+| Headings | 20 / 18 / 16 / 15 / 14 / 14px, semibold, 8px above them (none at the start of a message, quote or alert); h6 in the secondary text colour |
+| Links | Blue (`#1D4ED8` / `#6EADFB`), underlined |
+| Code blocks | A card with 8px corners and a faint 1px outline, on a translucent tint of the page, 12×10px padding, 13px monospace (Cascadia Code, SF Mono, Menlo, Consolas, Liberation Mono). The toolbar takes the code's background, so the language label and copy button sit inside the card's top edge |
+| Inline code | Monospace on a faint translucent chip, in a text colour close to the body's, at 13px in paragraphs |
+| Blockquotes | A 3px grey bar, secondary text colour, no dimming |
+| Tables | A line under every row and none between columns, a semibold header on a faint tint, 10×6px cell padding |
+| Horizontal rules | A 1px grey line |
+| Alerts | A 3px bar and the title in the kind's colour, on a faint tint of it, 8px corners on the right, the title at 14px |
+| Footnotes | 12px secondary text, no dimming |
+
+The colours that sit on the page (code cards, chips, tints, the table header) are translucent, so they follow the bubble's colour. Every pair meets WCAG 2.2 AA (4.5:1 for text, 3:1 for the quote bar, table lines and rules) on white and on a `#F4F4F5` bubble in the light variant, and on black, `#18181B` and `#2F2F2F` in the dark one, with Fluent's text colour as the body text. On a coloured bubble (an accent-coloured message from the user, say), check the contrast yourself or redefine the keys below for that bubble.
+
+The sizes are absolute, tuned for 14px body text (Fluent's default): with a larger body size, headings sit closer to it. Set `FontSize` on the viewer or its bubble as usual, and restyle `:is(TextBlock).markdown-h1` to `markdown-h6` if you need other heading sizes.
+
+It adds these resource keys to the ones it redefines from the default theme:
+
+| Resource key | Colours | Dark | Light |
+|---|---|---|---|
+| `MarkdownMutedForeground` | Blockquotes, h6, footnotes | `#AEAEB6` | `#52525B` |
+| `MarkdownCodeBlockBorder` | Outline of code blocks | `#1FFFFFFF` | `#14000000` |
+| `MarkdownTableHeaderBackground` | Table header row | `#0FFFFFFF` | `#0A000000` |
+| `MarkdownThematicBreakBackground` | Horizontal rule | `#8B8B94` | `#7A7A83` |
+
+and redefines the default theme's keys as follows:
+
+| Resource key | Dark | Light |
+|---|---|---|
+| `MarkdownLinkForeground`, `MarkdownAlertNoteBorder` | `#6EADFB` | `#1D4ED8` |
+| `MarkdownBlockquoteBorder`, `MarkdownTableBorder`, `MarkdownKbdBorder`, `MarkdownImageFailedBorder` | `#8B8B94` | `#7A7A83` |
+| `MarkdownCodeBlockBackground`, `MarkdownCodeHeaderBackground`, `MarkdownImageFailedBackground` | `#0FFFFFFF` | `#0A000000` |
+| `MarkdownCodeBlockForeground`, `MarkdownCodeInlineForeground` | `#E4E4E7` | `#18181B` |
+| `MarkdownCodeInlineBackground` | `#1AFFFFFF` | `#0F000000` |
+| `MarkdownCodeHeaderForeground`, `MarkdownCodeLineNumberForeground`, `MarkdownImageFailedForeground`, `MarkdownAlertDefaultBorder` | `#AEAEB6` | `#52525B` |
+| `MarkdownCodeCopyButtonHoverBackground` | `#1AFFFFFF` | `#14000000` |
+| `MarkdownAlertTipBorder` | `#4ADE80` | `#166534` |
+| `MarkdownAlertImportantBorder` | `#C79AFD` | `#7E22CE` |
+| `MarkdownAlertWarningBorder` | `#FACC15` | `#854D0E` |
+| `MarkdownAlertCautionBorder` | `#FA8C8C` | `#B91C1C` |
+| `MarkdownAlert<Kind>Background` | The kind's colour at 8% (`#14…`) | The kind's colour at 6% (`#0F…`) |
+| `MarkdownMarkedBackground` | `#5C4B00` | `#FEF08A` |
+| `MarkdownKbdBackground`, `MarkdownKbdForeground` | `#27272A`, `#F4F4F5` | `#FAFAFA`, `#18181B` |
+
+The find highlights, the image lightbox and the `MarkdownHighContrast*` palette keep the default theme's colours: the preset has no page colours of its own, so in high contrast the document takes the default theme's black or white page, and the code card's outline, quote bar, table lines and rules turn solid, as the default theme's do.
+
 ### Overriding a preset
 
 The preset's colours are resources, so the usual Avalonia lookup order applies: a key defined closer to the viewer wins. Redefine keys in `Application.Resources` (which Avalonia searches before `Application.Styles`), in a `Styles` block included after the preset, or in the `Resources` of a window or of the viewer itself:
@@ -159,7 +220,7 @@ The preset's colours are resources, so the usual Avalonia lookup order applies: 
 </Application.Resources>
 ```
 
-Styles work as with the default theme: a style declared after the preset's include wins over the preset's for the same property, whatever its selector. A value set on the viewer itself always wins over both themes, e.g. `<mv:MarkdownViewer Background="Transparent" FontSize="14" />`. The preset sets `Background`, `Foreground`, `FontFamily` and `FontSize` on `MarkdownViewer`, so local values of these replace GitHub's for the whole document.
+Styles work as with the default theme: a style declared after the preset's include wins over the preset's for the same property, whatever its selector. A value set on the viewer itself always wins over both themes, e.g. `<mv:MarkdownViewer Background="Transparent" FontSize="14" />`. The GitHub preset sets `Background`, `Foreground`, `FontFamily` and `FontSize` on `MarkdownViewer`, so local values of these replace GitHub's for the whole document.
 
 To switch presets at run time, add or remove the preset's `StyleInclude`; every open document restyles in place, without being rebuilt:
 

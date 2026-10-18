@@ -35,7 +35,7 @@ The toolbar has three groups: the outline, history and **Open…** buttons on th
 
 The **sun / moon** button switches the entire application between Avalonia's `Light` and `Dark` theme variants; its icon shows the current one. Syntax-highlighted code blocks and Mermaid diagrams update in-place — no document rebuild or scroll reset.
 
-The **theme preset** drop-down switches the documents between the default theme and the [GitHub theme preset](../../docs/theming.md#theme-presets) (`GitHubTheme.axaml`), by inserting or removing its `StyleInclude` right after `MarkdownTheme.axaml` in the application's styles (see `MainViewModel.ThemePresetIndex`). Both presets follow the Light/Dark switch.
+The **theme preset** drop-down switches the documents between the default theme and the [theme presets](../../docs/theming.md#theme-presets), GitHub (`GitHubTheme.axaml`) and Chat (`ChatTheme.axaml`), by inserting or removing the preset's `StyleInclude` right after `MarkdownTheme.axaml` in the application's styles (see `MainViewModel.ThemePresetIndex`). Every preset follows the Light/Dark switch.
 
 ### View Options
 

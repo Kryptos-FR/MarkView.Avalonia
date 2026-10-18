@@ -349,7 +349,9 @@ Include `MarkdownTheme.axaml` for default styles. For a document that looks like
 <StyleInclude Source="avares://MarkView.Avalonia/Themes/GitHubTheme.axaml" />
 ```
 
-See [Theme presets](docs/theming.md#theme-presets) for what it changes, and [Colour resources](docs/theming.md#colour-resources) for every colour key you can redefine.
+For chat messages, include the **Chat theme preset** (`ChatTheme.axaml`) instead: compact spacing, small headings and code cards, on whatever bubble, font and text colour the host gives the viewer.
+
+See [Theme presets](docs/theming.md#theme-presets) for what each preset changes, and [Colour resources](docs/theming.md#colour-resources) for every colour key you can redefine.
 
 Override any style class in your own `Styles` to customise appearance:
 
