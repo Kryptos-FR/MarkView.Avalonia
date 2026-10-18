@@ -424,7 +424,8 @@ public class MarkdownHealerTests
     public void OptionsFor_recognises_the_bracket_math_extension_by_its_type_name()
     {
         // The extension is declared in MarkView.Avalonia.Math, which this project does not reference: a
-        // type of the same full name stands in for it.
+        // type of the same full name stands in for it. It is emitted into a dynamic assembly because a real
+        // namespace MarkView.Avalonia.Math in this assembly would shadow System.Math in every test.
         var builder = new MarkdownPipelineBuilder();
         builder.Extensions.Add(NamedExtension("MarkView.Avalonia.Math.Parsing.BracketMathExtension"));
         Assert.Equal(new HealingOptions(false, true), MarkdownHealer.OptionsFor(builder.Build()));
