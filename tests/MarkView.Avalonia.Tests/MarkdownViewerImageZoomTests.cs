@@ -97,7 +97,8 @@ public class MarkdownViewerImageZoomTests
         window.MouseUp(point, button);
     }
 
-    private static void Press(Window window, Key key) => window.KeyPress(key, RawInputModifiers.None, PhysicalKey.None, null);
+    private static void Press(Window window, Key key, RawInputModifiers modifiers = RawInputModifiers.None) =>
+        window.KeyPress(key, modifiers, PhysicalKey.None, null);
 
     private static void RaiseKey(InputElement element, Key key) =>
         element.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = key });
@@ -139,12 +140,10 @@ public class MarkdownViewerImageZoomTests
         f.Window.UpdateLayout();
 
         var image = f.Lightbox!.Image;
-        Assert.Equal(Stretch.Uniform, image.Stretch);
-        Assert.Equal(StretchDirection.DownOnly, image.StretchDirection);
-        Assert.Equal(HorizontalAlignment.Center, image.HorizontalAlignment);
-        Assert.Equal(VerticalAlignment.Center, image.VerticalAlignment);
         Assert.Equal(new Size(40, 20), image.Bounds.Size);
         Assert.Equal(new Point(180, 140), image.Bounds.Position);
+        Assert.Equal(1, f.Lightbox.Zoom);
+        Assert.True(f.Lightbox.IsFitted);
     }
 
     [AvaloniaFact]
@@ -602,5 +601,454 @@ public class MarkdownViewerImageZoomTests
         Assert.Equal(new Thickness(48), lightbox.Image.Margin);
         Assert.Equal(Colors.White, Assert.IsAssignableFrom<ISolidColorBrush>(lightbox.CloseButton.Foreground).Color);
         Assert.Equal(Color.Parse("#66000000"), Assert.IsAssignableFrom<ISolidColorBrush>(lightbox.CloseButton.Background).Color);
+    }
+
+    // ── Zooming and panning in the lightbox ───────────────────────────────────
+
+    private static async Task<Fixture> OpenAsync(double width = 800, double height = 600, bool theme = false)
+    {
+        var f = await ShowAsync($"![A diagram]({FakeUrl()})", width, height, theme);
+        RaiseKey(f.Image, Key.Enter);
+        f.Window.UpdateLayout();
+        return f;
+    }
+
+    private static void AssertBounds(Rect expected, Rect actual)
+    {
+        Assert.Equal(expected.X, actual.X, 6);
+        Assert.Equal(expected.Y, actual.Y, 6);
+        Assert.Equal(expected.Width, actual.Width, 6);
+        Assert.Equal(expected.Height, actual.Height, 6);
+    }
+
+    private static void Drag(Window window, Point from, params Point[] to)
+    {
+        window.MouseDown(from, MouseButton.Left);
+        foreach (var point in to)
+            window.MouseMove(point, RawInputModifiers.LeftMouseButton);
+        window.MouseUp(to[^1], MouseButton.Left);
+    }
+
+    [AvaloniaFact]
+    public async Task The_lightbox_opens_fitted_and_shows_the_zoom_level()
+    {
+        // The viewer is 400×300, so an 800×600 picture is fitted at half its size.
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+
+        Assert.True(lightbox.IsFitted);
+        Assert.Equal(0.5, lightbox.Zoom);
+        Assert.Equal("50%", lightbox.ZoomLevel.Text);
+        AssertBounds(new Rect(0, 0, 400, 300), lightbox.Image.Bounds);
+        Assert.Contains("markdown-image-lightbox-zoom-level", lightbox.ZoomLevel.Classes);
+        Assert.Contains("markdown-image-lightbox-toolbar", lightbox.Toolbar.Classes);
+        Assert.Equal(HorizontalAlignment.Center, lightbox.Toolbar.HorizontalAlignment);
+        Assert.Equal(VerticalAlignment.Bottom, lightbox.Toolbar.VerticalAlignment);
+        Assert.True(lightbox.ClipToBounds);
+    }
+
+    [AvaloniaFact]
+    public async Task The_zoom_buttons_zoom_about_the_centre_and_fit_the_picture_again()
+    {
+        using var f = await OpenAsync(200, 120, theme: true);
+        var lightbox = f.Lightbox!;
+        Assert.Equal("Zoom out", AutomationProperties.GetName(lightbox.ZoomOutButton));
+        Assert.Equal("Zoom in", AutomationProperties.GetName(lightbox.ZoomInButton));
+        Assert.Equal("Fit to view", AutomationProperties.GetName(lightbox.FitButton));
+        Assert.IsType<ImageLightbox.ZoomGlyph>(lightbox.ZoomInButton.Content);
+        foreach (var button in new[] { lightbox.ZoomOutButton, lightbox.ZoomInButton, lightbox.FitButton })
+            Assert.Contains("markdown-image-lightbox-zoom", button.Classes);
+
+        Click(f.Window, f.Center(lightbox.ZoomInButton));
+        f.Window.UpdateLayout();
+
+        Assert.Same(lightbox, f.Lightbox);
+        Assert.False(lightbox.IsFitted);
+        Assert.Equal(1.25, lightbox.Zoom);
+        Assert.Equal("125%", lightbox.ZoomLevel.Text);
+        AssertBounds(new Rect(75, 75, 250, 150), lightbox.Image.Bounds);
+
+        Click(f.Window, f.Center(lightbox.ZoomOutButton));
+        f.Window.UpdateLayout();
+        Assert.True(lightbox.IsFitted);
+        Assert.Equal(1, lightbox.Zoom);
+
+        Click(f.Window, f.Center(lightbox.ZoomInButton));
+        Click(f.Window, f.Center(lightbox.ZoomInButton));
+        Click(f.Window, f.Center(lightbox.FitButton));
+        f.Window.UpdateLayout();
+        Assert.True(lightbox.IsFitted);
+        AssertBounds(new Rect(100, 90, 200, 120), lightbox.Image.Bounds);
+    }
+
+    [AvaloniaFact]
+    public async Task Clicking_the_toolbar_does_not_close_the_lightbox()
+    {
+        using var f = await OpenAsync(theme: true);
+
+        Click(f.Window, f.Center(f.Lightbox!.ZoomLevel));
+
+        Assert.NotNull(f.Lightbox);
+    }
+
+    [AvaloniaFact]
+    public async Task The_wheel_zooms_about_the_pointer()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+
+        f.Window.MouseWheel(new Point(100, 75), new Vector(0, 1));
+        f.Window.UpdateLayout();
+
+        // The point under the pointer stays under it.
+        Assert.Equal(0.6, lightbox.Zoom, 9);
+        AssertBounds(new Rect(-20, -15, 480, 360), lightbox.Image.Bounds);
+
+        f.Window.MouseWheel(new Point(100, 75), new Vector(0, -1));
+        f.Window.UpdateLayout();
+
+        Assert.True(lightbox.IsFitted);
+        AssertBounds(new Rect(0, 0, 400, 300), lightbox.Image.Bounds);
+    }
+
+    [AvaloniaFact]
+    public async Task A_sideways_scroll_does_not_zoom()
+    {
+        using var f = await OpenAsync();
+
+        f.Window.MouseWheel(new Point(100, 75), new Vector(1, 0));
+
+        Assert.True(f.Lightbox!.IsFitted);
+    }
+
+    [AvaloniaFact]
+    public async Task Zooming_stays_between_the_fitted_size_and_eight_times_the_natural_size()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+
+        lightbox.ZoomOut();
+        Assert.Equal(0.5, lightbox.Zoom);
+        Assert.True(lightbox.IsFitted);
+
+        lightbox.ZoomBy(100, new Point(200, 150));
+        Assert.Equal(ImageLightbox.MaxZoomFactor, lightbox.Zoom);
+        lightbox.ZoomIn();
+        Assert.Equal(ImageLightbox.MaxZoomFactor, lightbox.Zoom);
+    }
+
+    [AvaloniaFact]
+    public async Task A_small_picture_is_zoomed_out_no_further_than_its_natural_size()
+    {
+        using var f = await OpenAsync(40, 20);
+        var lightbox = f.Lightbox!;
+
+        lightbox.ZoomOut();
+        Assert.Equal(1, lightbox.Zoom);
+
+        lightbox.ZoomBy(100, new Point(200, 150));
+        Assert.Equal(ImageLightbox.MaxZoomFactor, lightbox.Zoom);
+    }
+
+    [AvaloniaFact]
+    public async Task Dragging_pans_a_zoomed_picture_without_closing_the_lightbox()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+        lightbox.ZoomBy(2, new Point(200, 150));
+        f.Window.UpdateLayout();
+        AssertBounds(new Rect(-200, -150, 800, 600), lightbox.Image.Bounds);
+
+        Drag(f.Window, new Point(200, 150), new Point(202, 150), new Point(250, 170));
+        f.Window.UpdateLayout();
+
+        Assert.Same(lightbox, f.Lightbox);
+        // The first move stays under the drag threshold, so the picture follows from where the drag started.
+        AssertBounds(new Rect(-150, -130, 800, 600), lightbox.Image.Bounds);
+        Assert.Null(lightbox.Cursor);
+
+        // Never past the picture's edges.
+        Drag(f.Window, new Point(200, 150), new Point(1200, 1150));
+        f.Window.UpdateLayout();
+        AssertBounds(new Rect(0, 0, 800, 600), lightbox.Image.Bounds);
+        Drag(f.Window, new Point(200, 150), new Point(-1200, -1150));
+        f.Window.UpdateLayout();
+        AssertBounds(new Rect(-400, -300, 800, 600), lightbox.Image.Bounds);
+    }
+
+    [AvaloniaFact]
+    public async Task Dragging_shows_the_move_cursor()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+        lightbox.ZoomBy(2, new Point(200, 150));
+        f.Window.UpdateLayout();
+
+        f.Window.MouseDown(new Point(200, 150), MouseButton.Left);
+        f.Window.MouseMove(new Point(203, 150), RawInputModifiers.LeftMouseButton);
+        Assert.Null(lightbox.Cursor);
+        f.Window.MouseMove(new Point(220, 150), RawInputModifiers.LeftMouseButton);
+        Assert.NotNull(lightbox.Cursor);
+
+        f.Window.MouseUp(new Point(220, 150), MouseButton.Left);
+        Assert.Null(lightbox.Cursor);
+        Assert.NotNull(f.Lightbox);
+    }
+
+    [AvaloniaFact]
+    public async Task A_picture_that_fits_along_an_axis_stays_centred_along_it()
+    {
+        using var f = await OpenAsync(200, 100);
+        var lightbox = f.Lightbox!;
+        // 600×300: wider than the viewer, but not taller.
+        lightbox.ZoomBy(3, new Point(0, 0));
+        f.Window.UpdateLayout();
+        AssertBounds(new Rect(0, 0, 600, 300), lightbox.Image.Bounds);
+
+        Drag(f.Window, new Point(200, 150), new Point(150, 100));
+        f.Window.UpdateLayout();
+
+        AssertBounds(new Rect(-50, 0, 600, 300), lightbox.Image.Bounds);
+    }
+
+    [AvaloniaFact]
+    public async Task A_short_drag_still_closes_the_lightbox()
+    {
+        using var f = await OpenAsync();
+
+        Drag(f.Window, new Point(200, 150), new Point(202, 152));
+
+        Assert.Null(f.Lightbox);
+    }
+
+    [AvaloniaFact]
+    public async Task Moving_another_pointer_or_without_a_press_does_not_pan()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+        lightbox.ZoomBy(2, new Point(200, 150));
+        f.Window.UpdateLayout();
+
+        f.Window.MouseMove(new Point(300, 250));
+        f.Window.MouseDown(new Point(200, 150), MouseButton.Right);
+        f.Window.MouseMove(new Point(300, 250), RawInputModifiers.RightMouseButton);
+        f.Window.MouseUp(new Point(300, 250), MouseButton.Right);
+        f.Window.UpdateLayout();
+
+        AssertBounds(new Rect(-200, -150, 800, 600), lightbox.Image.Bounds);
+        Assert.NotNull(f.Lightbox);
+    }
+
+    [AvaloniaFact]
+    public async Task Keys_zoom_pan_and_fit_the_picture()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+
+        Press(f.Window, Key.OemPlus);
+        Assert.Equal(0.625, lightbox.Zoom);
+        Press(f.Window, Key.Add);
+        Assert.Equal(0.78125, lightbox.Zoom);
+        Press(f.Window, Key.Subtract);
+        Press(f.Window, Key.OemMinus);
+        Assert.True(lightbox.IsFitted);
+
+        lightbox.ZoomBy(2, new Point(200, 150));
+        // An arrow moves the view by a tenth of its size, so the picture the other way.
+        Press(f.Window, Key.Left);
+        Press(f.Window, Key.Up);
+        f.Window.UpdateLayout();
+        AssertBounds(new Rect(-160, -120, 800, 600), lightbox.Image.Bounds);
+        Press(f.Window, Key.Right);
+        Press(f.Window, Key.Right);
+        Press(f.Window, Key.Down);
+        Press(f.Window, Key.Down);
+        f.Window.UpdateLayout();
+        AssertBounds(new Rect(-240, -180, 800, 600), lightbox.Image.Bounds);
+
+        Press(f.Window, Key.D0);
+        Assert.True(lightbox.IsFitted);
+        lightbox.ZoomIn();
+        Press(f.Window, Key.NumPad0);
+        Assert.True(lightbox.IsFitted);
+        Assert.Same(lightbox, f.Lightbox);
+    }
+
+    [AvaloniaFact]
+    public async Task The_keys_that_zoom_and_pan_go_no_further()
+    {
+        using var f = await OpenAsync();
+        var keys = 0;
+        f.Window.AddHandler(InputElement.KeyDownEvent, (_, _) => keys++, RoutingStrategies.Bubble);
+
+        foreach (var key in new[] { Key.OemPlus, Key.OemMinus, Key.Add, Key.Subtract, Key.D0, Key.NumPad0, Key.Left, Key.Right, Key.Up, Key.Down })
+            Press(f.Window, key);
+
+        Assert.Equal(0, keys);
+    }
+
+    [AvaloniaFact]
+    public async Task Resizing_the_viewer_fits_a_fitted_picture_again_and_keeps_a_zoomed_one()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+
+        f.Viewer.Width = 200;
+        f.Viewer.Height = 150;
+        f.Window.UpdateLayout();
+        Assert.Equal(0.25, lightbox.Zoom);
+
+        lightbox.ZoomBy(2, new Point(100, 75));
+        f.Viewer.Width = 400;
+        f.Viewer.Height = 300;
+        f.Window.UpdateLayout();
+        Assert.Equal(0.5, lightbox.Zoom);
+        Assert.False(lightbox.IsFitted);
+        AssertBounds(new Rect(0, 0, 400, 300), lightbox.Image.Bounds);
+
+        // Never smaller than its fitted size.
+        lightbox.ZoomBy(0.5, new Point(100, 75));
+        f.Viewer.Width = 1000;
+        f.Viewer.Height = 1000;
+        f.Window.UpdateLayout();
+        Assert.Equal(1, lightbox.Zoom);
+    }
+
+    [AvaloniaFact]
+    public async Task The_lightbox_follows_the_source_of_its_image()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+        var other = new FakeImage(100, 50);
+
+        f.Image.Source = other;
+        f.Window.UpdateLayout();
+
+        Assert.Same(other, lightbox.Image.Source);
+        AssertBounds(new Rect(150, 125, 100, 50), lightbox.Image.Bounds);
+
+        // An image losing its source (being removed from the document) leaves the lightbox as it is.
+        f.Image.Source = null;
+        Assert.Same(other, lightbox.Image.Source);
+        f.Image.Width = 10;
+        Assert.Same(other, lightbox.Image.Source);
+    }
+
+    [AvaloniaFact]
+    public async Task The_backing_is_painted_with_the_background_of_the_image_behind_it()
+    {
+        using var f = await ShowAsync($"![A diagram]({FakeUrl()})", 800, 600, theme: true);
+        ImageZoom.SetBackground(f.Image, Brushes.Red);
+        RaiseKey(f.Image, Key.Enter);
+        f.Window.UpdateLayout();
+        var lightbox = f.Lightbox!;
+
+        Assert.Contains("markdown-image-lightbox-backing", lightbox.Backing.Classes);
+        Assert.Same(Brushes.Red, lightbox.Backing.Background);
+        Assert.Equal(new CornerRadius(6), lightbox.Backing.CornerRadius);
+        AssertBounds(lightbox.Image.Bounds, lightbox.Backing.Bounds);
+        Assert.Same(lightbox.Backing, lightbox.Children[0]);
+
+        lightbox.ZoomIn();
+        f.Window.UpdateLayout();
+        AssertBounds(lightbox.Image.Bounds, lightbox.Backing.Bounds);
+
+        ImageZoom.SetBackground(f.Image, Brushes.Blue);
+        Assert.Same(Brushes.Blue, lightbox.Backing.Background);
+        ImageZoom.SetBackground(f.Image, null);
+        Assert.Null(lightbox.Backing.Background);
+    }
+
+    [AvaloniaFact]
+    public async Task An_image_has_no_backing_by_default()
+    {
+        using var f = await OpenAsync();
+
+        Assert.Null(f.Lightbox!.Backing.Background);
+        Assert.False(ImageZoom.GetEnlargeToFit(f.Image));
+    }
+
+    [AvaloniaFact]
+    public async Task A_closed_lightbox_no_longer_follows_its_image()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+        Press(f.Window, Key.Escape);
+
+        f.Image.Source = new FakeImage(100, 50);
+
+        Assert.Same(f.Picture, lightbox.Image.Source);
+    }
+
+    [AvaloniaFact]
+    public async Task Tab_moves_through_the_close_and_zoom_buttons()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+
+        var order = new List<IInputElement?>();
+        for (var i = 0; i < 5; i++)
+        {
+            Press(f.Window, Key.Tab);
+            order.Add(f.Window.FocusManager!.GetFocusedElement());
+        }
+        Press(f.Window, Key.Tab, RawInputModifiers.Shift);
+        order.Add(f.Window.FocusManager!.GetFocusedElement());
+        Press(f.Window, Key.Tab, RawInputModifiers.Shift);
+        order.Add(f.Window.FocusManager!.GetFocusedElement());
+
+        // Round the lightbox and its buttons, never to the document behind.
+        Assert.Equal<IInputElement?>(
+            [lightbox.CloseButton, lightbox.ZoomOutButton, lightbox.ZoomInButton, lightbox.FitButton, lightbox, lightbox.FitButton, lightbox.ZoomInButton],
+            order);
+    }
+
+    [AvaloniaFact]
+    public async Task A_pinch_zooms_about_its_centre_without_closing_the_lightbox()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+
+        // About the point between the two touches when the pinch starts.
+        var first = f.Window.TouchBegin(new Point(100, 100));
+        var second = f.Window.TouchBegin(new Point(200, 100));
+        f.Window.TouchMove(second, new Point(300, 100));
+        f.Window.UpdateLayout();
+        Assert.Equal(1, lightbox.Zoom, 9);
+        AssertBounds(new Rect(-150, -100, 800, 600), lightbox.Image.Bounds);
+
+        // The scale is relative to the start of the pinch.
+        f.Window.TouchMove(second, new Point(250, 100));
+        Assert.Equal(0.75, lightbox.Zoom, 9);
+        f.Window.TouchEnd(second, new Point(250, 100));
+        f.Window.TouchEnd(first, new Point(100, 100));
+
+        Assert.Same(lightbox, f.Lightbox);
+    }
+
+    [AvaloniaFact]
+    public async Task A_tap_closes_the_lightbox()
+    {
+        using var f = await OpenAsync();
+
+        var touch = f.Window.TouchBegin(new Point(150, 150));
+        f.Window.TouchEnd(touch, new Point(150, 150));
+
+        Assert.Null(f.Lightbox);
+    }
+
+    [AvaloniaFact]
+    public async Task A_touchpad_pinch_zooms_about_the_pointer()
+    {
+        using var f = await OpenAsync();
+        var lightbox = f.Lightbox!;
+
+        lightbox.RaiseEvent(new PointerDeltaEventArgs(InputElement.PointerTouchPadGestureMagnifyEvent, lightbox,
+            new Pointer(Pointer.GetNextFreeId(), PointerType.Mouse, true), f.Window, new Point(100, 75), 0,
+            new PointerPointProperties(), KeyModifiers.None, new Vector(0.2, 0)));
+        f.Window.UpdateLayout();
+
+        Assert.Equal(0.6, lightbox.Zoom, 9);
+        AssertBounds(new Rect(-20, -15, 480, 360), lightbox.Image.Bounds);
     }
 }

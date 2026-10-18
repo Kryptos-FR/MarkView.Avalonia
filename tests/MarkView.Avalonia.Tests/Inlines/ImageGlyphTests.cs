@@ -131,6 +131,32 @@ public class ImageGlyphTests
     }
 
     [AvaloniaFact]
+    public void The_zoom_glyphs_are_a_plus_a_minus_and_four_corners()
+    {
+        var zoomIn = Styled(new ImageLightbox.ZoomGlyph(ImageLightbox.ZoomGlyphKind.ZoomIn), fontSize: 20);
+        var zoomOut = Styled(new ImageLightbox.ZoomGlyph(ImageLightbox.ZoomGlyphKind.ZoomOut), fontSize: 20);
+        var fit = Styled(new ImageLightbox.ZoomGlyph(ImageLightbox.ZoomGlyphKind.Fit), fontSize: 20);
+        zoomIn.Measure(Size.Infinity);
+        Assert.Equal(new Size(20, 20), zoomIn.DesiredSize);
+
+        Assert.Equal([(new Point(4, 10), new Point(16, 10)), (new Point(10, 4), new Point(10, 16))], zoomIn.GetStrokes());
+        Assert.Equal([(new Point(4, 10), new Point(16, 10))], zoomOut.GetStrokes());
+        Assert.Equal(
+            [
+                (new Point(3, 8), new Point(3, 3)), (new Point(3, 3), new Point(8, 3)),
+                (new Point(12, 3), new Point(17, 3)), (new Point(17, 3), new Point(17, 8)),
+                (new Point(17, 12), new Point(17, 17)), (new Point(17, 17), new Point(12, 17)),
+                (new Point(8, 17), new Point(3, 17)), (new Point(3, 17), new Point(3, 12)),
+            ],
+            fit.GetStrokes().Select(s => (Round(s.Start), Round(s.End))));
+        var lines = Draw(fit).Children.Cast<GeometryDrawing>().ToList();
+        Assert.Equal(8, lines.Count);
+        Assert.All(lines, line => Assert.Same(Brushes.Red, line.Pen!.Brush));
+
+        static Point Round(Point p) => new(Math.Round(p.X, 9), Math.Round(p.Y, 9));
+    }
+
+    [AvaloniaFact]
     public void The_zoom_cursor_is_drawn_from_its_pixel_map()
     {
         Assert.All(ZoomCursor.Pixels, row => Assert.Equal(ZoomCursor.Pixels.Length, row.Length));

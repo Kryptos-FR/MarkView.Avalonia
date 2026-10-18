@@ -143,7 +143,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
         // An image inside a link opens the link instead.
         if (renderer.IsImageZoomEnabled && !IsInsideLink(obj))
-            MakeZoomable(renderer, image);
+            ImageZoom.MakeZoomable(renderer, image);
 
         renderer.WriteInline(image);
     }
@@ -169,37 +169,6 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
                 return true;
         }
         return false;
-    }
-
-    /// <summary>
-    /// Makes a loaded image ask the renderer to zoom it when clicked, or when Enter or Space is pressed
-    /// while it has focus. Screen readers see it as an image named by its alt text, whose help text
-    /// (from the theme's <c>markdown-image-zoomable</c> style) says what it does.
-    /// </summary>
-    private static void MakeZoomable(AvaloniaRenderer renderer, Image image)
-    {
-        image.Cursor = ZoomCursor.Instance;
-        image.Focusable = true;
-        image.Classes.Add("markdown-image-zoomable");
-        // A Tab stop, so not decorative even without alt text.
-        AutomationRoles.Set(image, AutomationControlType.Image);
-        // A click, like a foldable alert header's (see CollapsibleAlert): the press implicitly captures
-        // the pointer to the image, so the image sees no release once the viewer has turned the press
-        // into a selection drag.
-        image.PointerReleased += (_, e) =>
-        {
-            if (e.InitialPressMouseButton != MouseButton.Left || image.Source is null
-                || !new Rect(image.Bounds.Size).Contains(e.GetPosition(image)))
-                return;
-            renderer.OnImageZoomRequested(image);
-            e.Handled = true;
-        };
-        image.KeyDown += (_, e) =>
-        {
-            if (e.Key is not (Key.Enter or Key.Space) || image.Source is null) return;
-            renderer.OnImageZoomRequested(image);
-            e.Handled = true;
-        };
     }
 
     /// <summary>

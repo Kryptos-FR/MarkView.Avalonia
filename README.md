@@ -184,7 +184,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Links and autolinks | CommonMark + extension |
 | Images | CommonMark, remote URLs loaded async and cached in memory ([image cache](docs/configuration.md#image-cache)) |
 | Image sizing | `![alt](url =WxH)` — inline pixel dimensions, e.g. `=80x80` |
-| Image zoom | Clicking an image opens it in a lightbox over the viewer (`IsImageZoomEnabled`, on by default) |
+| Image zoom | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, with zoom and pan (`IsImageZoomEnabled`, on by default) |
 | Broken images | An image that fails to load shows a placeholder with its alt text |
 | Thematic breaks | CommonMark |
 | Hard line breaks | CommonMark (`\` or two spaces) |
@@ -285,7 +285,7 @@ viewer.UseMath();
 
 ### Mermaid Diagrams (`MarkView.Avalonia.Mermaid`)
 
-Renders fenced `mermaid` code blocks as SVG diagrams using the [Mermaider](https://github.com/nullean/mermaider) library (pure .NET, no browser required). Works on all platforms including Linux. Diagrams re-render automatically when the user switches between light and dark themes.
+Renders fenced `mermaid` code blocks as SVG diagrams using the [Mermaider](https://github.com/nullean/mermaider) library (pure .NET, no browser required). Works on all platforms including Linux. Diagrams re-render automatically when the user switches between light and dark themes. Clicking a diagram opens it in the viewer's lightbox, where it can be zoomed and panned.
 
 ```bash
 dotnet add package MarkView.Avalonia.Mermaid
