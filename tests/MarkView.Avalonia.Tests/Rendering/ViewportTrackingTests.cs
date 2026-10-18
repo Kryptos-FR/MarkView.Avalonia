@@ -3,6 +3,7 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 
 using MarkView.Avalonia.Rendering;
@@ -153,6 +154,78 @@ public class ViewportTrackingTests
     public void Near_viewport_is_within_one_viewport_height_vertically_and_touching_horizontally(double x, double y, bool near)
     {
         // The element, 400 x 10 at the origin of its own coordinates, sees a 400 x 300 viewport at (x, y).
-        Assert.Equal(near, ViewportTracking.IsNearViewport(new Size(400, 10), new Rect(-x, -y, 400, 300)));
+        Assert.Equal(near, ViewportTracking.IsNearViewport(new Rect(0, 0, 400, 10), new Rect(-x, -y, 400, 300)));
+        // The same, measured in the coordinates of an ancestor the element sits at (50, 70) in.
+        Assert.Equal(near, ViewportTracking.IsNearViewport(new Rect(50, 70, 400, 10), new Rect(50 - x, 70 - y, 400, 300)));
+    }
+
+    [AvaloniaFact]
+    public void Element_inside_a_clipping_ancestor_is_realized_a_viewport_height_ahead()
+    {
+        // A text block clips to its bounds, so Avalonia gives the image inside it an empty viewport
+        // until the text block itself scrolls into view.
+        var image = new Image { Width = 10, Height = 10 };
+        var realized = 0;
+        ViewportTracking.RunWhenNearViewport(image, () => realized++);
+        var paragraph = new TextBlock { Inlines = [new InlineUIContainer(image)] };
+        var scrollViewer = new ScrollViewer
+        {
+            Content = new StackPanel { Children = { new Border { Height = 1000 }, paragraph, new Border { Height = 1000 } } },
+        };
+        var window = new Window { Width = 400, Height = 300, Content = scrollViewer };
+        try
+        {
+            window.Show();
+            Assert.Equal(0, realized);
+
+            // The paragraph starts 1000 px down: 100 px below the visible area, within a viewport height.
+            scrollViewer.Offset = new Vector(0, 600);
+            window.UpdateLayout();
+
+            Assert.Equal(1, realized);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Tracker_is_the_outermost_clipping_ancestor_below_the_scroll_viewer()
+    {
+        // A clipping border outside the inner scroll viewer is not taken: that viewer's presenter clips
+        // to the area it shows, as the document's does.
+        var element = new Border();
+        var outer = new Border { ClipToBounds = true, Child = new StackPanel { Children = { new Border { Child = element } } } };
+        var paragraph = new Border { Child = outer };
+        var scrollViewer = new ScrollViewer { Content = new Border { ClipToBounds = true, Child = new ScrollViewer { Content = paragraph } } };
+        var window = new Window { Content = scrollViewer };
+        try
+        {
+            window.Show();
+
+            Assert.Same(outer, ViewportTracking.TrackerOf(element));
+            Assert.Same(paragraph, ViewportTracking.TrackerOf((Control)paragraph));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Element_detached_before_it_came_near_stops_tracking_and_tracks_again_when_attached()
+    {
+        using var scrolled = new Scrolled();
+        scrolled.Window.Show();
+        var panel = (StackPanel)scrolled.ScrollViewer.Content!;
+
+        panel.Children.Remove(scrolled.Element);
+        scrolled.ScrollTo(1000);
+        Assert.Equal(0, scrolled.Realized);
+
+        panel.Children.Add(scrolled.Element);
+        scrolled.Window.UpdateLayout();
+        Assert.Equal(1, scrolled.Realized);
     }
 }

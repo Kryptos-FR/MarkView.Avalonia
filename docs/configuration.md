@@ -738,6 +738,13 @@ Content within reach is built during the layout pass that brings it near, before
 so it never shows up half done: a code block in view is coloured the first time it appears. A theme
 switch only rebuilds the content already built, which also makes switching faster on a long document.
 
+Content built as you scroll is often taller than the space it held (an image that loads, a formula that
+replaces an empty line), and so is a block a streaming session updates. When that happens above the
+part of the document in view, the viewer moves the scroll position by as much, as browsers do: the
+text you are reading stays where it is. A heading reached with `ScrollToAnchor` or a match found with
+`FindNext` stays where it was shown while the content above it loads, until the document is scrolled
+again.
+
 Turn it off when the viewer is never scrolled into view but must show everything, for example when it
 is rendered to a bitmap for printing or export:
 
