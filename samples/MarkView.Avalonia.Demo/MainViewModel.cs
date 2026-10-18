@@ -15,6 +15,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private static readonly Uri ShowcaseSource =
         new("avares://MarkView.Avalonia.Demo/Assets/showcase.md");
 
+    private static readonly Uri RightToLeftSource =
+        new("avares://MarkView.Avalonia.Demo/Assets/right-to-left.md");
+
 #if BROWSER
     private static readonly Uri ReadmeSource =
         new("avares://MarkView.Avalonia.Demo/Assets/README.md");
@@ -495,6 +498,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             case 3:
                 // Content is supplied by the dedicated ColorExtensionView control, not this Markdown/Source pair.
                 Source = null;
+                Markdown = null;
+                break;
+            case 4:
+                Source = RightToLeftSource;
                 Markdown = null;
                 break;
             default:

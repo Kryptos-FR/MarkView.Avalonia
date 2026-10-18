@@ -21,6 +21,7 @@
       <TabItem Header="Extensions Showcase" />
       <TabItem Header="Custom Styling" />
       <TabItem Header="Color Extension" />
+      <TabItem Header="Right to Left" />
       <TabItem Header="README" />
     </TabControl>
 
@@ -162,6 +163,9 @@
               <MenuItem Header="Foldable headings" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.AreHeadingsFoldable, Mode=TwoWay}"
                         ToolTip.Tip="Start each heading with a button that hides or shows its section" />
+              <MenuItem Header="Detect text direction" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.DetectTextDirection, Mode=TwoWay}"
+                        ToolTip.Tip="Lay out each block right to left or left to right from its first letter, like dir=&quot;auto&quot; in HTML" />
               <Separator />
               <MenuItem Header="Code line numbers" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers, Mode=TwoWay}"

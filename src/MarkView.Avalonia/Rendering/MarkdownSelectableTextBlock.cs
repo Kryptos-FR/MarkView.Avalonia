@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 using Avalonia;
@@ -80,6 +81,79 @@ public class MarkdownSelectableTextBlock : TextBlock
         // (https://github.com/AvaloniaUI/Avalonia/issues/22505).
         StyledInlinesTextBlock.ApplyInlineStyling(Inlines);
         return base.MeasureOverride(availableSize);
+    }
+
+    /// <inheritdoc />
+    protected override TextLayout CreateTextLayout(string? text)
+    {
+        // Avalonia ends a TextBlock's text with a TextEndOfParagraph run, and hit testing then places the
+        // characters of a right-to-left run that ends the paragraph one position off: a selection or a find
+        // match over them misses a character or has no width. A text source that ends without that run, as
+        // the one of a TextLayout built from a string does, measures them right.
+        if (_textRuns is not { } runs || !HasRightToLeftText(runs))
+            return base.CreateTextLayout(text);
+
+        if (!ReferenceEquals(runs, _cachedRuns))
+        {
+            // Avalonia rebuilds the runs whenever the text or its formatting changes, so the shaped runs
+            // cached for the previous ones are stale.
+            _textRunCache.Invalidate();
+            _cachedRuns = runs;
+        }
+
+        var defaultProperties = new GenericTextRunProperties(
+            new Typeface(FontFamily, FontStyle, FontWeight, FontStretch),
+            FontSize,
+            TextDecorations,
+            Foreground,
+            fontFeatures: FontFeatures);
+        var paragraphProperties = new GenericTextParagraphProperties(
+            FlowDirection, IsMeasureValid ? TextAlignment : TextAlignment.Left, true, false,
+            defaultProperties, TextWrapping, LineHeight, 0, LetterSpacing);
+        if (LineSpacing != 0)
+        {
+            try
+            {
+                SetLineSpacing(paragraphProperties, LineSpacing);
+            }
+            catch (MissingMethodException)
+            {
+                return base.CreateTextLayout(text);
+            }
+        }
+        var maxSize = GetMaxSizeFromConstraint();
+        return new TextLayout(
+            new ParagraphTextSource(new InlinesTextSource(runs)),
+            paragraphProperties,
+            TextTrimming,
+            maxSize.Width,
+            maxSize.Height,
+            MaxLines,
+            _textRunCache);
+    }
+
+    // TextParagraphProperties.LineSpacing has an internal setter, which TextBlock sets.
+    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "set_LineSpacing")]
+    private static extern void SetLineSpacing(TextParagraphProperties properties, double value);
+
+    private readonly TextRunCache _textRunCache = new();
+    private IReadOnlyList<TextRun>? _cachedRuns;
+
+    private static bool HasRightToLeftText(IReadOnlyList<TextRun> runs)
+    {
+        foreach (var run in runs)
+        {
+            if (run is TextCharacters && TextDirection.HasRightToLeft(run.Text.Span))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>The text of a <see cref="TextBlock"/>, ended by <c>null</c> rather than a <see cref="TextEndOfParagraph"/>.</summary>
+    private sealed class ParagraphTextSource(ITextSource source) : ITextSource
+    {
+        public TextRun? GetTextRun(int textSourceIndex) =>
+            source.GetTextRun(textSourceIndex) is var run and not TextEndOfParagraph ? run : null;
     }
 
     /// <inheritdoc />
@@ -223,6 +297,11 @@ public class MarkdownSelectableTextBlock : TextBlock
         {
             switch (inline)
             {
+                case DirectionMark mark:
+                    // A mark the renderer added: laid out, but not copied.
+                    (embeddedText ??= [])[sb.Length] = string.Empty;
+                    sb.Append(mark.Text);
+                    break;
                 case Run r: sb.Append(r.Text); break;
                 case LineBreak: sb.Append(Environment.NewLine); break;
                 case Span s: AppendInlines(sb, s.Inlines, ref embeddedText); break;

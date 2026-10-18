@@ -1,8 +1,12 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Media;
+
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
+
+using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia.Parsing;
 
@@ -25,8 +29,9 @@ namespace MarkView.Avalonia.Parsing;
 /// <c>&lt;div&gt;</c> tags are matched among the children of each container block, like elements, so a
 /// <c>&lt;div align="center"&gt;</c> separated by blank lines from the markdown inside it, and from its
 /// <c>&lt;/div&gt;</c>, centers that markdown. An <c>align</c> attribute on a matched <c>&lt;div&gt;</c>, a
-/// <c>&lt;p&gt;</c> or a heading puts its blocks in an <see cref="HtmlAlignedBlock"/>; a <c>&lt;div&gt;</c>
-/// without a match is dropped. Comments, and the HTML blocks Markdig starts with <c>&lt;script&gt;</c>,
+/// <c>&lt;p&gt;</c> or a heading puts its blocks in an <see cref="HtmlAlignedBlock"/>, and so does a <c>dir</c>
+/// attribute on a matched <c>&lt;div&gt;</c>; a <c>dir</c> attribute on a <c>&lt;p&gt;</c> or a heading gives the
+/// paragraph or heading its direction. A <c>&lt;div&gt;</c> without a match is dropped. Comments, and the HTML blocks Markdig starts with <c>&lt;script&gt;</c>,
 /// <c>&lt;pre&gt;</c>, <c>&lt;style&gt;</c>, <c>&lt;textarea&gt;</c>, a comment or a declaration, are left as they
 /// are and not rendered.
 /// </para>
@@ -140,8 +145,9 @@ internal static class HtmlSubsetGrouper
                     frames.Peek().Target.Add(token.Block);
                     break;
                 case TokenKind.DivStart when matched[i]:
-                    var aligned = Alignment(token.Html.Tag!) is { } alignment
-                        ? Add(frames.Peek().Target, new HtmlAlignedBlock(alignment), token.Block)
+                    var div = token.Html.Tag!;
+                    var aligned = Alignment(div) is not null || Direction(div) is not null
+                        ? Add(frames.Peek().Target, Directed(new HtmlAlignedBlock(Alignment(div)), div), token.Block)
                         : null;
                     frames.Push(new Frame(aligned ?? frames.Peek().Target, aligned));
                     break;
@@ -193,6 +199,22 @@ internal static class HtmlSubsetGrouper
         _ => null,
     };
 
+    /// <summary>The direction of a <c>dir="ltr"</c> or <c>dir="rtl"</c> attribute; <c>dir="auto"</c> is what blocks do anyway.</summary>
+    private static FlowDirection? Direction(HtmlTag tag) => tag.Attribute("dir")?.Trim().ToLowerInvariant() switch
+    {
+        "ltr" => FlowDirection.LeftToRight,
+        "rtl" => FlowDirection.RightToLeft,
+        _ => null,
+    };
+
+    /// <summary>Gives <paramref name="block"/> the direction of <paramref name="tag"/>'s <c>dir</c> attribute, if any.</summary>
+    private static T Directed<T>(T block, HtmlTag tag) where T : Block
+    {
+        if (Direction(tag) is { } direction)
+            block.SetData(TextDirection.ExplicitKey, direction);
+        return block;
+    }
+
     /// <summary>
     /// Pairs each <c>&lt;/div&gt;</c> with the innermost <c>&lt;div&gt;</c> before it that is still open. Returns
     /// which tokens are paired.
@@ -233,8 +255,12 @@ internal static class HtmlSubsetGrouper
             : new ParagraphBlock();
         block.Inline = inline;
 
-        if (leaf is not null && Alignment(leaf) is { } alignment)
-            target = Add(target, new HtmlAlignedBlock(alignment), source);
+        if (leaf is not null)
+        {
+            if (Alignment(leaf) is { } alignment)
+                target = Add(target, new HtmlAlignedBlock(alignment), source);
+            Directed(block, leaf);
+        }
         Add(target, block, source);
     }
 

@@ -40,6 +40,9 @@ internal sealed class BrokenImageGlyph : Control
 
     protected override Size MeasureOverride(Size availableSize) => new(BoxSize, BoxSize);
 
+    // A picture, like an image: not mirrored in right-to-left text.
+    protected override bool BypassFlowDirectionPolicies => true;
+
     public override void Render(DrawingContext context)
     {
         var scale = BoxSize / DesignSize;

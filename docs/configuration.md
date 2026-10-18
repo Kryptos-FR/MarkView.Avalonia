@@ -21,6 +21,7 @@
 | `IsImageZoomEnabled` | `bool` | `true` | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, where it can be zoomed and panned. See [Image zoom](#image-zoom). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
+| `DetectTextDirection` | `bool` | `true` | Gives each block the direction of its first letter that has one, so Hebrew and Arabic text reads right to left. Setting it re-renders the document. See [Right-to-left text](right-to-left.md). |
 | `HighContrastMode` | `HighContrastMode` | `System` | When to use the high-contrast palette: follow the OS (`System`), `Enabled` or `Disabled`. See [Accessibility](accessibility.md#high-contrast). |
 | `IsHighContrast` | `bool` | `false` | Get-only. Whether the high-contrast palette is in use; mirrors the `:high-contrast` pseudo-class. |
 
@@ -257,6 +258,7 @@ HTML blocks — HTML that starts a line, which CommonMark does not parse markdow
 | `<p>`, `<h1>`…`<h6>` | A paragraph or heading of the inline HTML inside it. A heading gets an anchor and is listed in `TableOfContents`, like a markdown heading |
 | `<div>` | Its content; text and inline elements outside any `<p>` become a paragraph |
 | `align="left\|center\|right\|justify"` on `<p>`, `<div>` and `<h1>`…`<h6>` | Aligns the text and images inside it, as `text-align` does |
+| `dir="rtl\|ltr"` on `<p>`, `<div>` and `<h1>`…`<h6>` | Sets the direction of its text, whatever the text says. See [Right-to-left text](right-to-left.md#the-html-dir-attribute) |
 | `<hr>` | A thematic break, like `---` |
 
 A `<div align="center">` and its `</div>`, each separated by blank lines from the markdown between them, align that markdown too, as on GitHub:
@@ -271,7 +273,7 @@ A `<div align="center">` and its `</div>`, each separated by blank lines from th
 </div>
 ```
 
-- Only the `href`, `src`, `alt`, `title`, `width`, `height` and `align` attributes are read; any other (`style`, `class`, `onclick`…) is ignored.
+- Only the `href`, `src`, `alt`, `title`, `width`, `height`, `align` and `dir` attributes are read; any other (`style`, `class`, `onclick`…) is ignored.
 - Any other tag (`<span>`, `<table>`, `<iframe>`, `<picture>`…), and a tag without its match (`<b>` never closed, a stray `</i>`), is dropped, and the text around it still shows, as it did before. The content of `<script>` and `<style>` is dropped with them, as GitHub does. Comments do not show.
 - Tags pair like elements: `<b><i>x</i></b>` nests, and `</b>` in `<b><i>x</b>` also closes the `<i>`. Inline tags pair within the same markdown inline only: in `*<b>x*</b>`, the `<b>` is inside the emphasis and the `</b>` outside, so both are dropped. A `<div>` pairs with a `</div>` among the blocks of the same container (as for [details blocks](#html-details-blocks)); one without its match is dropped.
 - A `<p>` or heading ends at its end tag, at the next block tag, or at the end of its HTML block. Whitespace collapses as in HTML.

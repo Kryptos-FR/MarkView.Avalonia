@@ -152,6 +152,12 @@ public partial class MarkdownViewer : ContentControl
         AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(IsImageZoomEnabled), true);
 
     /// <summary>
+    /// Defines the <see cref="DetectTextDirection"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> DetectTextDirectionProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(DetectTextDirection), true);
+
+    /// <summary>
     /// Defines the <see cref="TableOfContentsMaxDepth"/> property.
     /// </summary>
     public static readonly StyledProperty<int> TableOfContentsMaxDepthProperty =
@@ -340,6 +346,21 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets whether each block takes the direction of its own text, as HTML's <c>dir="auto"</c> does:
+    /// a paragraph, heading, list, quote or table whose first letter is Hebrew or Arabic is laid out right to
+    /// left (lists and quotes mirrored, the first column of a table on the right), one whose first letter is
+    /// Latin left to right. A block without a letter keeps the viewer's <see cref="Visual.FlowDirection"/>,
+    /// code blocks are always left to right, and an HTML <c>dir</c> attribute wins over the text.
+    /// When <c>false</c>, every block takes the viewer's <see cref="Visual.FlowDirection"/>.
+    /// Defaults to <c>true</c>. Can be set from a style, e.g. for every viewer of an application.
+    /// </summary>
+    public bool DetectTextDirection
+    {
+        get => GetValue(DetectTextDirectionProperty);
+        set => SetValue(DetectTextDirectionProperty, value);
+    }
+
+    /// <summary>
     /// Gets or sets the maximum heading level included in <see cref="TableOfContents"/>.
     /// Headings deeper than this level, and their descendants, are excluded. Defaults to 6 (no limit).
     /// </summary>
@@ -444,6 +465,7 @@ public partial class MarkdownViewer : ContentControl
         AreTaskListsInteractiveProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         AreHeadingsFoldableProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         IsImageZoomEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        DetectTextDirectionProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
     }
@@ -624,6 +646,7 @@ public partial class MarkdownViewer : ContentControl
             AreHeadingsFoldable = AreHeadingsFoldable,
             TimeProvider = TimeProvider,
             IsImageZoomEnabled = IsImageZoomEnabled,
+            DetectTextDirection = DetectTextDirection,
         };
         renderer.LinkClicked += OnLinkClicked;
         renderer.ImageZoomRequested += OpenLightbox;
