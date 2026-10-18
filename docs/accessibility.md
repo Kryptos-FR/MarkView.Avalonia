@@ -64,8 +64,8 @@ Links stay inline text, so they wrap and select as before. An invisible stand-in
 
 The default palette in `MarkdownTheme.axaml` meets WCAG 2.2 AA on FluentTheme's page colours (white with black text, and black with white text):
 
-- **4.5:1** for text: code, code block line numbers, inline code, the code block header (language label and copy icon), `==marked==` text, alert titles and alert bodies.
-- **3:1** for borders that carry meaning (1.4.11): blockquote bars and table cell borders.
+- **4.5:1** for text: code, code block line numbers, inline code, the code block header (language label and copy icon), `==marked==` text, alert titles and alert bodies, `<kbd>` keys, the text of an image that could not be loaded, and body text, code and inline code on [find](find-in-document.md#highlight-colours) highlights.
+- **3:1** for borders that carry meaning (1.4.11): blockquote bars, table cell borders, the outlines of `<kbd>` keys and of an image that could not be loaded, and the image lightbox's close button.
 
 `ThemeContrastTests` checks every pair against the colours in the theme file, so a brush change that drops below these ratios fails the build.
 

@@ -27,8 +27,10 @@ public class ThemeContrastTests
 
     public static TheoryData<string, string, string, double> Pairs()
     {
-        // (variant, foreground key, background key, minimum ratio). "Page" and "Body" are the
-        // Fluent page colours; any other key is a brush from the theme's dictionary for that variant.
+        // (variant, foreground key, background, minimum ratio). "Page" and "Body" are the Fluent page
+        // colours; any other key is a brush from the theme's dictionary for that variant. A background
+        // is a key, or several joined by " over ": translucent brushes composited from the last one up,
+        // over the page.
         var data = new TheoryData<string, string, string, double>();
         foreach (var variant in new[] { "Light", "Dark" })
         {
@@ -47,6 +49,23 @@ public class ThemeContrastTests
                 data.Add(variant, $"MarkdownAlert{kind}Border", $"MarkdownAlert{kind}Background", Text);
                 data.Add(variant, "Body", $"MarkdownAlert{kind}Background", Text);
             }
+            // HTML <kbd> (UseHtmlSubset)
+            data.Add(variant, "MarkdownKbdForeground", "MarkdownKbdBackground", Text);
+            data.Add(variant, "MarkdownKbdBorder", "Page", NonText);
+            data.Add(variant, "MarkdownKbdBorder", "MarkdownKbdBackground", NonText);
+            foreach (var match in new[] { "MarkdownFindMatchBackground", "MarkdownFindCurrentMatchBackground" })
+            {
+                // Matched text is drawn again over the highlight in its own colours, inline code with
+                // its translucent background.
+                data.Add(variant, "Body", match, Text);
+                data.Add(variant, "MarkdownCodeBlockForeground", match, Text);
+                data.Add(variant, "MarkdownCodeInlineForeground", $"MarkdownCodeInlineBackground over {match}", Text);
+            }
+            // The placeholder of an image that could not be loaded, and the lightbox's close button
+            data.Add(variant, "MarkdownImageFailedForeground", "Page", Text);
+            data.Add(variant, "MarkdownImageFailedForeground", "MarkdownImageFailedBackground", Text);
+            data.Add(variant, "MarkdownImageFailedBorder", "Page", NonText);
+            data.Add(variant, "MarkdownImageLightboxCloseForeground", "MarkdownImageLightboxCloseBackground over MarkdownImageLightboxBackdrop", NonText);
         }
         return data;
     }
@@ -57,7 +76,8 @@ public class ThemeContrastTests
     {
         var brushes = LoadThemeBrushes(variant);
         var page = Pages[variant].Page;
-        var back = Composite(Resolve(brushes, variant, background), page);
+        var back = background.Split(" over ").Reverse()
+            .Aggregate(page, (under, key) => Composite(Resolve(brushes, variant, key), under));
         var fore = Composite(Resolve(brushes, variant, foreground), back);
 
         var ratio = ContrastRatio(fore, back);

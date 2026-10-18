@@ -137,8 +137,8 @@ the body text, code blocks (`MarkdownCodeBlockForeground`) and inline code
 |---|---|---|---|---|
 | Body text (Fluent theme) | 11.3:1 | 11.1:1 | 15.1:1 | 11.7:1 |
 | Code blocks | 7.6:1 | 7.5:1 | 14.4:1 | 10.8:1 |
-| Inline code | 4.7:1 | 4.6:1 | 6.2:1 | 4.7:1 |
+| Inline code | 4.7:1 | 4.7:1 | 6.2:1 | 4.7:1 |
 
-Text in another colour, such as links (`SystemAccentColor`) or the tokens of a
+Text in another colour, such as links (`MarkdownLinkForeground`) or the tokens of a
 [syntax-highlighted](extensions.md) code block, keeps that colour on the highlight, with whatever
 contrast it gives. Without `MarkdownTheme.axaml` the viewer uses the same colours.

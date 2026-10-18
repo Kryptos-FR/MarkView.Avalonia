@@ -9,8 +9,10 @@
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#1E1E1E</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#D4D4D4</SolidColorBrush>
-          <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#26FFFFFF</SolidColorBrush>
-          <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#CE9178</SolidColorBrush>
+          <!-- Inline code: a light chip on the dark page, and text light enough to keep 4.5:1 on the chip over
+               a find match (4.7:1), where the chip lightens the highlight; 9.8:1 on the chip over black -->
+          <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#1AFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#F4B49A</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#2D2D2D</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#A0A0A0</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#1AFFFFFF</SolidColorBrush>

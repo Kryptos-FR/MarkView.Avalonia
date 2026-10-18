@@ -29,8 +29,8 @@ Each extension theme is independent — it does not import the core `MarkdownThe
 |---|---|---|---|
 | `MarkdownCodeBlockBackground` | Fenced and indented code blocks | `#1E1E1E` | `#F3F3F3` |
 | `MarkdownCodeBlockForeground` | Code block text (before syntax highlighting); the copy icon under the pointer | `#D4D4D4` | `#1E1E1E` |
-| `MarkdownCodeInlineBackground` | Inline code | `#26FFFFFF` | `#0A000000` |
-| `MarkdownCodeInlineForeground` | Inline code text | `#CE9178` | `#A31515` |
+| `MarkdownCodeInlineBackground` | Inline code | `#1AFFFFFF` | `#0A000000` |
+| `MarkdownCodeInlineForeground` | Inline code text | `#F4B49A` | `#A31515` |
 | `MarkdownCodeHeaderBackground` | Code block toolbar | `#2D2D2D` | `#E4E4E4` |
 | `MarkdownCodeHeaderForeground` | Toolbar language label and copy icon | `#A0A0A0` | `#5F5F5F` |
 | `MarkdownCodeCopyButtonHoverBackground` | Copy button under the pointer | `#1AFFFFFF` | `#14000000` |
