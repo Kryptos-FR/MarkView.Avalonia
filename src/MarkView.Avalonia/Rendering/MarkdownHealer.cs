@@ -38,8 +38,8 @@ namespace MarkView.Avalonia.Rendering;
 /// after that one become literal; what is left of it opens when it can. CommonMark's rule of
 /// multiples of 3 is not applied. Other runs of <c>~</c>, and <c>^</c>, <c>+</c> and <c>=</c>, are
 /// literal. A run with nothing after it is not closed: closing it would show nothing. When the
-/// content's last line holds only <c>*</c>, <c>_</c> and <c>~</c> runs (and spaces, tabs or quote
-/// markers), the text is returned as it is: closers appended to that line would make it a thematic break (<c>***</c>) or
+/// content's last line holds only <c>*</c>, <c>_</c> and <c>~</c> runs (and spaces or tabs, after any
+/// quote or list marker), the text is returned as it is: closers appended to that line would make it a thematic break (<c>***</c>) or
 /// a fence (<c>~~~~</c>).
 /// With <see cref="HealingOptions.Math"/>, a run of one or two <c>$</c> and the next run of the same
 /// length enclose a math span, opaque to the other rules; a run with no match, or of three or more, is
@@ -302,16 +302,43 @@ internal static class MarkdownHealer
     }
 
     /// <summary>
-    /// Whether the last line of the content, from the character after the last line break before
-    /// <paramref name="end"/> (or from <paramref name="start"/> when there is none), is not empty and holds
-    /// only <c>*</c>, <c>_</c>, <c>~</c>, spaces, tabs and quote markers (<c>&gt;</c>).
+    /// Whether the last line of the content (from the character after the last line break before
+    /// <paramref name="end"/>, or from <paramref name="start"/>) holds only <c>*</c>, <c>_</c>, <c>~</c>,
+    /// spaces and tabs after its quote markers (<c>&gt;</c>) and an optional list marker
+    /// (<c>-</c>, <c>+</c> or digits with <c>.</c> or <c>)</c>, followed by a space).
     /// </summary>
     private static bool EndsWithDelimiterOnlyLine(string text, int start, int end)
     {
-        var lineStart = end;
-        while (lineStart > start && text[lineStart - 1] is '*' or '_' or '~' or ' ' or '\t' or '>')
-            lineStart--;
-        return lineStart < end && (lineStart == start || text[lineStart - 1] is '\n' or '\r');
+        var i = end;
+        while (i > start && text[i - 1] is not ('\n' or '\r'))
+            i--;
+        while (i < end && text[i] is ' ' or '\t' or '>')
+            i++;
+
+        var afterMarker = i;
+        if (i < end && text[i] is '-' or '+')
+        {
+            afterMarker = i + 1;
+        }
+        else
+        {
+            var digits = i;
+            while (digits < end && char.IsAsciiDigit(text[digits]))
+                digits++;
+            if (digits > i && digits < end && text[digits] is '.' or ')')
+                afterMarker = digits + 1;
+        }
+        if (afterMarker > i && afterMarker < end && text[afterMarker] is ' ' or '\t')
+            i = afterMarker;
+
+        if (i == end)
+            return false;
+        for (; i < end; i++)
+        {
+            if (text[i] is not ('*' or '_' or '~' or ' ' or '\t'))
+                return false;
+        }
+        return true;
     }
 
     /// <summary>

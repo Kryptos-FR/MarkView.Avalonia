@@ -218,7 +218,9 @@ public class MarkdownHealerTests
     [InlineData("**b\n", "**b**\n")]
     [InlineData("**a\n*b", "**a\n*b***")]
     [InlineData("> **a\n> *b", "> **a\n> *b***")]
-    [InlineData("a > *", "a > *")]
+    [InlineData("**a > *b", "**a > *b***")]
+    [InlineData("**a\n- *b", "**a\n- *b***")]
+    [InlineData("**a\n*>", "**a\n*>***")]
     public void Unmatched_emphasis_is_closed_in_reverse_order_of_opening(string text, string expected) =>
         Assert.Equal(expected, Heal(text));
 
@@ -249,6 +251,9 @@ public class MarkdownHealerTests
     [InlineData("**a\n  ** ")]
     [InlineData("- **a\n  *")]
     [InlineData("> **a\n> *")]
+    [InlineData("**a\n- *")]
+    [InlineData("**a\n1. *")]
+    [InlineData("> - **a\n>   ~~")]
     public void Delimiter_run_at_the_end_is_left_alone(string text) =>
         Assert.Same(text, Heal(text));
 
