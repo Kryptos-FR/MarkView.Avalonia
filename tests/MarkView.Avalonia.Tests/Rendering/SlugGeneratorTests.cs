@@ -47,4 +47,81 @@ public class SlugGeneratorTests
         gen.Reset();
         Assert.Equal("hello", gen.GenerateSlug("Hello"));
     }
+
+    [Fact]
+    public void Reset_clears_count()
+    {
+        var gen = new SlugGenerator();
+        gen.GenerateSlug("Hello");
+        Assert.Equal(1, gen.Count);
+
+        gen.Reset();
+
+        Assert.Equal(0, gen.Count);
+    }
+
+    [Fact]
+    public void TruncateTo_forgets_later_duplicates()
+    {
+        var gen = new SlugGenerator();
+        gen.GenerateSlug("a");
+        gen.GenerateSlug("a");
+        gen.GenerateSlug("a"); // a, a-1, a-2
+
+        gen.TruncateTo(1);
+
+        Assert.Equal(1, gen.Count);
+        Assert.Equal("a-1", gen.GenerateSlug("a"));
+    }
+
+    [Fact]
+    public void TruncateTo_zero_forgets_everything()
+    {
+        var gen = new SlugGenerator();
+        gen.GenerateSlug("a");
+
+        gen.TruncateTo(0);
+
+        Assert.Equal(0, gen.Count);
+        Assert.Equal("a", gen.GenerateSlug("a"));
+    }
+
+    [Fact]
+    public void TruncateTo_count_is_a_no_op()
+    {
+        var gen = new SlugGenerator();
+        gen.GenerateSlug("a");
+        gen.GenerateSlug("b");
+
+        gen.TruncateTo(2);
+
+        Assert.Equal(2, gen.Count);
+        Assert.Equal("a-1", gen.GenerateSlug("a"));
+        Assert.Equal(3, gen.Count);
+    }
+
+    [Fact]
+    public void TruncateTo_keeps_the_slugs_before_the_cut_distinct()
+    {
+        var gen = new SlugGenerator();
+        gen.GenerateSlug("a");
+        gen.GenerateSlug("b");
+        gen.GenerateSlug("a"); // a-1
+
+        gen.TruncateTo(2);
+
+        Assert.Equal("a-1", gen.GenerateSlug("a"));
+        Assert.Equal("b-1", gen.GenerateSlug("b"));
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(2)]
+    public void TruncateTo_rejects_a_count_outside_the_generated_range(int count)
+    {
+        var gen = new SlugGenerator();
+        gen.GenerateSlug("a");
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => gen.TruncateTo(count));
+    }
 }
