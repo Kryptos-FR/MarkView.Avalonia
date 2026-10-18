@@ -454,7 +454,9 @@ See [Find in Document](docs/find-in-document.md) for what is searched and the hi
 `MarkdownViewer` can render text as it arrives, such as the answer of a language model. Text appended
 to a streaming session is rendered in one update per interval (32 ms by default), and each update
 re-renders only the open tail of the document, so the rest keeps its controls, selection and scroll
-position.
+position. The syntax left open at the end of the text, such as an unmatched `` ` `` or `**`, is closed
+between updates so the text renders as it will once complete; pass `healIncompleteSyntax: false` to
+`BeginStreaming` to turn it off.
 
 ```csharp
 viewer.Markdown = "";
@@ -466,7 +468,7 @@ foreach (var token in tokens)
 ```
 
 See [Streaming](docs/streaming.md) for completing a session, auto-scroll, what happens to the selection
-and search, and how custom renderers can tell that a block is still growing.
+and search, how incomplete syntax is healed, and how custom renderers can tell that a block is still growing.
 
 ## Accessibility
 
