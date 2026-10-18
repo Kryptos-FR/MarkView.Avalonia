@@ -5,13 +5,13 @@
     <NoWarn>$(NoWarn);NU1507</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
-    <AvaloniaVersion>12.1.3</AvaloniaVersion>
+    <AvaloniaVersion>12.1.4</AvaloniaVersion>
     <SkiaSharpVersion>4.153.1</SkiaSharpVersion>
   </PropertyGroup>
   <ItemGroup>
     <!-- Core dependencies -->
     <PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
-    <PackageVersion Include="Markdig" Version="1.4.0" />
+    <PackageVersion Include="Markdig" Version="1.4.1" />
     <!-- Plugin dependencies -->
     <PackageVersion Include="CSharpMath.SkiaSharp" Version="0.5.1" />
     <PackageVersion Include="Mermaider" Version="0.12.2" />
