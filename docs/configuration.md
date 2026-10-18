@@ -159,6 +159,63 @@ Shown until the summary is clicked.
 - As with [foldable alerts](#alert-blocks), the body of a collapsed details block cannot be selected or copied, and `ScrollToAnchor` expands the details blocks around a heading before scrolling to it. See [Theming](theming.md#details-blocks) for the style classes.
 - A pipeline that disables HTML (Markdig's `DisableHtml()`) has no details blocks either.
 
+### Thinking blocks
+
+Reasoning models (DeepSeek R1, Qwen, GLM and most open models) write their reasoning before the answer,
+between `<think>` and `</think>`. Call `UseThinkingBlocks()` to show it in a block that folds away instead of
+as part of the answer:
+
+```csharp
+viewer.UseThinkingBlocks();   // default pipeline + thinking blocks
+
+// or in your own pipeline, with options
+viewer.Pipeline = new MarkdownPipelineBuilder()
+    .UseGitHubExtensions()
+    .UseThinkingBlocks(new ThinkingBlockOptions { Title = "Reasoning", ExpandWhenDone = true })
+    .Build();
+```
+
+```markdown
+<think>
+The user asks for **two** things:
+
+- a summary
+- an example
+</think>
+
+Here is the summary…
+```
+
+- The reasoning is markdown, parsed like the rest of the document, even without blank lines around the tags.
+  Each tag goes at the start of a line; the closing tag can also end the reasoning's last line
+  (`…so the answer is 4.</think>`). A closing tag inside a fenced code block of the reasoning is code.
+- The tags recognised by default are `think`, `thinking`, `reasoning`, `reason` and `thought`, in any case;
+  set `ThinkingBlockOptions.TagNames` to change them.
+- Click the header, or focus it and press Enter or Space, to show or hide the reasoning. In a document that is
+  not streamed, it starts collapsed under "Thoughts".
+- In a [streaming session](streaming.md), the header reads "Thinking…" and the reasoning is shown while it
+  arrives. When the closing tag arrives, the block collapses and its header gives the time the reasoning took:
+  "Thought for 12 seconds". A block the reader expanded or collapsed meanwhile keeps the state they chose.
+  Only the reasoning's new paragraphs are rendered on each update, however long it gets.
+- Reasoning without its closing tag runs to the end of the document: the model is still thinking, or its output
+  was cut off. A complete block with no content (some models write `<think>\n\n</think>` when thinking is off)
+  renders nothing.
+- As with [foldable alerts](#alert-blocks), collapsed reasoning cannot be selected or copied, and the
+  [find](find-in-document.md) methods expand it to show a match.
+
+| `ThinkingBlockOptions` | Default | |
+|---|---|---|
+| `TagNames` | `think`, `thinking`, `reasoning`, `reason`, `thought` | The tags around the reasoning |
+| `ThinkingTitle` | `"Thinking…"` | The header while a session receives the reasoning |
+| `Title` | `"Thoughts"` | The header once the reasoning is complete, when no duration is shown |
+| `DurationTitle` | `ThinkingBlockOptions.FormatDuration` | Formats the header from the time the reasoning took, when a session saw it start and end ("Thought for 12 seconds", "Thought for 2m 5s"); `null` to always show `Title` |
+| `ExpandWhileThinking` | `true` | Whether the reasoning is shown while it arrives |
+| `ExpandWhenDone` | `false` | Whether the reasoning is shown once complete, and in a document that is not streamed |
+
+To translate the titles, set `ThinkingTitle`, `Title` and `DurationTitle`. See
+[Theming](theming.md#thinking-blocks) for the style classes. Reasoning that a model API returns separately
+from the answer (a `reasoning` or `thinking` field) can be shown the same way by wrapping it in the tags.
+
 ### HTML subset
 
 GitHub READMEs often use a little HTML: a centered logo and title, a row of badges, `<kbd>` keys, `<sub>` and `<sup>`. The default pipeline renders a small, safe subset of HTML with native controls, the way GitHub shows it, without building a browser: nothing is run, and nothing is fetched but the `src` of an `<img>`, through the viewer's image loaders like a markdown image. To add it to a pipeline built from something else, call MarkView's `UseHtmlSubset()` (also part of `UseSupportedExtensions()`).
@@ -234,6 +291,7 @@ viewer.UseFigures();        // pipeline + figure blocks
 viewer.UseFootnotes();      // pipeline (footnotes are already in it)
 viewer.UseHardlineBreaks(); // pipeline + hardline breaks
 viewer.UseMediaLinks();     // pipeline + YouTube thumbnails
+viewer.UseThinkingBlocks(); // pipeline + a language model's <think> reasoning, folded away
 ```
 
 Each method calls `UseGitHubExtensions()` plus the requested feature. To combine several opt-in features, build the pipeline explicitly.

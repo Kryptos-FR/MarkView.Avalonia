@@ -40,6 +40,7 @@ public class App : Application
             .UseFooters()
             .UseSmartyPants()
             .UseListExtras()
+            .UseThinkingBlocks()
             // Markdig only parses attributes for the extensions set up before it: keep it last.
             .UseGenericAttributes()
             .Build();

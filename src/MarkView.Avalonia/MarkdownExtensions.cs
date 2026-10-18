@@ -121,4 +121,21 @@ public static class MarkdownExtensions
         builder.Extensions.AddIfNotAlready<Parsing.ExtendedAlertExtension>();
         return builder.Use<Markdig.Extensions.Alerts.AlertExtension>();
     }
+
+    /// <summary>
+    /// Shows the reasoning a language model writes before its answer, between tags such as
+    /// <c>&lt;think&gt;</c> and <c>&lt;/think&gt;</c> (see <see cref="ThinkingBlockOptions.TagNames"/>), in a block that
+    /// folds away. The reasoning is markdown. During a streaming session the block shows "Thinking…" and stays
+    /// expanded until the closing tag arrives, then collapses under a title with the time it took; in any other
+    /// document it starts collapsed. Each tag goes at the start of a line; the closing tag can also end the
+    /// reasoning's last line. A block without its closing tag runs to the end of the document. Activate on the
+    /// viewer with <c>viewer.UseThinkingBlocks()</c>.
+    /// </summary>
+    /// <param name="builder">The pipeline builder.</param>
+    /// <param name="options">The tags, titles and fold behaviour; the defaults when <c>null</c>. Calling the method again replaces them.</param>
+    public static MarkdownPipelineBuilder UseThinkingBlocks(this MarkdownPipelineBuilder builder, ThinkingBlockOptions? options = null)
+    {
+        builder.Extensions.ReplaceOrAdd<Parsing.ThinkingBlockExtension>(new Parsing.ThinkingBlockExtension(options ?? new ThinkingBlockOptions()));
+        return builder;
+    }
 }
