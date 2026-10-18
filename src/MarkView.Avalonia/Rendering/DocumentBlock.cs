@@ -32,6 +32,12 @@ internal sealed class IndexEntry
     public string PlainText => _plainText ?? TextBlock!.Text!;
     public string Separator { get; }
 
+    /// <summary>
+    /// The top-level block of the document the entry renders part of; <c>null</c> when it is not known.
+    /// Set by <see cref="MarkdownViewer.RegisterBlocks(DocumentSelectionLayer, Avalonia.Controls.Panel, int)"/>.
+    /// </summary>
+    public Markdig.Syntax.Block? TopLevelBlock { get; set; }
+
     /// <summary>Whether the entry is a list item's marker (see <see cref="ForMarker"/>).</summary>
     public bool IsMarker => _plainText is null;
 

@@ -432,12 +432,16 @@ viewer.ClearSelection();
 string text = viewer.SelectedText;
 await viewer.CopyToClipboardAsync();
 
+// The selection as Markdown: whole blocks as written, cut blocks rebuilt
+string markdown = viewer.GetSelectedMarkdown();
+await viewer.CopyAsMarkdownAsync();
+
 // React to the selection, or change what is copied
 viewer.SelectionChanged += (_, _) => copyButton.IsEnabled = viewer.HasSelection;
 viewer.CopyingToClipboard += (_, e) => e.Text = e.Text.Trim();
 ```
 
-A selection that spans an image copies the image's alt text in its place; math formulas and Mermaid diagrams copy their source. See [Text Selection](docs/text-selection.md) for details.
+A selection that spans an image copies the image's alt text in its place; math formulas and Mermaid diagrams copy their source. Copying also writes the selection as HTML, so pasting into a word processor or a chat keeps its formatting. See [Text Selection](docs/text-selection.md) for details.
 
 ## Find in Document
 

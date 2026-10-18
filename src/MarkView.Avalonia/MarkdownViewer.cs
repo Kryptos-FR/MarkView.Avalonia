@@ -712,13 +712,21 @@ public partial class MarkdownViewer : ContentControl
         RegisterBlocks(layer, panel, 0);
 
     /// <summary>
-    /// Registers the selectable blocks of <c>panel.Children[startIndex..]</c> in document order, with no
-    /// enclosing list item's marker.
+    /// Registers the selectable blocks of <c>panel.Children[startIndex..]</c>, the children of a renderer's
+    /// root panel, in document order, with no enclosing list item's marker. Each entry records the top-level
+    /// block it renders part of.
     /// </summary>
     internal static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, int startIndex)
     {
         TextBlock? marker = null;
-        RegisterBlocks(layer, panel, ref marker, startIndex);
+        for (var i = startIndex; i < panel.Children.Count; i++)
+        {
+            var first = layer.EntryCount;
+            RegisterBlocks(layer, panel, ref marker, i, i + 1);
+            var block = AvaloniaRenderer.GetTopLevelBlock(panel.Children[i]);
+            for (var k = first; k < layer.EntryCount; k++)
+                layer.Entries[k].TopLevelBlock = block;
+        }
     }
 
     /// <summary>
@@ -726,11 +734,12 @@ public partial class MarkdownViewer : ContentControl
     /// A non-null <paramref name="marker"/> (the enclosing list item's bullet, number or
     /// check glyph) is registered as its own entry just before the first registered entry,
     /// then is cleared, so a list item without selectable content contributes no marker.
-    /// Only <c>panel.Children[startIndex..]</c> are registered.
+    /// Only <c>panel.Children[startIndex..endIndex]</c> are registered.
     /// </summary>
-    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, ref TextBlock? marker, int startIndex = 0)
+    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, ref TextBlock? marker,
+        int startIndex = 0, int endIndex = int.MaxValue)
     {
-        for (var i = startIndex; i < panel.Children.Count; i++)
+        for (var i = startIndex; i < Math.Min(endIndex, panel.Children.Count); i++)
         {
             var child = panel.Children[i];
             switch (child)
@@ -871,7 +880,7 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>Returns the first <see cref="TextBlock"/> found in a control subtree.</summary>
-    private static TextBlock? FindFirstTextBlock(Control control)
+    internal static TextBlock? FindFirstTextBlock(Control control)
     {
         switch (control)
         {

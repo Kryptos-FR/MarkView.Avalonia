@@ -9,6 +9,9 @@ public enum MarkdownCopyOrigin
     /// <summary>The selected text, copied with the copy hotkey or <see cref="MarkdownViewer.CopyToClipboardAsync"/>.</summary>
     Selection,
 
+    /// <summary>The selection as Markdown, copied with <see cref="MarkdownViewer.CopyAsMarkdownAsync"/>.</summary>
+    SelectionAsMarkdown,
+
     /// <summary>The code of a code block, copied with its copy button.</summary>
     CodeBlock,
 }

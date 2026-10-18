@@ -22,9 +22,33 @@ viewer.ClearSelection();
 // Read the current selection (lines separated by '\n')
 string text = viewer.SelectedText;          // or viewer.GetSelectedText()
 
-// Copy to clipboard (with the platform's line endings, "\r\n" on Windows)
+// Copy to clipboard (with the platform's line endings, "\r\n" on Windows), with HTML next to the text
 await viewer.CopyToClipboardAsync();
+
+// Read or copy the selection as Markdown
+string markdown = viewer.GetSelectedMarkdown();
+await viewer.CopyAsMarkdownAsync();
 ```
+
+## Copying as Markdown
+
+`GetSelectedMarkdown()` returns the selection as Markdown, and `CopyAsMarkdownAsync()` writes it to the clipboard as plain text. Lines are separated by `\n` in the first, by the platform's line endings in the second.
+
+- A top-level block selected whole is copied as its own source text, with the source between consecutive whole blocks. Selecting the whole document (`Ctrl+A`) gives back the Markdown it was rendered from, as written, task toggles included.
+- A block only partly selected, at either end of the selection, is rebuilt for its selected part: its text with its bold, italics, strikethrough, code, links and images, inside its heading, list item, task item, quote, alert, code fence or table row (a table keeps its header row). This part is written as normalised Markdown (`**bold**`, `*italic*`, `-` bullets, inline HTML for subscript, superscript, marked and inserted text), not with the source's own characters. Text that Markdown would read as syntax is escaped.
+- A selection inside a single block copies only its text, with its inline syntax: a few words of a heading are not a heading, and part of a code block is its raw code.
+- Formulas, diagrams and the controls of [fence renderers](custom-extensions.md#rendering-a-fence-language-as-your-own-control) are copied as their `MarkdownSelection.CopyText`, which is their source.
+- Hidden content (a collapsed alert or details block) is left out of a partly selected block, as it is from the plain text.
+
+A link written with a [reference](https://spec.commonmark.org/0.31.2/#link-reference-definitions) copied as part of a whole block keeps its `[text][ref]` form; the definition is only included when it is selected too.
+
+## HTML on the clipboard
+
+When the selection is copied (`Ctrl+C` or `CopyToClipboardAsync()`), the viewer also writes it as HTML, next to the plain text, so that pasting into a word processor, a chat or a web editor keeps headings, lists, emphasis, links, code and tables. The HTML is rendered by Markdig, with the viewer's pipeline, from what `GetSelectedMarkdown()` returns, so it holds exactly what was selected. Relative addresses are resolved against `BaseUri` (or the folder of `Source`).
+
+Avalonia has no cross-platform HTML clipboard format, so the viewer writes `HTML Format` on Windows, `public.html` on macOS and `text/html` on Linux. In the browser and on mobile platforms, only the plain text is written.
+
+Set `IsHtmlCopyEnabled="False"` to write the plain text alone. `CopyAsMarkdownAsync()` and a code block's copy button never write HTML.
 
 ## Selection changes
 
@@ -55,12 +79,13 @@ The event args carry no text, so raising the event allocates no string. `Selecte
 
 ## Changing what is copied
 
-`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C` or `CopyToClipboardAsync()`) and when a code block's [copy button](configuration.md#code-block-toolbar) is clicked. It is not raised when there is nothing to copy.
+`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C`, `CopyToClipboardAsync()` or `CopyAsMarkdownAsync()`) and when a code block's [copy button](configuration.md#code-block-toolbar) is clicked. It is not raised when there is nothing to copy.
 
 | Property | Meaning |
 |----------|---------|
-| `Origin` | What is copied: `MarkdownCopyOrigin.Selection` or `MarkdownCopyOrigin.CodeBlock` |
+| `Origin` | What is copied: `MarkdownCopyOrigin.Selection`, `MarkdownCopyOrigin.SelectionAsMarkdown` or `MarkdownCopyOrigin.CodeBlock` |
 | `Text` | The text to write, lines separated by `\n`. Set it to change what is written; it is written with the platform's line endings. Set to `null` or `""`, nothing is written. |
+| `Html` | The [HTML](#html-on-the-clipboard) written next to the text, for `Selection` only; `null` otherwise, and when `IsHtmlCopyEnabled` is off or the platform has no HTML format. Set it to change or drop the HTML. |
 | `Cancel` | Set to `true` to write nothing, for instance when the application writes the clipboard itself. A code block's copy button then shows no confirmation. |
 
 ```csharp
