@@ -104,10 +104,33 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     public IReadOnlyDictionary<string, Control> Anchors => _anchors;
 
+    // Registrations in order, beside the dictionary: a duplicate id overwrites its entry there, so
+    // truncating to an earlier registration needs the history to restore it.
+    private readonly List<(string Id, Control Control)> _anchorOrder = [];
+
     /// <summary>
     /// Registers a heading control under the given anchor ID.
     /// </summary>
-    public void RegisterAnchor(string id, Control control) => _anchors[id] = control;
+    public void RegisterAnchor(string id, Control control)
+    {
+        _anchors[id] = control;
+        _anchorOrder.Add((id, control));
+    }
+
+    /// <summary>The number of <see cref="RegisterAnchor"/> calls since the document began, less those dropped by <see cref="TruncateAnchors"/>.</summary>
+    internal int AnchorCount => _anchorOrder.Count;
+
+    /// <summary>
+    /// Forgets every anchor registered after the first <paramref name="count"/> registrations, so a
+    /// duplicate id points at its earlier registration again.
+    /// </summary>
+    internal void TruncateAnchors(int count)
+    {
+        _anchorOrder.RemoveRange(count, _anchorOrder.Count - count);
+        _anchors.Clear();
+        foreach (var (id, control) in _anchorOrder)
+            _anchors[id] = control;
+    }
 
     private readonly List<(int Level, string Text, string Slug)> _headingEntries = [];
 
@@ -122,6 +145,12 @@ public class AvaloniaRenderer : RendererBase
     /// Records a heading's level, plain text, and anchor slug in document order.
     /// </summary>
     public void RegisterHeading(int level, string text, string slug) => _headingEntries.Add((level, text, slug));
+
+    /// <summary>The number of headings recorded by <see cref="RegisterHeading"/> since the document began, less those dropped by <see cref="TruncateHeadings"/>.</summary>
+    internal int HeadingCount => _headingEntries.Count;
+
+    /// <summary>Forgets every heading recorded after the first <paramref name="count"/>.</summary>
+    internal void TruncateHeadings(int count) => _headingEntries.RemoveRange(count, _headingEntries.Count - count);
 
     /// <summary>
     /// Optional syntax highlighter used by <c>TextMateCodeBlockRenderer</c>.
@@ -232,23 +261,73 @@ public class AvaloniaRenderer : RendererBase
         }
     }
 
+    /// <inheritdoc/>
     public override object Render(MarkdownObject markdownObject)
     {
+        BeginDocument();
+        Write(markdownObject);
+        return RootPanel;
+    }
+
+    /// <summary>
+    /// What <see cref="Render"/> does before writing: resets the anchors, headings and slugs, and places
+    /// the custom fence renderer (once, however many times a document begins).
+    /// </summary>
+    internal void BeginDocument()
+    {
         _anchors.Clear();
+        _anchorOrder.Clear();
         _headingEntries.Clear();
         SlugGenerator.Reset();
         PlaceCustomFenceRenderer();
-        Write(markdownObject);
-        return RootPanel;
+    }
+
+    /// <summary>
+    /// Writes a top-level block into the root panel, without resetting anything. The bottom of the
+    /// container stack is the <see cref="RootPanel"/>, pushed by the constructor.
+    /// </summary>
+    internal void WriteTopLevel(Block block) => Write(block);
+
+    /// <summary>
+    /// <c>true</c> while a streaming session renders the document, which may end in the middle of a
+    /// block. Renderers can consult <see cref="IsProvisional"/> to render such a block differently.
+    /// </summary>
+    public bool IsStreaming { get; internal set; }
+
+    /// <summary>
+    /// True during a session for an object whose block is still open: Markdig's IsOpen flag on the block,
+    /// or a fence with no closing line yet. Inlines resolve to their containing leaf block (ContainerInline.ParentBlock).
+    /// Always <c>false</c> when <see cref="IsStreaming"/> is <c>false</c>, so renderers can call it unconditionally.
+    /// </summary>
+    public bool IsProvisional(MarkdownObject obj)
+    {
+        if (!IsStreaming)
+            return false;
+
+        switch (obj)
+        {
+            case Block block:
+                return block.IsOpen;
+            case Markdig.Syntax.Inlines.Inline inline:
+                var container = inline as Markdig.Syntax.Inlines.ContainerInline ?? inline.Parent;
+                while (container?.Parent is { } parent)
+                    container = parent;
+                return container?.ParentBlock?.IsOpen ?? false;
+            default:
+                return false;
+        }
     }
 
     // Placed when rendering starts, after every extension and pipeline.Setup() have installed their
     // renderers, so a fence renderer wins over the other renderers of fenced code blocks (Mermaid,
     // syntax highlighting, the plain code block) whatever order they were registered in. A renderer
-    // of a narrower type (MathBlock) that already precedes them keeps its place.
+    // of a narrower type (MathBlock) that already precedes them keeps its place. Placed once: a
+    // second document on the same renderer must not stack another one.
+    private bool _fenceRendererPlaced;
+
     private void PlaceCustomFenceRenderer()
     {
-        if (FenceRenderers.Count == 0)
+        if (_fenceRendererPlaced || FenceRenderers.Count == 0)
             return;
 
         var insertAt = ObjectRenderers.Count;
@@ -261,6 +340,7 @@ public class AvaloniaRenderer : RendererBase
             }
         }
         ObjectRenderers.Insert(insertAt, new CustomFenceRenderer());
+        _fenceRendererPlaced = true;
     }
 
     /// <summary>

@@ -123,6 +123,55 @@ internal sealed class DocumentSelectionLayer : Control
         _totalLength += entry.PlainText.Length + entry.Separator.Length;
     }
 
+    /// <summary>The number of registered entries.</summary>
+    public int EntryCount => _entries.Count;
+
+    /// <summary>
+    /// Removes every entry after the first <paramref name="entryCount"/>, so later registrations continue
+    /// from the end of the last kept entry. A selection starting beyond the last kept entry's text is cleared,
+    /// one ending beyond it ends at the end of that text (a selection starting exactly there keeps its
+    /// anchor, as a drag in progress does), and the find matches in removed entries
+    /// are dropped, along with the current match when it was one of them.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="entryCount"/> is negative or greater than <see cref="EntryCount"/>.
+    /// </exception>
+    public void TruncateTo(int entryCount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(entryCount);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(entryCount, _entries.Count);
+
+        var removed = _entries.GetRange(entryCount, _entries.Count - entryCount);
+        _entries.RemoveRange(entryCount, removed.Count);
+        _totalLength = entryCount == 0 ? 0 : _entries[^1].AbsEndWithSep;
+
+        if (_anchor is { } anchor && _focus is { } focus)
+        {
+            var keptEnd = entryCount == 0 ? 0 : _entries[^1].AbsEnd;
+            if (Math.Min(anchor, focus) > keptEnd)
+            {
+                _anchor = null;
+                _focus = null;
+            }
+            else
+            {
+                _anchor = Math.Min(anchor, keptEnd);
+                _focus = Math.Min(focus, keptEnd);
+            }
+        }
+
+        // Matches are in entry order, so those in removed entries come last.
+        var removedEntries = new HashSet<IndexEntry>(removed);
+        var firstRemoved = _findMatches.Count;
+        while (firstRemoved > 0 && removedEntries.Contains(_findMatches[firstRemoved - 1].Entry))
+            firstRemoved--;
+        _findMatches.RemoveRange(firstRemoved, _findMatches.Count - firstRemoved);
+        if (CurrentFindMatch >= _findMatches.Count)
+            CurrentFindMatch = -1;
+
+        InvalidateVisual();
+    }
+
     // ── Public selection API ──────────────────────────────────────────────────
 
     /// <summary>Selects all text in all registered entries.</summary>
@@ -466,6 +515,9 @@ internal sealed class DocumentSelectionLayer : Control
         _anchor = start;
         _focus = end;
     }
+
+    /// <summary>The anchor and focus as absolute offsets, <c>null</c> when nothing is selected. For unit tests only.</summary>
+    internal (int? Anchor, int? Focus) SelectionForTest => (_anchor, _focus);
 
     // ── Private helpers ───────────────────────────────────────────────────────
 

@@ -56,10 +56,15 @@ public partial class MarkdownViewer : ContentControl
     // The markdown last rendered, with the task toggles made since applied to it; assigning the same
     // text to Markdown (as a host writing a toggle back does) then needs no re-render.
     private string? _renderedMarkdown;
+    // Where the image size hints of the last render were rewritten, for mapping a task toggle back to its source position.
+    private List<SourceShift> _sourceShifts = [];
     private CancellationTokenSource? _sourceLoadCts;
 
     private static readonly MarkdownPipeline DefaultPipeline =
         new MarkdownPipelineBuilder().UseGitHubExtensions().Build();
+
+    /// <summary>The pipeline in effect: the viewer's, else the global default, else the built-in one.</summary>
+    private MarkdownPipeline EffectivePipeline => Pipeline ?? MarkdownViewerDefaults.Pipeline ?? DefaultPipeline;
 
     /// <summary>
     /// Defines the <see cref="Markdown"/> property.
@@ -403,6 +408,8 @@ public partial class MarkdownViewer : ContentControl
 
     private void OnSourceChanged()
     {
+        // The session appends to Markdown, which Source replaces: it ends now, not when the load renders.
+        EndStreamingSession();
         _sourceLoadCts?.Cancel();
         _sourceLoadCts = null;
         _sourceMarkdown = null;
@@ -503,6 +510,8 @@ public partial class MarkdownViewer : ContentControl
 
     internal void RenderMarkdown()
     {
+        // Whatever is rendered now replaces what an active streaming session renders, so the session ends.
+        EndStreamingSession();
         var markdown = _sourceMarkdown ?? Markdown;
         _renderedMarkdown = markdown;
         // A focused link is about to be replaced; keep focus in the viewer rather than losing it.
@@ -521,10 +530,43 @@ public partial class MarkdownViewer : ContentControl
             return;
         }
 
-        var pipeline = Pipeline ?? MarkdownViewerDefaults.Pipeline ?? DefaultPipeline;
-        var markdownText = PreprocessImageSizes(markdown, out var sourceShifts);
-        var document = Markdig.Markdown.Parse(markdownText, pipeline);
+        var markdownText = PreprocessImageSizes(markdown, out _sourceShifts);
+        var document = Markdig.Markdown.Parse(markdownText, EffectivePipeline);
 
+        var renderer = CreateRenderer();
+        renderer.Render(document);
+
+        _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);
+        _headingEntries = [.. renderer.HeadingEntries];
+        RebuildTableOfContents();
+
+        // Set up document-wide selection layer
+        var layer = new DocumentSelectionLayer();
+        RegisterBlocks(layer, renderer.RootPanel);
+        _selectionLayer = layer;
+
+        // Keyboard stand-ins for the document's links
+        _linkFocusLayer = LinkFocusLayer.Create(renderer.RootPanel, ActivateLink);
+
+        InstallDocument(renderer, layer, _linkFocusLayer, focusWasInDocument);
+
+        // Every new render is treated as a fresh document — reset scroll position to the
+        // top, since PART_ScrollViewer now persists across renders (it lives in the
+        // template, not rebuilt per-render) and would otherwise keep its old offset.
+        if (_scrollViewer is not null)
+            _scrollViewer.Offset = default;
+
+        // The active search goes on in the new document, keeping its current match where it can,
+        // without scrolling to it.
+        UpdateFind(CurrentFindMatchIndex);
+    }
+
+    /// <summary>
+    /// Creates a renderer configured from the viewer's properties, hooked to its events, with the
+    /// extensions registered and the pipeline set up. Renders nothing.
+    /// </summary>
+    private AvaloniaRenderer CreateRenderer()
+    {
         var renderer = new AvaloniaRenderer
         {
             BaseUri = BaseUri ?? InferBaseUri(Source),
@@ -539,7 +581,7 @@ public partial class MarkdownViewer : ContentControl
         };
         renderer.LinkClicked += OnLinkClicked;
         renderer.ImageZoomRequested += OpenLightbox;
-        renderer.TaskToggled += (_, e) => OnTaskToggled(e, sourceShifts);
+        renderer.TaskToggled += (_, e) => OnTaskToggled(e);
 
         // Extensions register before pipeline.Setup() so they can swap renderers.
         // Globals first, then per-instance; skip exact-reference duplicates.
@@ -560,31 +602,28 @@ public partial class MarkdownViewer : ContentControl
             }
         }
 
+        var pipeline = EffectivePipeline;
         pipeline.Setup(renderer);
         // Markdig only sets these extensions up for its own HTML renderer.
         renderer.ApplyAttributeClasses = pipeline.Extensions.Contains<GenericAttributesExtension>();
         if (pipeline.Extensions.Find<SmartyPantsExtension>() is { } smartyPants
             && renderer.ObjectRenderers.Find<SmartyPantInlineRenderer>() is { } smartyPantRenderer)
             smartyPantRenderer.Options = smartyPants.Options;
-        renderer.Render(document);
 
-        _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);
-        _headingEntries = [.. renderer.HeadingEntries];
-        RebuildTableOfContents();
+        return renderer;
+    }
 
-        // Set up document-wide selection layer
-        var layer = new DocumentSelectionLayer();
-        RegisterBlocks(layer, renderer.RootPanel);
-        _selectionLayer = layer;
-
-        // Keyboard stand-ins for the document's links
-        _linkFocusLayer = LinkFocusLayer.Create(renderer.RootPanel, ActivateLink);
-
+    /// <summary>
+    /// Replaces the viewer's content with the rendered document: its root panel with the selection and
+    /// link focus layers on top, in a single-cell Grid.
+    /// </summary>
+    private void InstallDocument(AvaloniaRenderer renderer, DocumentSelectionLayer layer, LinkFocusLayer linkLayer, bool focusWasInDocument)
+    {
         // Stack panel + transparent selection and link focus layers in a single-cell Grid
         var contentGrid = new Grid();
         contentGrid.Children.Add(renderer.RootPanel);
         contentGrid.Children.Add(layer);
-        contentGrid.Children.Add(_linkFocusLayer);
+        contentGrid.Children.Add(linkLayer);
         // Tab moves through the document in reading order (ICustomKeyboardNavigation.GetNext),
         // so default navigation must not walk into it in visual-tree order as well.
         KeyboardNavigation.SetTabNavigation(contentGrid, KeyboardNavigationMode.None);
@@ -602,16 +641,6 @@ public partial class MarkdownViewer : ContentControl
         // so that focus does not return to one of its controls.
         CloseLightbox();
         if (focusWasInDocument) Focus();
-
-        // Every new render is treated as a fresh document — reset scroll position to the
-        // top, since PART_ScrollViewer now persists across renders (it lives in the
-        // template, not rebuilt per-render) and would otherwise keep its old offset.
-        if (_scrollViewer is not null)
-            _scrollViewer.Offset = default;
-
-        // The active search goes on in the new document, keeping its current match where it can,
-        // without scrolling to it.
-        UpdateFind(CurrentFindMatchIndex);
     }
 
     // ── Source positions ──────────────────────────────────────────────────────
@@ -663,11 +692,13 @@ public partial class MarkdownViewer : ContentControl
     /// <param name="Lines">Total line-count change of this and all earlier rewrites.</param>
     private readonly record struct SourceShift(int End, int Offset, int Lines);
 
-    private void OnTaskToggled(TaskToggledEventArgs e, List<SourceShift> shifts)
+    private void OnTaskToggled(TaskToggledEventArgs e)
     {
-        var (start, line) = ToSourcePosition(shifts, e.SourceStart, e.Line);
+        var (start, line) = ToSourcePosition(_sourceShifts, e.SourceStart, e.Line);
         if (_renderedMarkdown is { } rendered)
             _renderedMarkdown = string.Concat(rendered.AsSpan(0, start), e.IsChecked ? "[x]" : "[ ]", rendered.AsSpan(start + e.SourceLength));
+        // The session's next update renders its own text, which must not revert the toggle.
+        _streamingSession?.PatchText(start, e.SourceLength, e.IsChecked ? "[x]" : "[ ]");
         RaiseEvent(new TaskToggledEventArgs(e.IsChecked, start, e.SourceLength, line) { RoutedEvent = TaskToggledEvent });
     }
 
@@ -676,10 +707,17 @@ public partial class MarkdownViewer : ContentControl
 
     // ── Block registration ────────────────────────────────────────────────────
 
-    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel)
+    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel) =>
+        RegisterBlocks(layer, panel, 0);
+
+    /// <summary>
+    /// Registers the selectable blocks of <c>panel.Children[startIndex..]</c> in document order, with no
+    /// enclosing list item's marker.
+    /// </summary>
+    internal static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, int startIndex)
     {
         TextBlock? marker = null;
-        RegisterBlocks(layer, panel, ref marker);
+        RegisterBlocks(layer, panel, ref marker, startIndex);
     }
 
     /// <summary>
@@ -687,11 +725,13 @@ public partial class MarkdownViewer : ContentControl
     /// A non-null <paramref name="marker"/> (the enclosing list item's bullet, number or
     /// check glyph) is registered as its own entry just before the first registered entry,
     /// then is cleared, so a list item without selectable content contributes no marker.
+    /// Only <c>panel.Children[startIndex..]</c> are registered.
     /// </summary>
-    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, ref TextBlock? marker)
+    private static void RegisterBlocks(DocumentSelectionLayer layer, Panel panel, ref TextBlock? marker, int startIndex = 0)
     {
-        foreach (var child in panel.Children)
+        for (var i = startIndex; i < panel.Children.Count; i++)
         {
+            var child = panel.Children[i];
             switch (child)
             {
                 // A control a renderer gave copy text to (a formula, a diagram) is selected as a whole,
@@ -1117,7 +1157,11 @@ public partial class MarkdownViewer : ContentControl
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
+        if (_scrollViewer is not null)
+            _scrollViewer.ScrollChanged -= OnScrollChanged;
         _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+        if (_scrollViewer is not null)
+            _scrollViewer.ScrollChanged += OnScrollChanged;
         // Applying a template replaces every visual child, the open lightbox included.
         if (_lightbox is not null)
             VisualChildren.Add(_lightbox);
@@ -1159,6 +1203,9 @@ public partial class MarkdownViewer : ContentControl
         if (hadFocus && lightbox.ReturnFocus?.Focus() != true)
             Focus();
     }
+
+    /// <summary>The ids of the rendered document's anchors, for tests.</summary>
+    internal IEnumerable<string> AnchorIds => _anchors.Keys;
 
     public void ScrollToAnchor(string anchorId)
     {

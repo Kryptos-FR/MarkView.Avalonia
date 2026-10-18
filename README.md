@@ -449,6 +449,25 @@ viewer.ClearFind();
 
 See [Find in Document](docs/find-in-document.md) for what is searched and the highlight colours.
 
+## Streaming
+
+`MarkdownViewer` can render text as it arrives, such as the answer of a language model. Text appended
+to a streaming session is rendered in one update per interval (32 ms by default), and each update
+re-renders only the open tail of the document, so the rest keeps its controls, selection and scroll
+position.
+
+```csharp
+viewer.Markdown = "";
+using var session = viewer.BeginStreaming();   // viewer.AutoScrollToEnd = true follows the end
+
+foreach (var token in tokens)
+    session.Append(token);
+// leaving the block completes the session; session.Complete() does it explicitly
+```
+
+See [Streaming](docs/streaming.md) for completing a session, auto-scroll, what happens to the selection
+and search, and how custom renderers can tell that a block is still growing.
+
 ## Accessibility
 
 - **Keyboard.** `Tab` / `Shift+Tab` move through the document's links and interactive elements in reading order, with a focus ring, and `Enter` opens the focused link.
