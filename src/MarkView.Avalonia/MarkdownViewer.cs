@@ -584,9 +584,11 @@ public partial class MarkdownViewer : ContentControl
         // Completed already (avares://, or a resolver reading from memory): render before the setter returns.
         if (opening.IsCompleted)
         {
-            if (!opening.IsCompletedSuccessfully || opening.Result is not { } stream)
+            if (!opening.IsCompletedSuccessfully)
                 return;
-            using (stream)
+            using var stream = opening.Result;
+            if (stream is null)
+                return;
             using (var reader = new StreamReader(stream))
                 _sourceMarkdown = reader.ReadToEnd();
             RenderMarkdown();
