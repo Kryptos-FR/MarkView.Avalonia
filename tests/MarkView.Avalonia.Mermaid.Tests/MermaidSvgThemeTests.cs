@@ -109,65 +109,174 @@ public class MermaidSvgThemeTests
     public void ResolveHex_without_application_returns_fallback() =>
         Assert.Equal("#ABCDEF", MermaidSvgTheme.ResolveHex(null, ThemeVariant.Light, "MarkdownMermaidBackground", "#ABCDEF"));
 
+    /// <summary>An SVG shaped like Mermaider's: colours on the root element, derived properties in its style block.</summary>
+    private static string Svg(string body, string rootStyle = "--bg:#C8AF96;--fg:#644B32;--accent:#3B82F6;background:#C8AF96", string rule = "") =>
+        $"<svg xmlns=\"http://www.w3.org/2000/svg\" style=\"{rootStyle}\">\n<style>\n  text {{ font-family: 'Inter'; }}\n  svg {{\n{rule}\n  }}\n</style>\n{body}</svg>";
+
+    private static string Resolve(string body, string rule = "", MermaidRenderOptions? options = null) =>
+        Body(MermaidSvgTheme.InlineCssVariables(Svg(body, rule: rule), options ?? Options()));
+
+    private static string Body(string svg) => svg[(svg.IndexOf("</style>\n", StringComparison.Ordinal) + 9)..^6];
+
     [Theory]
+    [InlineData("var(--fg)", "#644B32")]
+    [InlineData("var(--bg)", "#C8AF96")]
+    [InlineData("var(--accent)", "#3B82F6")]
     [InlineData("var(--_text)", "#644B32")]
-    [InlineData("var(--_text-sec)", "#91775E")]
-    [InlineData("var(--_node-fill)", "#C4AB92")]
-    [InlineData("var(--_arrow)", "#3B82F6")]
-    [InlineData("var(--_group-fill)", "#C8AF96")]
-    [InlineData("var(--_accent-text)", "#6C91D3")]
-    public void InlineCssVariables_replaces_token_with_computed_colour(string token, string expected)
+    [InlineData("var(--_soft)", "#7D644B")]
+    [InlineData("var(--_tint)", "#BAAAA0")]
+    public void InlineCssVariables_resolves_properties_declared_by_the_svg(string expression, string expected)
     {
-        var result = MermaidSvgTheme.InlineCssVariables($"<rect fill=\"{token}\"/>", Options());
+        const string rule = """
+                --_text:  var(--fg);
+                --_soft:  color-mix(in srgb, var(--fg) 75%, var(--bg));
+                --_tint:  color-mix(in srgb, var(--accent, var(--fg)) 10%, var(--bg));
+            """;
 
-        Assert.Equal($"<rect fill=\"{expected}\"/>", result);
+        Assert.Equal($"<rect fill=\"{expected}\"/>", Resolve($"<rect fill=\"{expression}\"/>", rule));
     }
 
     [Fact]
-    public void InlineCssVariables_uses_supplied_accent_colour()
+    public void InlineCssVariables_resolves_expressions_inside_the_style_block_and_root_style()
     {
-        var options = new MermaidRenderOptions { Bg = "#FFFFFF", Fg = "#000000", Accent = "#112233" };
+        var result = MermaidSvgTheme.InlineCssVariables(
+            Svg("", rootStyle: "--bg:#FFFFFF;--fg:#000000;--line:color-mix(in srgb, #FF0000 50%, var(--fg));background:var(--bg)", rule: "--_line: var(--line);"),
+            Options());
 
-        var result = MermaidSvgTheme.InlineCssVariables("var(--_arrow)", options);
-
-        Assert.Equal("#112233", result);
+        Assert.Contains("--line:#800000;background:#FFFFFF\"", result);
+        Assert.Contains("--_line: #800000;", result);
     }
 
     [Fact]
-    public void InlineCssVariables_replaces_root_background_reference()
+    public void InlineCssVariables_uses_the_fallback_of_an_undeclared_property()
     {
-        var result = MermaidSvgTheme.InlineCssVariables("<svg style=\"background:var(--bg)\"/>", Options());
+        const string rule = "--_text-sec: var(--muted, color-mix(in srgb, var(--fg) 50%, var(--bg)));";
 
-        Assert.Equal("<svg style=\"background:#C8AF96\"/>", result);
+        Assert.Equal("#967D64", Resolve("var(--_text-sec)", rule));
     }
 
     [Fact]
-    public void InlineCssVariables_uses_explicit_muted_line_surface_and_border_colours()
+    public void InlineCssVariables_prefers_the_colours_of_the_options_over_fallbacks()
     {
+        const string rule = "--_text-sec: var(--muted, #000000); --_line: var(--line, #000000); --_fill: var(--surface, #000000); --_stroke: var(--border, #000000);";
         var options = new MermaidRenderOptions
         {
             Bg = "#C8AF96",
             Fg = "#644B32",
-            Accent = "#3B82F6",
             Muted = "#010203",
             Line = "#0A0B0C",
             Surface = "#0D0E0F",
             Border = "#101112",
         };
-        const string svg = "var(--_text-sec)|var(--_text-muted)|var(--_line)|var(--_node-fill)|var(--_node-stroke)";
 
-        var result = MermaidSvgTheme.InlineCssVariables(svg, options);
+        var result = Resolve("var(--_text-sec)|var(--_line)|var(--_fill)|var(--_stroke)", rule, options);
 
-        Assert.Equal("#010203|#010203|#0A0B0C|#0D0E0F|#101112", result);
+        Assert.Equal("#010203|#0A0B0C|#0D0E0F|#101112", result);
     }
 
     [Fact]
-    public void InlineCssVariables_without_colours_falls_back_to_light_defaults()
+    public void InlineCssVariables_prefers_the_colours_declared_by_the_svg_over_the_options()
     {
-        var result = MermaidSvgTheme.InlineCssVariables(
-            "var(--_text)|var(--_group-fill)|var(--_arrow)",
-            new MermaidRenderOptions { Bg = null, Fg = null, Accent = null });
+        var result = MermaidSvgTheme.InlineCssVariables(Svg("var(--fg)|var(--accent)", rootStyle: "--fg:#123456;--accent:#ABCDEF"), Options());
 
-        Assert.Equal("#27272A|#FFFFFF|#3B82F6", result);
+        Assert.Equal("#123456|#ABCDEF", Body(result));
+    }
+
+    [Fact]
+    public void InlineCssVariables_without_declarations_uses_the_options_then_light_defaults()
+    {
+        Assert.Equal("#C8AF96|#644B32|#3B82F6", MermaidSvgTheme.InlineCssVariables("var(--bg)|var(--fg)|var(--accent)", Options()));
+        Assert.Equal(
+            "#FFFFFF|#27272A|var(--accent)",
+            MermaidSvgTheme.InlineCssVariables("var(--bg)|var(--fg)|var(--accent)", new MermaidRenderOptions { Bg = null, Fg = null, Accent = null }));
+    }
+
+    [Theory]
+    [InlineData("color-mix(in srgb, #000000 50%, #FFFFFF)", "#808080")]
+    [InlineData("color-mix(in srgb, #000000 25%, #FFFFFF 75%)", "#BFBFBF")]
+    [InlineData("color-mix(in srgb, #000000 25%, #FFFFFF)", "#BFBFBF")]
+    [InlineData("color-mix(in srgb, #000000, #FFFFFF 75%)", "#BFBFBF")]
+    [InlineData("color-mix(in srgb, #000000, #FFFFFF)", "#808080")]
+    [InlineData("color-mix(in srgb, #000000 50%, #FFFFFF 150%)", "#BFBFBF")]
+    [InlineData("color-mix(in srgb, #000 100%, #FFF)", "#000000")]
+    [InlineData("color-mix(in srgb, #000000 0%, #FFFFFF)", "#FFFFFF")]
+    [InlineData("color-mix(in srgb,#102030 50%,#304050)", "#203040")]
+    [InlineData("color-mix(in srgb, #FF0000 12%, transparent)", "#FF00001F")]
+    [InlineData("color-mix(in srgb, #FF000080 50%, #0000FF)", "#5500AAC0")]
+    [InlineData("color-mix(in srgb, #00F8 50%, #F00)", "#A60059C3")]
+    [InlineData("color-mix(in srgb, #000000 20%, #FFFFFF 30%)", "#99999980")]
+    [InlineData("color-mix(in srgb, #80402080 50%, #20408040)", "#60404060")]
+    [InlineData("color-mix(in srgb, transparent 40%, transparent)", "transparent")]
+    public void InlineCssVariables_mixes_colours_in_srgb(string expression, string expected) =>
+        Assert.Equal(expected, MermaidSvgTheme.InlineCssVariables(expression, Options()));
+
+    [Theory]
+    [InlineData("var(--unknown)")]
+    [InlineData("var(--bg")]
+    [InlineData("color-mix(in oklch, #000000 50%, #FFFFFF)")]
+    [InlineData("color-mix(in srgb, red 50%, #FFFFFF)")]
+    [InlineData("color-mix(in srgb, #000000 50%, #FFFFF)")]
+    [InlineData("color-mix(in srgb, #000000 50%, #GGGGGG)")]
+    [InlineData("color-mix(in srgb, #000000 50%)")]
+    [InlineData("color-mix(in srgb, #000000 0%, #FFFFFF 0%)")]
+    [InlineData("color-mix(in srgb, #000000 50%, #FFFFFF 50%, #808080)")]
+    public void InlineCssVariables_leaves_expressions_it_cannot_resolve(string expression) =>
+        Assert.Equal($"<rect fill=\"{expression}\"/>", Resolve($"<rect fill=\"{expression}\"/>"));
+
+    [Fact]
+    public void InlineCssVariables_leaves_properties_that_refer_to_each_other()
+    {
+        const string rule = "--_a: var(--_b); --_b: var(--_a); --_c: color-mix(in srgb, var(--_c) 50%, #FFFFFF);";
+
+        Assert.Equal("var(--_a)", Resolve("var(--_a)", rule)[..9]);
+        Assert.EndsWith("#FFFFFF)", Resolve("var(--_c)", rule));
+    }
+
+    [Fact]
+    public void InlineCssVariables_keeps_every_comma_of_a_fallback() =>
+        Assert.Equal("a, b", Resolve("var(--nope, a, b)"));
+
+    [Fact]
+    public void InlineCssVariables_ignores_declarations_that_are_not_custom_properties() =>
+        Assert.Equal("var(background)", Body(MermaidSvgTheme.InlineCssVariables(Svg("var(background)", rootStyle: "background:#123456"), Options())));
+
+    [Fact]
+    public void InlineCssVariables_converts_rem_font_sizes_to_pixels()
+    {
+        const string rule = "--fs-xs: 0.75rem; --fs-s: 0.875rem; --fs-m:  1rem; --fs-l: 1.125rem; --gap: 2em;";
+
+        var result = Resolve("""<text font-size="var(--fs-xs)"/><text font-size="var(--fs-s)"/><text font-size="var(--fs-m)"/><text font-size="var(--fs-l)"/><g x="var(--gap)"/>""", rule);
+
+        Assert.Equal("""<text font-size="12px"/><text font-size="14px"/><text font-size="16px"/><text font-size="18px"/><g x="2em"/>""", result);
+    }
+
+    [Fact]
+    public void InlineCssVariables_reads_only_the_svg_rule_and_the_root_style()
+    {
+        var svg = """<svg style="--fg:#111111"><style>  .tsvg { --_x: #222222; } svg { --_y: #333333; }</style><g style="--_z:#444444"/>var(--_x)|var(--_y)|var(--_z)|var(--fg)</svg>""";
+
+        var result = MermaidSvgTheme.InlineCssVariables(svg, Options());
+
+        Assert.EndsWith("var(--_x)|#333333|var(--_z)|#111111</svg>", result);
+    }
+
+    [Theory]
+    [InlineData("graph TD\n  A[Start] --> B{Ok?}\n  B -->|yes| C[Done]\n  subgraph S [Group]\n    C\n  end")]
+    [InlineData("sequenceDiagram\n  Alice->>Bob: Hi\n  Note over Alice,Bob: note")]
+    [InlineData("classDiagram\n  Animal <|-- Dog")]
+    [InlineData("erDiagram\n  CUSTOMER ||--o{ ORDER : places")]
+    [InlineData("stateDiagram-v2\n  [*] --> Still\n  Still --> [*]")]
+    [InlineData("pie title Pets\n  \"Dogs\" : 386\n  \"Cats\" : 85")]
+    [InlineData("graph LR\n  A:::success --> B:::failure --> C:::warning --> D:::info")]
+    public void InlineCssVariables_leaves_no_css_function_in_mermaider_output(string source)
+    {
+        foreach (var options in new[] { Options(), new MermaidRenderOptions { Bg = "#18181B", Fg = "#FAFAFA", Accent = "#60A5FA" } })
+        {
+            var svg = MermaidSvgTheme.InlineCssVariables(Mermaider.MermaidRenderer.RenderSvg(source, options), options);
+            var drawing = svg.Remove(svg.IndexOf("<style>", StringComparison.Ordinal), svg.IndexOf("</style>", StringComparison.Ordinal) - svg.IndexOf("<style>", StringComparison.Ordinal));
+
+            Assert.DoesNotContain("var(", drawing);
+            Assert.DoesNotContain("color-mix(", drawing);
+        }
     }
 }

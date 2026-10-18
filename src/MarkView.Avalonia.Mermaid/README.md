@@ -103,8 +103,8 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 
 For mermaid blocks:
 1. Source lines are extracted from the fenced block. The diagram itself is rendered the first time it comes within a screen of the viewport, so diagrams further down a long document cost nothing while it loads.
-2. `MermaidRenderer.RenderSvg` produces an SVG string with Mermaider's CSS custom properties.
-3. CSS variable references (`var(--_text)` etc.) are inlined with computed hex values so SkiaSharp can render the diagram.
+2. `MermaidRenderer.RenderSvg` produces an SVG string whose colours and font sizes use CSS custom properties and `color-mix()`.
+3. These expressions (`var(--_text)`, `color-mix(in srgb, var(--fg) 10%, var(--bg))`, `var(--fs-s)` etc.) are resolved from the properties the SVG declares and replaced with hex colours and pixel sizes, so SkiaSharp, which ignores them, can render the diagram.
 4. The SVG is loaded into an `SvgImage` and displayed in an `Image` control. Labels are drawn in the document's font as Avalonia resolves it (the viewer's inherited `FontFamily`, e.g. Inter with `WithInterFont()`), wherever the SVG asks for that font by name. In the browser, where SkiaSharp itself only has a monospace fallback font, every label uses the document's font.
 5. `MaxWidth` is constrained to the `ScrollViewer` viewport and updated on resize.
 
