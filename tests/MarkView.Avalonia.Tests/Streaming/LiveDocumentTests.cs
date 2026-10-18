@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
@@ -26,6 +27,20 @@ public class LiveDocumentTests
     private static MarkdownDocument Doc(string text) => Markdown.Parse(text, Pipeline);
 
     private static UpdateResult Update(LiveDocument live, string text) => live.Update(Doc(text));
+
+    private static MarkdownHyperlink FirstLink(LiveDocument live)
+    {
+        var text = Assert.IsAssignableFrom<TextBlock>(live.RootPanel.Children[0]);
+        return Assert.IsType<MarkdownHyperlink>(Assert.Single(text.Inlines!, i => i is MarkdownHyperlink));
+    }
+
+    /// <summary>The document rendered in one update, as a direct set renders it.</summary>
+    private static LiveDocument Direct(string text, MarkdownPipeline? pipeline = null)
+    {
+        var live = Live();
+        live.Update(Markdown.Parse(text, pipeline ?? Pipeline));
+        return live;
+    }
 
     [AvaloniaFact]
     public void First_update_renders_every_block()
@@ -170,6 +185,81 @@ public class LiveDocumentTests
         Assert.Equal(0, result.ReusedBlocks);
         var text = Assert.IsAssignableFrom<TextBlock>(live.RootPanel.Children[0]);
         Assert.Contains(text.Inlines!, i => i is MarkdownHyperlink);
+    }
+
+    [AvaloniaFact]
+    public void Growing_definition_url_re_renders_the_paragraph_that_uses_it()
+    {
+        const string partial = "[t][ref]\n\n[ref]: https://exam";
+        const string full = "[t][ref]\n\n[ref]: https://example.com";
+        var live = Live();
+        Update(live, partial);
+        Assert.Equal("https://exam/", FirstLink(live).NavigateUri!.AbsoluteUri);
+
+        var result = Update(live, full);
+
+        Assert.Equal(0, result.ReusedBlocks);
+        Assert.Equal("https://example.com/", FirstLink(live).NavigateUri!.AbsoluteUri);
+        Assert.Equal(FirstLink(Direct(full)).NavigateUri, FirstLink(live).NavigateUri);
+    }
+
+    [AvaloniaFact]
+    public void Growing_definition_title_re_renders_the_paragraph_that_uses_it()
+    {
+        // Markdig drops a definition whose title is not closed yet, so the title arrives whole, in one
+        // update, after the label and URL are final.
+        const string partial = "[t][ref]\n\n[ref]: /u";
+        const string full = "[t][ref]\n\n[ref]: /u \"title\"";
+        var live = Live();
+        Update(live, partial);
+        Assert.Null(FirstLink(live).Title);
+
+        var result = Update(live, full);
+
+        Assert.Equal(0, result.ReusedBlocks);
+        Assert.Equal("title", FirstLink(live).Title);
+        Assert.Equal(FirstLink(Direct(full)).Title, FirstLink(live).Title);
+        Assert.Equal("/u", FirstLink(live).NavigateUri!.OriginalString);
+    }
+
+    [AvaloniaFact]
+    public void Growing_abbreviation_re_renders_the_paragraph_that_uses_it()
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseGitHubExtensions().UseAbbreviations().Build();
+        const string partial = "HTML is\n\n*[HTML]: Hyper";
+        const string full = "HTML is\n\n*[HTML]: Hyper Text";
+        static TextBlock Abbreviation(LiveDocument live)
+        {
+            var paragraph = Assert.IsAssignableFrom<TextBlock>(live.RootPanel.Children[0]);
+            var container = Assert.IsType<InlineUIContainer>(paragraph.Inlines![0]);
+            var abbreviation = Assert.IsType<TextBlock>(container.Child);
+            Assert.Contains("markdown-abbr", abbreviation.Classes);
+            return abbreviation;
+        }
+        var live = Live();
+        live.Update(Markdown.Parse(partial, pipeline));
+        Assert.Equal("Hyper", ToolTip.GetTip(Abbreviation(live)));
+
+        var result = live.Update(Markdown.Parse(full, pipeline));
+
+        Assert.Equal(0, result.ReusedBlocks);
+        Assert.Equal("Hyper Text", ToolTip.GetTip(Abbreviation(live)));
+        Assert.Equal(ToolTip.GetTip(Abbreviation(Direct(full, pipeline))), ToolTip.GetTip(Abbreviation(live)));
+        Assert.Equal("HTML", Abbreviation(live).Text);
+    }
+
+    [AvaloniaFact]
+    public void Unchanged_abbreviation_keeps_the_paragraph_that_uses_it()
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseGitHubExtensions().UseAbbreviations().Build();
+        var live = Live();
+        live.Update(Markdown.Parse("HTML is\n\n*[HTML]: Hyper Text\n\nmore", pipeline));
+        var paragraph = live.RootPanel.Children[0];
+
+        var result = live.Update(Markdown.Parse("HTML is\n\n*[HTML]: Hyper Text\n\nmore text", pipeline));
+
+        Assert.Equal(1, result.ReusedBlocks);
+        Assert.Same(paragraph, live.RootPanel.Children[0]);
     }
 
     [AvaloniaFact]

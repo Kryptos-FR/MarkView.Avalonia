@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 
+using Markdig.Extensions.Abbreviations;
 using Markdig.Extensions.Footnotes;
 using Markdig.Syntax;
 
@@ -35,7 +36,7 @@ internal readonly record struct UpdateResult(int ReusedBlocks, bool HeadingsChan
 internal sealed class LiveDocument
 {
     private readonly List<BlockRecord> _records = [];
-    private List<string> _labels = [];
+    private List<string> _invalidationKeys = [];
 
     /// <summary>
     /// Creates a live document that renders with <paramref name="renderer"/>, whose link targets call
@@ -78,10 +79,10 @@ internal sealed class LiveDocument
     /// </param>
     public UpdateResult Update(MarkdownDocument document, IInputElement? focusedElement = null)
     {
-        var labels = CollectLabels(document);
+        var keys = CollectInvalidationKeys(document);
         // Before the first update there are no records, so ReusablePrefix returns 0 by itself.
-        var labelsUnchanged = labels.SequenceEqual(_labels, StringComparer.Ordinal);
-        var reused = labelsUnchanged ? ReusablePrefix(document) : 0;
+        var keysUnchanged = keys.SequenceEqual(_invalidationKeys, StringComparer.Ordinal);
+        var reused = keysUnchanged ? ReusablePrefix(document) : 0;
 
         // The state the first `reused` blocks produced: the sum of their counts.
         int children = 0, entries = 0, stops = 0, targets = 0, anchors = 0, headings = 0, slugs = 0;
@@ -136,33 +137,46 @@ internal sealed class LiveDocument
         }
 
         Document = document;
-        _labels = labels;
+        _invalidationKeys = keys;
         return new UpdateResult(reused, removedHeadings > 0 || Renderer.HeadingCount != headings, focusDiscarded);
     }
 
     /// <summary>
-    /// The labels of every link reference definition and footnote of <paramref name="document"/>, in
-    /// order. A definition anywhere can change how an earlier block renders, so a change in this list
-    /// invalidates every block.
+    /// What, anywhere in <paramref name="document"/>, can change how an earlier block renders, in
+    /// order: each link reference definition's label, URL and title, each footnote's label, and each
+    /// abbreviation's label and text. A change in this list invalidates every block.
     /// </summary>
-    private static List<string> CollectLabels(MarkdownDocument document)
+    /// <remarks>
+    /// A definition's label is complete before its URL and title are, so the label alone would keep a
+    /// block whose link still points to the partial URL. A footnote's content is rendered in its group,
+    /// which is re-rendered anyway, so its label is enough. Markdig removes abbreviation definitions
+    /// from the block tree once it has rewritten every paragraph's inlines with them, so they are read
+    /// from the document's abbreviation table instead.
+    /// </remarks>
+    private static List<string> CollectInvalidationKeys(MarkdownDocument document)
     {
-        var labels = new List<string>();
+        var keys = new List<string>();
         foreach (var block in document)
         {
             switch (block)
             {
                 case LinkReferenceDefinitionGroup group:
                     foreach (var definition in group.OfType<LinkReferenceDefinition>())
-                        labels.Add(definition.Label ?? "");
+                        keys.Add($"{definition.Label}\0{definition.Url}\0{definition.Title}");
                     break;
                 case FootnoteGroup footnotes:
                     foreach (var footnote in footnotes.OfType<Footnote>())
-                        labels.Add(footnote.Label ?? "");
+                        keys.Add(footnote.Label ?? "");
                     break;
             }
         }
-        return labels;
+        if (document.GetAbbreviations() is { } abbreviations)
+        {
+            // The same text always fills the table in the same order.
+            foreach (var (label, abbreviation) in abbreviations)
+                keys.Add($"{label}\0{abbreviation.Text}");
+        }
+        return keys;
     }
 
     /// <summary>
@@ -172,8 +186,8 @@ internal sealed class LiveDocument
     /// for that block alone: Markdig reports some earlier blocks open although they cannot change (a
     /// pipe table closed by a blank line, a <see cref="LinkReferenceDefinitionGroup"/>, which stays
     /// where its first definition appeared and collects later ones; a new definition changes the
-    /// labels, which already invalidates everything). The span check catches a last block Markdig
-    /// reports closed but that still grows (a list with several items).
+    /// invalidation keys, which already invalidates everything). The span check catches a last block
+    /// Markdig reports closed but that still grows (a list with several items).
     /// </summary>
     private int ReusablePrefix(MarkdownDocument document)
     {
