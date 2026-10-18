@@ -58,6 +58,8 @@ public class MarkdownViewerInlinePatternTests
     public void Use_helpers_replace_the_viewers_earlier_registration_of_the_same_pattern()
     {
         var viewer = Viewer();
+        var fence = new FenceRendererExtension("chart", (_, _) => null);
+        viewer.Extensions.Insert(0, fence);
         viewer.Extensions.Add(new InlinePatternExtension(new Regex(Issue.ToString(), RegexOptions.IgnoreCase), _ => null));
 
         viewer.UseInlinePattern(new Regex(Issue.ToString()), m => new Run("issue") { Classes = { "issue" } });
@@ -65,6 +67,7 @@ public class MarkdownViewerInlinePatternTests
 
         // The same pattern text with other options is another pattern.
         Assert.Collection(viewer.Extensions,
+            e => Assert.Same(fence, e),
             e => Assert.Equal(RegexOptions.IgnoreCase, Assert.IsType<InlinePatternExtension>(e).Pattern.Options),
             e => Assert.Equal(Issue.ToString(), Assert.IsType<InlinePatternExtension>(e).Pattern.ToString()),
             e => Assert.Equal(Mention.ToString(), Assert.IsType<LinkPatternExtension>(e).Pattern.ToString()));
