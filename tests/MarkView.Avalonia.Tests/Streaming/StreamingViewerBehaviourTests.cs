@@ -295,6 +295,7 @@ public class StreamingViewerBehaviourTests
         var inner = f.Viewer.GetVisualDescendants().OfType<ScrollViewer>().Single(s => s.Classes.Contains("markdown-code-scroll"));
         session.Append("more\n\nmore\n\n");
         session.ApplyPendingUpdate();            // requests a scroll to the end on the next layout pass
+        // Set between ApplyPendingUpdate() and the pump on purpose: the inner scroll must be reported in the same layout pass as the scroll-to-end.
         inner.Offset = new Vector(0, 20);        // a user scroll inside the code block, reported in that same pass
         await AsyncTestHelpers.PumpAsync();
         AssertAtBottom(f);
@@ -302,6 +303,8 @@ public class StreamingViewerBehaviourTests
         session.Append("more\n\n");
         session.ApplyPendingUpdate();
         await AsyncTestHelpers.PumpAsync();
+        var requeried = f.Viewer.GetVisualDescendants().OfType<ScrollViewer>().Single(s => s.Classes.Contains("markdown-code-scroll"));
+        Assert.Same(inner, requeried);
         Assert.InRange(f.ScrollViewer.Offset.Y, f.Bottom - 1, f.Bottom + 1);
         Assert.Equal(20, inner.Offset.Y);
     }

@@ -9,7 +9,7 @@ using Avalonia.LogicalTree;
 using Markdig;
 using Markdig.Extensions.Mathematics;
 
-using MarkView.Avalonia.Extensions;
+using MarkView.Avalonia.Mermaid;
 using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Tests.Shared;
 
@@ -43,6 +43,28 @@ public class MathStreamingTests
     public void Provisional_math_block_renders_as_a_code_block(string markdown)
     {
         var child = Assert.Single(Render(markdown, provisional: true).Children);
+        var container = Assert.IsType<StackPanel>(child);
+        Assert.Contains("markdown-code-container", container.Classes);
+        Assert.Equal("x^2", CodeText(CodeBlockAssert.Layout(CodeBlockAssert.CodeBorder(container)).Code));
+        Assert.DoesNotContain(container.GetLogicalDescendants().OfType<Border>(), b => b.Classes.Contains("markdown-math-block"));
+    }
+
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Provisional_math_block_renders_as_a_code_block_with_mermaid_registered(bool mermaidFirst)
+    {
+        var pipeline = new MarkdownPipelineBuilder().UseMathematics().UseMathBracketDelimiters().Build();
+        var renderer = new AvaloniaRenderer { IsStreaming = true, ProvisionalStart = 0 };
+        if (mermaidFirst)
+            new MermaidExtension().Register(renderer);
+        new MathExtension().Register(renderer);
+        if (!mermaidFirst)
+            new MermaidExtension().Register(renderer);
+        pipeline.Setup(renderer);
+        renderer.Render(Markdown.Parse("$$\nx^2", pipeline));
+
+        var child = Assert.Single(renderer.RootPanel.Children);
         var container = Assert.IsType<StackPanel>(child);
         Assert.Contains("markdown-code-container", container.Classes);
         Assert.Equal("x^2", CodeText(CodeBlockAssert.Layout(CodeBlockAssert.CodeBorder(container)).Code));

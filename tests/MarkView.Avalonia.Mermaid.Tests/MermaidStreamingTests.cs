@@ -8,7 +8,6 @@ using Avalonia.LogicalTree;
 
 using Markdig;
 
-using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Tests.Shared;
 
@@ -31,7 +30,7 @@ public class MermaidStreamingTests
     }
 
     [AvaloniaFact]
-    public void Provisional_mermaid_fence_renders_as_a_highlighted_code_block()
+    public void Provisional_mermaid_fence_renders_as_a_code_block()
     {
         var child = Assert.Single(Render(OpenDiagram, provisional: true).Children);
         var container = Assert.IsType<StackPanel>(child);
