@@ -93,13 +93,18 @@ when an update throws, the task is faulted with that exception instead.
 
 `Dispose()` does the same as `Complete()`, so a `using` block completes the session even when the
 code that produces the text throws. If the final update itself throws, that exception comes out of
-`Dispose()`; call `Complete()` or `CompleteAsync()` where you want to observe it. `IsCompleted` is true as soon as the session accepts no more
-text.
+`Dispose()`; call `Complete()` or `CompleteAsync()` where you want to observe it. `IsCompleted` is
+true as soon as the session accepts no more text.
+
+When you complete a session from a background thread, await `CompleteAsync()` before calling
+`BeginStreaming()` again: `Complete()` only posts the final update, and the session stays active
+until it lands, so a second `BeginStreaming()` before then throws.
 
 A session also ends, silently and without a final update, when the viewer renders something else:
 setting `Markdown`, `Source`, `Pipeline` or a render option such as `BaseUri` or
-`ShowCodeBlockLineNumbers`, or calling `UseFenceRenderer`. `IsCompleted` becomes true, `IsStreaming` becomes false, and a later
-`Append` throws. Setting `Markdown` yourself is how you drop an answer that is no longer wanted.
+`ShowCodeBlockLineNumbers`, or calling `UseFenceRenderer`. `IsCompleted` becomes true,
+`IsStreaming` becomes false, and a later `Append` throws. Setting `Markdown` yourself is how you
+drop an answer that is no longer wanted.
 
 Adding to `Extensions` does not end a session, and does not reach it either: the session's
 renderer is created by its first update. Add extensions before `BeginStreaming()`.
@@ -158,8 +163,9 @@ blocks stay open until they end:
   kept once it closes.
 - Markdig reports some tables open after they end. The viewer does not rely on that flag for
   blocks before the last one, so a finished table is kept.
-- A link reference definition or a footnote anywhere in the text can change how an earlier block
-  renders. When the set of definitions changes, the whole document is rendered again.
+- A link reference definition, a footnote or an abbreviation anywhere in the text can change how
+  an earlier block renders. When a definition's label, URL or title, or an abbreviation, changes,
+  the whole document is rendered again.
 
 The cost per update is small. These figures come from measurements of a prototype, and depend on
 the document and the machine, so read them as orders of magnitude:

@@ -50,6 +50,13 @@ internal sealed class LinkFocusLayer : Panel
     /// <see cref="StopCount"/> and <see cref="TargetCount"/> described. The discarded targets are
     /// also removed from their text blocks.
     /// </summary>
+    /// <remarks>
+    /// <paramref name="stopCount"/> and <paramref name="targetCount"/> must be values of
+    /// <see cref="StopCount"/> and <see cref="TargetCount"/> taken together at a root-child boundary:
+    /// after <see cref="Collect"/> has run on a whole child of the root panel, never in the middle of
+    /// one. A text block's targets are cleared from it as a whole, so a cut inside a text block would
+    /// also drop the targets of the links it keeps.
+    /// </remarks>
     internal void TruncateTo(int stopCount, int targetCount)
     {
         // Stryker disable Statement : List.RemoveRange rejects the same counts, before it changes anything
