@@ -125,8 +125,9 @@ exception handling instead.
 - **Scroll position.** An update never resets the scroll offset, unlike setting `Markdown`.
 - **`AutoScrollToEnd`.** Set it to `true` to keep the end of the document in view as text arrives.
   Scrolling up pauses following, so the user can read earlier text while the answer goes on;
-  scrolling back to the bottom resumes it. Each new session starts following again. It has no
-  effect outside a session, and it defaults to `false`.
+  scrolling back to the bottom resumes it. A scroll inside a scroll viewer nested in the content,
+  such as a height-limited code block, does not pause following the end. Each new session starts
+  following again. It has no effect outside a session, and it defaults to `false`.
 - **Selection.** A selection in text that was kept survives the update. A selection that reaches
   into the re-rendered tail is clamped to the kept text; one inside the tail is cleared. See
   [text selection](text-selection.md).
@@ -217,13 +218,13 @@ images of the block that contains the end of the text as provisional:
   tabbing to a link that is not complete does nothing.
 - **Images** show their alt text, and nothing is requested: a half-written address is never
   fetched.
-- **Mermaid diagrams** (the MarkView.Avalonia.Mermaid package) show as a highlighted `mermaid` code
-  block, and nothing is rendered until the block is no longer provisional, which is the update
-  after a blank line or another block follows it. The diagram appears then.
-- **Formula blocks** (the MarkView.Avalonia.Math package) show their source as a code block while
-  they are provisional, whether they are written with `$$` or with `\[`. **Inline formulas**
-  (`$…$`, `\(…\)`) are only parsed once complete, so they render for real; healing closes a `\(`
-  that is still open (see [Healing](#healing)).
+- **Mermaid diagrams** (the MarkView.Avalonia.Mermaid package) show as a `mermaid` code block, and
+  nothing is rendered until the block is no longer provisional, which is once a blank line or
+  another block follows it. The diagram appears then.
+- **Formula blocks** (the MarkView.Avalonia.Math package) show their source as a code block until
+  a blank line or another block follows them, whether they are written with `$$` or with `\[`.
+  **Inline formulas** (`$…$`, `\(…\)`) are only parsed once complete, so they render for real;
+  healing closes a `\(` that is still open (see [Healing](#healing)).
 
 Provisional applies to every `[text](address)` link and image of that block, bare URLs turned into
 links by the pipeline included, even the ones that were already complete in it. An angle-bracket
@@ -292,9 +293,9 @@ A block that was rendered as provisional is rendered again on the next update.
 
 The Mermaid and Math packages take exactly the path of the sketch below for their blocks: while
 `IsProvisional(obj)` is true, a `mermaid` fence is written as the standard code block, and a
-`$$` or `\[` block is written by the renderer that would otherwise accept the fenced block (the
-core code block renderer, or Mermaid's), so the source is shown. The diagram or the formula is made once the block is no longer
-provisional.
+`$$` or `\[` block is written by the renderer that would otherwise accept the fenced block
+(Mermaid's whenever the Mermaid package is registered, the core code block renderer otherwise), so
+the source is shown. The diagram or the formula is made once the block is no longer provisional.
 
 In this sketch `MyChart` stands for your own control. See
 [custom extensions](custom-extensions.md) for how a renderer is registered.
