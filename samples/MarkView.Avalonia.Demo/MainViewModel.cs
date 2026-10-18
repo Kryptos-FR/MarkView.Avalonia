@@ -266,6 +266,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private int _replayChunkSize = 40;
     private int _replayInterval = 200;
     private bool _isCodeHeightLimited;
+    private bool _isFirstLinesOnly;
+    private bool _isFirstLinesExpanded;
     private int _themePresetIndex;
     private PageView _pageView;
     // The presets of the drop-down after the default theme (index 0), each created when first picked
@@ -330,6 +332,29 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     private const double LimitedCodeBlockHeight = 160;
+
+    /// <summary>Shows only the first <see cref="FirstLineCount"/> lines of each page, with a Show more button.</summary>
+    public bool IsFirstLinesOnly
+    {
+        get => _isFirstLinesOnly;
+        set
+        {
+            if (!SetField(ref _isFirstLinesOnly, value)) return;
+            IsFirstLinesExpanded = false;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FirstLinesMaxLines)));
+        }
+    }
+
+    private const int FirstLineCount = 10;
+
+    public int FirstLinesMaxLines => _isFirstLinesOnly ? FirstLineCount : 0;
+
+    /// <summary>Whether the whole page is shown despite <see cref="IsFirstLinesOnly"/>; each new page starts cut again.</summary>
+    public bool IsFirstLinesExpanded
+    {
+        get => _isFirstLinesExpanded;
+        set => SetField(ref _isFirstLinesExpanded, value);
+    }
 
     /// <summary>
     /// Whether a replay closes the syntax left open at the end of the streamed text between updates
@@ -439,6 +464,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _isReplaying = false;
             // A replay's base belongs to the page it replayed; the viewer infers the new page's from its Source.
             BaseUri = null;
+            IsFirstLinesExpanded = false;
             SetField(ref _source, value);
         }
     }

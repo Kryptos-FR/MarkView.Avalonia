@@ -178,6 +178,9 @@
                 Data="M2,4 H14 M2,8 H14 M2,12 H14 M5,2.5 V5.5 M10.5,6.5 V9.5 M7,10.5 V13.5" />
           <DropDownButton.Flyout>
             <MenuFlyout Placement="BottomEdgeAlignedRight">
+              <MenuItem Header="Show only the first lines" ToggleType="CheckBox"
+                        IsChecked="{Binding IsFirstLinesOnly, Mode=TwoWay}"
+                        ToolTip.Tip="Show only the first 10 lines of the page (MaxLines), with a Show more button below them" />
               <MenuItem Header="Clickable tasks" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.AreTaskListsInteractive, Mode=TwoWay}"
                         ToolTip.Tip="Render task-list items as checkboxes you can toggle" />
@@ -266,6 +269,9 @@
                            IsImageZoomEnabled="True"
                            Classes.custom-styled="{Binding IsCustomStyled}"
                            CodeBlockMaxHeight="{Binding CodeBlockMaxHeight}"
+                           MaxLines="{Binding FirstLinesMaxLines}"
+                           IsExpanded="{Binding IsFirstLinesExpanded}"
+                           Classes.first-lines="{Binding IsFirstLinesOnly}"
                            IsVisible="{Binding !IsColorExtensionSelected}"
                            Padding="4" />
         <ce:ColorExtensionView IsVisible="{Binding IsColorExtensionSelected}" />

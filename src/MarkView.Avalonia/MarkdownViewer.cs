@@ -1208,6 +1208,9 @@ public partial class MarkdownViewer : ContentControl
         // A match inside a collapsed block has no position until the block is expanded and laid out.
         if (RevealFolded(textBlock))
             textBlock.UpdateLayout();
+        // Nor does a match in the lines hidden by MaxLines.
+        if (match.GetBounds() is { } hidden)
+            ExpandToShow(textBlock, hidden);
 
         // A viewer that is not shown has laid nothing out, so there is nothing to scroll.
         var matchBounds = match.GetBounds();
@@ -1302,6 +1305,7 @@ public partial class MarkdownViewer : ContentControl
         // Applying a template replaces every visual child, the open lightbox included.
         if (_lightbox is not null)
             VisualChildren.Add(_lightbox);
+        AttachExpandButton(e.NameScope.Find<Button>("PART_ExpandButton"));
     }
 
     // ── Image lightbox ────────────────────────────────────────────────────────
@@ -1373,6 +1377,8 @@ public partial class MarkdownViewer : ContentControl
         // A heading inside a collapsed alert, details element or section has no position until it is expanded and laid out.
         if (RevealFolded(control))
             control.UpdateLayout();
+        // Nor does one in the lines hidden by MaxLines.
+        ExpandToShow(control, new Rect(control.Bounds.Size));
 
         if (_scrollViewer is null)
         {

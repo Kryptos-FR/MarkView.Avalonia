@@ -30,6 +30,10 @@ Styled properties can be set in a style for every viewer of an application. The 
 | `CodeBlockMaxHeight` | `double` | `PositiveInfinity` | Maximum height of a code block, past which it scrolls. Re-renders. |
 | `AreTaskListsInteractive` | `bool` | `false` | Task-list items are checkboxes that raise `TaskToggled`. Re-renders. See [Task lists](../guides/task-lists.md). |
 | `AreHeadingsFoldable` | `bool` | `false` | Each heading has a button that folds its section. Re-renders. See [Folding](../guides/folding.md). |
+| `MaxLines` | `int` | `0` | Shows only the document's first lines, with a "Show more" button below; `0` shows everything. See [Previews](../guides/displaying-documents.md#previews). |
+| `IsExpanded` | `bool` | `false` | Shows the whole document even when it has more than `MaxLines` lines. Two-way by default. |
+| `ShowExpandButton` | `bool` | `true` | Shows the "Show more" / "Show less" button below a document longer than `MaxLines`. |
+| `ExceedsMaxLines` | `bool` | `false` | Read-only. Whether the document has more than `MaxLines` lines, expanded or not. |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | empty | Read-only. The headings as a tree, rebuilt after every render. See [Table of contents](../guides/displaying-documents.md#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Deepest heading level in `TableOfContents`. |
 | `DetectTextDirection` | `bool` | `true` | Each block takes the direction of its text, so Hebrew and Arabic read right to left. Re-renders. See [Right-to-left text](../guides/right-to-left.md). |

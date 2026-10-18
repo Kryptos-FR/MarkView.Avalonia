@@ -103,4 +103,4 @@ The [control themes](style-classes.md#control-themes) read their sizes and spaci
 
 ## Text
 
-The labels of the context menu are string resources, listed under [Context menu](../guides/text-selection.md#context-menu). The tooltips and accessible names of buttons (copy, lightbox, fold) come from the theme's styles; see [Code blocks](../guides/code-blocks.md#styling-code-blocks) and [Images and diagrams](../guides/images.md#styling-images).
+The labels of the context menu are string resources, listed under [Context menu](../guides/text-selection.md#context-menu), and so is the text of the expand button, under [Previews](../guides/displaying-documents.md#previews). The tooltips and accessible names of buttons (copy, lightbox, fold) come from the theme's styles; see [Code blocks](../guides/code-blocks.md#styling-code-blocks) and [Images and diagrams](../guides/images.md#styling-images).

@@ -93,6 +93,8 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
             _tabStart = null;
         else if (change.Property == IsImageSaveEnabledProperty && _lightbox is { } lightbox)
             ShowLightboxSaveButton(lightbox);
+        else
+            OnTruncationPropertyChanged(change);
     }
 
     /// <inheritdoc />
@@ -136,9 +138,10 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
 
     /// <summary>
     /// Tab order through the document: the viewer itself, then its links and focusable controls in
-    /// reading order, then whatever follows the viewer. Shift+Tab walks the same stops backwards,
-    /// and entering the document backwards lands on its last stop. After a jump to an anchor, Tab
-    /// from the viewer goes on from that anchor instead of from the top of the document.
+    /// reading order, then its expand button when shown, then whatever follows the viewer. Shift+Tab
+    /// walks the same stops backwards, and entering the document backwards lands on its last stop. After
+    /// a jump to an anchor, Tab from the viewer goes on from that anchor instead of from the top of the
+    /// document.
     /// </summary>
     (bool handled, IInputElement? next) ICustomKeyboardNavigation.GetNext(IInputElement element, NavigationDirection direction)
     {
@@ -151,6 +154,8 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
             return (false, null);
 
         var stops = _linkFocusLayer.GetActiveStops();
+        if (_expandButton is { IsEffectivelyVisible: true })
+            stops.Add(_expandButton);
         var forward = direction == NavigationDirection.Next;
         if (element == this)
         {

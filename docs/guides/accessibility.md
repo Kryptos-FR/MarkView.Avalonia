@@ -72,7 +72,7 @@ The scrolling keys work while the viewer itself has the focus, as it does after 
 
 After a jump to an anchor (an `#anchor` link clicked or opened with `Enter`, or `ScrollToAnchor`), the viewer keeps the focus and `Tab` goes on from the anchor, as in a browser: to the first link at or below it, and `Shift+Tab` to the last link above it. A click elsewhere in the document drops that starting point.
 
-The focused link scrolls into view, and a 2px ring outlines each line of its text. The ring uses FluentTheme's `SystemControlFocusVisualPrimaryBrush`, or black/white without FluentTheme. Links in hidden content, such as a collapsed block, are skipped.
+The focused link scrolls into view, and a 2px ring outlines each line of its text. The ring uses FluentTheme's `SystemControlFocusVisualPrimaryBrush`, or black/white without FluentTheme. Links in hidden content, such as a collapsed block or the lines past [`MaxLines`](displaying-documents.md#previews), are skipped. The "Show more" button of a viewer with `MaxLines` comes after the document's last stop.
 
 Links stay inline text, so they wrap and select as before. An invisible stand-in over each link takes the focus instead.
 

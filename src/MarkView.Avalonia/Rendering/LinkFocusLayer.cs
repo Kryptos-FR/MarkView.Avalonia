@@ -39,6 +39,12 @@ internal sealed class LinkFocusLayer : Panel
         return layer;
     }
 
+    /// <summary>
+    /// How far down the document shows, from the top of the layer: stops past it are hidden (see
+    /// <see cref="MarkdownViewer.MaxLines"/>). Infinity when the whole document shows.
+    /// </summary>
+    internal double VisibleHeight { get; set; } = double.PositiveInfinity;
+
     /// <summary>The number of keyboard stops recorded, in reading order.</summary>
     internal int StopCount => _stops.Count;
 
@@ -78,8 +84,9 @@ internal sealed class LinkFocusLayer : Panel
 
     /// <summary>
     /// The keyboard stops a user can reach now, in reading order. Stops inside hidden content
-    /// (e.g. a collapsed block) are skipped, and so are controls that left the document (e.g. an
-    /// image replaced by its failure placeholder): they can't take the focus, so Tab would stay put.
+    /// (e.g. a collapsed block, or lines past <see cref="VisibleHeight"/>) are skipped, and so are
+    /// controls that left the document (e.g. an image replaced by its failure placeholder): they
+    /// can't take the focus, so Tab would stay put.
     /// </summary>
     public List<IInputElement> GetActiveStops()
     {
@@ -87,12 +94,16 @@ internal sealed class LinkFocusLayer : Panel
         foreach (var stop in _stops)
         {
             var visible = stop is LinkFocusTarget target
-                ? target.TextBlock.IsEffectivelyVisible
-                : stop.IsEffectivelyVisible && stop.IsEffectivelyEnabled && ((Visual)stop).IsAttachedToVisualTree();
+                ? target.TextBlock.IsEffectivelyVisible && target.GeometryBounds.Top < VisibleHeight
+                : stop.IsEffectivelyVisible && stop.IsEffectivelyEnabled && ((Visual)stop).IsAttachedToVisualTree()
+                  && IsAboveVisibleHeight((Visual)stop);
             if (visible) stops.Add(stop);
         }
         return stops;
     }
+
+    private bool IsAboveVisibleHeight(Visual stop) =>
+        double.IsPositiveInfinity(VisibleHeight) || stop.TranslatePoint(default, this) is not { } origin || origin.Y < VisibleHeight;
 
     /// <summary>
     /// Records the keyboard stops under <paramref name="control"/> after those already collected, and
