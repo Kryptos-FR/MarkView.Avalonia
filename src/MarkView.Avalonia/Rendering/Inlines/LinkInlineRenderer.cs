@@ -24,9 +24,9 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// Renders a Markdig <see cref="LinkInline"/> as a <see cref="MarkdownHyperlink"/> span or image.
 /// YouTube video links (produced by UseMediaLinks) are rendered as clickable thumbnails.
 /// An image that cannot be loaded is replaced by a <c>markdown-image-failed</c> placeholder.
-/// While <see cref="AvaloniaRenderer.IsProvisional"/> holds for it, whose address may still be growing, a link
-/// keeps its text, class and title but gets no <see cref="MarkdownHyperlink.NavigateUri"/>, and an image (a YouTube one
-/// included) is written as its alt text in a plain <see cref="Run"/>, nothing being loaded.
+/// While <see cref="AvaloniaRenderer.IsProvisional"/> holds for a link or image (its address may still be
+/// growing), a link keeps its text, class and title but gets no <see cref="MarkdownHyperlink.NavigateUri"/>,
+/// and an image (a YouTube one included) is written as its alt text in a plain <see cref="Run"/>, nothing being loaded.
 /// </summary>
 public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {

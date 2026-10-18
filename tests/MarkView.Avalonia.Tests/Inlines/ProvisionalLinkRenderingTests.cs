@@ -70,7 +70,7 @@ public class ProvisionalLinkRenderingTests
         renderer.ProvisionalStart = document[1].Span.Start;
         renderer.Render(document);
         var textBlock = Assert.IsAssignableFrom<TextBlock>(renderer.RootPanel.Children[0]);
-        Assert.NotNull(textBlock.Inlines!.OfType<MarkdownHyperlink>().Single().NavigateUri);
+        Assert.Equal(new Uri("https://example.com/"), textBlock.Inlines!.OfType<MarkdownHyperlink>().Single().NavigateUri);
         Assert.Single(textBlock.Inlines!.OfType<InlineUIContainer>());
     }
 
@@ -79,7 +79,7 @@ public class ProvisionalLinkRenderingTests
     {
         var renderer = new AvaloniaRenderer { ProvisionalStart = 0 };
         renderer.Render(Markdown.Parse("[t](https://example.com/)", Pipeline));
-        Assert.NotNull(FirstInline<MarkdownHyperlink>(renderer.RootPanel).NavigateUri);
+        Assert.Equal(new Uri("https://example.com/"), FirstInline<MarkdownHyperlink>(renderer.RootPanel).NavigateUri);
     }
 
     /// <summary>Renders <paramref name="text"/> with every block provisional and returns the root panel.</summary>
@@ -94,7 +94,7 @@ public class ProvisionalLinkRenderingTests
 
     /// <summary>The first inline of type <typeparamref name="T"/> in the first text block, searched recursively.</summary>
     private static T FirstInline<T>(Panel panel) where T : Inline
-        => Assert.Single(Flatten(FirstTextBlock(panel).Inlines!).OfType<T>().Take(1));
+        => Flatten(FirstTextBlock(panel).Inlines!).OfType<T>().First();
 
     private static IEnumerable<Inline> Flatten(IEnumerable<Inline> inlines)
     {
