@@ -176,6 +176,112 @@ public class StreamingViewerBehaviourTests
     }
 
     [AvaloniaFact]
+    public async Task AutoScrollToEnd_keeps_following_when_its_own_scroll_is_reported_after_the_next_update()
+    {
+        using var f = Show("", v => v.AutoScrollToEnd = true);
+        var session = f.Viewer.BeginStreaming();
+        session.Append(Paragraphs("Paragraph", 40));
+        session.ApplyPendingUpdate();
+        // This pass measures the content, then the viewer scrolls to its end; the scroll viewer reports
+        // that scroll only at the end of the next pass.
+        f.Window.UpdateLayout();
+        var firstBottom = f.Bottom;
+        Assert.Equal(firstBottom, f.ScrollViewer.Offset.Y);
+
+        // The next update lands first, so the report reads the first bottom against a taller extent.
+        session.Append("\n\n" + Paragraphs("More", 10));
+        session.ApplyPendingUpdate();
+        f.Window.UpdateLayout();
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.True(f.Bottom > firstBottom);
+        AssertAtBottom(f);
+
+        var secondBottom = f.Bottom;
+        session.Append("\n\n" + Paragraphs("Again", 10));
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.True(f.Bottom > secondBottom);
+        AssertAtBottom(f);
+    }
+
+    [AvaloniaFact]
+    public async Task AutoScrollToEnd_pauses_when_the_user_scrolls_up_before_its_own_scroll_is_reported()
+    {
+        using var f = Show("", v => v.AutoScrollToEnd = true);
+        var session = f.Viewer.BeginStreaming();
+        session.Append(Paragraphs("Paragraph", 40));
+        session.ApplyPendingUpdate();
+        f.Window.UpdateLayout();
+        Assert.Equal(f.Bottom, f.ScrollViewer.Offset.Y);
+
+        // Reported together with the viewer's scroll, as one move from the top to the user's offset.
+        f.ScrollViewer.Offset = new Vector(0, 100);
+        await AsyncTestHelpers.PumpAsync();
+        session.Append("\n\n" + Paragraphs("More", 10));
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.True(f.Bottom > 100);
+        Assert.Equal(100, f.ScrollViewer.Offset.Y);
+    }
+
+    [AvaloniaFact]
+    public async Task Scrolling_to_where_the_viewer_once_scrolled_does_not_resume_following()
+    {
+        using var f = Show("", v => v.AutoScrollToEnd = true);
+        var session = f.Viewer.BeginStreaming();
+        session.Append(Paragraphs("Paragraph", 40));
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+        AssertAtBottom(f);
+        var firstBottom = f.ScrollViewer.Offset.Y;
+        f.ScrollViewer.Offset = new Vector(0, 0);
+        await AsyncTestHelpers.PumpAsync();
+        session.Append("\n\n" + Paragraphs("More", 10));
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+        Assert.True(f.Bottom > firstBottom);
+
+        // The viewer's scroll was reported long ago: this one is the user's, above the bottom.
+        f.ScrollViewer.Offset = new Vector(0, firstBottom);
+        await AsyncTestHelpers.PumpAsync();
+        session.Append("\n\n" + Paragraphs("Again", 10));
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.Equal(firstBottom, f.ScrollViewer.Offset.Y);
+    }
+
+    [AvaloniaFact]
+    public async Task A_scroll_viewer_replaced_by_a_new_template_no_longer_pauses_following()
+    {
+        using var f = Show("", v => v.AutoScrollToEnd = true);
+        var session = f.Viewer.BeginStreaming();
+        session.Append(Paragraphs("Paragraph", 40));
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+        AssertAtBottom(f);
+        var previous = f.ScrollViewer;
+
+        f.Viewer.Template = ScrollingViewerTemplate.Create();
+        f.Viewer.ApplyTemplate();
+        await AsyncTestHelpers.PumpAsync();
+        Assert.NotSame(previous, f.ScrollViewer);
+
+        // The previous scroll viewer reports a scroll to its top, which would pause following.
+        previous.Offset = default;
+        Assert.True(previous.Extent.Height - previous.Viewport.Height > 1);
+        previous.RaiseEvent(new ScrollChangedEventArgs(default, new Vector(0, -500), default));
+        session.Append("\n\n" + Paragraphs("More", 10));
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+
+        AssertAtBottom(f);
+    }
+
+    [AvaloniaFact]
     public async Task Following_restarts_with_each_session()
     {
         using var f = Show("", v => v.AutoScrollToEnd = true);

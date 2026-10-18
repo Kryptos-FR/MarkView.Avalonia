@@ -37,6 +37,8 @@ public partial class MarkdownViewer
     // scrolled away from the bottom.
     private bool _followEnd;
     private bool _scrollToEndPending;
+    // The offset the viewer's own last ScrollToEnd moved to, until the scroll viewer reports it.
+    private double? _ownScrollTargetY;
 
     /// <summary>
     /// Gets whether a streaming session is active, from <see cref="BeginStreaming"/> until the session
@@ -66,7 +68,8 @@ public partial class MarkdownViewer
     /// rendered at most once per <paramref name="updateInterval"/>, re-rendering only the blocks the new
     /// text can have changed: the scroll position, the selection in unchanged blocks, the active search
     /// and an open image lightbox are kept. After each update <see cref="Markdown"/> holds the text so
-    /// far. Must be called on the UI thread.
+    /// far; a <c>null</c> <see cref="Markdown"/> is treated as empty, so it is <c>""</c> once a session
+    /// that appended nothing completes. Must be called on the UI thread.
     /// </summary>
     /// <param name="updateInterval">
     /// The shortest time between two updates; <see cref="DefaultStreamingUpdateInterval"/> when
@@ -186,19 +189,28 @@ public partial class MarkdownViewer
     {
         LayoutUpdated -= OnLayoutUpdatedScrollToEnd;
         _scrollToEndPending = false;
-        if (_followEnd)
-            _scrollViewer?.ScrollToEnd();
+        if (_followEnd && _scrollViewer is { } scrollViewer)
+        {
+            _ownScrollTargetY = scrollViewer.Extent.Height - scrollViewer.Viewport.Height;
+            scrollViewer.ScrollToEnd();
+        }
     }
 
     /// <summary>
     /// Pauses following the end when the user scrolls away from the bottom and resumes it when they
-    /// scroll back to it. The viewer's own <see cref="ScrollViewer.ScrollToEnd"/> lands at the bottom, so
-    /// it reads as "keep following"; an extent change alone moves no offset and is ignored.
+    /// scroll back to it; an extent change alone moves no offset and is ignored. The scroll viewer
+    /// reports a scroll one layout pass late, against the extent of that pass: when an update has grown
+    /// the document in between, the viewer's own <see cref="ScrollViewer.ScrollToEnd"/> reads above the
+    /// new bottom, so it is recognised by the offset it moved to and keeps following.
     /// </summary>
     private void OnScrollChanged(object? sender, ScrollChangedEventArgs e)
     {
         if (e.OffsetDelta.Y == 0 || sender is not ScrollViewer scrollViewer)
             return;
-        _followEnd = scrollViewer.Offset.Y >= scrollViewer.Extent.Height - scrollViewer.Viewport.Height - 1;
+        // Stryker disable once Equality : the reported offset is the requested one; the half pixel only absorbs rounding
+        var ownScroll = _ownScrollTargetY is { } target && Math.Abs(scrollViewer.Offset.Y - target) <= 0.5;
+        _ownScrollTargetY = null;
+        _followEnd = ownScroll
+            || scrollViewer.Offset.Y >= scrollViewer.Extent.Height - scrollViewer.Viewport.Height - 1;
     }
 }
