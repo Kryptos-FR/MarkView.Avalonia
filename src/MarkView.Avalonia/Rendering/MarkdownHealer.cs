@@ -21,6 +21,13 @@ namespace MarkView.Avalonia.Rendering;
 /// An unmatched backtick run is closed with a run of the same length, unless the content (the text
 /// without its trailing whitespace) ends with a backtick: the closer would merge with that backtick
 /// into a longer run that closes nothing, so the run is left literal.
+/// A link or image whose text is closed (<c>](</c>) but whose address is not gets the closing
+/// <c>)</c>, one per parenthesis still open in the address, after the closing quote of a title still
+/// open; a title quote opens only after whitespace, and the address is opaque to the other rules. A
+/// bracket alone (<c>[t</c>, <c>[t]</c>, <c>- [ </c>) is left literal, since it may be a reference
+/// link, a footnote or a task list item. An HTML tag or autolink (<c>&lt;</c> followed by a letter,
+/// <c>/</c>, <c>!</c> or <c>?</c>) is opaque up to its <c>&gt;</c>; one without it ends the scan, so
+/// nothing after it is healed.
 /// </remarks>
 internal static class MarkdownHealer
 {
@@ -76,18 +83,59 @@ internal static class MarkdownHealer
                     break;
                 }
             }
+            else if (c == '<' && i + 1 < end && IsTagStart(text[i + 1]))
+            {
+                var tagEnd = text.IndexOf('>', i + 1, end - i - 1);
+                if (tagEnd == -1)
+                {
+                    // A half tag is literal text until its > arrives; what follows it may be an attribute.
+                    break;
+                }
+                i = tagEnd + 1;
+            }
+            else if (c == '[')
+            {
+                open.Add(('[', 0));
+                i++;
+            }
+            else if (c == ']')
+            {
+                var bracket = open.FindLastIndex(entry => entry.Char == '[');
+                if (bracket == -1)
+                {
+                    i++;
+                }
+                else if (i + 1 < end && text[i + 1] == '(')
+                {
+                    // Delimiters opened inside the link text never reach outside it.
+                    open.RemoveRange(bracket, open.Count - bracket);
+                    var addressEnd = AddressEnd(text, i + 2, end, out var depth, out var quote);
+                    if (addressEnd == -1)
+                    {
+                        // The title quote opened after the parentheses, so it is pushed last and closed first.
+                        open.Add((')', depth));
+                        if (quote != '\0')
+                            open.Add((quote, 1));
+                        break;
+                    }
+                    i = addressEnd;
+                }
+                else
+                {
+                    // A link text without an address (a reference link, maybe): only the bracket is closed.
+                    open.RemoveAt(bracket);
+                    i++;
+                }
+            }
             else
             {
                 i++;
             }
         }
 
-        if (open.Count == 0)
-            return text;
-
         var closers = new StringBuilder();
         WriteClosers(closers, open);
-        return text.Insert(end, closers.ToString());
+        return closers.Length == 0 ? text : text.Insert(end, closers.ToString());
     }
 
     /// <summary>
@@ -142,19 +190,16 @@ internal static class MarkdownHealer
             : block.Span.End;
 
     /// <summary>
-    /// Appends the closers of the <paramref name="open"/> delimiters, the last opened first.
+    /// Appends the closers of the <paramref name="open"/> delimiters, the last opened first: each
+    /// entry's character, as many times as its count. A link text entry, <c>('[', 0)</c>, so writes
+    /// nothing.
     /// </summary>
     private static void WriteClosers(StringBuilder closers, List<(char Char, int Count)> open)
     {
         for (var i = open.Count - 1; i >= 0; i--)
         {
             var (c, count) = open[i];
-            switch (c)
-            {
-                case '`':
-                    closers.Append('`', count);
-                    break;
-            }
+            closers.Append(c, count);
         }
     }
 
@@ -193,6 +238,67 @@ internal static class MarkdownHealer
         }
         return -1;
     }
+
+    /// <summary>
+    /// Scans the address of a link or image, starting at <paramref name="start"/> just after its
+    /// <c>](</c>: a destination, in which parentheses nest, then an optional title opened by a
+    /// <c>"</c> or <c>'</c> after whitespace and closed by the same quote, in which parentheses are
+    /// plain. A backslash escapes the character after it.
+    /// </summary>
+    /// <param name="text">The text being healed.</param>
+    /// <param name="start">The index just after the address's opening parenthesis.</param>
+    /// <param name="end">The end of the content; the scan does not look at or past it.</param>
+    /// <param name="depth">
+    /// When the content ends inside the address, the number of parentheses still open, the address's
+    /// own included.
+    /// </param>
+    /// <param name="quote">
+    /// When the content ends inside the address, the quote of the title still open, or <c>'\0'</c>.
+    /// </param>
+    /// <returns>
+    /// The index just after the parenthesis that closes the address; -1 when the content ends first.
+    /// </returns>
+    private static int AddressEnd(string text, int start, int end, out int depth, out char quote)
+    {
+        depth = 1;
+        quote = '\0';
+        var i = start;
+        while (i < end)
+        {
+            var c = text[i];
+            if (c == '\\')
+            {
+                i += 2;
+                continue;
+            }
+
+            if (quote != '\0')
+            {
+                if (c == quote)
+                    quote = '\0';
+            }
+            else if ((c is '"' or '\'') && IsWhitespace(text[i - 1]))
+            {
+                quote = c;
+            }
+            else if (c == '(')
+            {
+                depth++;
+            }
+            else if (c == ')' && --depth == 0)
+            {
+                return i + 1;
+            }
+            i++;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="c"/>, following a <c>&lt;</c>, starts an HTML tag, comment, declaration,
+    /// processing instruction or autolink: an ASCII letter, <c>/</c>, <c>!</c> or <c>?</c>.
+    /// </summary>
+    private static bool IsTagStart(char c) => char.IsAsciiLetter(c) || c is '/' or '!' or '?';
 
     /// <summary>Whether <paramref name="c"/> is a space, a tab or a line break character.</summary>
     private static bool IsWhitespace(char c) => c is ' ' or '\t' or '\r' or '\n';

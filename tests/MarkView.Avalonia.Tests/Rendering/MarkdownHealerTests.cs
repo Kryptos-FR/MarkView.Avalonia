@@ -84,6 +84,122 @@ public class MarkdownHealerTests
     public void Tail_start_at_the_end_heals_nothing() =>
         Assert.Same("a `b", Heal("a `b", tailStart: 4));
 
+    [Theory]
+    [InlineData("[t](u", "[t](u)")]
+    [InlineData("![a](u", "![a](u)")]
+    [InlineData("[t](", "[t]()")]
+    [InlineData("[t](u \"ti", "[t](u \"ti\")")]
+    [InlineData("[t](u 'ti", "[t](u 'ti')")]
+    [InlineData("[t](u(v", "[t](u(v))")]
+    [InlineData("see [t](u", "see [t](u)")]
+    public void Unclosed_link_address_is_closed(string text, string expected) =>
+        Assert.Equal(expected, Heal(text));
+
+    [Theory]
+    [InlineData("[t")]
+    [InlineData("![a")]
+    [InlineData("- [ ")]
+    [InlineData("[1")]
+    [InlineData("[t]")]
+    [InlineData("[t][r")]
+    [InlineData("a ] b")]
+    public void Bare_bracket_stays_literal(string text) =>
+        Assert.Same(text, Heal(text));
+
+    [Theory]
+    [InlineData("a](u")]
+    [InlineData("\\[t](u")]
+    // The first ] closes the link text without an address, so the second one has no [ to pair with.
+    [InlineData("[t] x](u")]
+    // Likewise once the first link is complete.
+    [InlineData("[a](u) b](v")]
+    public void Closing_bracket_without_an_open_one_starts_no_address(string text) =>
+        Assert.Same(text, Heal(text));
+
+    [Theory]
+    [InlineData("[t](u) `c", "[t](u) `c`")]
+    [InlineData("[t](u \"ti)\") `c", "[t](u \"ti)\") `c`")]
+    public void Scan_continues_after_a_closed_address(string text, string expected) =>
+        Assert.Equal(expected, Heal(text));
+
+    [Fact]
+    public void Link_inside_brackets_is_closed() =>
+        Assert.Equal("[a [b](u)", Heal("[a [b](u"));
+
+    [Fact]
+    public void Scan_resumes_just_after_the_closing_parenthesis() =>
+        // The backtick before ) is address content: it does not pair with the one after.
+        Assert.Equal("[t](u`) `c`", Heal("[t](u`) `c"));
+
+    [Fact]
+    public void Nothing_inside_an_address_is_healed() =>
+        Assert.Equal("[t](u`v)", Heal("[t](u`v"));
+
+    [Fact]
+    public void Quote_inside_the_destination_does_not_open_a_title() =>
+        Assert.Equal("[t](u\"v)", Heal("[t](u\"v"));
+
+    [Theory]
+    [InlineData("[t](u \"ti)", "[t](u \"ti)\")")]
+    [InlineData("[t](u \"(", "[t](u \"(\")")]
+    public void Parentheses_inside_a_title_are_plain(string text, string expected) =>
+        Assert.Equal(expected, Heal(text));
+
+    [Theory]
+    [InlineData("[t](a(b)c", "[t](a(b)c)")]
+    [InlineData("[t](u\\)", "[t](u\\))")]
+    [InlineData("[t](u \"a\\\"b", "[t](u \"a\\\"b\")")]
+    public void Address_tracks_nesting_and_escapes(string text, string expected) =>
+        Assert.Equal(expected, Heal(text));
+
+    [Fact]
+    public void Backtick_inside_a_link_text_is_still_healed() =>
+        Assert.Equal("[`t`", Heal("[`t"));
+
+    [Fact]
+    public void Unmatched_backtick_inside_a_link_text_swallows_the_address() =>
+        // The code span rule stops the scan: what follows the backtick is code content, as CommonMark reads it.
+        Assert.Equal("[a `b](u`", Heal("[a `b](u"));
+
+    [Theory]
+    [InlineData("<b>x `c", "<b>x `c`")]
+    [InlineData("<https://x.y/`a> `c", "<https://x.y/`a> `c`")]
+    public void Complete_tag_or_autolink_is_opaque(string text, string expected) =>
+        Assert.Equal(expected, Heal(text));
+
+    [Theory]
+    [InlineData("<b class=\"`x")]
+    [InlineData("<https://x.y/`a")]
+    public void Half_tag_ends_the_scan(string text) =>
+        Assert.Same(text, Heal(text));
+
+    [Theory]
+    // The backtick inside the autolink does not pair with the one after it.
+    [InlineData("<https://x.y/`> `c", "<https://x.y/`> `c`")]
+    [InlineData("<b>`c", "<b>`c`")]
+    public void Tag_is_opaque_up_to_its_greater_than(string text, string expected) =>
+        Assert.Equal(expected, Heal(text));
+
+    [Theory]
+    [InlineData("</b `x")]
+    [InlineData("<!-- `x")]
+    [InlineData("<?php `x")]
+    [InlineData("a <b `x")]
+    public void Half_tag_of_any_kind_ends_the_scan(string text) =>
+        Assert.Same(text, Heal(text));
+
+    [Fact]
+    public void Half_tag_still_gets_the_earlier_closers() =>
+        Assert.Equal("`a <b`", Heal("`a <b"));
+
+    [Fact]
+    public void Less_than_before_a_space_is_literal() =>
+        Assert.Equal("1 < 2 `c`", Heal("1 < 2 `c"));
+
+    [Fact]
+    public void Less_than_at_the_end_is_literal() =>
+        Assert.Same("x <", Heal("x <"));
+
     [Fact]
     public void TailBlock_is_the_paragraph_at_the_end()
     {
