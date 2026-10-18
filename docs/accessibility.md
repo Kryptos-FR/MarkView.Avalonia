@@ -93,7 +93,7 @@ Avalonia reports whether the operating system asks for high contrast. It detects
 | `MarkdownHighContrastHighlightForeground` | `#000000` | `#FFFFFF` |
 | `MarkdownHighContrastBorder` | `#FFFFFF` | `#000000` |
 
-Every pair is at least 7:1, as Windows' contrast themes are. The [GitHub preset](theming.md#github) redefines these keys with Primer's high-contrast colours. The column used follows the theme variant Avalonia reports along with the contrast setting. On Windows, Avalonia only reports Light for contrast themes whose name contains "White". Override any of these keys in your own resources to match your app's contrast palette.
+Every pair is at least 7:1, as Windows' contrast themes are, and `ThemeContrastTests` checks it. The [GitHub preset](theming.md#github) redefines these keys with Primer's high-contrast colours. The column used follows the theme variant Avalonia reports along with the contrast setting. On Windows, Avalonia only reports Light for contrast themes whose name contains "White". Override any of these keys in your own resources to match your app's contrast palette.
 
 `HighContrastMode` controls when the palette is used:
 

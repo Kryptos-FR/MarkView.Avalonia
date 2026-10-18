@@ -10,13 +10,16 @@ namespace MarkView.Avalonia.Tests.Rendering;
 
 /// <summary>
 /// Checks the default theme's colour pairs against the WCAG 2.2 AA contrast minimums: 4.5:1 for
-/// text (1.4.3) and 3:1 for the borders and bars that carry meaning (1.4.11). Colours are read
-/// from <c>MarkdownTheme.axaml</c> itself, so editing a brush there re-runs the check.
+/// text (1.4.3) and 3:1 for the borders and bars that carry meaning (1.4.11), and its high-contrast
+/// palette against 7:1. Colours are read from <c>MarkdownTheme.axaml</c> itself, so editing a brush
+/// there re-runs the check.
 /// </summary>
 public class ThemeContrastTests
 {
     private const double Text = 4.5;
     private const double NonText = 3.0;
+    // High contrast: WCAG 2.2 AAA enhanced contrast (1.4.6), which Windows' contrast themes meet.
+    private const double HighContrast = 7.0;
 
     // FluentTheme's page background and body text in each variant.
     private static readonly Dictionary<string, (string Page, string Body)> Pages = new()
@@ -66,6 +69,11 @@ public class ThemeContrastTests
             data.Add(variant, "MarkdownImageFailedForeground", "MarkdownImageFailedBackground", Text);
             data.Add(variant, "MarkdownImageFailedBorder", "Page", NonText);
             data.Add(variant, "MarkdownImageLightboxCloseForeground", "MarkdownImageLightboxCloseBackground over MarkdownImageLightboxBackdrop", NonText);
+            // The high-contrast palette (MarkdownViewer:high-contrast) replaces the page colours.
+            data.Add(variant, "MarkdownHighContrastForeground", "MarkdownHighContrastBackground", HighContrast);
+            data.Add(variant, "MarkdownHighContrastLink", "MarkdownHighContrastBackground", HighContrast);
+            data.Add(variant, "MarkdownHighContrastBorder", "MarkdownHighContrastBackground", HighContrast);
+            data.Add(variant, "MarkdownHighContrastHighlightForeground", "MarkdownHighContrastHighlightBackground", HighContrast);
         }
         return data;
     }
