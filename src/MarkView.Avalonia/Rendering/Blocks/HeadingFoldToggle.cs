@@ -17,7 +17,7 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// It is a Tab stop, draws a focus ring when focused from the keyboard, and is exposed to screen readers
 /// as a button that expands or collapses, named by its heading's text.
 /// </summary>
-internal sealed class HeadingFoldToggle : AlertChevron
+internal sealed class HeadingFoldToggle : AlertChevron, IFoldButton
 {
     static HeadingFoldToggle()
     {
@@ -57,14 +57,16 @@ internal sealed class HeadingFoldToggle : AlertChevron
 
     internal void RaiseToggled() => Toggled?.Invoke();
 
+    void IFoldButton.Toggle() => RaiseToggled();
+
     /// <summary>The text screen readers announce for the button: its heading's text.</summary>
-    internal string AccessibleName { get; set; } = string.Empty;
+    public string AccessibleName { get; set; } = string.Empty;
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         if (change.Property == IsExpandedProperty)
-            (ControlAutomationPeer.FromElement(this) as HeadingFoldAutomationPeer)?.RaiseExpandCollapseStateChanged(change.GetOldValue<bool>(), change.GetNewValue<bool>());
+            FoldButtonAutomationPeer.RaiseExpandCollapseStateChanged(this, change.GetOldValue<bool>(), change.GetNewValue<bool>());
     }
 
     public override void Render(DrawingContext context)
@@ -76,5 +78,5 @@ internal sealed class HeadingFoldToggle : AlertChevron
             context.DrawRectangle(null, new Pen(foreground), new RoundedRect(new Rect(Bounds.Size).Deflate(0.5), 2));
     }
 
-    protected override AutomationPeer OnCreateAutomationPeer() => new HeadingFoldAutomationPeer(this);
+    protected override AutomationPeer OnCreateAutomationPeer() => new FoldButtonAutomationPeer(this);
 }
