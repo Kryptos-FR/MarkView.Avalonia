@@ -128,6 +128,14 @@ and redefines the default theme's keys as follows:
 | `MarkdownAlertCautionBorder` | `#F85149` | `#D1242F` |
 | `MarkdownAlert<Kind>Background` (all six) | `#00000000` | `#00000000` |
 | `MarkdownMarkedBackground` | `#26BB8009` | `#FFF8C5` |
+| `MarkdownHighContrastBackground` | `#0A0C10` | `#FFFFFF` |
+| `MarkdownHighContrastForeground` | `#F0F3F6` | `#0E1116` |
+| `MarkdownHighContrastLink` | `#71B7FF` | `#0349B4` |
+| `MarkdownHighContrastHighlightBackground` | `#F0B72F` | `#744500` |
+| `MarkdownHighContrastHighlightForeground` | `#0A0C10` | `#FFFFFF` |
+| `MarkdownHighContrastBorder` | `#B7BDC8` | `#20252C` |
+
+**In high contrast.** When the viewer has the `:high-contrast` pseudo-class (see [High contrast](accessibility.md#high-contrast)), the preset uses the colours of Primer's "dark high contrast" and "light high contrast" themes for the `MarkdownHighContrast*` keys above, every pair 7:1 or more, and gives up its muted text, striped table rows and grey rules and borders for them, as the default theme does.
 
 **Next to the extension packages.** Their themes stay as they are. Syntax highlighting (`MarkView.Avalonia.SyntaxHighlighting`) keeps its TextMate colours, Dark+ and Light+ by default, drawn on the preset's code background: GitHub's own highlighting colours differ, but Dark+ and Light+ have at least the same contrast on it as on the default theme's (the light background is a little lighter, the dark one a little darker). Mermaid diagrams keep the colours of `MermaidTheme.axaml`: in the light variant their white background matches the page, while in the dark one their `#18181B` background shows as a slightly lighter card on GitHub's `#0D1117`; redefine `MarkdownMermaidBackground` in the `Dark` dictionary to blend it in. Math formulas follow the theme variant on their own.
 

@@ -3,12 +3,15 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
+using Markdig;
+using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Rendering.Inlines;
 using MarkView.Avalonia.Tests.Shared;
 using Xunit;
@@ -148,5 +151,78 @@ public class HighContrastTests
         Assert.Contains(texts, t => t.Classes.Contains("markdown-code-line-numbers"));
         Assert.Equal(2, texts.Count);
         Assert.All(texts, t => Assert.Equal(Color.Parse(foreground), ColorOf(t.Foreground)));
+    }
+
+    [AvaloniaTheory]
+    [InlineData("Light", "#FFFFFF", "#0E1116", "#0349B4", "#20252C", "#744500", "#FFFFFF")]
+    [InlineData("Dark", "#0A0C10", "#F0F3F6", "#71B7FF", "#B7BDC8", "#F0B72F", "#0A0C10")]
+    public void High_contrast_wins_over_the_GitHub_preset(string variant, string background, string foreground,
+        string link, string border, string highlightBackground, string highlightForeground)
+    {
+        using var _ = new ThemeScope(variant == "Light" ? ThemeVariant.Light : ThemeVariant.Dark);
+        var viewer = new MarkdownViewer
+        {
+            HighContrastMode = HighContrastMode.Enabled,
+            Pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseAlertBlocks().Build(),
+            Markdown = """
+                # Title
+
+                Text with a [link](https://example.com) and ==marked== words.[^1]
+
+                ###### Level 6
+
+                > A quote.
+
+                | Name | Value |
+                |------|-------|
+                | a    | 1     |
+                | b    | 2     |
+
+                ---
+
+                ```cs
+                var x = 1;
+                ```
+
+                - [x] Done
+
+                [^1]: The footnote.
+                """,
+        };
+        viewer.Styles.Add(MarkdownThemeInclude());
+        viewer.Styles.Add(new StyleInclude((Uri?)null) { Source = new Uri("avares://MarkView.Avalonia/Themes/GitHubTheme.axaml") });
+        new Window { Width = 800, Height = 600, Content = viewer }.Show();
+
+        static Color ColorOf(IBrush? brush) => Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;
+        void AssertColor(string expected, IBrush? brush) => Assert.Equal(Color.Parse(expected), ColorOf(brush));
+        T Single<T>(string styleClass) where T : StyledElement =>
+            viewer.GetVisualDescendants().OfType<T>().Single(c => c.Classes.Contains(styleClass));
+        MarkdownSelectableTextBlock Paragraph(string text) => viewer.GetVisualDescendants().OfType<MarkdownSelectableTextBlock>()
+            .Single(t => MarkdownSelectableTextBlock.ExtractPlainText(t.Inlines!).StartsWith(text, StringComparison.Ordinal));
+
+        AssertColor(background, viewer.Background);
+        AssertColor(foreground, viewer.Foreground);
+        var links = viewer.GetVisualDescendants().OfType<TextBlock>().SelectMany(t => t.Inlines!).OfType<MarkdownHyperlink>().ToList();
+        Assert.Equal(2, links.Count); // the link and the footnote reference
+        Assert.All(links, l => AssertColor(link, l.Foreground));
+        var marked = Paragraph("Text with").Inlines!.OfType<Span>().Single(s => s.Classes.Contains("markdown-marked"));
+        AssertColor(highlightBackground, marked.Background);
+        AssertColor(highlightForeground, marked.Foreground);
+
+        // What the preset recolours: muted text, rules and grids
+        AssertColor(foreground, Single<TextBlock>("markdown-h6").Foreground);
+        AssertColor(border, Single<MarkdownSelectableTextBlock>("markdown-h1").BorderBrush);
+        var quote = Single<Border>("markdown-blockquote");
+        AssertColor(border, quote.BorderBrush);
+        AssertColor(foreground, Paragraph("A quote.").Foreground);
+        Assert.All(viewer.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("markdown-table-cell")),
+            cell => AssertColor(border, cell.BorderBrush));
+        Assert.All(viewer.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("markdown-table-row-even")),
+            cell => Assert.Equal(Colors.Transparent, ColorOf(cell.Background)));
+        Assert.All(viewer.GetVisualDescendants().OfType<Separator>(), rule => AssertColor(border, rule.Background));
+        AssertColor(foreground, Single<TextBlock>("markdown-task-list").Foreground);
+        AssertColor(foreground, Paragraph("The footnote.").Foreground);
+        AssertColor(border, Single<Button>("markdown-code-copy").BorderBrush);
+        AssertColor(background, Single<Border>("markdown-code-block").Background);
     }
 }

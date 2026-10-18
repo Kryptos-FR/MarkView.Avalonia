@@ -10,9 +10,10 @@ namespace MarkView.Avalonia.Tests.Rendering;
 
 /// <summary>
 /// Checks the GitHub theme's colour pairs against the WCAG 2.2 AA contrast minimums: 4.5:1 for
-/// text (1.4.3) and 3:1 for the borders and bars that carry meaning (1.4.11). Colours are read
-/// from <c>GitHubTheme.axaml</c>, falling back to <c>MarkdownTheme.axaml</c> for a key it does not
-/// redefine, so editing a brush in either file re-runs the check.
+/// text (1.4.3) and 3:1 for the borders and bars that carry meaning (1.4.11), and its high-contrast
+/// palette against 7:1. Colours are read from <c>GitHubTheme.axaml</c>, falling back to
+/// <c>MarkdownTheme.axaml</c> for a key it does not redefine, so editing a brush in either file
+/// re-runs the check.
 /// </summary>
 /// <remarks>
 /// Decorative lines are left out, as GitHub draws them: the rule under h1 and h2, the line above
@@ -24,6 +25,8 @@ public class GitHubThemeContrastTests
 {
     private const double Text = 4.5;
     private const double NonText = 3.0;
+    // High contrast: WCAG 2.2 AAA enhanced contrast (1.4.6), which Windows' contrast themes meet.
+    private const double HighContrast = 7.0;
 
     private static readonly XNamespace Avalonia = "https://github.com/avaloniaui";
     private static readonly XNamespace X = "http://schemas.microsoft.com/winfx/2006/xaml";
@@ -73,6 +76,11 @@ public class GitHubThemeContrastTests
                 data.Add(variant, $"MarkdownAlert{kind}Border", $"MarkdownAlert{kind}Background", Text);
                 data.Add(variant, "Body", $"MarkdownAlert{kind}Background", Text);
             }
+            // The high-contrast palette (MarkdownViewer:high-contrast) replaces the page colours.
+            data.Add(variant, "MarkdownHighContrastForeground", "MarkdownHighContrastBackground", HighContrast);
+            data.Add(variant, "MarkdownHighContrastLink", "MarkdownHighContrastBackground", HighContrast);
+            data.Add(variant, "MarkdownHighContrastBorder", "MarkdownHighContrastBackground", HighContrast);
+            data.Add(variant, "MarkdownHighContrastHighlightForeground", "MarkdownHighContrastHighlightBackground", HighContrast);
         }
         return data;
     }
