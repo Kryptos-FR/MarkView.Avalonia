@@ -39,6 +39,17 @@ viewer.BaseUri = new Uri("https://raw.githubusercontent.com/Kryptos-FR/MarkView.
 viewer.Markdown = markdownText; // relative image paths resolved against BaseUri
 ```
 
+### Reading documents and images from your own storage
+
+The viewer reads `avares://`, `file://` and `http(s)://` by itself. An `IResourceResolver` opens
+anything else, for both `Source` and the document's images: a zip archive, the app's storage, a
+server that needs credentials. See [Resource resolver](docs/configuration.md#resource-resolver).
+
+```csharp
+viewer.ResourceResolver = new ZipResolver(ZipFile.OpenRead("manual.zip"));
+viewer.Source = new Uri("zip://manual/guide/index.md"); // its images are read from the archive too
+```
+
 ### Handling link clicks
 
 External links open automatically via the platform's launcher (OS browser on desktop,

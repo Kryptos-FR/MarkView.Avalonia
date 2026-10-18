@@ -5,7 +5,8 @@
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `Markdown` | `string?` | `null` | The markdown text to render. Setting this triggers a full re-render. |
-| `Source` | `Uri?` | `null` | URI of a markdown document to load and render. Takes precedence over `Markdown` when set. Supports `avares://`, `file://`, and `http/https`. |
+| `Source` | `Uri?` | `null` | URI of a markdown document to load and render. Takes precedence over `Markdown` when set. Supports `avares://`, `file://`, and `http/https`, plus whatever `ResourceResolver` opens. |
+| `ResourceResolver` | `IResourceResolver?` | `null` | Opens the document of `Source` and the document's images before the viewer's own loading, e.g. from a zip archive or an authenticated server. `null` falls back to `MarkdownViewerDefaults.ResourceResolver`. See [Resource resolver](#resource-resolver). |
 | `Pipeline` | `MarkdownPipeline?` | `null` | The Markdig pipeline. `null` falls back to `MarkdownViewerDefaults.Pipeline`, or the built-in default (`UseGitHubExtensions`). |
 | `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
 | `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. See also [Custom fenced blocks](#custom-fenced-blocks). |
@@ -253,6 +254,9 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new MyChart(code));
 ```
 
+`MarkdownViewerDefaults.ResourceResolver` likewise applies to every viewer that does not set its own
+[`ResourceResolver`](#resource-resolver).
+
 **Priority rules:**
 
 1. `viewer.Pipeline` is used if set; otherwise `MarkdownViewerDefaults.Pipeline`; otherwise the built-in default.
@@ -271,9 +275,10 @@ MarkdownViewerDefaults.ImageCacheSize = 200; // images kept; 0 disables the cach
 MarkdownViewerDefaults.ClearImageCache();    // e.g. after the images behind some URLs have changed
 ```
 
-- An image is cached under its resolved URL (after `BaseUri`) and the types of the
+- An image is cached under its resolved URL (after `BaseUri`), the types of the
   [image loaders](custom-extensions.md#writing-a-custom-image-loader) in use, since another loader
-  chain (one with the SVG loader, say) can load the same URL differently. A custom loader whose result
+  chain (one with the SVG loader, say) can load the same URL differently, and the
+  [resource resolver](#resource-resolver) they read through. A custom loader whose result
   depends on more than the URL and its type (e.g. settings passed to its constructor) should use URLs
   that tell those results apart, or the cache should be cleared when the settings change.
 - Once it holds `ImageCacheSize` images, the least recently used one is evicted first. Evicted images
@@ -314,6 +319,10 @@ viewer.Source = null;
 | `avares://` | Synchronous | `ManifestResourceStream` — already in memory, no I/O cost |
 | `file://` | Async | Suitable for local and network paths |
 | `http/https` | Async | In-flight request is cancelled when `Source` changes |
+| Any other | Through `ResourceResolver` | Synchronous when the resolver's task has already completed. See [Resource resolver](#resource-resolver) |
+
+A document that cannot be loaded (missing, forbidden, a scheme nothing opens) leaves the current
+document on screen.
 
 **Precedence:** when both `Source` and `Markdown` are set, `Source` wins.
 
@@ -329,6 +338,73 @@ but without needing to wait for rendering to complete first.
 For `avares://` sources, everything after the first `#` is treated as the fragment, so an
 embedded asset whose path contains `#` (e.g. `Docs/C#.md`) cannot be loaded through `Source`.
 Rename the asset or load it yourself with `AssetLoader.Open` and assign the text to `Markdown`.
+
+## Resource resolver
+
+The viewer reads `avares://`, `file://` and `http(s)://` resources by itself. For anything else (a
+zip archive, a database, files the application keeps in its own storage, a server that needs
+credentials), give it an `IResourceResolver`. It opens both the document of `Source` and every image
+of the document, so a document from a zip archive shows the images stored next to it:
+
+```csharp
+using System.IO.Compression;
+using MarkView.Avalonia.Extensions;
+
+/// Serves the entries of a zip archive as zip://manual/<path>.
+public sealed class ZipResolver(ZipArchive archive) : IResourceResolver
+{
+    private readonly Lock _gate = new(); // a ZipArchive cannot be read from two threads at once
+
+    public Task<Stream?> OpenAsync(Uri uri, CancellationToken cancellationToken = default)
+    {
+        if (uri is not { Scheme: "zip", Host: "manual" })
+            return Task.FromResult<Stream?>(null); // not ours: the viewer opens it itself
+
+        lock (_gate)
+        {
+            var entry = archive.GetEntry(Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/')))
+                ?? throw new FileNotFoundException(null, uri.AbsolutePath);
+            var copy = new MemoryStream();
+            using (var stream = entry.Open())
+                stream.CopyTo(copy);
+            copy.Position = 0;
+            return Task.FromResult<Stream?>(copy);
+        }
+    }
+}
+
+viewer.ResourceResolver = new ZipResolver(ZipFile.OpenRead("manual.zip"));
+viewer.Source = new Uri("zip://manual/guide/index.md"); // ![](../img/a.png) reads zip://manual/img/a.png
+```
+
+- The resolver gets absolute URIs without their fragment: relative ones are resolved first against
+  [`BaseUri`](#baseuri), or the folder of `Source`. Any scheme that looks like a URL
+  (`scheme://host/path`) resolves relative paths as `http` does. Images given as `data:` URIs never
+  reach it.
+- Return `null` for a URI the resolver does not handle: the viewer then opens it itself. Throw (or
+  fail the task) for one it handles but cannot read: the image shows its
+  [placeholder](#images-that-fail-to-load) and a `Source` keeps the current document.
+- A task that has already completed when it is returned, as above, renders `Source` before the
+  property setter returns, as for `avares://`.
+- It can be called from any thread and for several images at once. The viewer disposes of the
+  streams it gets.
+- Setting `ResourceResolver` loads `Source` again and re-renders the document. Set
+  `MarkdownViewerDefaults.ResourceResolver` for every viewer that has none of its own.
+
+The same hook covers servers that need credentials, through an `HttpClient` set up for them:
+
+```csharp
+public sealed class IntranetResolver(HttpClient client) : IResourceResolver
+{
+    public async Task<Stream?> OpenAsync(Uri uri, CancellationToken cancellationToken = default) =>
+        uri.Host == "docs.intranet.example"
+            ? await client.GetStreamAsync(uri, cancellationToken) // client sends the Authorization header
+            : null;
+}
+```
+
+[Custom image loaders](custom-extensions.md#writing-a-custom-image-loader) read through the resolver
+too when they implement the `LoadAsync` overload that takes one, as the built-in and SVG loaders do.
 
 ## BaseUri
 

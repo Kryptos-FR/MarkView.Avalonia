@@ -8,8 +8,9 @@ namespace MarkView.Avalonia.Extensions;
 /// <summary>
 /// An in-memory cache of the images loaded through an image loader chain, so that rendering the same
 /// image again (a document edited and re-rendered, a viewer recreated) neither downloads nor decodes it
-/// again. Entries are keyed by the resolved URL and the types of the loaders in the chain, since another
-/// chain (e.g. one with the SVG loader) can load the same URL differently.
+/// again. Entries are keyed by the resolved URL, the types of the loaders in the chain, since another
+/// chain (e.g. one with the SVG loader) can load the same URL differently, and the resource resolver
+/// they read through, since another resolver can find other content at the same URL.
 /// </summary>
 /// <remarks>
 /// Holds at most <see cref="Capacity"/> images and evicts the least recently used one first. An evicted
@@ -64,16 +65,18 @@ internal sealed class ImageCache(int capacity)
     }
 
     /// <summary>
-    /// Returns the image cached for <paramref name="url"/> and <paramref name="loaders"/>, or loads it
-    /// with the first loader that accepts the URL and returns an image (see <see cref="LoadAsync"/>).
-    /// Returns <c>null</c> when no loader could load it; a loader's exception propagates.
+    /// Returns the image cached for <paramref name="url"/>, <paramref name="loaders"/> and
+    /// <paramref name="resources"/> (the viewer's own loading when <c>null</c>), or loads it with the first
+    /// loader that accepts the URL and returns an image (see <see cref="LoadAsync"/>). Returns <c>null</c>
+    /// when no loader could load it; a loader's exception propagates.
     /// </summary>
-    public async Task<IImage?> GetOrLoadAsync(string url, IList<IImageLoader> loaders, CancellationToken cancellationToken)
+    public async Task<IImage?> GetOrLoadAsync(string url, IList<IImageLoader> loaders, CancellationToken cancellationToken, IResourceResolver? resources = null)
     {
+        resources ??= DefaultResourceResolver.Instance;
         if (Capacity == 0)
-            return await LoadAsync(url, loaders, cancellationToken);
+            return await LoadAsync(url, loaders, cancellationToken, resources);
 
-        var key = new Key(url, string.Join('|', loaders.Select(l => l.GetType().FullName)));
+        var key = new Key(url, string.Join('|', loaders.Select(l => l.GetType().FullName)), resources);
         SharedLoad? load;
         bool start;
         lock (_gate)
@@ -92,7 +95,7 @@ internal sealed class ImageCache(int capacity)
 
         // Started outside the lock, since a loader's code runs synchronously up to its first await.
         if (start)
-            _ = RunAsync(key, load, url, loaders);
+            _ = RunAsync(key, load, url, loaders, resources);
 
         try
         {
@@ -113,12 +116,12 @@ internal sealed class ImageCache(int capacity)
         }
     }
 
-    private async Task RunAsync(Key key, SharedLoad load, string url, IList<IImageLoader> loaders)
+    private async Task RunAsync(Key key, SharedLoad load, string url, IList<IImageLoader> loaders, IResourceResolver resources)
     {
         IImage? image;
         try
         {
-            image = await LoadAsync(url, loaders, load.Cancellation.Token);
+            image = await LoadAsync(url, loaders, load.Cancellation.Token, resources);
         }
         catch (Exception e)
         {
@@ -157,23 +160,25 @@ internal sealed class ImageCache(int capacity)
     }
 
     /// <summary>
-    /// Tries each loader that accepts <paramref name="url"/> in order, and returns the first image one
-    /// of them returns, or <c>null</c> when none does.
+    /// Tries each loader that accepts <paramref name="url"/> in order, reading through
+    /// <paramref name="resources"/>, and returns the first image one of them returns, or <c>null</c> when
+    /// none does.
     /// </summary>
-    internal static async Task<IImage?> LoadAsync(string url, IList<IImageLoader> loaders, CancellationToken cancellationToken)
+    internal static async Task<IImage?> LoadAsync(string url, IList<IImageLoader> loaders, CancellationToken cancellationToken, IResourceResolver? resources = null)
     {
         foreach (var loader in loaders)
         {
             if (!loader.CanLoad(url))
                 continue;
-            var loaded = await loader.LoadAsync(url, cancellationToken);
+            var loaded = await loader.LoadAsync(url, resources ?? DefaultResourceResolver.Instance, cancellationToken);
             if (loaded != null)
                 return loaded;
         }
         return null;
     }
 
-    private readonly record struct Key(string Url, string Loaders);
+    // Resources compares with Equals: FallbackResourceResolver instances wrapping the same resolver are equal.
+    private readonly record struct Key(string Url, string Loaders, IResourceResolver Resources);
 
     private sealed class SharedLoad
     {

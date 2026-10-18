@@ -11,8 +11,10 @@ using MarkView.Avalonia.Extensions;
 namespace MarkView.Avalonia.Svg;
 
 /// <summary>
-/// Loads SVG images from remote URLs (ending in <c>.svg</c>) and
-/// from <c>data:image/svg+xml</c> data URIs.
+/// Loads SVG images from URLs ending in <c>.svg</c>, from any <c>http/https</c> URL (falling back to the
+/// bitmap loader when the response is not SVG), and from <c>data:image/svg+xml</c> data URIs. Their content
+/// is read through the viewer's <see cref="IResourceResolver"/>, so <c>avares://</c>, <c>file://</c> and the
+/// application's own schemes work as well.
 /// </summary>
 public sealed class SvgImageLoader : IImageLoader
 {
@@ -39,7 +41,10 @@ public sealed class SvgImageLoader : IImageLoader
         return false;
     }
 
-    public async Task<IImage?> LoadAsync(string url, CancellationToken cancellationToken = default)
+    public Task<IImage?> LoadAsync(string url, CancellationToken cancellationToken = default) =>
+        LoadAsync(url, DefaultResourceResolver.Instance, cancellationToken);
+
+    public async Task<IImage?> LoadAsync(string url, IResourceResolver resources, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -58,7 +63,9 @@ public sealed class SvgImageLoader : IImageLoader
             {
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                     return null;
-                using var responseStream = await SharedHttpClient.Instance.GetStreamAsync(uri, cancellationToken);
+                using var responseStream = await resources.OpenAsync(uri, cancellationToken);
+                if (responseStream is null)
+                    return null;
                 using var buffer = new MemoryStream();
                 await responseStream.CopyToAsync(buffer, cancellationToken);
                 buffer.Position = 0;

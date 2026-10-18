@@ -39,12 +39,17 @@ public class BitmapImageLoaderTests
         Assert.True(_loader.CanLoad("https://example.com/image.png"));
 
     [Fact]
-    public void CanLoad_file_url_returns_false() =>
-        Assert.False(_loader.CanLoad("file:///C:/images/photo.png"));
+    public void CanLoad_file_url_returns_true() =>
+        Assert.True(_loader.CanLoad("file:///C:/images/photo.png"));
+
+    // A resource resolver may open any scheme.
+    [Fact]
+    public void CanLoad_custom_scheme_url_returns_true() =>
+        Assert.True(_loader.CanLoad("zip://manual/images/photo.png"));
 
     [Fact]
-    public void CanLoad_ftp_url_returns_false() =>
-        Assert.False(_loader.CanLoad("ftp://example.com/image.png"));
+    public void CanLoad_data_uri_that_is_not_an_image_returns_false() =>
+        Assert.False(_loader.CanLoad("data:text/plain,hello"));
 
     [Fact]
     public void CanLoad_relative_path_returns_false() =>
