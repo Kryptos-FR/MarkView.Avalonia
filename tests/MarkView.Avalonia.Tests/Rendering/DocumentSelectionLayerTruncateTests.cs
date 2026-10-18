@@ -94,7 +94,69 @@ public class DocumentSelectionLayerTruncateTests
 
         layer.TruncateTo(2);
 
+        Assert.Equal((null, null), layer.SelectionForTest);
         Assert.Equal(string.Empty, layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Selection_starting_in_the_separator_after_the_kept_end_is_cleared()
+    {
+        var layer = ThreeEntries();
+        layer.SetSelectionForTest(11, 15);
+
+        layer.TruncateTo(2);
+
+        Assert.Equal((null, null), layer.SelectionForTest);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(10, 14)]
+    [InlineData(14, 10)]
+    [InlineData(10, 10)]
+    public void Selection_starting_at_the_kept_end_keeps_its_anchor_there(int anchor, int focus)
+    {
+        var layer = ThreeEntries();
+        layer.SetSelectionForTest(anchor, focus);
+
+        layer.TruncateTo(2);
+
+        Assert.Equal((10, 10), layer.SelectionForTest);
+        Assert.Equal(string.Empty, layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Dragging_selection_keeps_extending_from_its_anchor_after_the_text_it_follows_grows()
+    {
+        var layer = ThreeEntries();
+        layer.SetSelectionForTest(10, 14);   // pressed at the end of "beta", dragged into "gamma"
+        layer.TruncateTo(2);
+
+        Assert.Equal(11, Add(layer, "delta").AbsStart);
+        layer.SetSelectionForTest(layer.SelectionForTest.Anchor!.Value, 14);
+
+        Assert.Equal("\ndel", layer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Selection_in_the_first_entry_survives_truncating_to_zero_as_a_collapsed_one_at_zero()
+    {
+        var layer = ThreeEntries();
+        layer.SetSelectionForTest(0, 4);
+
+        layer.TruncateTo(0);
+
+        Assert.Equal((0, 0), layer.SelectionForTest);
+    }
+
+    [AvaloniaFact]
+    public void Selection_is_cleared_when_every_entry_is_removed_and_it_starts_after_zero()
+    {
+        var layer = ThreeEntries();
+        layer.SetSelectionForTest(2, 4);
+
+        layer.TruncateTo(0);
+
+        Assert.Equal((null, null), layer.SelectionForTest);
     }
 
     [AvaloniaFact]
@@ -109,18 +171,6 @@ public class DocumentSelectionLayerTruncateTests
     }
 
     [AvaloniaFact]
-    public void Selection_is_cleared_when_every_entry_is_removed()
-    {
-        var layer = ThreeEntries();
-        layer.SetSelectionForTest(0, 4);
-
-        layer.TruncateTo(0);
-        Add(layer, "again");
-
-        Assert.Equal(string.Empty, layer.GetSelectedText());
-    }
-
-    [AvaloniaFact]
     public void Find_matches_in_removed_entries_are_dropped()
     {
         var layer = ThreeEntries();
@@ -131,6 +181,44 @@ public class DocumentSelectionLayerTruncateTests
 
         Assert.Equal(3, layer.FindMatches.Count);
         Assert.All(layer.FindMatches, match => Assert.NotEqual("gamma", match.Entry.PlainText));
+        Assert.Equal(-1, layer.CurrentFindMatch);
+    }
+
+    [AvaloniaFact]
+    public void Current_find_match_equal_to_the_remaining_count_is_reset()
+    {
+        var layer = ThreeEntries();
+        layer.Find("a", MarkdownFindOptions.None);
+        layer.CurrentFindMatch = 3;
+
+        layer.TruncateTo(2);
+
+        Assert.Equal(3, layer.FindMatches.Count);
+        Assert.Equal(-1, layer.CurrentFindMatch);
+    }
+
+    [AvaloniaFact]
+    public void Current_find_match_just_below_the_remaining_count_is_kept()
+    {
+        var layer = ThreeEntries();
+        layer.Find("a", MarkdownFindOptions.None);
+        layer.CurrentFindMatch = 2;
+
+        layer.TruncateTo(2);
+
+        Assert.Equal(2, layer.CurrentFindMatch);
+    }
+
+    [AvaloniaFact]
+    public void Every_find_match_is_dropped_when_every_entry_is_removed()
+    {
+        var layer = ThreeEntries();
+        layer.Find("a", MarkdownFindOptions.None);
+        layer.CurrentFindMatch = 0;
+
+        layer.TruncateTo(0);
+
+        Assert.Empty(layer.FindMatches);
         Assert.Equal(-1, layer.CurrentFindMatch);
     }
 

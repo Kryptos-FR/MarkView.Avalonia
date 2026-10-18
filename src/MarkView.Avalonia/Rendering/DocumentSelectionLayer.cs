@@ -128,8 +128,9 @@ internal sealed class DocumentSelectionLayer : Control
 
     /// <summary>
     /// Removes every entry after the first <paramref name="entryCount"/>, so later registrations continue
-    /// from the end of the last kept entry. A selection starting in a removed entry is cleared, one ending
-    /// in a removed entry ends at the end of the last kept entry, and the find matches in removed entries
+    /// from the end of the last kept entry. A selection starting beyond the last kept entry's text is cleared,
+    /// one ending beyond it ends at the end of that text (a selection starting exactly there keeps its
+    /// anchor, as a drag in progress does), and the find matches in removed entries
     /// are dropped, along with the current match when it was one of them.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">
@@ -147,7 +148,7 @@ internal sealed class DocumentSelectionLayer : Control
         if (_anchor is { } anchor && _focus is { } focus)
         {
             var keptEnd = entryCount == 0 ? 0 : _entries[^1].AbsEnd;
-            if (Math.Min(anchor, focus) >= keptEnd)
+            if (Math.Min(anchor, focus) > keptEnd)
             {
                 _anchor = null;
                 _focus = null;
@@ -514,6 +515,9 @@ internal sealed class DocumentSelectionLayer : Control
         _anchor = start;
         _focus = end;
     }
+
+    /// <summary>The anchor and focus as absolute offsets, <c>null</c> when nothing is selected. For unit tests only.</summary>
+    internal (int? Anchor, int? Focus) SelectionForTest => (_anchor, _focus);
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
