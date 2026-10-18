@@ -9,14 +9,20 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 
 /// <summary>
 /// Renders a Markdig <see cref="AutolinkInline"/> as a <see cref="MarkdownHyperlink"/> span,
-/// matching regular <c>[text](url)</c> links.
+/// matching regular <c>[text](url)</c> links, or as plain text when the URL transform drops its URL.
 /// </summary>
 public sealed class AutolinkInlineRenderer : AvaloniaObjectRenderer<AutolinkInline>
 {
     protected override void Write(AvaloniaRenderer renderer, AutolinkInline obj)
     {
         var rawUrl = obj.Url;
-        var resolvedUrl = obj.IsEmail ? "mailto:" + rawUrl : renderer.ResolveUrl(rawUrl);
+        var resolvedUrl = obj.IsEmail ? renderer.TransformUrl("mailto:" + rawUrl, MarkdownUrlKind.Link) : renderer.ResolveUrl(rawUrl);
+        if (resolvedUrl is null)
+        {
+            // Dropped by the URL transform: the address as plain text.
+            renderer.WriteInline(new Run(rawUrl));
+            return;
+        }
 
         var hyperlink = new MarkdownHyperlink
         {

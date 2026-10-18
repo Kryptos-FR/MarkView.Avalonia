@@ -50,10 +50,22 @@ viewer.ResourceResolver = new ZipResolver(ZipFile.OpenRead("manual.zip"));
 viewer.Source = new Uri("zip://manual/guide/index.md"); // its images are read from the archive too
 ```
 
+### Filtering links and images
+
+`UrlTransform` rewrites or drops each link and image URL, e.g. to allow images from trusted hosts only
+in a chat app. See [URL transform](docs/configuration.md#url-transform).
+
+```csharp
+viewer.UrlTransform = (url, kind) =>
+    kind == MarkdownUrlKind.Image && !url.StartsWith("https://cdn.myapp.example/") ? null : url;
+```
+
 ### Handling link clicks
 
-External links open automatically via the platform's launcher (OS browser on desktop,
-an intent on mobile, a new tab on WebAssembly) — no code required. `LinkClicked` is an
+External `http`, `https` and `mailto` links open automatically via the platform's launcher (OS
+browser on desktop, an intent on mobile, a new tab on WebAssembly) — no code required. Other schemes
+(`file:`, custom protocols) are left to your handler, since the OS may run a program for them; see
+[Links the viewer opens](docs/configuration.md#links-the-viewer-opens). `LinkClicked` is an
 Avalonia **routed event** (bubbles up), raised before that default launch happens;
 subscribe to override it for specific links by setting `e.Handled = true`:
 

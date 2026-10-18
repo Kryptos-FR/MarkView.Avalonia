@@ -97,6 +97,12 @@ public partial class MarkdownViewer : ContentControl
         AvaloniaProperty.Register<MarkdownViewer, IResourceResolver?>(nameof(ResourceResolver));
 
     /// <summary>
+    /// Defines the <see cref="UrlTransform"/> property.
+    /// </summary>
+    public static readonly StyledProperty<MarkdownUrlTransform?> UrlTransformProperty =
+        AvaloniaProperty.Register<MarkdownViewer, MarkdownUrlTransform?>(nameof(UrlTransform));
+
+    /// <summary>
     /// Defines the <see cref="ImageResizeMode"/> property.
     /// </summary>
     public static readonly StyledProperty<ImageResizeMode> ImageResizeModeProperty =
@@ -227,6 +233,21 @@ public partial class MarkdownViewer : ContentControl
     {
         get => GetValue(ResourceResolverProperty);
         set => SetValue(ResourceResolverProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets a function that rewrites or drops the URL of each link and image while the document
+    /// renders, e.g. to allow images from trusted hosts only, so that a document cannot make the viewer
+    /// fetch an address of its choosing. It gets the URL resolved against <see cref="BaseUri"/> and
+    /// whether it is a link or an image; returning <c>null</c> drops it: a link then renders as its plain
+    /// text and an image as its <c>markdown-image-failed</c> placeholder, without being loaded.
+    /// Same-document anchors (<c>#heading</c>) are not given to it. <c>null</c> (the default) falls back to
+    /// <see cref="MarkdownViewerDefaults.UrlTransform"/>. Setting it re-renders the document.
+    /// </summary>
+    public MarkdownUrlTransform? UrlTransform
+    {
+        get => GetValue(UrlTransformProperty);
+        set => SetValue(UrlTransformProperty, value);
     }
 
     /// <summary>The resolver in use: <see cref="ResourceResolver"/>, else <see cref="MarkdownViewerDefaults.ResourceResolver"/>.</summary>
@@ -423,6 +444,7 @@ public partial class MarkdownViewer : ContentControl
             if (x.Source is null) x.RenderMarkdown();
             else x.OnSourceChanged();
         });
+        UrlTransformProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ImageResizeModeProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ShowCodeBlockLanguageProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ShowCodeBlockCopyButtonProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
@@ -608,6 +630,7 @@ public partial class MarkdownViewer : ContentControl
         {
             BaseUri = BaseUri ?? InferBaseUri(Source),
             ResourceResolver = CustomResourceResolver,
+            UrlTransform = UrlTransform ?? MarkdownViewerDefaults.UrlTransform,
             ImageResizeMode = ImageResizeMode,
             ShowCodeBlockLanguage = ShowCodeBlockLanguage,
             ShowCodeBlockCopyButton = ShowCodeBlockCopyButton,
@@ -1037,7 +1060,7 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>Opens <paramref name="hyperlink"/>, whether it was clicked or activated from the keyboard.</summary>
-    private void ActivateLink(MarkdownHyperlink hyperlink)
+    internal void ActivateLink(MarkdownHyperlink hyperlink)
     {
         if (hyperlink.NavigateUri is { } uri)
             OnLinkClicked(this, new LinkClickedEventArgs(uri.ToString()));
@@ -1193,8 +1216,25 @@ public partial class MarkdownViewer : ContentControl
 
         // No subscriber intercepted the link (e.g. to render a local document in-place) —
         // the platform launcher is the only cross-platform way to open an external URI
-        // (desktop shell, mobile intent, or browser new-tab).
-        if (!Uri.TryCreate(e.Url, UriKind.Absolute, out var uri)) return;
+        // (desktop shell, mobile intent, or browser new-tab). It opens whatever the OS has a handler
+        // for, a file:// executable or an installer protocol included, so only allowed schemes go to it.
+        if (!Uri.TryCreate(e.Url, UriKind.Absolute, out var uri)
+            || !MarkdownViewerDefaults.LaunchableLinkSchemes.Contains(uri.Scheme))
+            return;
+        await LaunchUri(uri);
+    }
+
+    /// <summary>Opens a link no handler handled; the platform's launcher, unless a test replaces it.</summary>
+    internal Func<Uri, Task> LaunchUri
+    {
+        get => _launchUri ??= LaunchWithPlatform;
+        set => _launchUri = value;
+    }
+
+    private Func<Uri, Task>? _launchUri;
+
+    private async Task LaunchWithPlatform(Uri uri)
+    {
         var launcher = TopLevel.GetTopLevel(this)?.Launcher;
         if (launcher is not null)
             await launcher.LaunchUriAsync(uri);
