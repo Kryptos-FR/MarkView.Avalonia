@@ -312,6 +312,17 @@ Other names keep the default look:
 Styled by its name with `Border.markdown-custom-container.note`.
 :::
 
+## Patterns in the Text
+
+An application can turn matches of a regular expression into links or inlines of its own. This demo
+links issue numbers such as #138 to this repository's issues, and shows mentions such as @Kryptos-FR
+in a style of its own. Code (`#138`) and link text ([#138](https://github.com/Kryptos-FR/MarkView.Avalonia))
+are left alone.
+
+```markdown
+Issue numbers such as #138, mentions such as @Kryptos-FR.
+```
+
 ---
 
 *End of showcase.*

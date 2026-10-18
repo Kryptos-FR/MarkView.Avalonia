@@ -197,6 +197,7 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-code-scroll` | `ScrollViewer` | Scrolls the code of a block vertically, when `CodeBlockMaxHeight` is set |
 | `markdown-custom-fence` | `Border` | Wraps the control a [fence renderer](custom-extensions.md#rendering-a-fence-language-as-your-own-control) returned for a fenced block |
 | `markdown-fence-<language>` | `Border` | The same `Border`, by fence language in lower case (e.g. `markdown-fence-chart`) |
+| `markdown-pattern-link` | `Span` | A link written by a [link pattern](custom-extensions.md#rendering-patterns-in-the-text-mentions-issue-numbers) (`#123` → an issue); it also has `markdown-link` |
 | `markdown-code-inline` | `Border` | Inline code container |
 | `markdown-blockquote` | `Border` | Blockquote container |
 | `markdown-list` | `StackPanel` | Ordered / unordered list |

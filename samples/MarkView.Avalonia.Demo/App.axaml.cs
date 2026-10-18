@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Documents;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
@@ -14,8 +16,14 @@ using MarkView.Avalonia.Demo.Views;
 
 namespace MarkView.Avalonia.Demo;
 
-public class App : Application
+public partial class App : Application
 {
+    [GeneratedRegex(@"(?<![\w&])#(\d+)\b")]
+    private static partial Regex IssueReference();
+
+    [GeneratedRegex(@"(?<![\w@])@(\w(?:[\w-]*\w)?)")]
+    private static partial Regex Mention();
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -67,6 +75,12 @@ public class App : Application
             Content = content,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         });
+
+        // Global patterns — #123 links to the repository's issue, and @name renders as a mention
+        MarkdownViewerDefaults.Extensions.AddLinkPattern(IssueReference(),
+            match => $"https://github.com/Kryptos-FR/MarkView.Avalonia/issues/{match.Groups[1].Value}");
+        MarkdownViewerDefaults.Extensions.AddInlinePattern(Mention(),
+            match => new Run(match.Value) { Classes = { "mention" } });
 
         // Global link handler — handles external links for every MarkdownViewer in the app
         MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>(OnLinkClicked);

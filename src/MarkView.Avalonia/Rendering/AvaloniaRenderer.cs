@@ -199,6 +199,12 @@ public class AvaloniaRenderer : RendererBase
     internal Dictionary<string, ContainerRendererFactory> ContainerRenderers { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The patterns written differently where they match the document's text, in registration order.
+    /// Filled by <see cref="InlinePatternExtension"/> and <see cref="LinkPatternExtension"/>.
+    /// </summary>
+    internal List<InlinePattern> InlinePatterns { get; } = [];
+
+    /// <summary>
     /// Raised when a hyperlink is clicked.
     /// </summary>
     public event EventHandler<LinkClickedEventArgs>? LinkClicked;

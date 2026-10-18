@@ -135,6 +135,20 @@ viewer.UseContainerRenderer("spoiler", (content, title) => new Expander { Header
 
 See [Custom containers as controls](docs/configuration.md#custom-containers-as-controls) for details.
 
+### Patterns in the text
+
+Turn matches of a regular expression into links or inlines of your own, such as issue numbers and
+mentions:
+
+```csharp
+viewer.UseLinkPattern(new Regex(@"(?<![\w&])#(\d+)\b"),
+    match => $"https://github.com/owner/repo/issues/{match.Groups[1].Value}");
+viewer.UseInlinePattern(new Regex(@"(?<!\w)@(\w+)"),
+    match => new Run(match.Value) { FontWeight = FontWeight.SemiBold });
+```
+
+See [Patterns in the text](docs/configuration.md#patterns-in-the-text) for details.
+
 ### Using a custom Markdig pipeline
 
 ```csharp
