@@ -17,6 +17,7 @@
 | `WrapCodeBlockLines` | `bool` | `false` | Wraps code lines longer than the block's width instead of letting them run past it. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `CodeBlockMaxHeight` | `double` | `PositiveInfinity` | Maximum height of a code block (toolbar excluded); a taller block scrolls vertically inside itself. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `AreTaskListsInteractive` | `bool` | `false` | Renders task-list items as checkboxes the user can toggle, raising `TaskToggled`. Setting it re-renders the document. See [Interactive task lists](#interactive-task-lists). |
+| `AreHeadingsFoldable` | `bool` | `false` | Starts each heading with a fold button that hides or shows its section. Setting it re-renders the document. See [Foldable headings](#foldable-headings). |
 | `IsImageZoomEnabled` | `bool` | `true` | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, where it can be zoomed and panned. See [Image zoom](#image-zoom). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
@@ -424,6 +425,34 @@ re-render, for example after assigning a different text or changing `Pipeline`.
 Pressing the checkbox and dragging selects text instead of toggling it, and a selection started on
 text can still be dragged across items. When copied, a checkbox contributes its current ☐/☑ glyph.
 
+## Foldable headings
+
+Set `AreHeadingsFoldable` to start each heading with a fold button, as in Obsidian or Notion, for long
+documents read section by section:
+
+```xml
+<mv:MarkdownViewer Source="avares://MyApp/Docs/guide.md" AreHeadingsFoldable="True" />
+```
+
+A heading's section is everything after it up to the next heading of the same or a higher level
+(`##` folds the blocks below it until the next `##` or `#`), nested sections included. Collapsing a
+heading hides its section; the heading stays. Expanding it again shows the section as it was, so a
+nested heading that was collapsed stays collapsed. Every section starts expanded, and a new document
+(another `Markdown`, `Source` or `Pipeline`) starts over with every section expanded.
+
+- The button toggles on click, or on `Enter` or `Space` once it has focus. It is a Tab stop, and screen
+  readers see it as a button named by the heading's text that reports whether the section is expanded
+  (see [Accessibility](accessibility.md)). The heading's text stays selectable, and its links clickable.
+- Only headings fold. A heading inside a blockquote, a list item or an alert folds what follows it
+  there, not the rest of the document.
+- A collapsed section cannot be selected or copied, like the body of a [foldable alert](#alert-blocks).
+  `ScrollToAnchor` and the [find](find-in-document.md) methods expand the sections around their
+  target first; a heading navigated to keeps its own section as it was.
+- In a [streaming session](streaming.md), blocks that arrive after a collapsed heading join its
+  section, and a heading still being written keeps the state the reader gave it.
+
+See [Theming](theming.md#foldable-headings) for the style classes.
+
 ## Anchor navigation
 
 Call `ScrollToAnchor` to programmatically scroll to any heading or footnote:
@@ -435,7 +464,7 @@ viewer.ScrollToAnchor("fn-1");            // matches footnote [^1]
 
 Anchors are generated from heading text using GitHub-compatible slug rules (lowercase, spaces to hyphens, non-alphanumeric stripped). Headings with identical slugs are disambiguated with a numeric suffix (`-1`, `-2`, …).
 
-A heading inside a collapsed [foldable alert](#alert-blocks) or [details block](#html-details-blocks) is still listed in `TableOfContents`; scrolling to its anchor expands it first.
+A heading inside a collapsed [foldable alert](#alert-blocks), [details block](#html-details-blocks) or [heading section](#foldable-headings) is still listed in `TableOfContents`; scrolling to its anchor expands it first.
 
 ## Table of contents
 

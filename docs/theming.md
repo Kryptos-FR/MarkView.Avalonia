@@ -187,6 +187,8 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | Class | Control | Element |
 |-------|---------|---------|
 | `markdown-h1` … `markdown-h6` | `TextBlock` | Headings |
+| `markdown-heading-foldable` | `TextBlock` | A heading with a fold button, when `AreHeadingsFoldable` is set; has the `:expanded` pseudo-class while its section is shown (see [Foldable headings](#foldable-headings)) |
+| `markdown-heading-fold` | `Control` | The fold button at the start of a foldable heading |
 | `markdown-paragraph` | `TextBlock` | Paragraphs |
 | `markdown-code-block` | `Border` | Fenced code block container |
 | `markdown-code-container` | `StackPanel` | Wraps a code block and its toolbar (only when the toolbar is shown) |
@@ -301,6 +303,31 @@ The summary is focusable and toggles the body on click, Enter or Space; the body
 </Style>
 <Style Selector="TextBlock.markdown-details-summary">
   <Setter Property="FontWeight" Value="SemiBold" />
+</Style>
+```
+
+### Foldable headings
+
+Headings with a fold button (see [Foldable headings](configuration.md#foldable-headings)), when
+`AreHeadingsFoldable` is set.
+
+| Class | Control | Element |
+|-------|---------|---------|
+| `markdown-heading-foldable` | `TextBlock` | The heading, besides its `markdown-heading` and `markdown-h1`…`markdown-h6` classes; has the `:expanded` pseudo-class while its section is shown |
+| `markdown-heading-fold` | `Control` | The fold button at the start of the heading: a triangle pointing right when collapsed and down when expanded, like `markdown-alert-chevron`, drawn in the heading's `Foreground` and sized by its `FontSize`, with a focus ring when focused from the keyboard |
+
+The sections' visibility is set by the control, not by a style. The default theme only gives the button
+a right margin. For example, to dim collapsed headings and show their button more discreetly:
+
+```xml
+<Style Selector=":is(TextBlock).markdown-heading-foldable:not(:expanded)">
+  <Setter Property="Opacity" Value="0.8" />
+</Style>
+<Style Selector=":is(Control).markdown-heading-fold">
+  <Setter Property="Opacity" Value="0.6" />
+</Style>
+<Style Selector=":is(Control).markdown-heading-fold:pointerover">
+  <Setter Property="Opacity" Value="1" />
 </Style>
 ```
 

@@ -157,6 +157,9 @@
               <MenuItem Header="Clickable tasks" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.AreTaskListsInteractive, Mode=TwoWay}"
                         ToolTip.Tip="Render task-list items as checkboxes you can toggle" />
+              <MenuItem Header="Foldable headings" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.AreHeadingsFoldable, Mode=TwoWay}"
+                        ToolTip.Tip="Start each heading with a button that hides or shows its section" />
               <Separator />
               <MenuItem Header="Code line numbers" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers, Mode=TwoWay}"

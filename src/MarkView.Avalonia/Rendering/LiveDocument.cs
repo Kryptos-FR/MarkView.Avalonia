@@ -10,6 +10,7 @@ using Markdig.Extensions.Abbreviations;
 using Markdig.Extensions.Footnotes;
 using Markdig.Syntax;
 
+using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Rendering.Inlines;
 
 namespace MarkView.Avalonia.Rendering;
@@ -135,6 +136,11 @@ internal sealed class LiveDocument
                 Renderer.HeadingCount - headingsBefore,
                 Renderer.SlugGenerator.Count - slugsBefore));
         }
+
+        // New blocks after a collapsed heading belong to its section, and a heading rendered again keeps the
+        // state the user left it in.
+        HeadingFold.Apply(RootPanel);
+        Renderer.ApplyHeadingFolds();
 
         Document = document;
         _invalidationKeys = keys;

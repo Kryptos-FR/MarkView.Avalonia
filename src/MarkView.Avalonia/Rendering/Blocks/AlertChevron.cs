@@ -16,7 +16,7 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// Drawn rather than taken from a font (▸/▾), because a browser build only has the fonts the
 /// application embeds, which usually lack these symbols.
 /// </remarks>
-internal sealed class AlertChevron : Control
+internal class AlertChevron : Control
 {
     public static readonly StyledProperty<bool> IsExpandedProperty =
         AvaloniaProperty.Register<AlertChevron, bool>(nameof(IsExpanded));
@@ -49,10 +49,15 @@ internal sealed class AlertChevron : Control
     /// <summary>The triangle, in the control's coordinates.</summary>
     internal PolylineGeometry GetTriangle()
     {
-        var size = BoxSize;
+        // The triangle fills the square, or a smaller square centred in it.
+        var size = BoxSize * TriangleScale;
+        var offset = (BoxSize - size) / 2;
         Point[] points = IsExpanded
             ? [new(size * 0.1, size * 0.25), new(size * 0.9, size * 0.25), new(size * 0.5, size * 0.85)]
             : [new(size * 0.25, size * 0.1), new(size * 0.85, size * 0.5), new(size * 0.25, size * 0.9)];
-        return new PolylineGeometry(points, isFilled: true);
+        return new PolylineGeometry(points.Select(p => new Point(p.X + offset, p.Y + offset)), isFilled: true);
     }
+
+    /// <summary>The size of the triangle's square relative to the control's, 1 to fill it.</summary>
+    private protected virtual double TriangleScale => 1;
 }
