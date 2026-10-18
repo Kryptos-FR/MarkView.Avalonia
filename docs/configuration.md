@@ -215,6 +215,7 @@ A `<div align="center">` and its `</div>`, each separated by blank lines from th
 - Only the `href`, `src`, `alt`, `title`, `width`, `height` and `align` attributes are read; any other (`style`, `class`, `onclick`…) is ignored.
 - Any other tag (`<span>`, `<table>`, `<iframe>`, `<picture>`…), and a tag without its match (`<b>` never closed, a stray `</i>`), is dropped, and the text around it still shows, as it did before. The content of `<script>` and `<style>` is dropped with them, as GitHub does. Comments do not show.
 - Tags pair like elements: `<b><i>x</i></b>` nests, and `</b>` in `<b><i>x</b>` also closes the `<i>`. Inline tags pair within the same markdown inline only: in `*<b>x*</b>`, the `<b>` is inside the emphasis and the `</b>` outside, so both are dropped. A `<div>` pairs with a `</div>` among the blocks of the same container (as for [details blocks](#html-details-blocks)); one without its match is dropped.
+- A tag that names no element of HTML or MathML shows as the text it was typed as, so `List<string>`, `Vec<u8>` and `Option<T>` read as written, where GitHub shows only `List`, `Vec` and `Option`. Custom elements (a name with a hyphen, `<my-widget>`) are elements and are dropped. The content of `<svg>` is dropped like that of `<script>`, so its shapes don't show as text. A placeholder that is also an element's name, such as `<input>` or `<title>`, is still dropped: put it in backticks, or use the `Escape` [HTML mode](#html-mode).
 - A `<p>` or heading ends at its end tag, at the next block tag, or at the end of its HTML block. Whitespace collapses as in HTML.
 - HTML blocks Markdig starts with `<script>`, `<style>`, `<pre>`, `<textarea>`, a comment or a declaration are still not rendered.
 - A link inside a details summary shows as a link but is not clickable: clicking the summary toggles the details block.
@@ -227,7 +228,7 @@ A `<div align="center">` and its `</div>`, each separated by blank lines from th
 | Mode | HTML renders as | For |
 |------|-----------------|-----|
 | `HtmlMode.SafeSubset` | The [HTML subset](#html-subset) and [details blocks](#html-details-blocks); other elements are dropped and their text shows, as on GitHub. The mode of the default pipeline | READMEs and documentation |
-| `HtmlMode.Escape` | The literal text it was typed as: `<b>x</b>` reads `<b>x</b>`, as with Markdig's `DisableHtml()` | Text whose tags are not meant as HTML, such as chat messages that mention `List<string>` or `<div>` |
+| `HtmlMode.Escape` | The literal text it was typed as: `<b>x</b>` reads `<b>x</b>`, as with Markdig's `DisableHtml()` | Text whose tags are not meant as HTML, such as chat messages that mention `<div>` or `<input>` |
 | `HtmlMode.Ignore` | Nothing: tags are dropped, the text between inline tags shows, and HTML blocks don't show. `<br>` still breaks the line, as markdown has no other way to do so in a table cell | Showing only the markdown |
 
 ```csharp

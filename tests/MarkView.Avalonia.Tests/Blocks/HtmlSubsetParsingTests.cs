@@ -123,6 +123,44 @@ public class HtmlSubsetParsingTests
     }
 
     [Theory]
+    [InlineData("List<string>", "List<string>")]
+    [InlineData("Vec<u8> and Option<T>", "Vec<u8> and Option<T>")]
+    [InlineData("Map<String, List<Item>>", "Map<String, List<Item>>")]
+    [InlineData("a </string> b", "a </string> b")]
+    [InlineData("<T extends Base>x", "<T extends Base>x")]
+    [InlineData("<b>List<string></b>", "Bold(List<string>)")]
+    public void Tags_that_name_no_element_show_as_text(string markdown, string expected)
+    {
+        Assert.Equal(expected, Inlines(markdown));
+    }
+
+    [Theory]
+    [InlineData("a<my-widget>x</my-widget>", "a{<my-widget>}x{</my-widget>}")]
+    [InlineData("<center>x</center>", "{<center>}x{</center>}")]
+    [InlineData("<math><mi>x</mi></math>", "{<math>}{<mi>}x{</mi>}{</math>}")]
+    [InlineData("a<input>b", "a{<input>}b")]
+    public void Custom_obsolete_and_mathml_elements_are_elements(string markdown, string expected)
+    {
+        Assert.Equal(expected, Inlines(markdown));
+    }
+
+    [Fact]
+    public void The_content_of_an_svg_element_is_dropped()
+    {
+        Assert.Equal("ab", Inlines("a<svg viewBox=\"0 0 1 1\"><path d=\"M0 0\"/><text>t</text></svg>b"));
+    }
+
+    [Theory]
+    [InlineData("<p>a <T> b</p>", "P(a <T> b)")]
+    [InlineData("<p><T> b</p>", "P(<T> b)")]
+    [InlineData("<p>a <T></p>", "P(a <T>)")]
+    [InlineData("<p>List<string></p>", "P(List<string>)")]
+    public void Tags_shown_as_text_keep_the_spaces_around_them_in_an_html_block(string html, string expected)
+    {
+        Assert.Equal([expected], Blocks(html));
+    }
+
+    [Theory]
     [InlineData("a<script>alert(1)</script>b", "ab")]
     [InlineData("a<STYLE>p { color: red }</STYLE>b", "ab")]
     [InlineData("a<script><b>x</b> <img src=\"i.png\"></script>b", "ab")]
@@ -309,13 +347,14 @@ public class HtmlSubsetParsingTests
     }
 
     [Theory]
-    [InlineData("<h7>Title</h7>")]
-    [InlineData("<h0>Title</h0>")]
-    [InlineData("<hx>Title</hx>")]
-    [InlineData("<header>Title</header>")]
-    public void Other_tags_starting_with_h_are_not_headings(string html)
+    [InlineData("<h7>Title</h7>", "P(<h7>Title</h7>)")]
+    [InlineData("<h0>Title</h0>", "P(<h0>Title</h0>)")]
+    [InlineData("<hx>Title</hx>", "P(<hx>Title</hx>)")]
+    [InlineData("<header>Title</header>", "P(Title)")]
+    public void Other_tags_starting_with_h_are_not_headings(string html, string expected)
     {
-        Assert.Equal(["P(Title)"], Blocks($"<div>\n{html}\n</div>").Select(Visible));
+        // Tags that name no element show as text.
+        Assert.Equal([expected], Blocks($"<div>\n{html}\n</div>").Select(Visible));
     }
 
     [Fact]

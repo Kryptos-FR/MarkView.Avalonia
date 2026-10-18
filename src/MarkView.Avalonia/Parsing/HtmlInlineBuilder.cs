@@ -19,8 +19,10 @@ namespace MarkView.Avalonia.Parsing;
 /// Tags are matched among the children of each container inline, like elements: an end tag closes the
 /// innermost open element with its name, and the elements opened inside that one and not yet closed are left
 /// open. A tag without a match, and any tag outside the subset, is left as the <see cref="HtmlInline"/> Markdig
-/// parsed, which is not rendered; the text around it still shows. The content of a <c>&lt;script&gt;</c> or
-/// <c>&lt;style&gt;</c> element is dropped with its tags.
+/// parsed, which is not rendered; the text around it still shows. A tag whose name is not one of an element
+/// (see <see cref="HtmlElementNames"/>), such as the <c>&lt;string&gt;</c> of <c>List&lt;string&gt;</c>, becomes
+/// the literal text it was typed as. The content of a <c>&lt;script&gt;</c>, <c>&lt;style&gt;</c> or
+/// <c>&lt;svg&gt;</c> element is dropped with its tags.
 /// </remarks>
 internal static partial class HtmlInlineBuilder
 {
@@ -29,7 +31,7 @@ internal static partial class HtmlInlineBuilder
 
     /// <param name="Tag">The start tag, or <c>null</c> for the container being rebuilt.</param>
     /// <param name="Target">The inline the element's content is added to.</param>
-    /// <param name="Drops">Whether the content is dropped: inside a <c>&lt;script&gt;</c> or <c>&lt;style&gt;</c>.</param>
+    /// <param name="Drops">Whether the content is dropped: inside a <c>&lt;script&gt;</c>, <c>&lt;style&gt;</c> or <c>&lt;svg&gt;</c>.</param>
     private readonly record struct Frame(HtmlTag? Tag, ContainerInline Target, bool Drops);
 
     /// <summary>
@@ -47,11 +49,9 @@ internal static partial class HtmlInlineBuilder
         {
             if (tokens[i].Tag is { } tag)
             {
-                if (tag.IsEnd)
-                    continue;
-                if (tag.Name == "br")
+                if (tag is { IsEnd: false, Name: "br" })
                     afterSpace = true;
-                else if (tag.Name == "img")
+                else if (ShowsSomething(tag))
                     afterSpace = false;
                 continue;
             }
@@ -70,9 +70,9 @@ internal static partial class HtmlInlineBuilder
         {
             if (tokens[i].Tag is { } tag)
             {
-                if (!tag.IsEnd && tag.Name == "br")
+                if (tag is { IsEnd: false, Name: "br" })
                     atLineEnd = true;
-                else if (!tag.IsEnd && tag.Name == "img")
+                else if (ShowsSomething(tag))
                     atLineEnd = false;
                 continue;
             }
@@ -130,11 +130,16 @@ internal static partial class HtmlInlineBuilder
             var tag = tags[i];
             if (!matched[i])
             {
-                Append(frames.Peek(), tag is { IsEnd: false } ? CreateVoid(tag, children[i]) : children[i]);
+                Append(frames.Peek(), tag switch
+                {
+                    not null when ShowsAsText(tag) => new LiteralInline(((HtmlInline)children[i]).Tag),
+                    { IsEnd: false } => CreateVoid(tag, children[i]),
+                    _ => children[i],
+                });
             }
             else if (!tag!.IsEnd)
             {
-                frames.Push(new Frame(tag, CreateElement(tag), frames.Peek().Drops || tag.Name is "script" or "style"));
+                frames.Push(new Frame(tag, CreateElement(tag), frames.Peek().Drops || tag.Name is "script" or "style" or "svg"));
             }
             else
             {
@@ -176,7 +181,16 @@ internal static partial class HtmlInlineBuilder
     }
 
     /// <summary>Whether <paramref name="name"/> is an element of the subset with content, between two tags.</summary>
-    private static bool IsElement(string name) => name is "a" or "code" or "script" or "style" || FormattingKind(name) is not null;
+    private static bool IsElement(string name) => name is "a" or "code" or "script" or "style" or "svg" || FormattingKind(name) is not null;
+
+    /// <summary>
+    /// Whether <paramref name="tag"/> is not HTML anyone meant, such as the <c>&lt;string&gt;</c> of
+    /// <c>List&lt;string&gt;</c>, and shows as the text it was typed as.
+    /// </summary>
+    private static bool ShowsAsText(HtmlTag tag) => !HtmlElementNames.Contains(tag.Name);
+
+    /// <summary>Whether <paramref name="tag"/> shows something: an image, or a tag shown as text.</summary>
+    private static bool ShowsSomething(HtmlTag tag) => tag is { IsEnd: false, Name: "img" } || ShowsAsText(tag);
 
     private static HtmlElementKind? FormattingKind(string name) => name switch
     {

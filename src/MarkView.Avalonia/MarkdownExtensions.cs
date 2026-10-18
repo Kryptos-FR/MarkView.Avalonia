@@ -100,9 +100,10 @@ public static class MarkdownExtensions
     /// </list>
     /// Only the <c>href</c>, <c>src</c>, <c>alt</c>, <c>title</c>, <c>width</c>, <c>height</c> and <c>align</c>
     /// attributes are read. Any other tag, and a tag without its match, is dropped, and the text around it
-    /// shows; the content of <c>&lt;script&gt;</c> and <c>&lt;style&gt;</c> is dropped too. Part of
-    /// <see cref="UseGitHubExtensions"/> and <see cref="UseSupportedExtensions"/>; <see cref="UseHtmlMode"/> turns
-    /// it off.
+    /// shows; the content of <c>&lt;script&gt;</c> and <c>&lt;style&gt;</c> is dropped too. So is the content of
+    /// <c>&lt;svg&gt;</c>, but a tag that names no HTML element, such as the <c>&lt;string&gt;</c> of
+    /// <c>List&lt;string&gt;</c>, shows as text. Part of <see cref="UseGitHubExtensions"/> and
+    /// <see cref="UseSupportedExtensions"/>; <see cref="UseHtmlMode"/> turns it off.
     /// </summary>
     public static MarkdownPipelineBuilder UseHtmlSubset(this MarkdownPipelineBuilder builder)
     {
