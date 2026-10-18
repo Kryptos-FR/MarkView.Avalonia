@@ -9,5 +9,8 @@
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="TestAssets\**" />
+    <!-- The streaming equivalence tests stream real documents: the repository's own, not copies. -->
+    <AvaloniaResource Include="..\..\README.md" Link="TestAssets\Streaming\readme.md" />
+    <AvaloniaResource Include="..\..\docs\theming.md" Link="TestAssets\Streaming\theming.md" />
   </ItemGroup>
 </Project>
