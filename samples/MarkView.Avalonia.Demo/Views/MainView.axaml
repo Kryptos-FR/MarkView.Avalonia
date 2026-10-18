@@ -23,109 +23,154 @@
       <TabItem Header="README" />
     </TabControl>
 
-    <!-- Top bar -->
-    <Border DockPanel.Dock="Top" Padding="12,8">
-      <DockPanel>
-        <!-- Find in document: Ctrl+F focuses the box, Enter / Shift+Enter move between matches, Esc clears -->
-        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" Margin="8,0,0,0">
-          <TextBox x:Name="FindBox" Width="180" VerticalAlignment="Center"
-                   PlaceholderText="Find (Ctrl+F)"
-                   AutomationProperties.Name="Find in document"
-                   TextChanged="OnFindTextChanged" KeyDown="OnFindBoxKeyDown" />
-          <Button x:Name="FindPreviousButton" Click="OnFindPreviousClicked" IsEnabled="False"
-                  Width="32" Height="32" Padding="0" VerticalAlignment="Center"
-                  ToolTip.Tip="Previous match (Shift+Enter)" AutomationProperties.Name="Previous match">
-            <Path Data="M3,10 L8,5 L13,10" Width="16" Height="16" StrokeThickness="1.5"
-                  Stroke="{Binding $parent[Button].Foreground}" />
-          </Button>
-          <Button x:Name="FindNextButton" Click="OnFindNextClicked" IsEnabled="False"
-                  Width="32" Height="32" Padding="0" VerticalAlignment="Center"
-                  ToolTip.Tip="Next match (Enter)" AutomationProperties.Name="Next match">
-            <Path Data="M3,6 L8,11 L13,6" Width="16" Height="16" StrokeThickness="1.5"
-                  Stroke="{Binding $parent[Button].Foreground}" />
-          </Button>
-          <TextBlock x:Name="FindStatus" MinWidth="72" VerticalAlignment="Center" />
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <!-- Outline -->
-          <ToggleButton x:Name="OutlineToggle"
-                        Width="32" Height="32" Padding="4">
-            <PathIcon Data="{StaticResource text_bullet_list_tree_regular}" />
-          </ToggleButton>
-          <Popup x:Name="OutlinePopup"
-                 IsOpen="{Binding #OutlineToggle.IsChecked, Mode=TwoWay}" IsLightDismissEnabled="True"
-                 PlacementTarget="{Binding #OutlineToggle}">
-            <Border Background="{DynamicResource MenuFlyoutPresenterBackground}"
-                    BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
-                    BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
-                    CornerRadius="{DynamicResource OverlayCornerRadius}"
-                    Padding="8" MinWidth="260" MaxWidth="360" MaxHeight="420">
-              <DockPanel>
-                <TextBox x:Name="OutlineFilterBox" DockPanel.Dock="Top"
-                         PlaceholderText="Filter headings" Margin="0,0,0,8" />
-                <ScrollViewer>
-                  <ListBox x:Name="OutlineList"
-                           Background="Transparent"
-                           SelectionChanged="OnOutlineSelectionChanged">
-                    <ListBox.ItemsSource>
-                      <MultiBinding Converter="{StaticResource OutlineFilterConverter}">
-                        <Binding ElementName="MarkdownView" Path="TableOfContents" />
-                        <Binding ElementName="OutlineFilterBox" Path="Text" />
-                      </MultiBinding>
-                    </ListBox.ItemsSource>
-                    <ListBox.ItemTemplate>
-                      <DataTemplate DataType="local:OutlineRow">
-                        <TextBlock Text="{Binding Entry.Text}" Margin="{Binding Indent}"
-                                   TextTrimming="CharacterEllipsis" />
-                      </DataTemplate>
-                    </ListBox.ItemTemplate>
-                  </ListBox>
-                </ScrollViewer>
-              </DockPanel>
-            </Border>
-          </Popup>
-          <Button Content="←"
-                  Click="OnGoBackClicked"
-                  IsEnabled="{Binding CanGoBack}"
-                  ToolTip.Tip="Go back"
-                  VerticalAlignment="Center" />
-          <Button Content="→"
-                  Click="OnGoForwardClicked"
-                  IsEnabled="{Binding CanGoForward}"
-                  ToolTip.Tip="Go forward"
-                  VerticalAlignment="Center" />
-          <Button Content="Open file…"
-                  Click="OnOpenFileClicked"
-                  VerticalAlignment="Center" />
-          <ToggleButton IsChecked="{Binding IsLightTheme}"
-                        Content="Light theme"
-                        VerticalAlignment="Center" />
-          <ComboBox SelectedIndex="{Binding ThemePresetIndex}"
-                    ToolTip.Tip="Theme preset"
-                    AutomationProperties.Name="Theme preset"
-                    VerticalAlignment="Center">
-            <ComboBoxItem Content="Default theme" />
-            <ComboBoxItem Content="GitHub theme" />
-          </ComboBox>
-          <ToggleButton IsChecked="{Binding #MarkdownView.AreTaskListsInteractive}"
-                        Content="Clickable tasks"
-                        ToolTip.Tip="Render task-list items as checkboxes you can toggle"
-                        VerticalAlignment="Center" />
-          <ToggleButton IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers}"
-                        Content="Line numbers"
-                        ToolTip.Tip="Number the lines of code blocks"
-                        VerticalAlignment="Center" />
-          <ToggleButton IsChecked="{Binding #MarkdownView.WrapCodeBlockLines}"
-                        Content="Wrap code"
-                        ToolTip.Tip="Wrap code lines longer than their block"
-                        VerticalAlignment="Center" />
-          <ToggleButton IsChecked="{Binding IsCodeHeightLimited}"
-                        Content="Short code blocks"
-                        ToolTip.Tip="Cap code blocks at 160 pixels; taller blocks scroll inside themselves"
-                        VerticalAlignment="Center" />
-        </StackPanel>
-      </DockPanel>
-    </Border>
+    <!-- Top bar: navigation on the left, find in the middle, appearance and view options on the right -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="12,8">
+      <Grid.Styles>
+        <Style Selector="Button.icon, ToggleButton.icon">
+          <Setter Property="Width" Value="32" />
+          <Setter Property="Height" Value="32" />
+          <Setter Property="Padding" Value="0" />
+          <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Path.icon">
+          <Setter Property="Width" Value="16" />
+          <Setter Property="Height" Value="16" />
+          <Setter Property="StrokeThickness" Value="1.5" />
+          <Setter Property="StrokeLineCap" Value="Round" />
+          <Setter Property="StrokeJoin" Value="Round" />
+          <Setter Property="Stroke" Value="{Binding $parent[TemplatedControl].Foreground}" />
+        </Style>
+        <Style Selector=":disabled Path.icon">
+          <Setter Property="Opacity" Value="0.4" />
+        </Style>
+        <!-- The find box's own buttons, flat inside the box -->
+        <Style Selector="TextBox#FindBox Button">
+          <Setter Property="Width" Value="24" />
+          <Setter Property="Height" Value="24" />
+          <Setter Property="Padding" Value="0" />
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="BorderThickness" Value="0" />
+          <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+      </Grid.Styles>
+
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
+        <!-- Outline -->
+        <ToggleButton x:Name="OutlineToggle" Classes="icon" Padding="4"
+                      ToolTip.Tip="Outline" AutomationProperties.Name="Outline">
+          <PathIcon Data="{StaticResource text_bullet_list_tree_regular}" />
+        </ToggleButton>
+        <Popup x:Name="OutlinePopup"
+               IsOpen="{Binding #OutlineToggle.IsChecked, Mode=TwoWay}" IsLightDismissEnabled="True"
+               PlacementTarget="{Binding #OutlineToggle}">
+          <Border Background="{DynamicResource MenuFlyoutPresenterBackground}"
+                  BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
+                  BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
+                  CornerRadius="{DynamicResource OverlayCornerRadius}"
+                  Padding="8" MinWidth="260" MaxWidth="360" MaxHeight="420">
+            <DockPanel>
+              <TextBox x:Name="OutlineFilterBox" DockPanel.Dock="Top"
+                       PlaceholderText="Filter headings" Margin="0,0,0,8" />
+              <ScrollViewer>
+                <ListBox x:Name="OutlineList"
+                         Background="Transparent"
+                         SelectionChanged="OnOutlineSelectionChanged">
+                  <ListBox.ItemsSource>
+                    <MultiBinding Converter="{StaticResource OutlineFilterConverter}">
+                      <Binding ElementName="MarkdownView" Path="TableOfContents" />
+                      <Binding ElementName="OutlineFilterBox" Path="Text" />
+                    </MultiBinding>
+                  </ListBox.ItemsSource>
+                  <ListBox.ItemTemplate>
+                    <DataTemplate DataType="local:OutlineRow">
+                      <TextBlock Text="{Binding Entry.Text}" Margin="{Binding Indent}"
+                                 TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </ScrollViewer>
+            </DockPanel>
+          </Border>
+        </Popup>
+        <Button Classes="icon" Click="OnGoBackClicked" IsEnabled="{Binding CanGoBack}"
+                ToolTip.Tip="Go back" AutomationProperties.Name="Go back">
+          <Path Classes="icon" Data="M13,8 H3 M7.5,3.5 L3,8 L7.5,12.5" />
+        </Button>
+        <Button Classes="icon" Click="OnGoForwardClicked" IsEnabled="{Binding CanGoForward}"
+                ToolTip.Tip="Go forward" AutomationProperties.Name="Go forward">
+          <Path Classes="icon" Data="M3,8 H13 M8.5,3.5 L13,8 L8.5,12.5" />
+        </Button>
+        <Button Content="Open…" Click="OnOpenFileClicked" Margin="4,0,0,0"
+                ToolTip.Tip="Open a Markdown file" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <!-- Find in document: Ctrl+F focuses the box, Enter / Shift+Enter move between matches, Esc clears.
+           Centred, and narrower than the space between the two groups on a wide window. -->
+      <TextBox Grid.Column="1" x:Name="FindBox" MaxWidth="360" Margin="12,0" VerticalAlignment="Center"
+               PlaceholderText="Find (Ctrl+F)"
+               AutomationProperties.Name="Find in document"
+               TextChanged="OnFindTextChanged" KeyDown="OnFindBoxKeyDown">
+        <TextBox.InnerLeftContent>
+          <Path Classes="icon" Margin="8,0,0,0" Opacity="0.7"
+                Data="M6.5,1.5 A5,5 0 1 1 6.5,11.5 A5,5 0 1 1 6.5,1.5 Z M10.2,10.2 L14.5,14.5" />
+        </TextBox.InnerLeftContent>
+        <TextBox.InnerRightContent>
+          <StackPanel Orientation="Horizontal" Margin="0,0,4,0">
+            <TextBlock x:Name="FindStatus" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="12"
+                       Foreground="{DynamicResource TextControlPlaceholderForeground}" />
+            <Button x:Name="FindPreviousButton" Click="OnFindPreviousClicked" IsEnabled="False"
+                    ToolTip.Tip="Previous match (Shift+Enter)" AutomationProperties.Name="Previous match">
+              <Path Classes="icon" Data="M3,10 L8,5 L13,10" />
+            </Button>
+            <Button x:Name="FindNextButton" Click="OnFindNextClicked" IsEnabled="False"
+                    ToolTip.Tip="Next match (Enter)" AutomationProperties.Name="Next match">
+              <Path Classes="icon" Data="M3,6 L8,11 L13,6" />
+            </Button>
+          </StackPanel>
+        </TextBox.InnerRightContent>
+      </TextBox>
+
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+        <!-- Light / dark: the icon shows the current theme -->
+        <Button Classes="icon" Click="OnToggleThemeClicked"
+                ToolTip.Tip="Switch between light and dark" AutomationProperties.Name="Light or dark theme">
+          <Panel>
+            <Path Classes="icon" IsVisible="{Binding IsLightTheme}"
+                  Data="M8,5 A3,3 0 1 1 8,11 A3,3 0 1 1 8,5 Z M8,1 V2.5 M8,13.5 V15 M1,8 H2.5 M13.5,8 H15 M3.05,3.05 L4.1,4.1 M11.9,11.9 L12.95,12.95 M3.05,12.95 L4.1,11.9 M11.9,4.1 L12.95,3.05" />
+            <Path Classes="icon" IsVisible="{Binding !IsLightTheme}"
+                  Data="M9.5,1.5 A6.5,6.5 0 1 0 14.5,10 A5,5 0 0 1 9.5,1.5 Z" />
+          </Panel>
+        </Button>
+        <ComboBox SelectedIndex="{Binding ThemePresetIndex}" VerticalAlignment="Center"
+                  ToolTip.Tip="Theme preset" AutomationProperties.Name="Theme preset">
+          <ComboBoxItem Content="Default" />
+          <ComboBoxItem Content="GitHub" />
+        </ComboBox>
+        <!-- Viewer options that change how the document is drawn -->
+        <DropDownButton VerticalAlignment="Center" Height="32"
+                        ToolTip.Tip="View options" AutomationProperties.Name="View options">
+          <Path Classes="icon"
+                Data="M2,4 H14 M2,8 H14 M2,12 H14 M5,2.5 V5.5 M10.5,6.5 V9.5 M7,10.5 V13.5" />
+          <DropDownButton.Flyout>
+            <MenuFlyout Placement="BottomEdgeAlignedRight">
+              <MenuItem Header="Clickable tasks" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.AreTaskListsInteractive, Mode=TwoWay}"
+                        ToolTip.Tip="Render task-list items as checkboxes you can toggle" />
+              <Separator />
+              <MenuItem Header="Code line numbers" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers, Mode=TwoWay}"
+                        ToolTip.Tip="Number the lines of code blocks" />
+              <MenuItem Header="Wrap long code lines" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.WrapCodeBlockLines, Mode=TwoWay}"
+                        ToolTip.Tip="Wrap code lines longer than their block" />
+              <MenuItem Header="Short code blocks" ToggleType="CheckBox"
+                        IsChecked="{Binding IsCodeHeightLimited, Mode=TwoWay}"
+                        ToolTip.Tip="Cap code blocks at 160 pixels; taller blocks scroll inside themselves" />
+            </MenuFlyout>
+          </DropDownButton.Flyout>
+        </DropDownButton>
+      </StackPanel>
+    </Grid>
 
     <!-- Page content -->
     <Grid>

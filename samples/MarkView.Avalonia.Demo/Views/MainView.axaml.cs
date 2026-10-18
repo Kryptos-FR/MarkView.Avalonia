@@ -76,6 +76,12 @@ public partial class MainView : UserControl
             : $"{MarkdownView.CurrentFindMatchIndex + 1} of {count}";
     }
 
+    private void OnToggleThemeClicked(object? sender, RoutedEventArgs e)
+    {
+        var viewModel = (MainViewModel)DataContext!;
+        viewModel.IsLightTheme = !viewModel.IsLightTheme;
+    }
+
     private void OnGoBackClicked(object? sender, RoutedEventArgs e) =>
         ((MainViewModel)DataContext!).GoBack();
 
