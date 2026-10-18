@@ -278,7 +278,8 @@ MarkdownViewerDefaults.ClearImageCache();    // e.g. after the images behind som
 - An image is cached under its resolved URL (after `BaseUri`), the types of the
   [image loaders](custom-extensions.md#writing-a-custom-image-loader) in use, since another loader
   chain (one with the SVG loader, say) can load the same URL differently, and the
-  [resource resolver](#resource-resolver) they read through. A custom loader whose result
+  [resource resolver](#resource-resolver) they read through. The cache keeps that resolver alive as long as it holds
+  images read through it. A custom loader whose result
   depends on more than the URL and its type (e.g. settings passed to its constructor) should use URLs
   that tell those results apart, or the cache should be cleared when the settings change.
 - Once it holds `ImageCacheSize` images, the least recently used one is evicted first. Evicted images
