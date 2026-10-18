@@ -8,6 +8,8 @@ using Avalonia;
 using Avalonia.Platform;
 using Avalonia.Styling;
 
+using Markdig;
+
 namespace MarkView.Avalonia.Demo;
 
 public sealed class MainViewModel : INotifyPropertyChanged
@@ -265,6 +267,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isCodeHeightLimited;
     private int _themePresetIndex;
     private GitHubPreset? _gitHubTheme;
+    private HtmlMode _htmlMode;
+    private MarkdownPipeline? _pipeline;
 
     public int SelectedIndex
     {
@@ -330,6 +334,35 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         get => _healIncompleteSyntax;
         set => SetField(ref _healIncompleteSyntax, value);
+    }
+
+    /// <summary>
+    /// How the documents treat HTML. The other modes than the default one give the viewer its own pipeline; the
+    /// default one leaves it the app's (<see cref="MarkdownViewerDefaults.Pipeline"/>).
+    /// </summary>
+    public HtmlMode HtmlMode
+    {
+        get => _htmlMode;
+        set
+        {
+            if (!SetField(ref _htmlMode, value)) return;
+            Pipeline = value == HtmlMode.SafeSubset ? null : App.CreatePipeline(value);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsHtmlSafeSubset)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsHtmlEscaped)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsHtmlIgnored)));
+        }
+    }
+
+    // One per radio item of the View options menu: checking one sets the mode, unchecking does nothing.
+    public bool IsHtmlSafeSubset { get => _htmlMode == HtmlMode.SafeSubset; set { if (value) HtmlMode = HtmlMode.SafeSubset; } }
+    public bool IsHtmlEscaped { get => _htmlMode == HtmlMode.Escape; set { if (value) HtmlMode = HtmlMode.Escape; } }
+    public bool IsHtmlIgnored { get => _htmlMode == HtmlMode.Ignore; set { if (value) HtmlMode = HtmlMode.Ignore; } }
+
+    /// <summary>The viewer's pipeline: <c>null</c> for the app's.</summary>
+    public MarkdownPipeline? Pipeline
+    {
+        get => _pipeline;
+        private set => SetField(ref _pipeline, value);
     }
 
     /// <summary>How many characters each step of a replay appends: <see cref="MinReplayChunkSize"/> to <see cref="MaxReplayChunkSize"/>.</summary>

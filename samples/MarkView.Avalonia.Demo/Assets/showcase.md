@@ -77,6 +77,8 @@ Markdown inside a `<div align="right">`, separated from its tags by **blank line
 </div>
 
 <span>Any other tag, such as this</span> <code>&lt;span&gt;</code>, is dropped and its text shows as it is.
+A tag that names no HTML element shows as typed, so List<string> and Option<T> keep their type, even outside backticks.
+Under *View options*, *HTML as text* shows every tag as typed instead, and *No HTML* renders none.
 
 <hr>
 
