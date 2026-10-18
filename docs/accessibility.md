@@ -56,6 +56,7 @@ The viewer is one Tab stop, followed by each link and each focusable control in 
 | `Tab` | Move to the next link. Past the last one, focus leaves the viewer. |
 | `Shift+Tab` | Move to the previous link, then back to the viewer. Entering the viewer this way lands on its last link. |
 | `Enter` | Open the focused link, as a click does: `#anchor` links scroll to their target, and other links raise `LinkClicked`. |
+| Menu key | Open the viewer's [context menu](text-selection.md#context-menu); on a focused link, it offers to copy the link's address. |
 
 The focused link scrolls into view, and a 2px ring outlines each line of its text. The ring uses FluentTheme's `SystemControlFocusVisualPrimaryBrush`, or black/white without FluentTheme. Links in hidden content, such as a collapsed block, are skipped.
 

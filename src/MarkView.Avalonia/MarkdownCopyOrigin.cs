@@ -14,4 +14,7 @@ public enum MarkdownCopyOrigin
 
     /// <summary>The code of a code block, copied with its copy button.</summary>
     CodeBlock,
+
+    /// <summary>The address of a link, copied with the context menu's Copy link.</summary>
+    Link,
 }
