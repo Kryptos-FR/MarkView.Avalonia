@@ -37,7 +37,10 @@ namespace MarkView.Avalonia.Rendering;
 /// nearest open run of its character, as many delimiters as both have, and the delimiters opened
 /// after that one become literal; what is left of it opens when it can. CommonMark's rule of
 /// multiples of 3 is not applied. Other runs of <c>~</c>, and <c>^</c>, <c>+</c> and <c>=</c>, are
-/// literal. A run with nothing after it is not closed: closing it would show nothing.
+/// literal. A run with nothing after it is not closed: closing it would show nothing. When the
+/// content's last line holds only <c>*</c>, <c>_</c> and <c>~</c> runs (and spaces or tabs), the text
+/// is returned as it is: closers appended to that line would make it a thematic break (<c>***</c>) or
+/// a fence (<c>~~~~</c>).
 /// With <see cref="HealingOptions.Math"/>, a run of one or two <c>$</c> and the next run of the same
 /// length enclose a math span, opaque to the other rules; a run with no match, or of three or more, is
 /// literal, and an unmatched one is never closed, since <c>$5</c> is a price. With
@@ -66,6 +69,9 @@ internal static class MarkdownHealer
         var end = text.Length;
         while (end > tailStart && IsWhitespace(text[end - 1]))
             end--;
+
+        if (EndsWithDelimiterOnlyLine(text, tailStart, end))
+            return text;
 
         var backslashes = end - RunStart(text, tailStart, end, '\\');
         if (backslashes % 2 == 1)
@@ -290,6 +296,19 @@ internal static class MarkdownHealer
             else
                 closers.Append(c, count);
         }
+    }
+
+    /// <summary>
+    /// Whether the last line of the content, from the character after the last line break before
+    /// <paramref name="end"/> (or from <paramref name="start"/> when there is none), is not empty and holds
+    /// only <c>*</c>, <c>_</c>, <c>~</c>, spaces and tabs.
+    /// </summary>
+    private static bool EndsWithDelimiterOnlyLine(string text, int start, int end)
+    {
+        var lineStart = end;
+        while (lineStart > start && text[lineStart - 1] is '*' or '_' or '~' or ' ' or '\t')
+            lineStart--;
+        return lineStart < end && (lineStart == start || text[lineStart - 1] is '\n' or '\r');
     }
 
     /// <summary>

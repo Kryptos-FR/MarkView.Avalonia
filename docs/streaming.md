@@ -178,7 +178,8 @@ What is healed:
   closing run, following CommonMark's flanking rules: in short, a run opens when it is followed by
   a non-space character and closes when it is preceded by one, and `_` does neither inside a word.
   `snake_case` and `2 * 3` stay as they are. A run with nothing after it opens nothing, so it
-  gets no closer. Nested emphasis is closed innermost first. Only a run of exactly two `~`
+  gets no closer. A last line made only of `*`, `_` or `~` is left as it is, since closers would
+  turn it into a thematic break or a fence. Nested emphasis is closed innermost first. Only a run of exactly two `~`
   is strikethrough; other runs of `~`, and `^`, `+` and `=`, are left as they are.
 - **Bracket math.** With the Math package's bracket delimiters enabled (`UseMath()` does, unless
   you pass `bracketDelimiters: false`), `\(` and `\[` that are not closed get `\)` and `\]`, the
