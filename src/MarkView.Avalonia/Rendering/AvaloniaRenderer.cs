@@ -290,13 +290,24 @@ public class AvaloniaRenderer : RendererBase
 
     /// <summary>
     /// <c>true</c> while a streaming session renders the document, which may end in the middle of a
-    /// block. Renderers can consult <see cref="IsProvisional"/> to render such a block differently.
+    /// block. Renderers can consult <see cref="IsProvisional"/> to render the blocks that contain the end
+    /// of the text so far differently.
     /// </summary>
     public bool IsStreaming { get; internal set; }
 
     /// <summary>
-    /// True during a session for an object whose block is still open: Markdig's IsOpen flag on the block,
-    /// or a fence with no closing line yet. Inlines resolve to their containing leaf block (ContainerInline.ParentBlock).
+    /// The source position where the block that contains the end of the text starts (the deepest last
+    /// block of the document), or <see cref="int.MaxValue"/> when no block does: outside a session, on
+    /// the final update, or when a blank line follows the last block. Every block whose span ends at or
+    /// after it contains the end of the text. Read by <see cref="IsProvisional"/> while
+    /// <see cref="IsStreaming"/> is <c>true</c>.
+    /// </summary>
+    public int ProvisionalStart { get; internal set; } = int.MaxValue;
+
+    /// <summary>
+    /// True during a session for an object that contains the end of the text so far: the last leaf block
+    /// and every block around it, those whose span ends at or after <see cref="ProvisionalStart"/>; an
+    /// inline is judged by its leaf block (ContainerInline.ParentBlock), and is never provisional outside one.
     /// Always <c>false</c> when <see cref="IsStreaming"/> is <c>false</c>, so renderers can call it unconditionally.
     /// </summary>
     public bool IsProvisional(MarkdownObject obj)
@@ -307,16 +318,18 @@ public class AvaloniaRenderer : RendererBase
         switch (obj)
         {
             case Block block:
-                return block.IsOpen;
+                return ContainsTheEnd(block);
             case Markdig.Syntax.Inlines.Inline inline:
                 var container = inline as Markdig.Syntax.Inlines.ContainerInline ?? inline.Parent;
                 while (container?.Parent is { } parent)
                     container = parent;
-                return container?.ParentBlock?.IsOpen ?? false;
+                return container?.ParentBlock is { } leaf && ContainsTheEnd(leaf);
             default:
                 return false;
         }
     }
+
+    private bool ContainsTheEnd(Block block) => block.Span.End >= ProvisionalStart;
 
     // Placed when rendering starts, after every extension and pipeline.Setup() have installed their
     // renderers, so a fence renderer wins over the other renderers of fenced code blocks (Mermaid,

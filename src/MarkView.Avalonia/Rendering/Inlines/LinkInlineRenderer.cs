@@ -24,6 +24,9 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// Renders a Markdig <see cref="LinkInline"/> as a <see cref="MarkdownHyperlink"/> span or image.
 /// YouTube video links (produced by UseMediaLinks) are rendered as clickable thumbnails.
 /// An image that cannot be loaded is replaced by a <c>markdown-image-failed</c> placeholder.
+/// While <see cref="AvaloniaRenderer.IsProvisional"/> holds for a link or image (its address may still be
+/// growing), a link keeps its text, class and title but gets no <see cref="MarkdownHyperlink.NavigateUri"/>,
+/// and an image (a YouTube one included) is written as its alt text in a plain <see cref="Run"/>, nothing being loaded.
 /// </summary>
 public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {
@@ -37,8 +40,14 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
     protected override void Write(AvaloniaRenderer renderer, LinkInline obj)
     {
+        var provisional = renderer.IsProvisional(obj);
         if (obj.IsImage)
         {
+            if (provisional)
+            {
+                WriteProvisionalImage(renderer, obj);
+                return;
+            }
             var videoId = ExtractYoutubeId(obj.Url);
             if (videoId is not null)
             {
@@ -53,7 +62,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
         var hyperlink = new MarkdownHyperlink
         {
-            NavigateUri = Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri) ? uri : null,
+            NavigateUri = !provisional && Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri) ? uri : null,
             Title = string.IsNullOrEmpty(obj.Title) ? null : obj.Title,
         };
         hyperlink.Classes.Add("markdown-link");
@@ -63,6 +72,17 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         renderer.Pop();
 
         renderer.WriteInline(hyperlink);
+    }
+
+    /// <summary>
+    /// Writes an image of the block that contains the end of the text as its alt text in a plain
+    /// <see cref="Run"/>, or nothing without one: its address may still be growing, so nothing is loaded.
+    /// </summary>
+    private static void WriteProvisionalImage(AvaloniaRenderer renderer, LinkInline obj)
+    {
+        var altText = ExtractAltText(obj);
+        if (!string.IsNullOrEmpty(altText))
+            renderer.WriteInline(new Run(altText));
     }
 
     private static void WriteImage(AvaloniaRenderer renderer, LinkInline obj)

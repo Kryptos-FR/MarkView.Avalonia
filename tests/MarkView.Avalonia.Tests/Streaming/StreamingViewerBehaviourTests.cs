@@ -431,7 +431,9 @@ public class StreamingViewerBehaviourTests
     {
         using var f = Show("");
         var session = f.Viewer.BeginStreaming();
-        session.Append("[a](x)\n\n[b](y)");
+        // The links of the paragraph being streamed are provisional and get no tab stop, so the focused
+        // link sits in a closed item of the list that the next update re-renders.
+        session.Append("[a](x)\n\n- [b](y)\n- c");
         session.ApplyPendingUpdate();
         f.Window.UpdateLayout();
         Assert.Equal(2, f.Targets.Length);

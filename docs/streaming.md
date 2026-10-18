@@ -144,6 +144,88 @@ exception handling instead.
 viewer.AutoScrollToEnd = true;
 ```
 
+## Healing
+
+Text that stops in the middle of a construct parses badly: `` `code `` shows a backtick and the
+words after it as plain text until the second backtick arrives, and `**bold` shows two asterisks.
+Between updates the viewer closes what is left open at the end of the text, so the text renders as
+it will once complete.
+
+Healing is a step of each update, before the parse is rendered:
+
+1. The text is parsed to find the block that contains its end: the last block, unless a blank
+   line follows it.
+2. If that block ends with open syntax, the closers are added to the text, before its trailing
+   whitespace, and the text is parsed again. The second parse only happens when closers were added.
+3. The result is rendered.
+
+Healing only ever adds characters, and only to what is parsed. `Markdown` always holds the text as
+it was received, and the final update, the one `Complete()` applies, renders the text as it is,
+without healing. Only a paragraph or an ATX heading (`# Title`) at the end of the text is healed:
+the text of other blocks, a code block or an HTML block for instance, is left as it is, and so is
+everything before the last block.
+
+What is healed:
+
+- **Code spans.** An unmatched run of backticks is closed with a run of the same length, so
+  `` `code `` becomes `` `code` ``. A run is left as it is when the text ends with a
+  backtick (a run with nothing after it, for instance), as the closer would merge with it into a
+  longer run that closes nothing.
+- **Link and image addresses.** A link or image whose text is closed but whose address is not,
+  such as `[docs](https://example.com/a(b` or `![logo](logo.png "The`, gets the closing quote of
+  its title if one is open and the closing parentheses it needs. Parentheses nest in the address.
+- **Emphasis and strikethrough.** `*`, `_` and `~~` runs that open and are not closed get their
+  closing run, following CommonMark's flanking rules: in short, a run opens when it is followed by
+  a non-space character and closes when it is preceded by one, and `_` does neither inside a word.
+  `snake_case` and `2 * 3` stay as they are. A run with nothing after it opens nothing, so it
+  gets no closer. A last line made only of `*`, `_` or `~` (after a quote or list marker, if any) is
+  left as it is, since closers would turn it into a thematic break or a fence. Nested emphasis is closed innermost first. Only a run of exactly two `~`
+  is strikethrough; other runs of `~`, and `^`, `+` and `=`, are left as they are.
+- **Bracket math.** With the Math package's bracket delimiters enabled (`UseMath()` does, unless
+  you pass `bracketDelimiters: false`), `\(` and `\[` that are not closed get `\)` and `\]`, the
+  rest of the text being the formula. Without the bracket delimiters they are plain escapes and
+  stay as they are. A `\(` with nothing after it is not closed.
+
+What is never healed:
+
+- A bracket that has no address yet, as in `[text` or `[text]`: it may become a link, a reference
+  link, a footnote or a task list item, and the viewer does not guess.
+- An HTML tag or an autolink that is not closed, such as `<span class="a` or `<https://exa`. What
+  comes after it is not healed either, since it may be part of the tag.
+- A reference link or a footnote marker (`[text][ref]`, `[^note]`).
+- `$`, with or without the math extension: an unmatched `$` stays as it is, since `$5` is a price.
+  With the math extension on, `$…$` and `$$…$$` pairs are not scanned for the syntax inside them.
+- A paragraph that ends with an unescaped backslash: a closer written after it would be escaped.
+
+Healing is on by default. Pass `healIncompleteSyntax: false` to render the text as it is:
+
+```csharp
+using var session = viewer.BeginStreaming(healIncompleteSyntax: false);
+```
+
+The healer recognises Markdig's math extension and the Math package's bracket delimiters from the
+viewer's pipeline when the session starts. Set up the pipeline and the extensions before
+`BeginStreaming()`.
+
+## Provisional rendering
+
+A link or an image can still change when the text ends inside it: an address that has not fully
+arrived points somewhere else, or nowhere. During an update, the viewer renders the links and
+images of the block that contains the end of the text as provisional:
+
+- **Links** keep their text and their style, but have no address and no Tab stop, so clicking or
+  tabbing to a link that is not complete does nothing.
+- **Images** show their alt text, and nothing is requested: a half-written address is never
+  fetched.
+
+Provisional applies to every `[text](address)` link and image of that block, bare URLs turned into
+links by the pipeline included, even the ones that were already complete in it. An angle-bracket
+autolink (`<https://…>`) or a footnote reference keeps its address, since it is only parsed once
+complete. A block that was rendered as provisional is never kept as it is, so the next
+update renders it again. Once the text has moved past it, with a blank line or another block, that
+update renders it for real, with the addresses and the images. The final update, from
+`Complete()`, renders nothing as provisional.
+
 ## How rendering works
 
 An update does not patch the previous rendering with a diff of the text. It parses the whole text
@@ -189,10 +271,15 @@ of that block:
 
 - `IsStreaming` is true for every update of a session but the final one. It is false when the
   document is not streamed.
-- `IsProvisional(MarkdownObject)` tells whether a block or an inline is still growing: the block
-  is open, or a fenced code block has no closing fence yet. An inline is judged by the leaf block
-  it sits in. It always returns false when `IsStreaming` is false, so a renderer can call it
-  without checking.
+- `IsProvisional(MarkdownObject)` tells whether a block or an inline contains the end of the text so
+  far: the block that contains it, and every block around it (a heading, or a paragraph and the
+  list item and list that hold it). An inline is judged by its leaf block. A block is no longer
+  provisional once a blank line or another block follows it. It always returns false when
+  `IsStreaming` is false, so a renderer can call it without checking.
+
+A fenced code block is provisional while its fence is open, and also just after the fence closes,
+until a blank line or another block follows. A heading is provisional until the same happens.
+A block that was rendered as provisional is rendered again on the next update.
 
 In this sketch `MyChart` stands for your own control. See
 [custom extensions](custom-extensions.md) for how a renderer is registered.
@@ -208,7 +295,7 @@ public class ChartBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
     {
         var source = obj.Lines.ToString();
 
-        // The data is incomplete until the fence closes: show the text, not a chart.
+        // The fence may be open, or the answer may stop here: show the text, not a chart.
         Control content = renderer.IsProvisional(obj)
             ? new TextBlock { Text = source }
             : new MyChart(source);
@@ -218,5 +305,4 @@ public class ChartBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 }
 ```
 
-Healing of incomplete syntax, and provisional rendering of links, images, Mermaid diagrams and
-formulas, arrive in the next releases.
+Provisional rendering of Mermaid diagrams and formulas arrives in a later release.
