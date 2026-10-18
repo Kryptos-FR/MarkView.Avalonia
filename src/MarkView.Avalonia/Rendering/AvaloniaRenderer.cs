@@ -43,6 +43,12 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     public IResourceResolver? ResourceResolver { get; set; }
 
+    /// <summary>
+    /// Rewrites or drops the URL of each link and image, once resolved against <see cref="BaseUri"/>
+    /// (see <see cref="ResolveUrl"/>). <c>null</c> (the default) keeps every URL.
+    /// </summary>
+    public MarkdownUrlTransform? UrlTransform { get; set; }
+
     /// <summary>The resolver image loaders read through: <see cref="ResourceResolver"/>, then the renderer's own loading.</summary>
     internal IResourceResolver EffectiveResourceResolver =>
         ResourceResolver is { } resolver ? new FallbackResourceResolver(resolver) : DefaultResourceResolver.Instance;
@@ -725,15 +731,29 @@ public class AvaloniaRenderer : RendererBase
     }
 
     /// <summary>
-    /// Resolves a URL against the <see cref="BaseUri"/> if set and the URL is relative.
-    /// The fragment part (everything from <c>#</c> onward) is split off before combining
-    /// with the base URI so that <c>#</c> is never percent-encoded to <c>%23</c>.
+    /// Resolves a URL against the <see cref="BaseUri"/> if set and the URL is relative, then passes it
+    /// through <see cref="UrlTransform"/>. The fragment part (everything from <c>#</c> onward) is split
+    /// off before combining with the base URI so that <c>#</c> is never percent-encoded to <c>%23</c>.
+    /// A same-document anchor (<c>#heading</c>) is returned as is.
     /// </summary>
-    public string ResolveUrl(string url)
+    /// <param name="url">The URL as written in the document.</param>
+    /// <param name="kind">What the URL is used for, given to <see cref="UrlTransform"/>.</param>
+    /// <returns>The URL to use, or <c>null</c> when <see cref="UrlTransform"/> drops it.</returns>
+    public string? ResolveUrl(string url, MarkdownUrlKind kind = MarkdownUrlKind.Link)
     {
         if (url.StartsWith('#'))
             return url; // same-document anchor: never resolve against BaseUri
+        return TransformUrl(ResolveAgainstBase(url), kind);
+    }
 
+    /// <summary>
+    /// Passes <paramref name="url"/>, already resolved, through <see cref="UrlTransform"/>: the URL to use,
+    /// or <c>null</c> when the transform drops it.
+    /// </summary>
+    internal string? TransformUrl(string url, MarkdownUrlKind kind) => UrlTransform is { } transform ? transform(url, kind) : url;
+
+    private string ResolveAgainstBase(string url)
+    {
         if (BaseUri != null && Uri.TryCreate(url, UriKind.Relative, out _))
         {
             // Separate path from fragment before combining to prevent '#' → '%23' encoding.

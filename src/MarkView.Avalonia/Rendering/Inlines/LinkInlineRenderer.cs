@@ -25,6 +25,8 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// YouTube video links (produced by UseMediaLinks) are rendered as clickable thumbnails.
 /// An image that cannot be loaded is replaced by a <c>markdown-image-failed</c> placeholder. With
 /// <see cref="AvaloniaRenderer.IsLazyRenderingEnabled"/>, an image not cached yet starts loading once it nears the viewport.
+/// A link whose URL <see cref="AvaloniaRenderer.UrlTransform"/> drops is written as its text alone, and an image
+/// as its placeholder, without being loaded.
 /// While <see cref="AvaloniaRenderer.IsProvisional"/> holds for a link or image (its address may still be
 /// growing), a link keeps its text, class and title but gets no <see cref="MarkdownHyperlink.NavigateUri"/>,
 /// and an image (a YouTube one included) is written as its alt text in a plain <see cref="Run"/>, nothing being loaded.
@@ -59,11 +61,17 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             return;
         }
 
-        var url = renderer.ResolveUrl(obj.Url ?? string.Empty);
+        // A provisional address is still growing: the transform judges it once complete.
+        var url = provisional ? null : renderer.ResolveUrl(obj.Url ?? string.Empty);
+        if (!provisional && url is null)
+        {
+            renderer.WriteChildren(obj);
+            return;
+        }
 
         var hyperlink = new MarkdownHyperlink
         {
-            NavigateUri = !provisional && Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri) ? uri : null,
+            NavigateUri = url is not null && Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri) ? uri : null,
             Title = string.IsNullOrEmpty(obj.Title) ? null : obj.Title,
         };
         hyperlink.Classes.Add("markdown-link");
@@ -88,7 +96,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
     private static void WriteImage(AvaloniaRenderer renderer, LinkInline obj)
     {
-        var url = renderer.ResolveUrl(obj.Url ?? string.Empty);
+        var url = renderer.ResolveUrl(obj.Url ?? string.Empty, MarkdownUrlKind.Image);
         var altText = ExtractAltText(obj);
 
         var image = new Image();
@@ -122,6 +130,13 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             image.Stretch = Stretch.Uniform;
             // "=WxH" is a ceiling, never a forced upscale, regardless of ImageResizeMode.
             image.StretchDirection = StretchDirection.DownOnly;
+        }
+
+        if (url is null)
+        {
+            renderer.WriteInline(image);
+            ShowFailurePlaceholder(renderer, image, altText);
+            return;
         }
 
         image.Tag = url;
@@ -333,8 +348,18 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
     private static void WriteYoutubeEmbed(AvaloniaRenderer renderer, LinkInline obj, string videoId)
     {
         if (!Uri.TryCreate(obj.Url, UriKind.Absolute, out var videoUri)) return;
+        if (renderer.TransformUrl(videoUri.ToString(), MarkdownUrlKind.Link) is not { } videoUrl
+            || !Uri.TryCreate(videoUrl, UriKind.Absolute, out videoUri))
+        {
+            // Without its link, the thumbnail would be a picture nobody asked for: written as a dropped image.
+            var image = new Image();
+            image.Classes.Add("markdown-image");
+            renderer.WriteInline(image);
+            ShowFailurePlaceholder(renderer, image, ExtractAltText(obj));
+            return;
+        }
 
-        var thumbnailUrl = $"https://img.youtube.com/vi/{videoId}/hqdefault.jpg";
+        var thumbnailUrl = renderer.TransformUrl($"https://img.youtube.com/vi/{videoId}/hqdefault.jpg", MarkdownUrlKind.Image);
 
         var thumbnail = new Image();
         thumbnail.Classes.Add("markdown-youtube-thumbnail");
@@ -372,7 +397,9 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         AutomationProperties.SetControlTypeOverride(button, AutomationControlType.Hyperlink);
         AutomationProperties.SetName(button, string.IsNullOrEmpty(altText) ? videoUri.ToString() : altText);
 
-        StartLoading(renderer, thumbnail, thumbnailUrl);
+        // A thumbnail the URL transform dropped is never loaded.
+        if (thumbnailUrl is not null)
+            StartLoading(renderer, thumbnail, thumbnailUrl);
 
         overlayGrid.Children.Add(thumbnail);
         overlayGrid.Children.Add(playOverlay);
