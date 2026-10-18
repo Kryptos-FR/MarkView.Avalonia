@@ -76,7 +76,10 @@ internal static class MarkdownHealer
         while (i < end)
         {
             var c = text[i];
-            if (options.BracketMath && c == '\\' && i + 1 < end && text[i + 1] is '(' or '[')
+            // Before the escape case, which would skip the backslash and its bracket. A trailing lone
+            // backslash was rejected above, so text[i + 1] exists; an opener with nothing after it stays
+            // literal (closing it would show an empty formula).
+            if (options.BracketMath && c == '\\' && text[i + 1] is '(' or '[' && i + 2 < end)
             {
                 var round = text[i + 1] == '(';
                 var mathEnd = BracketMathEnd(text, i + 2, end, round ? ')' : ']');

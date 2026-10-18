@@ -349,14 +349,14 @@ public class MarkdownHealerTests
     public void Escaped_backslash_at_the_end_still_heals() =>
         Assert.Equal("**a\\\\**", Heal("**a\\\\"));
 
-    private static readonly HealingOptions Math = new(true, false);
+    private static readonly HealingOptions DollarMath = new(true, false);
     private static readonly HealingOptions Bracket = new(true, true);
 
     [Theory]
     [InlineData("$a *b$ *c", "$a *b$ *c*")]
     [InlineData("$$a *b$$ *c", "$$a *b$$ *c*")]
     public void Complete_dollar_math_is_opaque(string text, string expected) =>
-        Assert.Equal(expected, MarkdownHealer.Heal(text, 0, Math));
+        Assert.Equal(expected, MarkdownHealer.Heal(text, 0, DollarMath));
 
     [Theory]
     [InlineData("$5 and *c", "$5 and *c*")]
@@ -365,15 +365,22 @@ public class MarkdownHealerTests
     [InlineData("$a$$ *c", "$a$$ *c*")]
     [InlineData("$$a$ *c", "$$a$ *c*")]
     public void Unclosed_dollar_is_literal_and_never_healed(string text, string expected) =>
-        Assert.Equal(expected, MarkdownHealer.Heal(text, 0, Math));
+        Assert.Equal(expected, MarkdownHealer.Heal(text, 0, DollarMath));
 
     [Fact]
     public void Dollar_run_of_three_is_literal() =>
-        Assert.Equal("$$$a *b$$$ c*", MarkdownHealer.Heal("$$$a *b$$$ c", 0, Math));
+        Assert.Equal("$$$a *b$$$ c*", MarkdownHealer.Heal("$$$a *b$$$ c", 0, DollarMath));
 
     [Fact]
     public void Dollar_math_is_not_opaque_without_the_option() =>
         Assert.Equal("$a *b$ c*", MarkdownHealer.Heal("$a *b$ c", 0, None));
+
+    [Theory]
+    [InlineData("\\(")]
+    [InlineData("a \\[")]
+    [InlineData("a \\( ")]
+    public void Bracket_math_opener_at_the_end_is_left_alone(string text) =>
+        Assert.Same(text, MarkdownHealer.Heal(text, 0, Bracket));
 
     [Theory]
     [InlineData("\\(x^2", "\\(x^2\\)")]
@@ -407,11 +414,11 @@ public class MarkdownHealerTests
 
     [Fact]
     public void Bracket_math_parenthesis_is_an_escape_without_the_option() =>
-        Assert.Equal("\\(x *y*", MarkdownHealer.Heal("\\(x *y", 0, Math));
+        Assert.Equal("\\(x *y*", MarkdownHealer.Heal("\\(x *y", 0, DollarMath));
 
     [Fact]
     public void Bracket_math_bracket_is_an_escape_without_the_option() =>
-        Assert.Same("\\[x", MarkdownHealer.Heal("\\[x", 0, Math));
+        Assert.Same("\\[x", MarkdownHealer.Heal("\\[x", 0, DollarMath));
 
     [Fact]
     public void OptionsFor_reads_the_pipeline()
