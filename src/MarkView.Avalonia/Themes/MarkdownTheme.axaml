@@ -34,6 +34,10 @@
           <SolidColorBrush x:Key="MarkdownKbdBackground">#151B23</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownKbdForeground">#F0F6FC</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownKbdBorder">#6E7681</SolidColorBrush>
+          <!-- Find matches: text keeps its own colour on them; at least 4.5:1 for the body text, code blocks
+               (MarkdownCodeBlockForeground) and inline code (MarkdownCodeInlineForeground) -->
+          <SolidColorBrush x:Key="MarkdownFindMatchBackground">#453A00</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#652A00</SolidColorBrush>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#F3F3F3</SolidColorBrush>
@@ -63,6 +67,10 @@
           <SolidColorBrush x:Key="MarkdownKbdBackground">#F6F8FA</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownKbdForeground">#1F2328</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownKbdBorder">#818B98</SolidColorBrush>
+          <!-- Find matches: text keeps its own colour on them; at least 4.5:1 for the body text, code blocks
+               (MarkdownCodeBlockForeground) and inline code (MarkdownCodeInlineForeground) -->
+          <SolidColorBrush x:Key="MarkdownFindMatchBackground">#FFF176</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#FFC584</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
       <!-- Code block copy button icons (16x16) -->

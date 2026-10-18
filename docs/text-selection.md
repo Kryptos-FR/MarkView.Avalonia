@@ -56,6 +56,8 @@ Content scrolled out of view inside the document is treated the same way while i
 
 Custom renderers opt their own non-text controls in through the `MarkdownSelection.CopyText` attached property — see [Content that is not text](custom-extensions.md#content-that-is-not-text).
 
+[Finding text](find-in-document.md) searches the same text blocks and draws its matches on the same overlay, under the selection; the two are independent, so finding never changes the selection and selecting never clears the matches.
+
 ## How it works
 
 `DocumentSelectionLayer` is a single transparent `Control` rendered in a single-cell `Grid` on top of the document. It tracks a start and end character offset across the entire flattened character index built by the renderer.

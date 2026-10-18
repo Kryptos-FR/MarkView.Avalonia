@@ -54,6 +54,9 @@
           <SolidColorBrush x:Key="MarkdownKbdBackground">#151B23</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownKbdForeground">#F0F6FC</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownKbdBorder">#656C76</SolidColorBrush>
+          <!-- Find matches: Primer yellow and orange, distinct from highlighted (==…==) text -->
+          <SolidColorBrush x:Key="MarkdownFindMatchBackground">#693E00</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#762D0A</SolidColorBrush>
         </ResourceDictionary>
         <!-- Primer "light default" -->
         <ResourceDictionary x:Key="Light">
@@ -93,6 +96,8 @@
           <SolidColorBrush x:Key="MarkdownKbdBackground">#F6F8FA</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownKbdForeground">#1F2328</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownKbdBorder">#818B98</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindMatchBackground">#FAE17D</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#FFB77C</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

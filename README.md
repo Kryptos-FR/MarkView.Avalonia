@@ -429,6 +429,22 @@ await viewer.CopyToClipboardAsync();
 
 A selection that spans an image copies the image's alt text in its place; math formulas and Mermaid diagrams copy their source. See [Text Selection](docs/text-selection.md) for details.
 
+## Find in Document
+
+`MarkdownViewer` finds text in the rendered document, highlights every match, and scrolls from one
+match to the next, expanding collapsed alerts and details blocks on the way. It has no find bar of
+its own; bind yours to the API:
+
+```csharp
+int count = viewer.Find("markdown");                      // case-insensitive by default
+viewer.Find("Markdown", MarkdownFindOptions.MatchCase | MarkdownFindOptions.WholeWord);
+viewer.FindNext();                                        // or FindPrevious(); wraps around
+int current = viewer.CurrentFindMatchIndex;              // with FindMatchCount, bindable
+viewer.ClearFind();
+```
+
+See [Find in Document](docs/find-in-document.md) for what is searched and the highlight colours.
+
 ## Known Limitations
 
 | Limitation | Detail |

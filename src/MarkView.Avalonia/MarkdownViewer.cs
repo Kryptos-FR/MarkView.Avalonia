@@ -11,6 +11,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 using Markdig;
 using Markdig.Extensions.GenericAttributes;
@@ -45,6 +46,10 @@ public partial class MarkdownViewer : ContentControl
     private const double DragThreshold = 3.0;
 
     private string? _sourceMarkdown;
+
+    // The active search, run again on each new render; null when there is none.
+    private string? _findText;
+    private MarkdownFindOptions _findOptions;
 
     // The markdown last rendered, with the task toggles made since applied to it; assigning the same
     // text to Markdown (as a host writing a toggle back does) then needs no re-render.
@@ -133,6 +138,18 @@ public partial class MarkdownViewer : ContentControl
     public static readonly DirectProperty<MarkdownViewer, IReadOnlyList<TocEntry>> TableOfContentsProperty =
         AvaloniaProperty.RegisterDirect<MarkdownViewer, IReadOnlyList<TocEntry>>(
             nameof(TableOfContents), o => o.TableOfContents);
+
+    /// <summary>
+    /// Defines the <see cref="FindMatchCount"/> property.
+    /// </summary>
+    public static readonly DirectProperty<MarkdownViewer, int> FindMatchCountProperty =
+        AvaloniaProperty.RegisterDirect<MarkdownViewer, int>(nameof(FindMatchCount), o => o.FindMatchCount);
+
+    /// <summary>
+    /// Defines the <see cref="CurrentFindMatchIndex"/> property.
+    /// </summary>
+    public static readonly DirectProperty<MarkdownViewer, int> CurrentFindMatchIndexProperty =
+        AvaloniaProperty.RegisterDirect<MarkdownViewer, int>(nameof(CurrentFindMatchIndex), o => o.CurrentFindMatchIndex);
 
     /// <summary>
     /// Gets or sets the Markdown text to render.
@@ -275,6 +292,26 @@ public partial class MarkdownViewer : ContentControl
         get;
         private set => SetAndRaise(TableOfContentsProperty, ref field, value);
     } = [];
+
+    /// <summary>
+    /// Gets the number of matches of the active search (see <see cref="Find"/>) in the rendered
+    /// document, including those in collapsed content; 0 when there is no active search.
+    /// </summary>
+    public int FindMatchCount
+    {
+        get;
+        private set => SetAndRaise(FindMatchCountProperty, ref field, value);
+    }
+
+    /// <summary>
+    /// Gets the zero-based index of the current match of the active search, the one
+    /// <see cref="FindNext"/> and <see cref="FindPrevious"/> moved to, or -1 when no match is current.
+    /// </summary>
+    public int CurrentFindMatchIndex
+    {
+        get;
+        private set => SetAndRaise(CurrentFindMatchIndexProperty, ref field, value);
+    } = -1;
 
     /// <summary>
     /// Extensions that customise the renderer before each render pass.
@@ -453,6 +490,7 @@ public partial class MarkdownViewer : ContentControl
             _headingEntries = [];
             RebuildTableOfContents();
             _selectionLayer = null;
+            UpdateFind(CurrentFindMatchIndex);
             return;
         }
 
@@ -530,6 +568,10 @@ public partial class MarkdownViewer : ContentControl
         // template, not rebuilt per-render) and would otherwise keep its old offset.
         if (_scrollViewer is not null)
             _scrollViewer.Offset = default;
+
+        // The active search goes on in the new document, keeping its current match where it can,
+        // without scrolling to it.
+        UpdateFind(CurrentFindMatchIndex);
     }
 
     // ── Source positions ──────────────────────────────────────────────────────
@@ -866,6 +908,130 @@ public partial class MarkdownViewer : ContentControl
         return topLevel is not null
             ? _selectionLayer?.CopyToClipboardAsync(topLevel) ?? Task.CompletedTask
             : Task.CompletedTask;
+    }
+
+    // ── Find API ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Finds every occurrence of <paramref name="text"/> in the rendered document and highlights it,
+    /// replacing the previous search. Returns the number of matches, also given by
+    /// <see cref="FindMatchCount"/>. No match is current yet: <see cref="FindNext"/> goes to the first one
+    /// and <see cref="FindPrevious"/> to the last one. An empty <paramref name="text"/> clears the search,
+    /// as <see cref="ClearFind"/> does.
+    /// <para>
+    /// A match never spans two blocks (paragraphs, headings, code blocks, table cells...). Text inside
+    /// collapsed alerts and details blocks is searched too; moving to a match there expands its block.
+    /// The source of formulas and diagrams, and list markers, are not searched.
+    /// </para>
+    /// <para>
+    /// The search stays active until it is cleared: when the document is rendered again (e.g.
+    /// <see cref="Markdown"/> or <see cref="Source"/> changes), it runs again on the new document, which
+    /// keeps the current match index when the new document has that many matches (the last match
+    /// otherwise), without scrolling to it.
+    /// </para>
+    /// </summary>
+    /// <param name="text">The text to find.</param>
+    /// <param name="options">Case sensitivity and whole-word matching; by default the search ignores case and
+    /// matches inside words too.</param>
+    public int Find(string text, MarkdownFindOptions options = MarkdownFindOptions.None)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        _findText = text.Length > 0 ? text : null;
+        _findOptions = options;
+        UpdateFind(-1);
+        return FindMatchCount;
+    }
+
+    /// <summary>
+    /// Makes the next match of the active search current, wrapping around from the last match to the first,
+    /// and scrolls it into view, expanding any collapsed alert or details block it is in. Returns <c>false</c>
+    /// when there is no match.
+    /// </summary>
+    public bool FindNext() => MoveToFindMatch(1);
+
+    /// <summary>
+    /// Makes the previous match of the active search current, wrapping around from the first match to the
+    /// last, and scrolls it into view, expanding any collapsed alert or details block it is in. Returns
+    /// <c>false</c> when there is no match.
+    /// </summary>
+    public bool FindPrevious() => MoveToFindMatch(-1);
+
+    /// <summary>Clears the active search and its highlights.</summary>
+    public void ClearFind()
+    {
+        _findText = null;
+        UpdateFind(-1);
+    }
+
+    /// <summary>
+    /// Runs the active search on the rendered document and makes the match at <paramref name="currentIndex"/>
+    /// current (the last match when there are fewer, none for -1).
+    /// </summary>
+    private void UpdateFind(int currentIndex)
+    {
+        var layer = _selectionLayer;
+        if (_findText is null)
+            layer?.ClearFind();
+        var count = _findText is null || layer is null ? 0 : layer.Find(_findText, _findOptions);
+        FindMatchCount = count;
+        SetCurrentFindMatch(Math.Min(currentIndex, count - 1));
+    }
+
+    private void SetCurrentFindMatch(int index)
+    {
+        if (_selectionLayer is not null)
+            _selectionLayer.CurrentFindMatch = index;
+        CurrentFindMatchIndex = index;
+    }
+
+    private bool MoveToFindMatch(int step)
+    {
+        var count = FindMatchCount;
+        if (count == 0) return false;
+
+        // With no current match (-1), stepping forward reaches the first match; stepping backward
+        // must reach the last one rather than the one before it.
+        var current = CurrentFindMatchIndex;
+        // Stryker disable once Equality : stepping back from the first match reaches the last one either way, and step is never 0
+        var index = current < 0 && step < 0 ? count - 1 : (current + step + count) % count;
+        SetCurrentFindMatch(index);
+        BringFindMatchIntoView(_selectionLayer!.FindMatches[index]);
+        return true;
+    }
+
+    /// <summary>
+    /// Shows <paramref name="match"/>: expands the collapsed alerts and details blocks it is in, then
+    /// scrolls it into view, with a margin above and below it.
+    /// </summary>
+    private void BringFindMatchIntoView(FindMatch match)
+    {
+        const double margin = 16;
+        var textBlock = match.Entry.TextBlock!;
+
+        // A match inside a collapsed block has no position until the block is expanded and laid out.
+        if (CollapsibleAlert.ExpandAncestors(textBlock))
+            textBlock.UpdateLayout();
+
+        // A viewer that is not shown has laid nothing out, so there is nothing to scroll.
+        var matchBounds = match.GetBounds();
+        if (matchBounds is null)
+            return;
+        var bounds = matchBounds.Value.Inflate(new Thickness(0, margin));
+        textBlock.BringIntoView(bounds);
+
+        // The nearest scroll viewer handles that request, and when it had to scroll, the request goes no
+        // further: the document stays where it is when that is the scroll viewer of a code block with a
+        // maximum height, and so does an application's scroll viewer around the viewer when it is the
+        // document's. So each scroll viewer around the match then asks those around it in turn to show
+        // the match where it now is.
+        for (var scrollViewer = textBlock.FindAncestorOfType<ScrollViewer>();
+             scrollViewer is not null;
+             scrollViewer = scrollViewer.FindAncestorOfType<ScrollViewer>())
+        {
+            scrollViewer.UpdateLayout();
+            var transform = textBlock.TransformToVisual(scrollViewer)!.Value;
+            scrollViewer.BringIntoView(bounds.TransformToAABB(transform));
+        }
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
