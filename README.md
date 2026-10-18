@@ -73,13 +73,17 @@ subscribe to override it for specific links by setting `e.Handled = true`:
 viewer.LinkClicked += (_, e) =>
 {
     // e.Url contains the clicked URL
-    if (e.Url.EndsWith(".md"))
+    if (e.Url.StartsWith("myapp://"))
     {
-        viewer.Source = new Uri(e.Url); // render in-place instead of opening externally
+        Router.Navigate(e.Url); // the app's own links
         e.Handled = true;
     }
 };
 ```
+
+Links to other Markdown documents next to the current one (`[Install](install.md)`) open in the
+viewer itself, with `GoBack()`/`GoForward()` history (also on the mouse's back and forward buttons
+and `Alt+Left`/`Alt+Right`). See [Navigating between documents](docs/configuration.md#navigating-between-documents).
 
 `LinkClickedEvent` is an Avalonia **routed event** (bubbles up) — subscribe globally once at app startup to handle all viewers:
 

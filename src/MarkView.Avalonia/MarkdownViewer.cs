@@ -467,10 +467,20 @@ public partial class MarkdownViewer : ContentControl
         _sourceLoadCts = null;
         _sourceMarkdown = null;
 
+        // Back or Forward restores where the document was left; any other change is a new history entry,
+        // and the document being left keeps its offset for Back.
+        var restoredOffset = _historyOffset;
+        if (restoredOffset is null)
+            SaveHistoryOffset();
+
         var source = Source;
         if (source is null)
         {
             RenderMarkdown();
+            if (restoredOffset is { } offset)
+                RestoreOffsetAfterRender(offset);
+            else
+                ResetHistory();
             return;
         }
 
@@ -478,30 +488,14 @@ public partial class MarkdownViewer : ContentControl
         if (!source.IsAbsoluteUri)
             return;
 
-        var fragment = source.Fragment.TrimStart('#');
-        if (source.Scheme == "avares")
-        {
-            // Avalonia parses avares:// with GenericUriParserOptions.NoFragment, which keeps
-            // "#fragment" in the resource path; split it off the original string instead.
-            var hashIndex = source.OriginalString.IndexOf('#');
-            if (hashIndex >= 0)
-            {
-                fragment = source.OriginalString[(hashIndex + 1)..];
-                source = new Uri(source.OriginalString[..hashIndex]);
-            }
-        }
-        else if (fragment.Length > 0)
-        {
-            source = new Uri(source.GetLeftPart(UriPartial.Query));
-        }
-
+        var (document, fragment) = SplitFragment(source);
         var cts = new CancellationTokenSource();
         _sourceLoadCts = cts;
         var custom = CustomResourceResolver;
         IResourceResolver resolver = custom is null ? DefaultResourceResolver.Instance : new FallbackResourceResolver(custom);
         // Neither throws: the default resolver fails its task, and the fallback wrapper, an async method,
         // turns whatever the application's resolver throws into a failed task.
-        var opening = resolver.OpenAsync(source, cts.Token);
+        var opening = resolver.OpenAsync(document, cts.Token);
 
         // Completed already (avares://, or a resolver reading from memory): render before the setter returns.
         if (opening.IsCompleted)
@@ -513,14 +507,13 @@ public partial class MarkdownViewer : ContentControl
                 return;
             using (var reader = new StreamReader(stream))
                 _sourceMarkdown = reader.ReadToEnd();
-            RenderMarkdown();
-            ScrollToAnchorAfterRender(fragment);
+            OnSourceLoaded(source, fragment, restoredOffset);
             return;
         }
-        _ = LoadFromUriAsync(opening, fragment, cts);
+        _ = LoadFromUriAsync(opening, source, fragment, restoredOffset, cts);
     }
 
-    private async Task LoadFromUriAsync(Task<Stream?> opening, string fragment, CancellationTokenSource cts)
+    private async Task LoadFromUriAsync(Task<Stream?> opening, Uri source, string fragment, Vector? restoredOffset, CancellationTokenSource cts)
     {
         try
         {
@@ -533,8 +526,7 @@ public partial class MarkdownViewer : ContentControl
             if (!cts.IsCancellationRequested)
             {
                 _sourceMarkdown = text;
-                RenderMarkdown();
-                ScrollToAnchorAfterRender(fragment);
+                OnSourceLoaded(source, fragment, restoredOffset);
             }
         }
         // Whatever the resolver throws is a failed load, which keeps the current document: this task is
@@ -542,6 +534,23 @@ public partial class MarkdownViewer : ContentControl
         catch (Exception)
         {
         }
+    }
+
+    /// <summary>
+    /// Renders the document just loaded for <paramref name="source"/>, and scrolls it back where it was left
+    /// when Back or Forward loaded it, else to its fragment, recording it in the history. A document that
+    /// fails to load is never recorded.
+    /// </summary>
+    private void OnSourceLoaded(Uri source, string fragment, Vector? restoredOffset)
+    {
+        RenderMarkdown();
+        if (restoredOffset is { } offset)
+        {
+            RestoreOffsetAfterRender(offset);
+            return;
+        }
+        RecordHistory(source);
+        ScrollToAnchorAfterRender(fragment);
     }
 
     // Anchor targets are only positioned after the next layout pass, so scrolling
@@ -565,6 +574,9 @@ public partial class MarkdownViewer : ContentControl
         if (_sourceMarkdown is null && string.Equals(Markdown, _renderedMarkdown, StringComparison.Ordinal))
             return;
         RenderMarkdown();
+        // Another text is another document: the places recorded in the previous one are gone.
+        if (Source is null)
+            ResetHistory();
     }
 
     internal void RenderMarkdown()
@@ -1193,6 +1205,7 @@ public partial class MarkdownViewer : ContentControl
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
+        if (!e.Handled && HandleNavigationKey(e)) { e.Handled = true; return; }
         var hotkeys = Application.Current?.PlatformSettings?.HotkeyConfiguration;
         if (hotkeys is null) return;
         if (hotkeys.Copy.Any(g => g.Matches(e))) { _ = CopyToClipboardAsync(); e.Handled = true; }
@@ -1205,7 +1218,7 @@ public partial class MarkdownViewer : ContentControl
     {
         if (e.Url.StartsWith('#'))
         {
-            ScrollToAnchor(e.Url[1..]);
+            NavigateToAnchor(e.Url[1..]);
             e.Handled = true;
             return;
         }
@@ -1214,11 +1227,11 @@ public partial class MarkdownViewer : ContentControl
         RaiseEvent(e);
         if (e.Handled) return;
 
-        // No subscriber intercepted the link (e.g. to render a local document in-place) —
-        // the platform launcher is the only cross-platform way to open an external URI
+        // No subscriber intercepted the link: a Markdown document of the same origin opens in the viewer.
+        // Otherwise the platform launcher is the only cross-platform way to open an external URI
         // (desktop shell, mobile intent, or browser new-tab). It opens whatever the OS has a handler
         // for, a file:// executable or an installer protocol included, so only allowed schemes go to it.
-        if (!Uri.TryCreate(e.Url, UriKind.Absolute, out var uri)
+        if (!Uri.TryCreate(e.Url, UriKind.Absolute, out var uri) || TryNavigate(uri)
             || !MarkdownViewerDefaults.LaunchableLinkSchemes.Contains(uri.Scheme))
             return;
         await LaunchUri(uri);
