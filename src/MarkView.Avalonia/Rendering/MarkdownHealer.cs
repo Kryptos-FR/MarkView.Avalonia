@@ -28,6 +28,16 @@ namespace MarkView.Avalonia.Rendering;
 /// link, a footnote or a task list item. An HTML tag or autolink (<c>&lt;</c> followed by a letter,
 /// <c>/</c>, <c>!</c> or <c>?</c>) is opaque up to its <c>&gt;</c>; one without it ends the scan, so
 /// nothing after it is healed.
+/// A run of <c>*</c> or <c>_</c>, or exactly <c>~~</c>, opens or closes emphasis (strikethrough)
+/// following CommonMark's flanking rules, the start of the text and the end of the content counting
+/// as whitespace: <c>*</c> and <c>~~</c> open when left-flanking and close when right-flanking;
+/// <c>_</c> does not open or close inside a word (<c>snake_case</c>). A closing run consumes the
+/// nearest open run of its character, as many delimiters as both have, and the delimiters opened
+/// after that one become literal; what is left of it opens when it can. CommonMark's rule of
+/// multiples of 3 is not applied. Other runs of <c>~</c>, and <c>^</c>, <c>+</c> and <c>=</c>, are
+/// literal. A run with nothing after it is not closed: closing it would show nothing.
+/// When the content ends with an unescaped backslash, the text is returned as it is, since any closer
+/// written after it would be escaped.
 /// </remarks>
 internal static class MarkdownHealer
 {
@@ -48,6 +58,10 @@ internal static class MarkdownHealer
         var end = text.Length;
         while (end > tailStart && IsWhitespace(text[end - 1]))
             end--;
+
+        var backslashes = end - RunStart(text, tailStart, end, '\\');
+        if (backslashes % 2 == 1)
+            return text;
 
         var open = new List<(char Char, int Count)>();
         var i = tailStart;
@@ -82,6 +96,20 @@ internal static class MarkdownHealer
                     open.Add(('`', length));
                     break;
                 }
+            }
+            else if (c is '*' or '_' or '~')
+            {
+                var runEnd = RunEnd(text, i, end, c);
+                var length = runEnd - i;
+                if (c != '~' || length == 2)
+                {
+                    var (canOpen, canClose) = Flanking(text, i, runEnd, end, c);
+                    if (canClose)
+                        length = Close(open, c, length);
+                    if (canOpen && length > 0)
+                        open.Add((c, length));
+                }
+                i = runEnd;
             }
             else if (c == '<' && i + 1 < end && IsTagStart(text[i + 1]))
             {
@@ -214,6 +242,79 @@ internal static class MarkdownHealer
             i++;
         return i;
     }
+
+    /// <summary>
+    /// The index of the first character of the run of <paramref name="c"/> that ends just before
+    /// <paramref name="end"/>, not looking before <paramref name="start"/>.
+    /// </summary>
+    private static int RunStart(string text, int start, int end, char c)
+    {
+        var i = end;
+        while (i > start && text[i - 1] == c)
+            i--;
+        return i;
+    }
+
+    /// <summary>
+    /// Whether the delimiter run of <paramref name="c"/> between <paramref name="start"/> and
+    /// <paramref name="runEnd"/> can open and can close emphasis, following CommonMark's definitions of
+    /// left- and right-flanking runs. The start of the text and <paramref name="end"/>, the end of the
+    /// content, count as whitespace; the character before <paramref name="start"/> is read even when it
+    /// lies before the scanned tail.
+    /// </summary>
+    /// <remarks>
+    /// <c>*</c> and <c>~</c> open when left-flanking and close when right-flanking. <c>_</c> opens when
+    /// left-flanking and either not right-flanking or preceded by punctuation, and closes when
+    /// right-flanking and either not left-flanking or followed by punctuation, so it does neither
+    /// inside a word.
+    /// </remarks>
+    private static (bool CanOpen, bool CanClose) Flanking(string text, int start, int runEnd, int end, char c)
+    {
+        var before = start > 0 ? text[start - 1] : ' ';
+        var after = runEnd < end ? text[runEnd] : ' ';
+        var spaceBefore = char.IsWhiteSpace(before);
+        var spaceAfter = char.IsWhiteSpace(after);
+        var punctuationBefore = IsPunctuation(before);
+        var punctuationAfter = IsPunctuation(after);
+
+        var left = !spaceAfter && (!punctuationAfter || spaceBefore || punctuationBefore);
+        var right = !spaceBefore && (!punctuationBefore || spaceAfter || punctuationAfter);
+        return c == '_'
+            ? (left && (!right || punctuationBefore), right && (!left || punctuationAfter))
+            : (left, right);
+    }
+
+    /// <summary>
+    /// Closes the runs of <paramref name="c"/> still <paramref name="open"/> with a closing run of
+    /// <paramref name="count"/> delimiters. The nearest entry of <paramref name="c"/>, from the last
+    /// opened down, gives up as many delimiters as both have; the entries opened after it are removed,
+    /// since they become literal, and so is the entry itself once it has none left. Delimiters left over
+    /// look further down. When no entry of <paramref name="c"/> is open, nothing is removed.
+    /// </summary>
+    /// <returns>The number of delimiters of the closing run left over.</returns>
+    private static int Close(List<(char Char, int Count)> open, char c, int count)
+    {
+        var k = open.FindLastIndex(entry => entry.Char == c);
+        while (k != -1 && count > 0)
+        {
+            var used = Math.Min(open[k].Count, count);
+            count -= used;
+            var remaining = open[k].Count - used;
+            open.RemoveRange(k + 1, open.Count - k - 1);
+            if (remaining == 0)
+                open.RemoveAt(k);
+            else
+                open[k] = (c, remaining);
+            k = open.FindLastIndex(entry => entry.Char == c);
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="c"/> is punctuation in CommonMark's sense: a Unicode punctuation or
+    /// symbol character, which every ASCII punctuation character is.
+    /// </summary>
+    private static bool IsPunctuation(char c) => char.IsPunctuation(c) || char.IsSymbol(c);
 
     /// <summary>
     /// The index just after the first run of exactly <paramref name="length"/> backticks between

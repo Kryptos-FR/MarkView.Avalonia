@@ -200,6 +200,152 @@ public class MarkdownHealerTests
     public void Less_than_at_the_end_is_literal() =>
         Assert.Same("x <", Heal("x <"));
 
+    [Theory]
+    [InlineData("**b", "**b**")]
+    [InlineData("*i", "*i*")]
+    [InlineData("***bi", "***bi***")]
+    [InlineData("__b", "__b__")]
+    [InlineData("_i", "_i_")]
+    [InlineData("~~s", "~~s~~")]
+    [InlineData("**b *i", "**b *i***")]
+    [InlineData("*i **b", "*i **b***")]
+    [InlineData("**b `c", "**b `c`**")]
+    [InlineData("**b [t](u", "**b [t](u)**")]
+    [InlineData("a **b** *c", "a **b** *c*")]
+    [InlineData("**b\n", "**b**\n")]
+    public void Unmatched_emphasis_is_closed_in_reverse_order_of_opening(string text, string expected) =>
+        Assert.Equal(expected, Heal(text));
+
+    [Theory]
+    [InlineData("snake_case")]
+    [InlineData("2 * 3")]
+    [InlineData("a * b * c")]
+    [InlineData("- item")]
+    [InlineData("* item")]
+    [InlineData("\\*not")]
+    [InlineData("~one")]
+    [InlineData("~~~x")]
+    [InlineData("^sup")]
+    [InlineData("++ins")]
+    [InlineData("==mark")]
+    [InlineData("a_b_c")]
+    public void Runs_that_cannot_open_are_literal(string text) =>
+        Assert.Same(text, Heal(text));
+
+    [Theory]
+    [InlineData("abc **")]
+    [InlineData("abc *")]
+    [InlineData("**")]
+    [InlineData("abc ** ")]
+    public void Delimiter_run_at_the_end_is_left_alone(string text) =>
+        Assert.Same(text, Heal(text));
+
+    [Theory]
+    [InlineData("**a*", "**a**")]
+    [InlineData("*a**", "*a**")]
+    [InlineData("**a** *b", "**a** *b*")]
+    // The closing * takes one * from the **: the two single * entries left open are closed.
+    [InlineData("*a **b*", "*a **b***")]
+    public void Closers_consume_openers_partially(string text, string expected) =>
+        Assert.Equal(expected, Heal(text));
+
+    [Fact]
+    public void Emphasis_opened_inside_a_link_text_is_dropped_when_the_link_closes() =>
+        Assert.Equal("[**a](u)", Heal("[**a](u"));
+
+    [Fact]
+    public void Emphasis_opened_inside_a_bare_bracket_is_still_closed() =>
+        Assert.Equal("[**a**", Heal("[**a"));
+
+    [Fact]
+    public void Intraword_underscore_does_not_close() =>
+        Assert.Equal("_a_b_", Heal("_a_b"));
+
+    [Fact]
+    public void Asterisk_after_punctuation_opens() =>
+        Assert.Equal("(*a*", Heal("(*a"));
+
+    [Fact]
+    public void Left_neighbour_before_tail_start_is_consulted() =>
+        // tailStart points at `*` whose left neighbour `x` makes it right-flanking; followed by `y` it is also
+        // left-flanking, and `*` can then open: healed. (With `_` it could not: intraword.)
+        Assert.Equal("x*y*", Heal("x*y", tailStart: 1));
+
+    [Fact]
+    public void Underscore_with_a_word_before_tail_start_is_intraword() =>
+        Assert.Same("x_y", Heal("x_y", tailStart: 1));
+
+    [Fact]
+    public void Closer_drops_the_openers_it_passes() =>
+        // The closing _ passes the * on its way down to the _: the * becomes literal and is not closed.
+        Assert.Same("_a *b_", Heal("_a *b_"));
+
+    [Fact]
+    public void Partial_close_still_drops_the_openers_it_passes() =>
+        // The closing * passes the _ and takes one * from the **: the _ is literal, one * is left open.
+        Assert.Equal("**a _b**", Heal("**a _b*"));
+
+    [Theory]
+    // The * finds no * to close, so the _ below it stays open.
+    [InlineData("_a b*", "_a b*_")]
+    // The * between a and b closes the first one and has none left to open with, so the last * finds none.
+    [InlineData("*a*b _c*", "*a*b _c*_")]
+    public void Closer_without_a_matching_opener_drops_nothing(string text, string expected) =>
+        Assert.Equal(expected, Heal(text));
+
+    [Fact]
+    public void Closer_count_left_over_keeps_looking_down() =>
+        // The ** closes the * and then takes one * from the ** below it.
+        Assert.Equal("**a *b***", Heal("**a *b**"));
+
+    [Fact]
+    public void Closer_count_left_over_opens_when_it_can() =>
+        // The ** after a closes the * with one of its two and opens with the other.
+        Assert.Equal("*a**b*", Heal("*a**b"));
+
+    [Fact]
+    public void Strikethrough_closes_like_emphasis() =>
+        Assert.Equal("~~a~~ ~~b~~", Heal("~~a~~ ~~b"));
+
+    [Fact]
+    public void Link_closing_drops_only_the_entries_of_its_own_bracket() =>
+        // The inner bracket's address closes; the ** opened inside the outer bracket is still open.
+        Assert.Equal("[**a [b](u)**", Heal("[**a [b](u"));
+
+    [Theory]
+    // Next is punctuation, previous is whitespace: left-flanking.
+    [InlineData("a *(b", "a *(b*")]
+    // Between two punctuation characters _ is both left- and right-flanking, and opens since punctuation precedes it.
+    [InlineData("(_(a", "(_(a_")]
+    // A no-break space is Unicode whitespace: the _ is left-flanking only.
+    [InlineData("a\u00A0_b", "a\u00A0_b_")]
+    // Symbols count as punctuation: as with "(_(a", the _ opens.
+    [InlineData("+_+a", "+_+a_")]
+    public void Flanking_follows_commonmark(string text, string expected) =>
+        Assert.Equal(expected, Heal(text));
+
+    [Theory]
+    // Previous is punctuation, next is whitespace: right-flanking, so the * closes.
+    [InlineData("*(a)* b")]
+    // Between two punctuation characters the * is right-flanking and closes.
+    [InlineData("*(a)*.")]
+    // Between two punctuation characters the _ closes since punctuation follows it.
+    [InlineData("_a._.")]
+    public void Closer_after_punctuation_closes(string text) =>
+        Assert.Same(text, Heal(text));
+
+    [Theory]
+    [InlineData("**a\\")]
+    [InlineData("[t](u\\")]
+    [InlineData("\\")]
+    public void Trailing_backslash_heals_nothing(string text) =>
+        // Any closer written after it would be escaped.
+        Assert.Same(text, Heal(text));
+
+    [Fact]
+    public void Escaped_backslash_at_the_end_still_heals() =>
+        Assert.Equal("**a\\\\**", Heal("**a\\\\"));
+
     [Fact]
     public void TailBlock_is_the_paragraph_at_the_end()
     {
