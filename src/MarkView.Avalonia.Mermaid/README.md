@@ -57,7 +57,7 @@ The extension targets the diagram types supported by the version of Mermaider th
 - Mind maps (`mindmap`)
 - Timeline (`timeline`)
 
-See the [Mermaid documentation](https://mermaid.js.org/intro/) for syntax reference. If a diagram fails to render, the extension falls back to a plain-text block containing the original source.
+See the [Mermaid documentation](https://mermaid.js.org/intro/) for syntax reference. If a diagram fails to render, the extension falls back to a plain-text block containing the original source. While a document is streaming, a `mermaid` fence at the end of the text is shown as a highlighted code block and becomes a diagram on the update after its block closes.
 
 ## Theme Awareness
 

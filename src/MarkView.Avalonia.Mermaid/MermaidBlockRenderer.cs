@@ -25,12 +25,15 @@ namespace MarkView.Avalonia.Mermaid;
 /// to SVG via <see cref="MermaidRenderer"/> (pure .NET, no browser required);
 /// non-mermaid fenced blocks are rendered as styled code blocks and respect any
 /// <see cref="AvaloniaRenderer.CodeHighlighter"/> registered by the SyntaxHighlighting extension.
+/// While <see cref="AvaloniaRenderer.IsProvisional"/> holds for a block (it contains the end of the text
+/// being streamed), a Mermaid fence is rendered as a highlighted <c>mermaid</c> code block and no diagram
+/// render is scheduled; it renders as a diagram on the update after its block closes.
 /// </summary>
 public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, FencedCodeBlock obj)
     {
-        if (string.Equals(obj.Info, "mermaid", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(obj.Info, "mermaid", StringComparison.OrdinalIgnoreCase) && !renderer.IsProvisional(obj))
             WriteMermaid(renderer, obj);
         else
             WriteStandardCodeBlock(renderer, obj);
