@@ -956,7 +956,7 @@ public partial class MarkdownViewer : ContentControl
         // never changes the tracked element; only setting Cursor on mstb itself refreshes it.
         var origin = mstb.TranslatePoint(new Point(0, 0), _selectionLayer) ?? default;
         var hyperlink = mstb.HitTestHyperlink(posInLayer - origin);
-        mstb.Cursor = hyperlink != null ? HandCursor : Cursor.Default;
+        mstb.Cursor = hyperlink?.NavigateUri != null ? HandCursor : Cursor.Default;
     }
 
     private void TryFireHyperlinkClick(Point posInLayer)

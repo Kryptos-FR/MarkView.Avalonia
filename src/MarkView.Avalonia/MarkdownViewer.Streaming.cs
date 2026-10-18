@@ -165,6 +165,7 @@ public partial class MarkdownViewer
         {
             _liveDocument = null;
             _streamingSession = null;
+            _healing = null;
             IsStreaming = false;
             // Assistive technology re-reads the finished document.
             if (ControlAutomationPeer.CreatePeerForElement(this) is MarkdownViewerAutomationPeer peer)
@@ -193,6 +194,7 @@ public partial class MarkdownViewer
         session.Abandon();
         _streamingSession = null;
         _liveDocument = null;
+        _healing = null;
         IsStreaming = false;
     }
 

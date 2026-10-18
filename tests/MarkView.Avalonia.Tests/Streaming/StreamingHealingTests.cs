@@ -6,6 +6,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.Input.Raw;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.VisualTree;
@@ -204,6 +206,28 @@ public class StreamingHealingTests
         f.Window.UpdateLayout();
         Assert.Equal("https://example.com/docs", Hyperlink(f.Viewer, 0).NavigateUri!.ToString());
         Assert.Single(f.Targets);
+    }
+
+    [AvaloniaFact]
+    public void Pointer_over_a_provisional_link_shows_no_hand_cursor()
+    {
+        using var f = Show("");
+        var session = f.Viewer.BeginStreaming();
+        session.Append("see [docs](https://example.com/do");
+        session.ApplyPendingUpdate();
+        f.Window.UpdateLayout();
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(TextBlockAt(f.Viewer, 0));
+        Assert.Null(Hyperlink(f.Viewer, 0).NavigateUri);
+
+        // A real PointerMoved routed through the viewer, as HyperlinkHitTestingTests does.
+        var linkRect = textBlock.TextLayout!.HitTestTextRange("see ".Length, "docs".Length).First();
+        var onLink = textBlock.TranslatePoint(linkRect.Center, f.Window) ?? default;
+        var contentGrid = Assert.IsType<Grid>(f.Viewer.Content);
+        var pointer = new Pointer(Pointer.GetNextFreeId(), PointerType.Mouse, true);
+        var props = new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.Other);
+        contentGrid.RaiseEvent(new PointerEventArgs(InputElement.PointerMovedEvent, contentGrid, pointer, f.Window, onLink, 1, props, KeyModifiers.None));
+
+        Assert.NotEqual("Hand", textBlock.Cursor?.ToString());
     }
 
     [AvaloniaFact]
