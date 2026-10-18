@@ -156,39 +156,48 @@ public class AvaloniaRendererStreamingTests
     [AvaloniaFact]
     public void IsProvisional_is_false_when_not_streaming()
     {
-        var renderer = new AvaloniaRenderer();
+        var renderer = new AvaloniaRenderer { ProvisionalStart = 0 };
         var document = Parse("para");
-        Assert.True(document[0].IsOpen);
 
         Assert.False(renderer.IsStreaming);
         Assert.False(renderer.IsProvisional(document[0]));
     }
 
     [AvaloniaFact]
-    public void IsProvisional_is_true_for_an_open_block_when_streaming()
+    public void IsProvisional_is_true_for_the_tail_block_when_streaming()
     {
-        var renderer = new AvaloniaRenderer { IsStreaming = true };
         var document = Parse("para");
+        var renderer = new AvaloniaRenderer { IsStreaming = true, ProvisionalStart = document[0].Span.Start };
 
-        Assert.True(document[0].IsOpen);
         Assert.True(renderer.IsProvisional(document[0]));
     }
 
     [AvaloniaFact]
-    public void IsProvisional_is_false_for_a_closed_block_when_streaming()
+    public void IsProvisional_is_false_for_a_block_before_the_tail_when_streaming()
     {
-        var renderer = new AvaloniaRenderer { IsStreaming = true };
         var document = Parse("para\n\nnext");
+        var renderer = new AvaloniaRenderer { IsStreaming = true, ProvisionalStart = document[1].Span.Start };
 
         Assert.False(renderer.IsProvisional(document[0]));
         Assert.True(renderer.IsProvisional(document[1]));
     }
 
     [AvaloniaFact]
+    public void IsProvisional_is_true_for_a_one_character_tail_block()
+    {
+        var document = Parse("para\n\nx");
+        var renderer = new AvaloniaRenderer { IsStreaming = true, ProvisionalStart = document[1].Span.Start };
+
+        Assert.Equal(document[1].Span.Start, document[1].Span.End);
+        Assert.True(renderer.IsProvisional(document[1]));
+        Assert.False(renderer.IsProvisional(document[0]));
+    }
+
+    [AvaloniaFact]
     public void IsProvisional_resolves_an_inline_through_its_parent_block()
     {
-        var renderer = new AvaloniaRenderer { IsStreaming = true };
         var document = Parse("**a**");
+        var renderer = new AvaloniaRenderer { IsStreaming = true, ProvisionalStart = document[0].Span.Start };
         var paragraph = Assert.IsType<ParagraphBlock>(document[0]);
         var emphasis = Assert.IsType<EmphasisInline>(paragraph.Inline!.FirstChild);
         var literal = Assert.IsType<LiteralInline>(emphasis.FirstChild);
@@ -198,14 +207,52 @@ public class AvaloniaRendererStreamingTests
     }
 
     [AvaloniaFact]
-    public void IsProvisional_is_false_for_an_inline_of_a_closed_block()
+    public void IsProvisional_is_false_for_an_inline_of_a_block_before_the_tail()
     {
-        var renderer = new AvaloniaRenderer { IsStreaming = true };
         var document = Parse("**a**\n\nnext");
+        var renderer = new AvaloniaRenderer { IsStreaming = true, ProvisionalStart = document[1].Span.Start };
         var paragraph = Assert.IsType<ParagraphBlock>(document[0]);
         var emphasis = Assert.IsType<EmphasisInline>(paragraph.Inline!.FirstChild);
 
         Assert.False(renderer.IsProvisional(emphasis.FirstChild!));
         Assert.False(renderer.IsProvisional(paragraph.Inline));
+    }
+
+    [AvaloniaFact]
+    public void IsProvisional_is_false_for_an_inline_outside_any_block()
+    {
+        var renderer = new AvaloniaRenderer { IsStreaming = true, ProvisionalStart = 0 };
+
+        Assert.False(renderer.IsProvisional(new LiteralInline("detached")));
+    }
+
+    [AvaloniaFact]
+    public void IsProvisional_is_true_for_a_closed_heading_at_the_tail()
+    {
+        var document = Parse("para\n\n# title");
+        var renderer = new AvaloniaRenderer { IsStreaming = true, ProvisionalStart = document[1].Span.Start };
+
+        Assert.False(document[1].IsOpen);
+        Assert.True(renderer.IsProvisional(document[1]));
+        Assert.False(renderer.IsProvisional(document[0]));
+    }
+
+    [AvaloniaFact]
+    public void IsProvisional_is_true_for_a_list_whose_last_item_is_the_tail_but_not_for_its_first_item()
+    {
+        var document = Parse("- a\n- b");
+        var list = Assert.IsType<ListBlock>(document[0]);
+        var renderer = new AvaloniaRenderer { IsStreaming = true, ProvisionalStart = list.LastChild!.Span.Start };
+
+        Assert.True(renderer.IsProvisional(list));
+        Assert.False(renderer.IsProvisional(Assert.IsType<ListItemBlock>(list[0]).LastChild!));
+        Assert.True(renderer.IsProvisional(list.LastChild!));
+    }
+
+    [AvaloniaFact]
+    public void IsProvisional_is_false_for_everything_when_no_block_is_the_tail()
+    {
+        var renderer = new AvaloniaRenderer { IsStreaming = true };
+        Assert.False(renderer.IsProvisional(Parse("para")[0]));
     }
 }
