@@ -223,11 +223,13 @@ public partial class MarkdownViewer
     /// scroll back to it; an extent change alone moves no offset and is ignored. The scroll viewer
     /// reports a scroll one layout pass late, against the extent of that pass: when an update has grown
     /// the document in between, the viewer's own <see cref="ScrollViewer.ScrollToEnd"/> reads above the
-    /// new bottom, so it is recognised by the offset it moved to and keeps following.
+    /// new bottom, so it is recognised by the offset it moved to and keeps following. The event also
+    /// bubbles up from scroll viewers inside the content, such as a height-limited code block, whose
+    /// offsets say nothing about the document's end, so only the viewer's own scroll viewer counts.
     /// </summary>
     private void OnScrollChanged(object? sender, ScrollChangedEventArgs e)
     {
-        if (e.OffsetDelta.Y == 0 || sender is not ScrollViewer scrollViewer)
+        if (e.OffsetDelta.Y == 0 || sender is not ScrollViewer scrollViewer || !ReferenceEquals(e.Source, scrollViewer))
             return;
         // Stryker disable once Equality : the reported offset is the requested one; the half pixel only absorbs rounding
         var ownScroll = _ownScrollTargetY is { } target && Math.Abs(scrollViewer.Offset.Y - target) <= 0.5;
