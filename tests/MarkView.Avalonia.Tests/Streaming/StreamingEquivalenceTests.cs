@@ -27,7 +27,7 @@ public class StreamingEquivalenceTests
     public static TheoryData<string, int, bool> Documents()
     {
         var data = new TheoryData<string, int, bool>();
-        foreach (var asset in new[] { "chat.md", "readme.md", "theming.md", "references.md", "abbreviations.md" })
+        foreach (var asset in new[] { "chat.md", "readme.md", "theming.md", "references.md", "abbreviations.md", "healing.md" })
             for (var seed = 1; seed <= 3; seed++)
                 data.Add(asset, seed, false);
         data.Add("chat.md", 1, true);

@@ -126,7 +126,7 @@ internal sealed class LiveDocument
                 LinkLayer.Collect(RootPanel.Children[c]);
 
             _records.Add(new BlockRecord(
-                block.GetType(), block.Span.Start, block.Span.End, block.IsOpen,
+                block.GetType(), block.Span.Start, block.Span.End, block.IsOpen, Renderer.IsProvisional(block),
                 RootPanel.Children.Count - childrenBefore,
                 SelectionLayer.EntryCount - entriesBefore,
                 LinkLayer.StopCount - stopsBefore,
@@ -187,7 +187,10 @@ internal sealed class LiveDocument
     /// pipe table closed by a blank line, a <see cref="LinkReferenceDefinitionGroup"/>, which stays
     /// where its first definition appeared and collects later ones; a new definition changes the
     /// invalidation keys, which already invalidates everything). The span check catches a last block
-    /// Markdig reports closed but that still grows (a list with several items).
+    /// Markdig reports closed but that still grows (a list with several items). A block rendered as
+    /// provisional (see <see cref="AvaloniaRenderer.IsProvisional"/>) is never kept, even when Markdig
+    /// reports it closed (an ATX heading), so that it is rendered again once it no longer contains
+    /// the end of the text.
     /// </summary>
     private int ReusablePrefix(MarkdownDocument document)
     {
@@ -198,7 +201,7 @@ internal sealed class LiveDocument
         {
             var record = _records[k];
             var block = document[k];
-            if (record.WasOpen && k == last)
+            if (record.WasProvisional || (record.WasOpen && k == last))
                 break;
             if (record.SpanEnd != block.Span.End)
                 break;
@@ -225,7 +228,7 @@ internal sealed class LiveDocument
     }
 
     private readonly record struct BlockRecord(
-        Type BlockType, int SpanStart, int SpanEnd, bool WasOpen,
+        Type BlockType, int SpanStart, int SpanEnd, bool WasOpen, bool WasProvisional,
         int ChildCount, int SelectionEntries, int LinkStops, int LinkTargets,
         int Anchors, int Headings, int Slugs);
 }

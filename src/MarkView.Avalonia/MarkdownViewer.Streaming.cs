@@ -6,6 +6,8 @@ using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Threading;
 
+using Markdig.Syntax;
+
 using MarkView.Avalonia.Automation;
 using MarkView.Avalonia.Rendering;
 
@@ -33,6 +35,8 @@ public partial class MarkdownViewer
     // The active session and the document it renders into; the document is null until its first update.
     private MarkdownStreamingSession? _streamingSession;
     private LiveDocument? _liveDocument;
+    // The syntaxes the active session heals, or null when it does not heal.
+    private HealingOptions? _healing;
     // Whether auto-scroll follows the end: true when a session begins, false while the user has
     // scrolled away from the bottom.
     private bool _followEnd;
@@ -75,12 +79,18 @@ public partial class MarkdownViewer
     /// The shortest time between two updates; <see cref="DefaultStreamingUpdateInterval"/> when
     /// <c>null</c>.
     /// </param>
+    /// <param name="healIncompleteSyntax">
+    /// Whether each update closes the inline syntax the text so far leaves open (emphasis, code spans,
+    /// link addresses, bracket math when enabled), so the construct renders as it will once complete.
+    /// The closers are parse input only: <see cref="Markdown"/> holds the text as appended, and the
+    /// final update renders the text as it is.
+    /// </param>
     /// <returns>The session to append text to and complete.</returns>
     /// <exception cref="InvalidOperationException">
     /// A session is already active, or <see cref="Source"/> is set.
     /// </exception>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="updateInterval"/> is not positive.</exception>
-    public MarkdownStreamingSession BeginStreaming(TimeSpan? updateInterval = null)
+    public MarkdownStreamingSession BeginStreaming(TimeSpan? updateInterval = null, bool healIncompleteSyntax = true)
     {
         Dispatcher.UIThread.VerifyAccess();
         if (_streamingSession is not null)
@@ -91,6 +101,7 @@ public partial class MarkdownViewer
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(interval, TimeSpan.Zero, nameof(updateInterval));
 
         _followEnd = true;
+        _healing = healIncompleteSyntax ? MarkdownHealer.OptionsFor(EffectivePipeline) : null;
         _streamingSession = new MarkdownStreamingSession(this, Markdown ?? "", interval);
         IsStreaming = true;
         return _streamingSession;
@@ -105,6 +116,14 @@ public partial class MarkdownViewer
     {
         var markdownText = PreprocessImageSizes(text, out _sourceShifts);
         var document = Markdig.Markdown.Parse(markdownText, EffectivePipeline);
+        // The tail is taken before the second parse: a closer never moves the tail's start.
+        var tail = final ? null : MarkdownHealer.TailBlock(document, markdownText);
+        if (tail is ParagraphBlock or HeadingBlock { IsSetext: false } && _healing is { } options)
+        {
+            var healed = MarkdownHealer.Heal(markdownText, tail.Span.Start, options);
+            if (!ReferenceEquals(healed, markdownText))
+                document = Markdig.Markdown.Parse(healed, EffectivePipeline);
+        }
 
         var install = _liveDocument is null;
         var live = _liveDocument ??= new LiveDocument(CreateRenderer(), ActivateLink);
@@ -114,6 +133,7 @@ public partial class MarkdownViewer
         var focused = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement();
 
         renderer.IsStreaming = !final;
+        renderer.ProvisionalStart = tail?.Span.Start ?? int.MaxValue;
         var result = live.Update(document, focused);
 
         _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);

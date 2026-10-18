@@ -16,6 +16,8 @@ namespace MarkView.Avalonia;
 /// <para>
 /// After each update the viewer's <see cref="MarkdownViewer.Markdown"/> holds the text received so far.
 /// <see cref="Complete"/> (or <see cref="Dispose"/>) applies the final update and ends the session.
+/// Between updates the viewer closes the inline syntax the text leaves open, unless
+/// <see cref="MarkdownViewer.BeginStreaming"/> was called with <c>healIncompleteSyntax: false</c>.
 /// </para>
 /// <para>
 /// Setting <see cref="MarkdownViewer.Markdown"/>, <see cref="MarkdownViewer.Source"/>,
