@@ -468,7 +468,7 @@ foreach (var token in tokens)
 ```
 
 See [Streaming](docs/streaming.md) for completing a session, auto-scroll, what happens to the selection
-and search, how incomplete syntax is healed, and how custom renderers can tell that a block is still growing.
+and search, how incomplete syntax is healed, and how custom renderers can tell that a block contains the end of the text.
 
 ## Accessibility
 

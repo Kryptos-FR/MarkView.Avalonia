@@ -296,8 +296,9 @@ public class AvaloniaRenderer : RendererBase
     public bool IsStreaming { get; internal set; }
 
     /// <summary>
-    /// The source position where the last leaf block of the text so far starts, or
-    /// <see cref="int.MaxValue"/> when none is being streamed: every block whose span ends at or
+    /// The source position where the block that contains the end of the text starts (the deepest last
+    /// block of the document), or <see cref="int.MaxValue"/> when no block does: outside a session, on
+    /// the final update, or when a blank line follows the last block. Every block whose span ends at or
     /// after it contains the end of the text. Read by <see cref="IsProvisional"/> while
     /// <see cref="IsStreaming"/> is <c>true</c>.
     /// </summary>

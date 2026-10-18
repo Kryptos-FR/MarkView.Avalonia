@@ -240,6 +240,9 @@ internal static class MarkdownHealer
     /// index: Markdig moves the footnote group to the end of the document and keeps the link reference
     /// definition group where its first definition was, so index order is not text order.
     /// <see cref="Block.IsOpen"/> is not used either, since Markdig closes an ATX heading at once.
+    /// An ATX heading written with closing hashes (<c># **a #</c>) is never the tail while its line is
+    /// being typed, because Markdig's heading span ends before the closing hashes; healing it would
+    /// append the closers after them and show the hashes as text.
     /// </remarks>
     internal static Block? TailBlock(MarkdownDocument document, string text)
     {

@@ -218,8 +218,10 @@ images of the block that contains the end of the text as provisional:
 - **Images** show their alt text, and nothing is requested: a half-written address is never
   fetched.
 
-Provisional applies to every link and image of that block, including the ones that were already
-complete in it. A block that was rendered as provisional is never kept as it is, so the next
+Provisional applies to every `[text](address)` link and image of that block, bare URLs turned into
+links by the pipeline included, even the ones that were already complete in it. An angle-bracket
+autolink (`<https://…>`) or a footnote reference keeps its address, since it is only parsed once
+complete. A block that was rendered as provisional is never kept as it is, so the next
 update renders it again. Once the text has moved past it, with a blank line or another block, that
 update renders it for real, with the addresses and the images. The final update, from
 `Complete()`, renders nothing as provisional.
