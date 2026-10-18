@@ -50,12 +50,12 @@ public static class ViewportTracking
 
         void OnEffectiveViewportChanged(object? sender, EffectiveViewportChangedEventArgs e)
         {
-            var origin = ReferenceEquals(tracker, element) ? new Point() : element.TranslatePoint(default, tracker!);
-            if (origin is not { } position || !IsNearViewport(new Rect(position, element.Bounds.Size), e.EffectiveViewport))
+            if (element.TranslatePoint(default, tracker!) is not { } position
+                || !IsNearViewport(new Rect(position, element.Bounds.Size), e.EffectiveViewport))
                 return;
             StopTracking();
+            // The detach handler can stay: with nothing tracked, it does nothing.
             element.AttachedToVisualTree -= OnAttached;
-            element.DetachedFromVisualTree -= OnDetached;
             realize();
         }
 

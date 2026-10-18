@@ -3,6 +3,9 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Templates;
+using Avalonia.Data;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.VisualTree;
@@ -123,6 +126,99 @@ public class MarkdownViewerScrollAnchoringTests
     }
 
     [AvaloniaFact]
+    public void Block_growing_above_a_view_inside_one_long_block_does_not_move_that_block()
+    {
+        using var f = new Fixture(Paragraphs("Paragraph", 60));
+        var tall = f.Root.Children[20];
+        tall.MinHeight = 1000;
+        f.Settle();
+        // The view starts and ends inside the tall block: no block starts in it.
+        f.ScrollTo(f.Top(tall) + 300);
+        var top = f.Top(tall);
+
+        f.Root.Children[1].MinHeight = 250;
+        f.Settle();
+
+        Assert.Equal(top, f.Top(tall), 0.5);
+    }
+
+    [AvaloniaFact]
+    public void Block_growing_above_a_view_inside_the_last_block_does_not_move_that_block()
+    {
+        using var f = new Fixture(Paragraphs("Paragraph", 30));
+        var last = f.Root.Children[^1];
+        last.MinHeight = 1000;
+        f.Settle();
+        // No block starts in or below the view.
+        f.ScrollTo(f.Top(last) + 300);
+        var top = f.Top(last);
+
+        f.Root.Children[1].MinHeight = 250;
+        f.Settle();
+
+        Assert.Equal(top, f.Top(last), 0.5);
+    }
+
+    [AvaloniaFact]
+    public void Document_with_no_blocks_lays_out_without_an_anchor()
+    {
+        // A link reference definition renders nothing.
+        using var f = new Fixture("[a]: https://example.com");
+
+        f.Settle();
+
+        Assert.Empty(f.Root.Children);
+        Assert.Equal(0, f.ScrollViewer.Offset.Y);
+    }
+
+    [AvaloniaFact]
+    public void Anchor_removed_from_the_document_gives_way_to_the_block_then_in_view()
+    {
+        using var f = new Fixture(Paragraphs("Paragraph", 60));
+        f.ScrollTo(600);
+        f.Root.Children.Remove(f.FirstInView());
+        f.Settle();
+        var inView = f.FirstInView();
+        var top = f.Top(inView);
+
+        f.Root.Children[1].MinHeight = 250;
+        f.Settle();
+
+        Assert.Equal(top, f.Top(inView), 0.5);
+    }
+
+    [AvaloniaFact]
+    public void Block_growing_in_a_template_that_does_not_scroll_the_content_moves_nothing()
+    {
+        // PART_ScrollViewer is there, but the document is presented outside it.
+        var template = new FuncControlTemplate((_, scope) =>
+        {
+            var presenter = new ContentPresenter { Name = "PART_ContentPresenter" };
+            presenter.Bind(ContentPresenter.ContentProperty, new TemplateBinding(ContentControl.ContentProperty));
+            var scrollViewer = new ScrollViewer { Name = "PART_ScrollViewer" }.RegisterInNameScope(scope);
+            return new Panel { Children = { scrollViewer, presenter } };
+        });
+        var viewer = new MarkdownViewer { Template = template, Markdown = Paragraphs("Paragraph", 60) };
+        var window = new Window { Width = 400, Height = 300, Content = viewer };
+        try
+        {
+            window.Show();
+            var root = Assert.IsType<StackPanel>(Assert.IsType<Grid>(viewer.Content).Children[0]);
+            var scrollViewer = viewer.GetVisualDescendants().OfType<ScrollViewer>().Single();
+
+            root.Children[1].MinHeight = 250;
+            window.UpdateLayout();
+            window.UpdateLayout();
+
+            Assert.Equal(0, scrollViewer.Offset.Y);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void Block_growing_above_the_view_while_it_jumps_away_does_not_move_the_new_view()
     {
         using var f = new Fixture(Paragraphs("Paragraph", 200));
@@ -175,6 +271,26 @@ public class MarkdownViewerScrollAnchoringTests
         var images = string.Join("\n\n", Enumerable.Range(0, 3).Select(_ => $"![tall](tall://{Guid.NewGuid()}.png)"));
         using var f = new Fixture($"{Paragraphs("Before", 60)}\n\n{images}\n\nNeedle\n\n{Paragraphs("After", 60)}");
         var match = f.Paragraph("Needle");
+        var loaded = f.Viewer.GetVisualDescendants().OfType<Image>().ToArray();
+
+        f.Viewer.Find("Needle");
+        f.Viewer.FindNext();
+        f.Window.UpdateLayout();
+        var top = f.Top(match);
+        await AsyncTestHelpers.WaitUntilAsync(() => loaded.All(image => image.Source is not null));
+        f.Settle();
+
+        Assert.Equal(top, f.Top(match), 0.5);
+    }
+
+    [AvaloniaFact]
+    public async Task Images_loading_above_a_find_match_in_a_list_leave_it_where_it_was_shown()
+    {
+        var images = string.Join("\n\n", Enumerable.Range(0, 3).Select(_ => $"![tall](tall://{Guid.NewGuid()}.png)"));
+        using var f = new Fixture($"{Paragraphs("Before", 60)}\n\n{images}\n\n- Item\n- Needle\n\n{Paragraphs("After", 60)}");
+        var match = f.Viewer.GetVisualDescendants().OfType<TextBlock>()
+            .Single(t => t.Inlines is { } inlines && MarkdownSelectableTextBlock.ExtractPlainText(inlines) == "Needle");
+        Assert.NotSame(f.Root, match.GetVisualParent());
         var loaded = f.Viewer.GetVisualDescendants().OfType<Image>().ToArray();
 
         f.Viewer.Find("Needle");

@@ -214,6 +214,21 @@ public class ViewportTrackingTests
     }
 
     [AvaloniaFact]
+    public void Element_realized_then_detached_and_attached_again_is_not_realized_again()
+    {
+        using var scrolled = new Scrolled();
+        scrolled.Window.Show();
+        scrolled.ScrollTo(1000);
+        var panel = (StackPanel)scrolled.ScrollViewer.Content!;
+
+        panel.Children.Remove(scrolled.Element);
+        panel.Children.Add(scrolled.Element);
+        scrolled.Window.UpdateLayout();
+
+        Assert.Equal(1, scrolled.Realized);
+    }
+
+    [AvaloniaFact]
     public void Element_detached_before_it_came_near_stops_tracking_and_tracks_again_when_attached()
     {
         using var scrolled = new Scrolled();

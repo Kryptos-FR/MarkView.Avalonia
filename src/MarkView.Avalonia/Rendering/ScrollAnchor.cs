@@ -115,9 +115,6 @@ internal sealed class ScrollAnchor
             _anchorTop = _anchor.Bounds.Y;
     }
 
-    // A top-level block's top is its own Bounds.Y; anything deeper is translated. Null once the element
-    // has left the document.
-    private static double? TopOf(Control element, Panel root) =>
-        ReferenceEquals(element.GetVisualParent(), root) ? element.Bounds.Y
-        : element.TranslatePoint(default, root)?.Y;
+    // Null once the element has left the document.
+    private static double? TopOf(Control element, Panel root) => element.TranslatePoint(default, root)?.Y;
 }
