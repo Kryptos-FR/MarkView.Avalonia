@@ -201,6 +201,8 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             MaxWidth = image.MaxWidth,
             MaxHeight = image.MaxHeight,
             ClipToBounds = true,
+            // The address, as on the image, for copying the selection as Markdown.
+            Tag = image.Tag,
         };
         placeholder.Classes.Add("markdown-image-failed");
         MarkdownSelection.SetCopyText(placeholder, altText);

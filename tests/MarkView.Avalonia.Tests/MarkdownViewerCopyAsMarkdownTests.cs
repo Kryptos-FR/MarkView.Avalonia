@@ -9,7 +9,10 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input.Platform;
 using Avalonia.VisualTree;
 
+using Markdig;
+
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Tests.Shared;
 
 using Xunit;
 
@@ -70,6 +73,74 @@ public class MarkdownViewerCopyAsMarkdownTests
         var window = new Window { Width = 600, Height = 400, Content = viewer };
         window.Show();
         return new Fixture(window, viewer);
+    }
+
+    // ── Blocks rebuilt from their controls ────────────────────────────────────
+
+    /// <summary>
+    /// The whole document rebuilt from its controls, as a partly selected block is, rather than copied as its
+    /// source: what <see cref="SelectionMarkdownWriter"/> writes without a source to copy from.
+    /// </summary>
+    private static string Rebuilt(Fixture f)
+    {
+        f.Viewer.SelectAll();
+        var root = Assert.IsAssignableFrom<Panel>(Assert.IsType<Grid>(f.Viewer.Content).Children[0]);
+        return SelectionMarkdownWriter.Write(f.Layer, root);
+    }
+
+    [AvaloniaTheory]
+    [InlineData("# One\n\n## Two\n\n### Three\n\n#### Four\n\n##### Five\n\n###### Six")]
+    [InlineData("> quoted\n>\n> after a blank line")]
+    [InlineData("- a\n\n- b\n\n  more b")]
+    [InlineData("1) one\n2) two\n\n10. ten\n11. eleven")]
+    [InlineData("- [ ] open\n- [x] done")]
+    [InlineData("Intro\n\n````\nuse ``` here\n````")]
+    [InlineData("Intro\n\n```c\nint x;\n```")]
+    [InlineData("| a | b |\n| --- | --- |\n| x \\| y | p<br>q |")]
+    [InlineData("Line one\\\nline two")]
+    [InlineData("Sup <sup>up</sup>, sub <sub>dn</sub>, <ins>ins</ins>, <mark>mark</mark> and <kbd>Ctrl</kbd>")]
+    [InlineData("[a](<my file.md>), [b](<x(1).md>), [c](<>) and <https://example.com/>")]
+    [InlineData("`` ` ``, ``` `` ```, `  x  ` and ` `")]
+    [InlineData("Escaped \\* \\_ \\[ \\] \\< \\~ \\` \\\\ text")]
+    public void Blocks_rebuilt_from_their_controls_read_back_as_the_same_markdown(string markdown)
+    {
+        using var f = Show(markdown, v => v.Pipeline = new MarkdownPipelineBuilder().UseSupportedExtensions().Build());
+
+        Assert.Equal(markdown, Rebuilt(f));
+    }
+
+    [AvaloniaTheory]
+    [InlineData("NOTE")]
+    [InlineData("TIP")]
+    [InlineData("IMPORTANT")]
+    [InlineData("WARNING")]
+    [InlineData("CAUTION")]
+    public void An_alert_rebuilt_from_its_controls_keeps_its_kind(string kind)
+    {
+        var markdown = $"> [!{kind}]\n> Some text\n\nAfter";
+        using var f = Show(markdown, v => v.UseAlertBlocks());
+
+        Assert.Equal(markdown, Rebuilt(f));
+    }
+
+    [AvaloniaFact]
+    public void A_citation_rebuilt_from_its_controls_is_a_cite_element()
+    {
+        using var f = Show("Read \"\"the book\"\" now", v => v.UseCitations());
+
+        Assert.Equal("Read <cite>the book</cite> now", Rebuilt(f));
+    }
+
+    [AvaloniaFact]
+    public async Task An_image_that_could_not_be_loaded_keeps_its_address()
+    {
+        using var f = Show("Intro\n\nSee ![the logo](file:///nonexistent/missing.png) here");
+        await AsyncTestHelpers.WaitUntilAsync(() =>
+            f.Viewer.GetVisualDescendants().OfType<Border>().Any(b => b.Classes.Contains("markdown-image-failed")));
+
+        f.Select("Intro", "her");
+
+        Assert.Equal("Intro\n\nSee ![the logo](file:///nonexistent/missing.png) her", f.Viewer.GetSelectedMarkdown());
     }
 
     // ── Whole blocks ──────────────────────────────────────────────────────────
@@ -527,6 +598,15 @@ public class MarkdownViewerCopyAsMarkdownTests
         Assert.Equal("<html>", System.Text.Encoding.UTF8.GetString(data, Offset("StartHTML:"), 6));
         Assert.Equal(data.Length, Offset("EndHTML:"));
         Assert.Equal(fragment, HtmlClipboardFormat.FragmentOf(data));
+    }
+
+    [Fact]
+    public void A_windows_html_format_fragment_can_end_with_the_data()
+    {
+        // Offsets at the very start and the very end, the last one with no line end after it.
+        const string data = "StartFragment:0\nEndFragment:30";
+
+        Assert.Equal(data, HtmlClipboardFormat.FragmentOf(System.Text.Encoding.UTF8.GetBytes(data)));
     }
 
     [Fact]

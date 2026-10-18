@@ -284,15 +284,17 @@ internal sealed partial class SelectionMarkdownWriter
         return Escape(copyText);
     }
 
-    /// <summary>The address of the image <paramref name="control"/> shows, itself or one of its descendants.</summary>
+    /// <summary>
+    /// The address of the image <paramref name="control"/> shows, itself or one of its descendants, or of the
+    /// placeholder that replaced it when it could not be loaded.
+    /// </summary>
     private static string? FindImageUrl(Control control)
     {
-        if (control.Classes.Contains("markdown-image") && control.Tag is string url)
-            return url;
-        foreach (var descendant in control.GetLogicalDescendants().OfType<Control>())
+        foreach (var candidate in control.GetLogicalDescendants().OfType<Control>().Prepend(control))
         {
-            if (descendant.Classes.Contains("markdown-image") && descendant.Tag is string descendantUrl)
-                return descendantUrl;
+            if ((candidate.Classes.Contains("markdown-image") || candidate.Classes.Contains("markdown-image-failed"))
+                && candidate.Tag is string url)
+                return url;
         }
         return null;
     }
