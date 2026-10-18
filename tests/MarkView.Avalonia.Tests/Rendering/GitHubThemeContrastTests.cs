@@ -63,6 +63,10 @@ public class GitHubThemeContrastTests
                 data.Add(variant, "MarkdownCodeBlockForeground", match, Text);
                 data.Add(variant, "MarkdownCodeInlineForeground", match, Text);
             }
+            data.Add(variant, "MarkdownImageFailedForeground", "Page", Text);
+            data.Add(variant, "MarkdownImageFailedForeground", "MarkdownImageFailedBackground", Text);
+            data.Add(variant, "MarkdownImageFailedBorder", "Page", NonText);
+            data.Add(variant, "MarkdownImageLightboxCloseForeground", "MarkdownImageLightboxCloseBackground over MarkdownImageLightboxBackdrop", NonText);
             foreach (var kind in new[] { "Default", "Note", "Tip", "Important", "Warning", "Caution" })
             {
                 // The alert title is drawn in the bar's colour on the alert background.
