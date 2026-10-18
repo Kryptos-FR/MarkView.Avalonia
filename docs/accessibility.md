@@ -1,6 +1,6 @@
 # Accessibility
 
-`MarkdownViewer` exposes the structure of the rendered document to screen readers, lets keyboard users reach and open every link, ships default colours that meet WCAG 2.2 AA contrast, and switches to a high-contrast palette when the operating system asks for one.
+`MarkdownViewer` exposes the structure of the rendered document to screen readers, lets keyboard users reach and open every link and interactive element, ships default colours that meet WCAG 2.2 AA contrast, and switches to a high-contrast palette when the operating system asks for one. Screen reader and keyboard support don't change how the document looks or behaves with the mouse.
 
 ## Screen readers
 
@@ -20,10 +20,16 @@ Avalonia forwards automation peers to each platform's accessibility API: UI Auto
 | `<details>` (`UseHtmlDetails()`) | `Group`, named by its summary |
 | Code block line numbers | Hidden, so only the code is read |
 | Thematic break | `Separator` |
-| Image | `Image`, named by its alt text. An image with empty alt text (`![](…)`) is decorative and hidden, as browsers do with `alt=""`. |
+| Image | `Image`, named by its alt text. An image with empty alt text (`![](…)`) is decorative and hidden, as browsers do with `alt=""`, unless it can be zoomed. |
+| Zoomable image (`IsImageZoomEnabled`) | `Image`, named by its alt text, with the help text "Zoom". A Tab stop, so never hidden, even without alt text. |
+| Image lightbox | `Image`, named by the image's alt text, or "Image" without one |
+| Image that could not be loaded | `Image`, named by its alt text, with the help text "Image could not be loaded"; hidden without alt text |
+| `<kbd>` (`UseHtmlSubset()`) | `Text`, read as the key's text |
 | YouTube embed | `Hyperlink`, named by its alt text, or by its URL when there is none |
 | Math formula (`MarkView.Avalonia.Math`) | `Image`, named by its TeX source |
 | Mermaid diagram (`MarkView.Avalonia.Mermaid`) | `Image`, named by its diagram source |
+
+The help texts and the lightbox's fallback name are set by `MarkdownTheme.axaml` styles (`Image.markdown-image-zoomable`, `Border.markdown-image-failed`, `.markdown-image-lightbox`), as is the copy button's name, so they can be translated.
 
 To give the document a name of your own, set `AutomationProperties.Name`:
 
@@ -42,7 +48,7 @@ Avalonia 12.1.3 has the following gaps:
 
 ## Keyboard
 
-The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a code block's copy button, an interactive task's check box, a video embed. `Enter` or `Space` folds or unfolds a focused alert or `<details>` block and ticks a focused task; `Enter` or `Space` on the copy button copies the code.
+The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a code block's copy button, an interactive task's check box, a zoomable image, a video embed. `Enter` or `Space` folds or unfolds a focused alert or `<details>` block and ticks a focused task; `Enter` or `Space` on the copy button copies the code, and on an image opens it in the lightbox. In the lightbox, `Tab` moves between the lightbox and its close button only, and `Escape` closes it and gives the focus back to the image.
 
 | Key | Action |
 |---|---|

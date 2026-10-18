@@ -32,6 +32,9 @@ internal sealed class IndexEntry
     public string PlainText => _plainText ?? TextBlock!.Text!;
     public string Separator { get; }
 
+    /// <summary>Whether the entry is a list item's marker (see <see cref="ForMarker"/>).</summary>
+    public bool IsMarker => _plainText is null;
+
     /// <summary>
     /// Text copied in place of each embedded control (e.g. an image's alt text), keyed by its
     /// position in <see cref="PlainText"/>, which holds U+FFFC there to stay aligned with the

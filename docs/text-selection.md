@@ -19,10 +19,10 @@ viewer.SelectAll();
 // Clear the selection
 viewer.ClearSelection();
 
-// Read the current selection
+// Read the current selection (lines separated by '\n')
 string text = viewer.GetSelectedText();
 
-// Copy to clipboard
+// Copy to clipboard (with the platform's line endings, "\r\n" on Windows)
 await viewer.CopyToClipboardAsync();
 ```
 
@@ -37,12 +37,14 @@ All text-bearing block types are registered with the selection layer:
 - List items, including their markers (`•`, `1.`, or the `☑`/`☐` task-list glyph — for a clickable task-list checkbox, its current state) and any code blocks or tables nested inside them
 - Table cells (tab-separated when copying)
 - Footnote definitions
+- The paragraphs and headings of [HTML blocks](configuration.md#html-subset), and the blocks of an aligned `<div>`
 
 Non-text content is copied as a text equivalent:
 
 | Content | Highlighted | Copied as |
 |---------|-------------|-----------|
-| Image (including linked images and YouTube thumbnails) | With the surrounding text | Its alt text; nothing when it has none |
+| Image (including linked images, HTML `<img>` and YouTube thumbnails) | With the surrounding text | Its alt text; nothing when it has none |
+| HTML `<kbd>` key ([HTML subset](configuration.md#html-subset)) | As a whole, with the surrounding text | Its text |
 | Inline math (`MarkView.Avalonia.Math`) | With the surrounding text | Its source between its own delimiters: `$...$`, `\(...\)`, or `\[...\]` within a line |
 | Display math (`MarkView.Avalonia.Math`) | As a whole block | Its source between `$$` lines, or `\[` and `\]` lines |
 | Mermaid diagram (`MarkView.Avalonia.Mermaid`) | As a whole block | Its source in a ```` ```mermaid ```` fence |
@@ -54,12 +56,14 @@ Content scrolled out of view inside the document is treated the same way while i
 
 Custom renderers opt their own non-text controls in through the `MarkdownSelection.CopyText` attached property — see [Content that is not text](custom-extensions.md#content-that-is-not-text).
 
+[Finding text](find-in-document.md) searches the same text blocks and draws its matches on the same overlay, under the selection; the two are independent, so finding never changes the selection and selecting never clears the matches.
+
 ## How it works
 
 `DocumentSelectionLayer` is a single transparent `Control` rendered in a single-cell `Grid` on top of the document. It tracks a start and end character offset across the entire flattened character index built by the renderer.
 
 On `PointerMoved`, the layer calls `TextBlock.TextLayout.HitTestPoint` + `TranslatePoint` for each registered text block to find the nearest character offset, then redraws the selection highlight rectangles using `HitTestTextRange`. Both are limited to the part of each text block that its clipping ancestors inside the document (such as a code block's `ScrollViewer`) leave visible.
 
-On copy, `GetSelectedText()` extracts the substring from each text block's registered text and joins them with newlines (tabs between table cells, a space after a list marker). A list item's marker is registered as its own text block, so it is highlighted with the item and selection offsets inside the item text line up with what is rendered.
+On copy, `GetSelectedText()` extracts the substring from each text block's registered text and joins them with newlines (tabs between table cells, a space after a list marker). Every line ending in the result is `\n`, including those inside code blocks and copy texts. The clipboard, both from `Ctrl+C` and from a code block's copy button, gets the platform's line endings instead (`Environment.NewLine`, so `\r\n` on Windows). A list item's marker is registered as its own text block, so it is highlighted with the item and selection offsets inside the item text line up with what is rendered.
 
 A control embedded in a text block (`InlineUIContainer`) occupies one character position in its `TextLayout`, so it is registered as a U+FFFC placeholder that keeps selection offsets aligned with the layout. A block control with copy text is registered as an entry of its own, one placeholder long, whose bounds are hit-tested and highlighted as a whole. On copy, each placeholder is replaced by the control's `MarkdownSelection.CopyText`.

@@ -182,8 +182,10 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Blockquotes | CommonMark |
 | Ordered and unordered lists | CommonMark, tight and loose |
 | Links and autolinks | CommonMark + extension |
-| Images | CommonMark, remote URLs loaded async |
+| Images | CommonMark, remote URLs loaded async and cached in memory ([image cache](docs/configuration.md#image-cache)) |
 | Image sizing | `![alt](url =WxH)` — inline pixel dimensions, e.g. `=80x80` |
+| Image zoom | Clicking an image opens it in a lightbox over the viewer (`IsImageZoomEnabled`, on by default) |
+| Broken images | An image that fails to load shows a placeholder with its alt text |
 | Thematic breaks | CommonMark |
 | Hard line breaks | CommonMark (`\` or two spaces) |
 | HTML `<br>` / `<br />` | Rendered as line break |
@@ -202,6 +204,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | CJK-friendly emphasis | parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation |
 | YAML front matter | `---` metadata block at the top of a document is parsed and hidden |
 | Collapsible details | HTML `<details>` / `<summary>`, as on GitHub (also `UseHtmlDetails()` on its own) |
+| HTML subset | The HTML READMEs use, with native controls: `<p align="center">` / `<div align>` headers, `<a><img></a>` badges, `<kbd>`, `<sub>`, `<sup>`, `<mark>`, `<b>`, `<code>`, `<hr>`… Nothing runs; only `<img>` sources are fetched (also `UseHtmlSubset()` on its own; see [HTML subset](docs/configuration.md#html-subset)) |
 
 `UseSupportedExtensions()`, the previous default, enables the same features except alerts, footnotes and details, and adds subscript (`~text~`), superscript (`^text^`), underline (`++text++`), highlight (`==text==`) and grid tables.
 
@@ -339,7 +342,16 @@ viewer.Extensions.Add(new MyExtension());
 
 ## Theming / Customisation
 
-Include `MarkdownTheme.axaml` for default styles. Override any style class in your own `Styles` to customise appearance:
+Include `MarkdownTheme.axaml` for default styles. For a document that looks like Markdown on github.com (GitHub's fonts, spacing and Primer colours, in light and dark, with every colour meeting WCAG AA contrast), also include the **GitHub theme preset** after it:
+
+```xml
+<StyleInclude Source="avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml" />
+<StyleInclude Source="avares://MarkView.Avalonia/Themes/GitHubTheme.axaml" />
+```
+
+See [Theme presets](docs/theming.md#theme-presets) for what it changes, and [Colour resources](docs/theming.md#colour-resources) for every colour key you can redefine.
+
+Override any style class in your own `Styles` to customise appearance:
 
 | Style class | Applied to | Controls |
 |-------------|------------|----------|
@@ -362,10 +374,13 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-task-toggle` | Clickable task-list checkbox (`AreTaskListsInteractive`) | `ToggleButton` |
 | `markdown-thematic-break` | Horizontal rules | `Separator` |
 | `markdown-image` | Images | `Image` |
+| `markdown-image-failed` | Placeholder of an image that could not be loaded | `Border` |
+| `markdown-image-lightbox` | Lightbox a clicked image opens in (`IsImageZoomEnabled`) | `Panel` |
 | `markdown-link` | Hyperlinks | `HyperlinkButton` |
 | `markdown-table` | Tables | `Grid` |
 | `markdown-table-cell` | Table cells | `Border` |
 | `markdown-table-header` | Header cells | `Border` |
+| `markdown-table-row-even` | Cells of every second body row (2nd, 4th, …) | `Border` |
 | `markdown-marked` | Highlighted text (`==…==`) | `Span` |
 | `markdown-alert` | Alert block container | `Border` |
 | `markdown-alert-note` … `markdown-alert-caution` | Per-kind border colour | `Border` |
@@ -376,6 +391,7 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-figure-caption` | Figure caption | `TextBlock` |
 | `markdown-abbr` | Abbreviation with tooltip | `TextBlock` |
 | `markdown-footnote-ref` | Footnote reference link | `HyperlinkButton` |
+| `markdown-footnote-separator` | Line above the footnotes (also `markdown-thematic-break`) | `Separator` |
 | `markdown-footnote-group` | Footnote definition list | `StackPanel` |
 | `markdown-footnote-item` | Individual footnote row | `Grid` |
 | `markdown-definition-list` | Definition list | `StackPanel` |
@@ -419,9 +435,25 @@ await viewer.CopyToClipboardAsync();
 
 A selection that spans an image copies the image's alt text in its place; math formulas and Mermaid diagrams copy their source. See [Text Selection](docs/text-selection.md) for details.
 
+## Find in Document
+
+`MarkdownViewer` finds text in the rendered document, highlights every match, and scrolls from one
+match to the next, expanding collapsed alerts and details blocks on the way. It has no find bar of
+its own; bind yours to the API:
+
+```csharp
+int count = viewer.Find("markdown");                      // case-insensitive by default
+viewer.Find("Markdown", MarkdownFindOptions.MatchCase | MarkdownFindOptions.WholeWord);
+viewer.FindNext();                                        // or FindPrevious(); wraps around
+int current = viewer.CurrentFindMatchIndex;              // with FindMatchCount, bindable
+viewer.ClearFind();
+```
+
+See [Find in Document](docs/find-in-document.md) for what is searched and the highlight colours.
+
 ## Accessibility
 
-- **Keyboard.** `Tab` / `Shift+Tab` move through the document's links in reading order, with a focus ring, and `Enter` opens the focused link.
+- **Keyboard.** `Tab` / `Shift+Tab` move through the document's links and interactive elements in reading order, with a focus ring, and `Enter` opens the focused link.
 - **Screen readers.** Headings report their level, and lists, tables, quotes, alerts, images and links report their roles.
 - **Contrast.** Default colours meet WCAG 2.2 AA, and a high-contrast palette follows the OS setting.
 

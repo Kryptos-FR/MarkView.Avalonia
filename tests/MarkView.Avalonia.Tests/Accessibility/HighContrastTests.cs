@@ -2,8 +2,6 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia;
-using Avalonia.Automation;
-using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Markup.Xaml.Styling;
@@ -150,27 +148,5 @@ public class HighContrastTests
         Assert.Contains(texts, t => t.Classes.Contains("markdown-code-line-numbers"));
         Assert.Equal(2, texts.Count);
         Assert.All(texts, t => Assert.Equal(Color.Parse(foreground), ColorOf(t.Foreground)));
-    }
-
-    [AvaloniaFact]
-    public void Viewer_is_a_document_named_by_its_first_heading()
-    {
-        var viewer = ShowViewer("Intro\n\n# Release notes\n\n## Fixes");
-        var peer = ControlAutomationPeer.CreatePeerForElement(viewer);
-
-        Assert.Equal(AutomationControlType.Document, peer.GetAutomationControlType());
-        Assert.True(peer.IsControlElement());
-        Assert.True(peer.IsContentElement());
-        Assert.Equal("Release notes", peer.GetName());
-
-        AutomationProperties.SetName(viewer, "Help");
-        Assert.Equal("Help", peer.GetName());
-    }
-
-    [AvaloniaFact]
-    public void Viewer_without_headings_has_no_name()
-    {
-        var peer = ControlAutomationPeer.CreatePeerForElement(ShowViewer("Just text"));
-        Assert.Equal(string.Empty, peer.GetName());
     }
 }

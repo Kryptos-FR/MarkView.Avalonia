@@ -4,19 +4,26 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
+using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 
 using Markdig.Syntax.Inlines;
+
+using MarkView.Avalonia.Extensions;
+using MarkView.Avalonia.Parsing;
 
 namespace MarkView.Avalonia.Rendering.Inlines;
 
 /// <summary>
 /// Renders a Markdig <see cref="LinkInline"/> as a <see cref="MarkdownHyperlink"/> span or image.
 /// YouTube video links (produced by UseMediaLinks) are rendered as clickable thumbnails.
+/// An image that cannot be loaded is replaced by a <c>markdown-image-failed</c> placeholder.
 /// </summary>
 public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInline>
 {
@@ -79,21 +86,21 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         }
         MarkdownSelection.SetCopyText(image, altText);
 
-        // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor).
-        if (!string.IsNullOrEmpty(obj.Title))
+        // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor), or from the
+        // width and height attributes of an HTML <img>, either of which can be missing.
+        var (width, height) = ExplicitSize(obj);
+        if (width is not null || height is not null)
         {
-            var dim = DimensionTitleRegex().Match(obj.Title);
-            if (dim.Success)
-            {
-                // MaxWidth/MaxHeight (not Width/Height) so the layout box itself shrinks to
-                // the image's native resolution when it's smaller than the requested size —
-                // Width/Height would hard-pin the arranged size regardless of StretchDirection.
-                image.MaxWidth = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
-                image.MaxHeight = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
-                image.Stretch = Stretch.Uniform;
-                // "=WxH" is a ceiling, never a forced upscale, regardless of ImageResizeMode.
-                image.StretchDirection = StretchDirection.DownOnly;
-            }
+            // MaxWidth/MaxHeight (not Width/Height) so the layout box itself shrinks to
+            // the image's native resolution when it's smaller than the requested size —
+            // Width/Height would hard-pin the arranged size regardless of StretchDirection.
+            if (width is not null)
+                image.MaxWidth = width.Value;
+            if (height is not null)
+                image.MaxHeight = height.Value;
+            image.Stretch = Stretch.Uniform;
+            // "=WxH" is a ceiling, never a forced upscale, regardless of ImageResizeMode.
+            image.StretchDirection = StretchDirection.DownOnly;
         }
 
         image.Tag = url;
@@ -110,11 +117,118 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             // started, causing the image to never load.
             if (image.Source != null || cts != null) return;
             cts = new CancellationTokenSource();
-            _ = LoadImageAsync(renderer, image, url, cts.Token);
+            _ = LoadImageAsync(renderer, image, url, cts.Token, () => ShowFailurePlaceholder(image, altText));
         };
         image.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
 
+        // An image inside a link opens the link instead.
+        if (renderer.IsImageZoomEnabled && !IsInsideLink(obj))
+            MakeZoomable(renderer, image);
+
         renderer.WriteInline(image);
+    }
+
+    /// <summary>
+    /// The size an image is capped to: the <see cref="HtmlImageSize"/> of an HTML <c>&lt;img&gt;</c>, or its
+    /// "=WxH" title.
+    /// </summary>
+    private static (int? Width, int? Height) ExplicitSize(LinkInline obj)
+    {
+        if (obj.GetData(typeof(HtmlImageSize)) is HtmlImageSize size)
+            return (size.Width, size.Height);
+        if (!string.IsNullOrEmpty(obj.Title) && DimensionTitleRegex().Match(obj.Title) is { Success: true } dim)
+            return (int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture));
+        return (null, null);
+    }
+
+    private static bool IsInsideLink(LinkInline image)
+    {
+        for (var parent = image.Parent; parent is not null; parent = parent.Parent)
+        {
+            if (parent is LinkInline)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Makes a loaded image ask the renderer to zoom it when clicked, or when Enter or Space is pressed
+    /// while it has focus. Screen readers see it as an image named by its alt text, whose help text
+    /// (from the theme's <c>markdown-image-zoomable</c> style) says what it does.
+    /// </summary>
+    private static void MakeZoomable(AvaloniaRenderer renderer, Image image)
+    {
+        image.Cursor = ZoomCursor.Instance;
+        image.Focusable = true;
+        image.Classes.Add("markdown-image-zoomable");
+        // A Tab stop, so not decorative even without alt text.
+        AutomationRoles.Set(image, AutomationControlType.Image);
+        // A click, like a foldable alert header's (see CollapsibleAlert): the press implicitly captures
+        // the pointer to the image, so the image sees no release once the viewer has turned the press
+        // into a selection drag.
+        image.PointerReleased += (_, e) =>
+        {
+            if (e.InitialPressMouseButton != MouseButton.Left || image.Source is null
+                || !new Rect(image.Bounds.Size).Contains(e.GetPosition(image)))
+                return;
+            renderer.OnImageZoomRequested(image);
+            e.Handled = true;
+        };
+        image.KeyDown += (_, e) =>
+        {
+            if (e.Key is not (Key.Enter or Key.Space) || image.Source is null) return;
+            renderer.OnImageZoomRequested(image);
+            e.Handled = true;
+        };
+    }
+
+    /// <summary>
+    /// Replaces <paramref name="image"/>, which could not be loaded, with a <c>markdown-image-failed</c>
+    /// placeholder: a broken-image glyph followed by the alt text, if any. It copies the same text as the
+    /// image. A "=WxH" size hint does not size the placeholder, which keeps its own compact size: the hint
+    /// only caps it, the alt text being cut with an ellipsis beyond the width.
+    /// </summary>
+    private static void ShowFailurePlaceholder(Image image, string altText)
+    {
+        var content = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 4 };
+        content.Children.Add(new BrokenImageGlyph { VerticalAlignment = VerticalAlignment.Center });
+        if (!string.IsNullOrEmpty(altText))
+        {
+            var text = new TextBlock
+            {
+                Text = altText,
+                // Not the paragraph's wrapping, which the text would otherwise inherit.
+                TextWrapping = TextWrapping.NoWrap,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(text, 1);
+            content.Children.Add(text);
+        }
+
+        var placeholder = new Border
+        {
+            Child = content,
+            MaxWidth = image.MaxWidth,
+            MaxHeight = image.MaxHeight,
+            ClipToBounds = true,
+        };
+        placeholder.Classes.Add("markdown-image-failed");
+        MarkdownSelection.SetCopyText(placeholder, altText);
+        // Named by its alt text, the theme's style saying that it could not be loaded; decorative without one.
+        if (string.IsNullOrEmpty(altText))
+        {
+            AutomationRoles.Hide(placeholder);
+        }
+        else
+        {
+            AutomationRoles.Set(placeholder, AutomationControlType.Image);
+            AutomationProperties.SetName(placeholder, altText);
+        }
+
+        // Written by AvaloniaRenderer.WriteInline, the image is the child of an InlineUIContainer.
+        if (image.Parent is InlineUIContainer container)
+            container.Child = placeholder;
     }
 
     private static string ExtractAltText(LinkInline obj)
@@ -144,34 +258,37 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         }
     }
 
+    /// <summary>
+    /// Loads <paramref name="url"/> into <paramref name="image"/> through the renderer's image loaders
+    /// (index 0 first) and the shared <see cref="ImageCache"/>. Calls <paramref name="failed"/> when no
+    /// loader returns an image or a loader throws, but not when the load is cancelled.
+    /// </summary>
     private static async Task LoadImageAsync(
         AvaloniaRenderer renderer,
         Image image,
         string url,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action? failed = null)
     {
+        IImage? loaded = null;
         try
         {
-            // Try registered loaders first (priority order, index 0 = highest)
-            foreach (var loader in renderer.ImageLoaders)
-            {
-                if (!loader.CanLoad(url))
-                    continue;
-
-                var loaded = await loader.LoadAsync(url, cancellationToken);
-                if (loaded != null)
-                {
-                    image.Source = loaded;
-                    return;
-                }
-            }
-
-            // No loader claimed the URL — nothing to do.
-            // (BitmapImageLoader is always registered last as the catch-all.)
+            loaded = await ImageCache.Shared.GetOrLoadAsync(url, renderer.ImageLoaders, cancellationToken);
         }
-        catch (OperationCanceledException) { }
-        catch (HttpRequestException) { }
-        catch (IOException) { }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        // Whatever a loader throws (an HTTP error, undecodable data, its own bug) is a failed load: this
+        // task is never awaited, so nothing else would observe it.
+        catch (Exception)
+        {
+        }
+
+        if (loaded != null)
+            image.Source = loaded;
+        else
+            failed?.Invoke();
     }
 
     private static string? ExtractYoutubeId(string? url)

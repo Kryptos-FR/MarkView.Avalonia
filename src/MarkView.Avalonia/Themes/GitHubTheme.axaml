@@ -1,0 +1,327 @@
+<!-- GitHub preset: makes the document look like Markdown rendered on github.com, with GitHub's
+     Primer colours in both variants. Include it after MarkdownTheme.axaml, which it builds on:
+     it only redefines resources and styles where GitHub's look differs. -->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mv="using:MarkView.Avalonia"
+        xmlns:mr="using:MarkView.Avalonia.Rendering"
+        xmlns:mri="using:MarkView.Avalonia.Rendering.Inlines">
+
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <!-- Primer "dark default". Translucent Primer colours are written #AARRGGBB, Avalonia's order. -->
+        <ResourceDictionary x:Key="Dark">
+          <!-- The document's own background and text, set on MarkdownViewer -->
+          <SolidColorBrush x:Key="MarkdownBackground">#0D1117</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownForeground">#F0F6FC</SolidColorBrush>
+          <!-- Secondary text: blockquotes, h6, footnotes, task check boxes -->
+          <SolidColorBrush x:Key="MarkdownMutedForeground">#9198A1</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownLinkForeground">#4493F8</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHeadingBorder">#B33D444D</SolidColorBrush>
+          <!-- GitHub draws the blockquote bar, table grid and rule in #3D444D, which is below the 3:1
+               WCAG AA minimum for borders that carry meaning; Primer's emphasis border colour meets it. -->
+          <SolidColorBrush x:Key="MarkdownBlockquoteBorder">#656C76</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownTableBorder">#656C76</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownTableRowAlternateBackground">#151B23</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownThematicBreakBackground">#656C76</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFootnoteSeparatorBackground">#3D444D</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#151B23</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#F0F6FC</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#33656C76</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#F0F6FC</SolidColorBrush>
+          <!-- The toolbar shares the code's background, so the copy button sits in the block's corner -->
+          <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#151B23</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#9198A1</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeCopyButtonBorder">#3D444D</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#33656C76</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeLineNumberForeground">#9198A1</SolidColorBrush>
+          <!-- Alerts: GitHub's bar and title colours, and no background -->
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#9198A1</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#4493F8</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBorder">#3FB950</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBorder">#AB7DF8</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBorder">#D29922</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#F85149</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownMarkedBackground">#26BB8009</SolidColorBrush>
+          <!-- HTML <kbd>: GitHub's key, with a border that stays 3:1 on the page and the key -->
+          <SolidColorBrush x:Key="MarkdownKbdBackground">#151B23</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdForeground">#F0F6FC</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBorder">#656C76</SolidColorBrush>
+          <!-- Find matches: Primer yellow and orange, distinct from highlighted (==…==) text -->
+          <SolidColorBrush x:Key="MarkdownFindMatchBackground">#693E00</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#762D0A</SolidColorBrush>
+          <!-- Image that could not be loaded: secondary text on the code background -->
+          <SolidColorBrush x:Key="MarkdownImageFailedForeground">#9198A1</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBackground">#151B23</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBorder">#656C76</SolidColorBrush>
+          <!-- Image lightbox, as in the default theme -->
+          <SolidColorBrush x:Key="MarkdownImageLightboxBackdrop">#E0000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
+        </ResourceDictionary>
+        <!-- Primer "light default" -->
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="MarkdownBackground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownForeground">#1F2328</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownMutedForeground">#59636E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownLinkForeground">#0969DA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHeadingBorder">#B3D1D9E0</SolidColorBrush>
+          <!-- GitHub's #D1D9E0 is below 3:1 on white; see the Dark dictionary -->
+          <SolidColorBrush x:Key="MarkdownBlockquoteBorder">#818B98</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownTableBorder">#818B98</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownTableRowAlternateBackground">#F6F8FA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownThematicBreakBackground">#818B98</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFootnoteSeparatorBackground">#D1D9E0</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#F6F8FA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#1F2328</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#1F818B98</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#1F2328</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#F6F8FA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#59636E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeCopyButtonBorder">#D1D9E0</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#1A818B98</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeLineNumberForeground">#59636E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#59636E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#0969DA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBorder">#1A7F37</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBorder">#8250DF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBorder">#9A6700</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#D1242F</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#00000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownMarkedBackground">#FFF8C5</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBackground">#F6F8FA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdForeground">#1F2328</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBorder">#818B98</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindMatchBackground">#FAE17D</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#FFB77C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedForeground">#59636E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBackground">#F6F8FA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBorder">#818B98</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxBackdrop">#CC000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <!-- Document: GitHub's background, text colour and system font stack at 16px. Local values set on
+       a MarkdownViewer (Background="Transparent", FontSize="14") still win. -->
+  <Style Selector=":is(mv|MarkdownViewer)">
+    <Setter Property="Background" Value="{DynamicResource MarkdownBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownForeground}" />
+    <Setter Property="FontFamily" Value="Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial" />
+    <Setter Property="FontSize" Value="16" />
+  </Style>
+
+  <!-- Headings: 2em / 1.5em / 1.25em / 1em / 0.875em / 0.85em, semibold, 24px above and 16px below
+       (the document's 8px block spacing plus these margins) -->
+  <Style Selector=":is(TextBlock).markdown-heading">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,16,0,8" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h1">
+    <Setter Property="FontSize" Value="32" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h2">
+    <Setter Property="FontSize" Value="24" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h3">
+    <Setter Property="FontSize" Value="20" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h4">
+    <Setter Property="FontSize" Value="16" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h5">
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h6">
+    <Setter Property="FontSize" Value="13.6" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+  </Style>
+  <!-- The rule under h1 and h2, 0.3em below the text -->
+  <Style Selector=":is(mr|MarkdownSelectableTextBlock).markdown-h1">
+    <Setter Property="Padding" Value="0,0,0,10" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHeadingBorder}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+  <Style Selector=":is(mr|MarkdownSelectableTextBlock).markdown-h2">
+    <Setter Property="Padding" Value="0,0,0,7" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHeadingBorder}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+  <!-- No space above a heading that starts the document, a quote or an alert -->
+  <Style Selector=":is(TextBlock).markdown-heading:nth-child(1)">
+    <Setter Property="Margin" Value="0,0,0,8" />
+  </Style>
+
+  <!-- Paragraphs: 16px apart; tight inside list items, table cells, quotes and alerts -->
+  <Style Selector=":is(TextBlock).markdown-paragraph">
+    <Setter Property="Margin" Value="0,4" />
+    <Setter Property="LineSpacing" Value="4" />
+  </Style>
+  <Style Selector="StackPanel.markdown-list :is(TextBlock).markdown-paragraph">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="Border.markdown-table-cell :is(TextBlock).markdown-paragraph">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="Border.markdown-blockquote :is(TextBlock).markdown-paragraph">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="Border.markdown-alert :is(TextBlock).markdown-paragraph">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+
+  <!-- Links -->
+  <Style Selector="mri|MarkdownHyperlink.markdown-link">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownLinkForeground}" />
+  </Style>
+
+  <!-- Code blocks: 16px padding, 6px corners, 85% monospace text -->
+  <Style Selector="Border.markdown-code-block">
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+  <Style Selector="Border.markdown-code-block TextBlock">
+    <Setter Property="FontFamily" Value="SF Mono, Menlo, Consolas, Liberation Mono, Courier New, monospace" />
+    <Setter Property="FontSize" Value="13.6" />
+    <Setter Property="LineHeight" Value="20" />
+  </Style>
+  <Style Selector="StackPanel.markdown-code-container > Border.markdown-code-block">
+    <Setter Property="CornerRadius" Value="0,0,6,6" />
+    <Setter Property="Padding" Value="16,0,16,16" />
+  </Style>
+  <Style Selector="Border.markdown-code-header">
+    <Setter Property="CornerRadius" Value="6,6,0,0" />
+    <Setter Property="Padding" Value="16,6,6,0" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownCodeCopyButtonBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="7" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownCodeCopyButtonBorder}" />
+  </Style>
+
+  <!-- Inline code: monospace at 85% of the paragraph's size (but full size in a heading) -->
+  <Style Selector="Run.markdown-code-inline">
+    <Setter Property="FontFamily" Value="SF Mono, Menlo, Consolas, Liberation Mono, Courier New, monospace" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-paragraph Run.markdown-code-inline">
+    <Setter Property="FontSize" Value="13.6" />
+  </Style>
+
+  <!-- Blockquote: a 4px bar and secondary text, no dimming -->
+  <Style Selector="Border.markdown-blockquote">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownBlockquoteBorder}" />
+    <Setter Property="BorderThickness" Value="4,0,0,0" />
+    <Setter Property="Padding" Value="16,0" />
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+  </Style>
+
+  <!-- Lists: text 2em from the left edge, nested lists without extra space -->
+  <Style Selector="StackPanel.markdown-list">
+    <Setter Property="Margin" Value="18,4,0,4" />
+  </Style>
+  <Style Selector="StackPanel.markdown-list StackPanel.markdown-list">
+    <Setter Property="Margin" Value="18,0,0,0" />
+  </Style>
+  <!-- Task-list check boxes look read-only, like GitHub's -->
+  <Style Selector=":is(TextBlock).markdown-task-list">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+  </Style>
+
+  <!-- Horizontal rule: a 4px bar with 24px above and below -->
+  <Style Selector="Separator.markdown-thematic-break">
+    <Setter Property="Background" Value="{DynamicResource MarkdownThematicBreakBackground}" />
+    <Setter Property="Height" Value="4" />
+    <Setter Property="Margin" Value="0,16" />
+  </Style>
+
+  <!-- Tables: a 1px grid on every side of every cell, a semibold header without background, and
+       striped body rows. Cells only draw their right and bottom borders, so that neighbours don't
+       double them; the first row and column add the top and left ones. -->
+  <Style Selector="Border.markdown-table-cell">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownTableBorder}" />
+    <Setter Property="BorderThickness" Value="0,0,1,1" />
+    <Setter Property="Padding" Value="13,6" />
+  </Style>
+  <Style Selector="Border.markdown-table-cell[(Grid.Row)=0]">
+    <Setter Property="BorderThickness" Value="0,1,1,1" />
+  </Style>
+  <Style Selector="Border.markdown-table-cell[(Grid.Column)=0]">
+    <Setter Property="BorderThickness" Value="1,0,1,1" />
+    <Style Selector="^[(Grid.Row)=0]">
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+  </Style>
+  <Style Selector="Border.markdown-table-header">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Border.markdown-table-header :is(TextBlock)">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <!-- Header cells are centred, as browsers draw <th>. A column's own alignment (colons in the delimiter
+       row) is set on the cell itself, so it wins over this style. -->
+  <Style Selector="Border.markdown-table-header > StackPanel">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.markdown-table-row-even">
+    <Setter Property="Background" Value="{DynamicResource MarkdownTableRowAlternateBackground}" />
+  </Style>
+
+  <!-- Alerts: a 4px bar without background, the title in the bar's colour at body size -->
+  <Style Selector="Border.markdown-alert">
+    <Setter Property="BorderThickness" Value="4,0,0,0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Padding" Value="16,8" />
+  </Style>
+  <Style Selector="TextBlock.markdown-alert-header">
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="FontSize" Value="16" />
+  </Style>
+
+  <!-- Footnotes: below a 1px line, in 12px secondary text -->
+  <Style Selector="Separator.markdown-footnote-separator">
+    <Setter Property="Background" Value="{DynamicResource MarkdownFootnoteSeparatorBackground}" />
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Margin" Value="0,24,0,0" />
+  </Style>
+  <Style Selector="StackPanel.markdown-footnote-group">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+    <Setter Property="TextElement.FontSize" Value="12" />
+  </Style>
+  <Style Selector="mri|MarkdownHyperlink.markdown-footnote-ref">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownLinkForeground}" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <!-- Definition lists: italic semibold terms, definitions indented by 16px -->
+  <Style Selector=":is(TextBlock).markdown-definition-term">
+    <Setter Property="FontStyle" Value="Italic" />
+    <Setter Property="Margin" Value="0,8,0,0" />
+  </Style>
+  <Style Selector="StackPanel.markdown-definition">
+    <Setter Property="Margin" Value="16,0,0,0" />
+  </Style>
+
+</Styles>

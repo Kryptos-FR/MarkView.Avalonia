@@ -13,6 +13,8 @@ dotnet run
 
 The demo window contains a page tab strip, a toolbar, and a full-screen content area. Use the **tabs** to switch between five built-in pages; use **Open file…** to load any local `.md` file.
 
+The toolbar has three groups: the outline, history and **Open…** buttons on the left; the find box in the middle (Ctrl+F, with the match count and the previous and next buttons inside it); and the appearance controls on the right: the light and dark switch, the theme preset and the **View options** menu.
+
 ### Built-in Views
 
 | View | Content |
@@ -31,7 +33,18 @@ The demo window contains a page tab strip, a toolbar, and a full-screen content 
 
 ### Theme Toggle
 
-The **Light theme** toggle button switches the entire application between Avalonia's `Light` and `Dark` theme variants. Syntax-highlighted code blocks and Mermaid diagrams update in-place — no document rebuild or scroll reset.
+The **sun / moon** button switches the entire application between Avalonia's `Light` and `Dark` theme variants; its icon shows the current one. Syntax-highlighted code blocks and Mermaid diagrams update in-place — no document rebuild or scroll reset.
+
+The **theme preset** drop-down switches the documents between the default theme and the [GitHub theme preset](../../docs/theming.md#theme-presets) (`GitHubTheme.axaml`), by inserting or removing its `StyleInclude` right after `MarkdownTheme.axaml` in the application's styles (see `MainViewModel.ThemePresetIndex`). Both presets follow the Light/Dark switch.
+
+### View Options
+
+The **View options** menu (the sliders icon) toggles the viewer settings that change how the document is drawn:
+
+- **Clickable tasks**: `AreTaskListsInteractive`, task-list items as check boxes you can toggle.
+- **Code line numbers**: `ShowCodeBlockLineNumbers`.
+- **Wrap long code lines**: `WrapCodeBlockLines`.
+- **Short code blocks**: `CodeBlockMaxHeight` at 160 pixels, so taller blocks scroll inside themselves.
 
 ## How the Demo Is Configured
 

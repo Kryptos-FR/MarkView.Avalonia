@@ -16,8 +16,9 @@ public static class MarkdownExtensions
     /// <summary>
     /// Enables the Markdig extensions that make a document render as it does on GitHub: pipe tables,
     /// task lists, strikethrough (<c>~~text~~</c> and <c>~text~</c>), autolinks, emoji shortcodes,
-    /// alerts (<c>&gt; [!NOTE]</c>), footnotes, CJK-friendly emphasis, hidden YAML front matter and
-    /// collapsible HTML <c>&lt;details&gt;</c> blocks (see <see cref="UseHtmlDetails"/>).
+    /// alerts (<c>&gt; [!NOTE]</c>), footnotes, CJK-friendly emphasis, hidden YAML front matter,
+    /// collapsible HTML <c>&lt;details&gt;</c> blocks (see <see cref="UseHtmlDetails"/>) and the HTML elements
+    /// READMEs use, such as centered headers, badges and <c>&lt;kbd&gt;</c> (see <see cref="UseHtmlSubset"/>).
     /// This is the pipeline a <see cref="MarkdownViewer"/> uses when none is set. Math and Mermaid
     /// diagrams come from their own packages (<c>UseMath()</c>, <c>UseMermaid()</c>).
     /// </summary>
@@ -28,6 +29,7 @@ public static class MarkdownExtensions
         builder.Extensions.AddIfNotAlready<Parsing.GitHubStrikethroughExtension>();
         return builder
             .UseHtmlDetails()
+            .UseHtmlSubset()
             .UseAlertBlocks()
             .UseAutoLinks()
             .UseCjkFriendlyEmphasis()
@@ -41,15 +43,16 @@ public static class MarkdownExtensions
     /// <summary>
     /// Enables a broader set of Markdig extensions supported by MarkView.Avalonia: pipe and grid tables,
     /// task lists, all emphasis extras (<c>~~strike~~</c>, <c>~sub~</c>, <c>^sup^</c>, <c>++ins++</c>,
-    /// <c>==mark==</c>), autolinks, emoji shortcodes, CJK-friendly emphasis and hidden YAML front matter.
-    /// Unlike <see cref="UseGitHubExtensions"/>, <c>~text~</c> is subscript, and alerts and footnotes are
-    /// not enabled.
+    /// <c>==mark==</c>), autolinks, emoji shortcodes, CJK-friendly emphasis, hidden YAML front matter and the
+    /// HTML subset (see <see cref="UseHtmlSubset"/>). Unlike <see cref="UseGitHubExtensions"/>, <c>~text~</c> is
+    /// subscript, and alerts, footnotes and details blocks are not enabled.
     /// </summary>
     /// <param name="builder">The pipeline builder.</param>
     /// <param name="options">Options for the extensions enabled by this method. See <see cref="MarkdownExtensionsOptions"/>.</param>
     public static MarkdownPipelineBuilder UseSupportedExtensions(this MarkdownPipelineBuilder builder, MarkdownExtensionsOptions? options = null)
     {
         return builder
+            .UseHtmlSubset()
             .UseAutoLinks()
             .UseCjkFriendlyEmphasis()
             .UseEmojiAndSmiley(enableSmileys: false)
@@ -80,6 +83,29 @@ public static class MarkdownExtensions
     public static MarkdownPipelineBuilder UseHtmlDetails(this MarkdownPipelineBuilder builder)
     {
         builder.Extensions.AddIfNotAlready<Parsing.HtmlDetailsExtension>();
+        return builder;
+    }
+
+    /// <summary>
+    /// Renders a safe subset of HTML with native controls, as GitHub shows it in a README, without running or
+    /// fetching anything but images:
+    /// <list type="bullet">
+    /// <item>inline <c>&lt;b&gt;</c>/<c>&lt;strong&gt;</c>, <c>&lt;i&gt;</c>/<c>&lt;em&gt;</c>,
+    /// <c>&lt;del&gt;</c>/<c>&lt;s&gt;</c>/<c>&lt;strike&gt;</c>, <c>&lt;ins&gt;</c>/<c>&lt;u&gt;</c>, <c>&lt;mark&gt;</c>,
+    /// <c>&lt;sub&gt;</c>, <c>&lt;sup&gt;</c>, <c>&lt;kbd&gt;</c> and <c>&lt;code&gt;</c>; <c>&lt;a href&gt;</c> as a link
+    /// and <c>&lt;img src alt width height&gt;</c> as an image, like their markdown counterparts; <c>&lt;br&gt;</c>;</item>
+    /// <item>HTML blocks of <c>&lt;p&gt;</c>, <c>&lt;div&gt;</c> and <c>&lt;h1&gt;</c>…<c>&lt;h6&gt;</c> elements, with their
+    /// <c>align</c> attribute, holding inline HTML; <c>&lt;hr&gt;</c>; and a <c>&lt;div align="center"&gt;</c> around
+    /// markdown, separated from it by blank lines.</item>
+    /// </list>
+    /// Only the <c>href</c>, <c>src</c>, <c>alt</c>, <c>title</c>, <c>width</c>, <c>height</c> and <c>align</c>
+    /// attributes are read. Any other tag, and a tag without its match, is dropped, and the text around it
+    /// shows; the content of <c>&lt;script&gt;</c> and <c>&lt;style&gt;</c> is dropped too. Part of
+    /// <see cref="UseGitHubExtensions"/> and <see cref="UseSupportedExtensions"/>.
+    /// </summary>
+    public static MarkdownPipelineBuilder UseHtmlSubset(this MarkdownPipelineBuilder builder)
+    {
+        builder.Extensions.AddIfNotAlready<Parsing.HtmlSubsetExtension>();
         return builder;
     }
 

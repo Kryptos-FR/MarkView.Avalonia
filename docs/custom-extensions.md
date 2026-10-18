@@ -251,6 +251,14 @@ public class MyImageExtension : IMarkViewExtension
 
 The loader chain is tried in order. The first loader whose `CanLoad` returns `true` **and** whose `LoadAsync` returns a non-`null` result wins. Returning `null` from `LoadAsync` passes control to the next loader.
 
+When no loader returns an image, or a loader throws (other than for the cancellation it was given,
+which comes when the image is removed while it loads), the viewer shows a
+[placeholder](configuration.md#images-that-fail-to-load) instead. A loaded image is kept in the
+[image cache](configuration.md#image-cache) under its URL and the types of the loaders in the chain,
+so a loader is not asked again for an image it already returned. Its result should therefore depend
+only on the URL. The viewer may show the image a loader returns in several places at once, and never
+disposes it.
+
 ## Writing a custom code highlighter
 
 Implement `ICodeHighlighter` (or `IThemeAwareCodeHighlighter` for live theme switching):

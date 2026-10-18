@@ -35,7 +35,7 @@ public class AlertBlockTests : RenderTestBase
         var outer = Assert.IsType<StackPanel>(border.Child);
         // outer has header TextBlock + content StackPanel
         Assert.True(outer.Children.Count >= 2);
-        var header = Assert.IsType<TextBlock>(outer.Children[0]);
+        var header = Assert.IsAssignableFrom<TextBlock>(outer.Children[0]);
         Assert.Equal("NOTE", header.Text);
     }
 
@@ -67,7 +67,7 @@ public class AlertBlockTests : RenderTestBase
         Assert.Equal(["markdown-alert", $"markdown-alert-{lower}"], border.Classes.Where(c => !c.StartsWith(':')).ToArray());
         var outer = Assert.IsType<StackPanel>(border.Child);
         Assert.Equal(4, outer.Spacing);
-        var header = Assert.IsType<TextBlock>(outer.Children[0]);
+        var header = Assert.IsAssignableFrom<TextBlock>(outer.Children[0]);
         Assert.Equal(kind.ToUpperInvariant(), header.Text);
         Assert.Contains("markdown-alert-header", header.Classes);
         var content = Assert.IsType<StackPanel>(outer.Children[1]);

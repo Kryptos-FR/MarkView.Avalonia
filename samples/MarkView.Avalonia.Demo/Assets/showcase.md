@@ -2,12 +2,14 @@
 
 > Welcome to the **MarkView.Avalonia** feature showcase. This document demonstrates every
 > rendering capability supported by the viewer and its extension packages.
+> Press **Ctrl+F** to find text in it with the find box above.
 
 ## Table of Contents
 
 - [Headings](#headings)
 - [Text Formatting](#text-formatting)
 - [Emphasis Extras](#emphasis-extras)
+- [HTML](#html)
 - [Blockquotes](#blockquotes)
 - [Task List](#task-list)
 - [Tables](#tables)
@@ -51,6 +53,32 @@ The `EmphasisExtras` Markdig extension unlocks four additional inline styles:
 | `==text==` | ==marked==    | Highlighted (marked) |
 
 ---
+
+## HTML
+
+GitHub READMEs often use a little HTML. MarkView renders a safe subset of it with native controls
+(`UseHtmlSubset()`, part of the default pipeline): nothing runs, and only images are fetched, through the
+same loaders as markdown images.
+
+<p align="center">
+  <a href="https://avaloniaui.net"><img src="avalonia-logo.png" alt="Avalonia logo" width="64"></a><br>
+  <b>A centered README header</b><br>
+  <sub>with a linked logo, sized by its <code>width</code> attribute</sub>
+</p>
+
+Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy. Water is H<sub>2</sub>O and E = mc<sup>2</sup>.
+<mark>Marked</mark>, <ins>inserted</ins>, <del>deleted</del>, <b>bold</b>, <i>italic</i>,
+<code>code</code> and <a href="#html" title="Back to this section">a link</a>.
+
+<div align="right">
+
+Markdown inside a `<div align="right">`, separated from its tags by **blank lines**, is aligned too.
+
+</div>
+
+<span>Any other tag, such as this</span> <code>&lt;span&gt;</code>, is dropped and its text shows as it is.
+
+<hr>
 
 ## Blockquotes
 
@@ -177,6 +205,11 @@ The table below shows the same image at different sizes:
 | `![alt](url "=80x80")`   | ![Avalonia Logo](avalonia-logo.png "=80x80") 80×80 |
 | `![alt](url "=160x160")` | ![Avalonia Logo](avalonia-logo.png "=160x160") 160×160 |
 | `![alt](url)` (no size)  | ![Avalonia Logo](avalonia-logo.png) natural size   |
+
+Click any image to open it in a lightbox over the viewer; click anywhere or press Esc to close it.
+
+An image that cannot be loaded shows a placeholder with its alt text instead:
+![Architecture diagram (missing file)](missing-diagram.png)
 
 ---
 

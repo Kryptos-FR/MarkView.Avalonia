@@ -11,7 +11,9 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 
 /// <summary>
 /// Renders a Markdig <see cref="Table"/> as an Avalonia <see cref="Grid"/>.
-/// Supports pipe tables and grid tables (both share the same AST).
+/// Supports pipe tables and grid tables (both share the same AST). The cells of every second body row
+/// (the 2nd, 4th, … row below the header) also get the <c>markdown-table-row-even</c> class, for themes
+/// that stripe the rows.
 /// </summary>
 public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
 {
@@ -29,9 +31,11 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
         }
 
         int rowIndex = 0;
+        int bodyRowCount = 0;
         foreach (var row in obj.OfType<TableRow>())
         {
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var isEvenBodyRow = !row.IsHeader && ++bodyRowCount % 2 == 0;
 
             int colIndex = 0;
             foreach (var cell in row.OfType<TableCell>())
@@ -50,6 +54,8 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
                 }
                 else
                 {
+                    if (isEvenBodyRow)
+                        border.Classes.Add("markdown-table-row-even");
                     AutomationRoles.Set(border, AutomationControlType.DataItem);
                 }
 

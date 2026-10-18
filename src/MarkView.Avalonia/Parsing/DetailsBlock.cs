@@ -20,4 +20,13 @@ internal sealed class DetailsBlock() : ContainerBlock(null)
     /// (browsers then show "Details").
     /// </summary>
     public string? Summary { get; set; }
+
+    /// <summary>The HTML inside the <c>&lt;summary&gt;</c> element, or <c>null</c> when there is none.</summary>
+    public string? SummaryHtml { get; set; }
+
+    /// <summary>
+    /// The inlines of the summary, built from <see cref="SummaryHtml"/> by <see cref="HtmlSubsetGrouper"/> when the
+    /// pipeline has the HTML subset; shown instead of <see cref="Summary"/> when set.
+    /// </summary>
+    public Markdig.Syntax.Inlines.ContainerInline? SummaryInline { get; set; }
 }

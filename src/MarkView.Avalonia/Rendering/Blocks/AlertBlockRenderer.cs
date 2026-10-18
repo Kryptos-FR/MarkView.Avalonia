@@ -53,7 +53,7 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         var titleParagraph = extended is { HasTitle: true } ? firstParagraph : null;
         var skipFirstParagraph = titleParagraph is not null || firstParagraph is { Inline.FirstChild: null };
 
-        var header = new TextBlock();
+        var header = new StyledInlinesTextBlock();
         header.Classes.Add("markdown-alert-header");
 
         var contentPanel = new StackPanel { Spacing = 4 };

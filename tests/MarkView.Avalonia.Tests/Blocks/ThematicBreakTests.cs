@@ -15,5 +15,6 @@ public class ThematicBreakTests : RenderTestBase
         var result = Render("---");
         var separator = Assert.IsType<Separator>(Assert.Single(result.Children));
         Assert.Contains("markdown-thematic-break", separator.Classes);
+        Assert.DoesNotContain("markdown-footnote-separator", separator.Classes);
     }
 }

@@ -34,6 +34,23 @@
           <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#EF4444</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#1AEF4444</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownMarkedBackground">#5C4B00</SolidColorBrush>
+          <!-- HTML <kbd>: text 15.9:1 on the key; border 3.8:1 on the key, 4.6:1 on black -->
+          <SolidColorBrush x:Key="MarkdownKbdBackground">#151B23</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdForeground">#F0F6FC</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBorder">#6E7681</SolidColorBrush>
+          <!-- Find matches: text keeps its own colour on them; at least 4.5:1 for the body text, code blocks
+               (MarkdownCodeBlockForeground) and inline code (MarkdownCodeInlineForeground) -->
+          <SolidColorBrush x:Key="MarkdownFindMatchBackground">#453A00</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#652A00</SolidColorBrush>
+          <!-- Image that could not be loaded: 8.2:1 text on the page, 5.8:1 on its background; border 3.5:1 -->
+          <SolidColorBrush x:Key="MarkdownImageFailedForeground">#A1A1AA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBackground">#27272A</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBorder">#7A7A83</SolidColorBrush>
+          <!-- Image lightbox: the close cross is 12:1 or more on the backdrop over any page -->
+          <SolidColorBrush x:Key="MarkdownImageLightboxBackdrop">#E0000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
           <!-- High-contrast palette (MarkdownViewer:high-contrast), modelled on Windows' dark contrast
                themes. Avalonia exposes no system contrast colours, so these stand in for them. -->
           <SolidColorBrush x:Key="MarkdownHighContrastBackground">#000000</SolidColorBrush>
@@ -71,6 +88,23 @@
           <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#B91C1C</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#FEF2F2</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownMarkedBackground">#FFFF00</SolidColorBrush>
+          <!-- HTML <kbd>: text 14.8:1 on the key; border 3.2:1 on the key, 3.5:1 on white -->
+          <SolidColorBrush x:Key="MarkdownKbdBackground">#F6F8FA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdForeground">#1F2328</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBorder">#818B98</SolidColorBrush>
+          <!-- Find matches: text keeps its own colour on them; at least 4.5:1 for the body text, code blocks
+               (MarkdownCodeBlockForeground) and inline code (MarkdownCodeInlineForeground) -->
+          <SolidColorBrush x:Key="MarkdownFindMatchBackground">#FFF176</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#FFC584</SolidColorBrush>
+          <!-- Image that could not be loaded: 7.7:1 text on the page, 7.0:1 on its background; border 3.5:1 -->
+          <SolidColorBrush x:Key="MarkdownImageFailedForeground">#52525B</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBackground">#F4F4F5</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBorder">#82828B</SolidColorBrush>
+          <!-- Image lightbox: the close cross is 12:1 or more on the backdrop over any page -->
+          <SolidColorBrush x:Key="MarkdownImageLightboxBackdrop">#CC000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
           <!-- High-contrast palette, modelled on Windows' light contrast themes -->
           <SolidColorBrush x:Key="MarkdownHighContrastBackground">#FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownHighContrastForeground">#000000</SolidColorBrush>
@@ -234,6 +268,21 @@
     <Setter Property="Background" Value="{DynamicResource MarkdownMarkedBackground}"/>
   </Style>
 
+  <!-- HTML subset (UseHtmlSubset): <kbd> as a key -->
+  <Style Selector="Border.markdown-html-kbd">
+    <Setter Property="Background" Value="{DynamicResource MarkdownKbdBackground}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownKbdBorder}"/>
+    <Setter Property="BorderThickness" Value="1,1,1,2"/>
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="Padding" Value="4,0"/>
+    <Setter Property="Margin" Value="1,0"/>
+  </Style>
+  <Style Selector="Border.markdown-html-kbd > TextBlock">
+    <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownKbdForeground}"/>
+  </Style>
+
   <!-- Citation -->
   <Style Selector="Span.markdown-citation">
     <Setter Property="FontStyle" Value="Italic"/>
@@ -267,6 +316,48 @@
   <Style Selector="Image.markdown-image">
     <Setter Property="Margin" Value="0,4" />
   </Style>
+  <!-- Placeholder of an image that could not be loaded: a broken-image glyph and the alt text -->
+  <!-- What a zoomable image does, and what a failed one or the lightbox is called without alt text, for
+       screen readers. Set here so they can be translated. -->
+  <Style Selector="Image.markdown-image-zoomable">
+    <Setter Property="AutomationProperties.HelpText" Value="Zoom" />
+  </Style>
+  <Style Selector="Border.markdown-image-failed">
+    <Setter Property="AutomationProperties.HelpText" Value="Image could not be loaded" />
+  </Style>
+  <Style Selector=":is(Panel).markdown-image-lightbox">
+    <Setter Property="AutomationProperties.Name" Value="Image" />
+  </Style>
+  <Style Selector="Border.markdown-image-failed">
+    <Setter Property="Background" Value="{DynamicResource MarkdownImageFailedBackground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownImageFailedBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="6,2" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownImageFailedForeground}" />
+  </Style>
+  <!-- Lightbox a clicked image opens in (MarkdownViewer.IsImageZoomEnabled) -->
+  <Style Selector=":is(Panel).markdown-image-lightbox">
+    <Setter Property="Background" Value="{DynamicResource MarkdownImageLightboxBackdrop}" />
+  </Style>
+  <Style Selector="Image.markdown-image-lightbox-image">
+    <Setter Property="Margin" Value="48" />
+  </Style>
+  <Style Selector="Button.markdown-image-lightbox-close">
+    <Setter Property="Background" Value="{DynamicResource MarkdownImageLightboxCloseBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownImageLightboxCloseForeground}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Padding" Value="8" />
+    <Setter Property="Margin" Value="8" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="ToolTip.Tip" Value="Close" />
+    <Setter Property="AutomationProperties.Name" Value="Close" />
+  </Style>
+  <Style Selector="Button.markdown-image-lightbox-close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource MarkdownImageLightboxCloseHoverBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownImageLightboxCloseForeground}" />
+  </Style>
 
   <!-- Text selection highlight -->
   <Style Selector=":is(SelectableTextBlock)">
@@ -291,7 +382,7 @@
   <Style Selector="Border.markdown-table-header">
     <Setter Property="Background" Value="#20808080" />
   </Style>
-  <Style Selector="Border.markdown-table-header > StackPanel > TextBlock">
+  <Style Selector="Border.markdown-table-header > StackPanel > :is(TextBlock)">
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
 

@@ -1,11 +1,15 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Text;
+
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input.Platform;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using Avalonia.Media.TextFormatting;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 
 namespace MarkView.Avalonia.Rendering;
@@ -16,11 +20,27 @@ namespace MarkView.Avalonia.Rendering;
 /// <see cref="Grid"/>, it receives coordinate-translated pointer events from
 /// <see cref="MarkdownViewer"/> and paints selection highlights via <see cref="Render"/>.
 /// Selection is expressed as two absolute char offsets in the flat document char space.
+/// The layer also finds text in its entries and paints the matches under the selection.
 /// </summary>
 internal sealed class DocumentSelectionLayer : Control
 {
     private static readonly ImmutableSolidColorBrush SelectionBrush =
         new(Colors.CornflowerBlue, 0.35);
+
+    // Used when the theme does not define MarkdownFindMatchBackground / MarkdownFindCurrentMatchBackground,
+    // with the same values as MarkdownTheme.axaml.
+    private static readonly ImmutableSolidColorBrush LightFindMatchBrush = new(Color.FromRgb(0xFF, 0xF1, 0x76));
+    private static readonly ImmutableSolidColorBrush LightCurrentFindMatchBrush = new(Color.FromRgb(0xFF, 0xC5, 0x84));
+    private static readonly ImmutableSolidColorBrush DarkFindMatchBrush = new(Color.FromRgb(0x45, 0x3A, 0x00));
+    private static readonly ImmutableSolidColorBrush DarkCurrentFindMatchBrush = new(Color.FromRgb(0x65, 0x2A, 0x00));
+
+    /// <summary>Defines the <see cref="FindMatchBrush"/> property.</summary>
+    public static readonly StyledProperty<IBrush?> FindMatchBrushProperty =
+        AvaloniaProperty.Register<DocumentSelectionLayer, IBrush?>(nameof(FindMatchBrush));
+
+    /// <summary>Defines the <see cref="CurrentFindMatchBrush"/> property.</summary>
+    public static readonly StyledProperty<IBrush?> CurrentFindMatchBrushProperty =
+        AvaloniaProperty.Register<DocumentSelectionLayer, IBrush?>(nameof(CurrentFindMatchBrush));
 
     private readonly List<IndexEntry> _entries = [];
     private int _totalLength;
@@ -29,9 +49,38 @@ internal sealed class DocumentSelectionLayer : Control
     private int? _anchor;
     private int? _focus;
 
+    private readonly List<FindMatch> _findMatches = [];
+
+    static DocumentSelectionLayer()
+    {
+        AffectsRender<DocumentSelectionLayer>(FindMatchBrushProperty, CurrentFindMatchBrushProperty);
+    }
+
     public DocumentSelectionLayer()
     {
         IsHitTestVisible = false;
+        Bind(FindMatchBrushProperty, this.GetResourceObservable("MarkdownFindMatchBackground"));
+        Bind(CurrentFindMatchBrushProperty, this.GetResourceObservable("MarkdownFindCurrentMatchBackground"));
+    }
+
+    /// <summary>
+    /// The background of every find match but the current one, from the <c>MarkdownFindMatchBackground</c>
+    /// resource; <c>null</c> when no such resource is found, a built-in colour is then used.
+    /// </summary>
+    public IBrush? FindMatchBrush
+    {
+        get => GetValue(FindMatchBrushProperty);
+        set => SetValue(FindMatchBrushProperty, value);
+    }
+
+    /// <summary>
+    /// The background of the current find match, from the <c>MarkdownFindCurrentMatchBackground</c>
+    /// resource; <c>null</c> when no such resource is found, a built-in colour is then used.
+    /// </summary>
+    public IBrush? CurrentFindMatchBrush
+    {
+        get => GetValue(CurrentFindMatchBrushProperty);
+        set => SetValue(CurrentFindMatchBrushProperty, value);
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -54,7 +103,9 @@ internal sealed class DocumentSelectionLayer : Control
 
         // Text can move without the layer itself being laid out again, as when a code block with a
         // maximum height scrolls inside itself, so the highlight is drawn again where it now is.
-        if (_anchor is not null)
+        // Find matches move the same way, and with the text when it wraps differently.
+        // Stryker disable once Equality,Logical : drawing again without any match draws the same nothing
+        if (_anchor is not null || _findMatches.Count > 0)
             InvalidateVisual();
     }
 
@@ -91,7 +142,10 @@ internal sealed class DocumentSelectionLayer : Control
         InvalidateVisual();
     }
 
-    /// <summary>Returns selected plain text in reading order with separators between entries.</summary>
+    /// <summary>
+    /// Returns selected plain text in reading order with separators between entries. Lines are
+    /// separated by <c>'\n'</c>, whatever line endings the text and copy texts it is made of use.
+    /// </summary>
     public string GetSelectedText()
     {
         if (_anchor is null || _focus is null) return string.Empty;
@@ -115,7 +169,9 @@ internal sealed class DocumentSelectionLayer : Control
             if (selEnd > entry.AbsEnd && entry.Separator.Length > 0)
                 sb.Append(entry.Separator);
         }
-        return sb.ToString();
+        // Code block lines are written with the platform's line ending (LineBreak inlines), and a
+        // copy text keeps whatever its renderer gave it.
+        return sb.ToString().ReplaceLineEndings("\n");
     }
 
     /// <summary>
@@ -137,12 +193,12 @@ internal sealed class DocumentSelectionLayer : Control
         }
     }
 
-    /// <summary>Copies selected text to the clipboard.</summary>
+    /// <summary>Copies selected text to the clipboard, with the platform's line endings.</summary>
     public async Task CopyToClipboardAsync(TopLevel topLevel)
     {
         var text = GetSelectedText();
         if (!string.IsNullOrEmpty(text) && topLevel.Clipboard is { } clipboard)
-            await clipboard.SetTextAsync(text);
+            await clipboard.SetTextAsync(text.ReplaceLineEndings());
     }
 
     // ── Pointer event integration ─────────────────────────────────────────────
@@ -231,6 +287,13 @@ internal sealed class DocumentSelectionLayer : Control
 
     public override void Render(DrawingContext context)
     {
+        // Matches first, so a selection over a match still shows.
+        RenderFindMatches(context);
+        RenderSelection(context);
+    }
+
+    private void RenderSelection(DrawingContext context)
+    {
         if (_anchor is null || _focus is null) return;
         int selStart = Math.Min(_anchor.Value, _focus.Value);
         int selEnd = Math.Max(_anchor.Value, _focus.Value);
@@ -267,6 +330,133 @@ internal sealed class DocumentSelectionLayer : Control
                 context.DrawRectangle(SelectionBrush, null, rect.Translate(textOrigin));
         }
     }
+
+    private void RenderFindMatches(DrawingContext context)
+    {
+        var isDark = ActualThemeVariant == ThemeVariant.Dark;
+        var matchBrush = FindMatchBrush ?? (isDark ? DarkFindMatchBrush : LightFindMatchBrush);
+        var currentBrush = CurrentFindMatchBrush ?? (isDark ? DarkCurrentFindMatchBrush : LightCurrentFindMatchBrush);
+
+        for (int i = 0; i < _findMatches.Count; i++)
+        {
+            var (entry, start, length) = _findMatches[i];
+            // A match in hidden content (e.g. the body of a collapsed alert) is counted, not drawn.
+            if (IsHidden(entry) || !EnsureBounds(entry)) continue;
+            var bounds = entry.CachedBounds!.Value;
+
+            using var clip = entry.CachedClip != bounds
+                ? context.PushClip(entry.CachedClip!.Value)
+                : (DrawingContext.PushedState?)null;
+
+            var textBlock = entry.TextBlock!;
+            var textOrigin = bounds.TopLeft + new Vector(textBlock.Padding.Left, textBlock.Padding.Top);
+            var brush = i == CurrentFindMatch ? currentBrush : matchBrush;
+            foreach (var rect in textBlock.TextLayout.HitTestTextRange(start, length))
+            {
+                var highlight = rect.Translate(textOrigin);
+                context.DrawRectangle(brush, null, highlight);
+
+                // The highlight is opaque, so the text it covers is drawn again on top of it, in its own colours.
+                using (context.PushClip(highlight))
+                    DrawLines(context, textBlock.TextLayout, textOrigin, highlight);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Draws the lines of <paramref name="layout"/> that cross <paramref name="area"/>, where
+    /// <see cref="TextLayout.Draw"/> would draw them from <paramref name="origin"/>.
+    /// </summary>
+    private static void DrawLines(DrawingContext context, TextLayout layout, Point origin, Rect area)
+    {
+        var y = origin.Y;
+        foreach (var line in layout.TextLines)
+        {
+            if (y < area.Bottom && y + line.Height > area.Top)
+                line.Draw(context, new Point(origin.X, y));
+            y += line.Height;
+        }
+    }
+
+    // ── Find ──────────────────────────────────────────────────────────────────
+
+    /// <summary>The matches of the last <see cref="Find"/>, in document order.</summary>
+    public IReadOnlyList<FindMatch> FindMatches => _findMatches;
+
+    /// <summary>
+    /// The index in <see cref="FindMatches"/> of the current match, drawn with
+    /// <see cref="CurrentFindMatchBrush"/>; -1 when there is none.
+    /// </summary>
+    public int CurrentFindMatch
+    {
+        get;
+        set
+        {
+            field = value;
+            InvalidateVisual();
+        }
+    } = -1;
+
+    /// <summary>
+    /// Finds every occurrence of <paramref name="text"/>, which must not be empty, in the registered
+    /// text, replacing the previous matches, and leaves no current match. Returns the number of matches.
+    /// A match never spans two entries. Neither a block control nor a list item's marker is searched, and
+    /// an embedded control is a U+FFFC placeholder in its entry's text, so copy texts are never matched.
+    /// Hidden entries (e.g. the body of a collapsed alert) are searched like the others.
+    /// </summary>
+    public int Find(string text, MarkdownFindOptions options)
+    {
+        _findMatches.Clear();
+        var comparison = options.HasFlag(MarkdownFindOptions.MatchCase)
+            ? StringComparison.Ordinal
+            : StringComparison.OrdinalIgnoreCase;
+        var wholeWord = options.HasFlag(MarkdownFindOptions.WholeWord);
+
+        foreach (var entry in _entries)
+        {
+            if (entry.TextBlock is null || entry.IsMarker) continue;
+
+            var plainText = entry.PlainText;
+            var start = plainText.IndexOf(text, comparison);
+            while (start >= 0)
+            {
+                var end = start + text.Length;
+                if (wholeWord && !IsWholeWord(plainText, start, end))
+                {
+                    // A later occurrence may overlap this one, e.g. "a-a" at the end of "xa-a-a".
+                    start = plainText.IndexOf(text, start + 1, comparison);
+                    continue;
+                }
+                _findMatches.Add(new FindMatch(entry, start, text.Length));
+                start = plainText.IndexOf(text, end, comparison);
+            }
+        }
+
+        CurrentFindMatch = -1;
+        return _findMatches.Count;
+    }
+
+    /// <summary>Removes every find match.</summary>
+    public void ClearFind()
+    {
+        _findMatches.Clear();
+        CurrentFindMatch = -1;
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> when the characters just before <paramref name="start"/> and at
+    /// <paramref name="end"/> in <paramref name="text"/> are not word characters.
+    /// </summary>
+    private static bool IsWholeWord(string text, int start, int end)
+    {
+        // Nothing to decode, at either end of the text, gives the replacement character, which is not a
+        // word character, so the ends of the text are word boundaries.
+        Rune.DecodeLastFromUtf16(text.AsSpan(0, start), out var before, out _);
+        Rune.DecodeFromUtf16(text.AsSpan(end), out var after, out _);
+        return !IsWordCharacter(before) && !IsWordCharacter(after);
+    }
+
+    private static bool IsWordCharacter(Rune rune) => Rune.IsLetterOrDigit(rune) || rune.Value == '_';
 
     // ── Test helpers ──────────────────────────────────────────────────────────
 
