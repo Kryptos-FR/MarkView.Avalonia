@@ -27,7 +27,8 @@ namespace MarkView.Avalonia.Parsing;
 /// gives its <see cref="DetailsBlock.Summary"/>. Other text of an HTML block holding one of these tags is
 /// HTML, not markdown: inside a details element, it becomes a plain-text paragraph (tags removed, entities
 /// decoded, whitespace collapsed, <c>&lt;br&gt;</c> as a line break); outside, it stays an HTML block.
-/// HTML blocks without any of these tags are left untouched, wherever they are.
+/// HTML blocks without any of these tags are left untouched, wherever they are. With the HTML subset
+/// (<see cref="HtmlSubsetExtension"/>), the text inside a details element stays HTML too, for the subset to build.
 /// </para>
 /// </remarks>
 internal static partial class HtmlDetailsGrouper
@@ -65,19 +66,25 @@ internal static partial class HtmlDetailsGrouper
     private static partial Regex WhitespaceRegex();
 
     /// <summary>Groups the details elements of <paramref name="document"/>, at any depth.</summary>
-    public static void Process(MarkdownDocument document) => Process((ContainerBlock)document);
+    public static void Process(MarkdownDocument document) => Process(document, keepHtml: false);
 
-    private static void Process(ContainerBlock container)
+    /// <summary>
+    /// Groups the details elements of <paramref name="document"/>, at any depth. With <paramref name="keepHtml"/>,
+    /// the HTML text inside a details element is kept as an HTML block instead of becoming a plain-text paragraph.
+    /// </summary>
+    public static void Process(MarkdownDocument document, bool keepHtml) => Process((ContainerBlock)document, keepHtml);
+
+    private static void Process(ContainerBlock container, bool keepHtml)
     {
-        Group(container);
+        Group(container, keepHtml);
         foreach (var child in container)
         {
             if (child is ContainerBlock inner)
-                Process(inner);
+                Process(inner, keepHtml);
         }
     }
 
-    private static void Group(ContainerBlock container)
+    private static void Group(ContainerBlock container, bool keepHtml)
     {
         if (!HasHtmlBlock(container))
             return;
@@ -118,7 +125,7 @@ internal static partial class HtmlDetailsGrouper
                 switch (token.Kind)
                 {
                     case TokenKind.Open when matched[t]:
-                        Flush(targets.Peek(), html, pending);
+                        Flush(targets.Peek(), html, pending, keepHtml);
                         var details = new DetailsBlock
                         {
                             StartsExpanded = token.Expanded,
@@ -130,20 +137,21 @@ internal static partial class HtmlDetailsGrouper
                         targets.Push(details);
                         break;
                     case TokenKind.Close when matched[t]:
-                        Flush(targets.Peek(), html, pending);
+                        Flush(targets.Peek(), html, pending, keepHtml);
                         var closed = targets.Pop();
                         closed.Span = new SourceSpan(closed.Span.Start, html.Span.End);
                         break;
                     case TokenKind.Summary when targets.Peek() is DetailsBlock { Summary: null } current:
-                        Flush(current, html, pending);
+                        Flush(current, html, pending, keepHtml);
                         current.Summary = ToPlainText(token.Value);
+                        current.SummaryHtml = token.Value;
                         break;
                     default:
                         pending.Append(token.Raw);
                         break;
                 }
             }
-            Flush(targets.Peek(), html, pending);
+            Flush(targets.Peek(), html, pending, keepHtml);
         }
     }
 
@@ -242,16 +250,17 @@ internal static partial class HtmlDetailsGrouper
 
     /// <summary>
     /// Adds the text gathered in <paramref name="pending"/> to <paramref name="target"/> and clears it: as a
-    /// plain-text paragraph inside a details element, or as an HTML block of its own outside.
+    /// plain-text paragraph inside a details element (unless <paramref name="keepHtml"/>), or as an HTML block of
+    /// its own.
     /// </summary>
-    private static void Flush(ContainerBlock target, HtmlBlock html, StringBuilder pending)
+    private static void Flush(ContainerBlock target, HtmlBlock html, StringBuilder pending, bool keepHtml)
     {
         var text = pending.ToString();
         pending.Clear();
         if (string.IsNullOrWhiteSpace(text))
             return;
 
-        if (target is DetailsBlock)
+        if (target is DetailsBlock && !keepHtml)
         {
             if (ToParagraph(text) is { } paragraph)
             {

@@ -10,6 +10,8 @@ using Avalonia.Media;
 
 using Markdig.Syntax.Inlines;
 
+using MarkView.Avalonia.Parsing;
+
 namespace MarkView.Avalonia.Rendering.Inlines;
 
 /// <summary>
@@ -69,21 +71,21 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             ToolTip.SetTip(image, altText);
         MarkdownSelection.SetCopyText(image, altText);
 
-        // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor).
-        if (!string.IsNullOrEmpty(obj.Title))
+        // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor), or from the
+        // width and height attributes of an HTML <img>, either of which can be missing.
+        var (width, height) = ExplicitSize(obj);
+        if (width is not null || height is not null)
         {
-            var dim = DimensionTitleRegex().Match(obj.Title);
-            if (dim.Success)
-            {
-                // MaxWidth/MaxHeight (not Width/Height) so the layout box itself shrinks to
-                // the image's native resolution when it's smaller than the requested size —
-                // Width/Height would hard-pin the arranged size regardless of StretchDirection.
-                image.MaxWidth = int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture);
-                image.MaxHeight = int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture);
-                image.Stretch = Stretch.Uniform;
-                // "=WxH" is a ceiling, never a forced upscale, regardless of ImageResizeMode.
-                image.StretchDirection = StretchDirection.DownOnly;
-            }
+            // MaxWidth/MaxHeight (not Width/Height) so the layout box itself shrinks to
+            // the image's native resolution when it's smaller than the requested size —
+            // Width/Height would hard-pin the arranged size regardless of StretchDirection.
+            if (width is not null)
+                image.MaxWidth = width.Value;
+            if (height is not null)
+                image.MaxHeight = height.Value;
+            image.Stretch = Stretch.Uniform;
+            // "=WxH" is a ceiling, never a forced upscale, regardless of ImageResizeMode.
+            image.StretchDirection = StretchDirection.DownOnly;
         }
 
         image.Tag = url;
@@ -105,6 +107,19 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         image.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
 
         renderer.WriteInline(image);
+    }
+
+    /// <summary>
+    /// The size an image is capped to: the <see cref="HtmlImageSize"/> of an HTML <c>&lt;img&gt;</c>, or its
+    /// "=WxH" title.
+    /// </summary>
+    private static (int? Width, int? Height) ExplicitSize(LinkInline obj)
+    {
+        if (obj.GetData(typeof(HtmlImageSize)) is HtmlImageSize size)
+            return (size.Width, size.Height);
+        if (!string.IsNullOrEmpty(obj.Title) && DimensionTitleRegex().Match(obj.Title) is { Success: true } dim)
+            return (int.Parse(dim.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(dim.Groups[2].Value, CultureInfo.InvariantCulture));
+        return (null, null);
     }
 
     private static string ExtractAltText(LinkInline obj)

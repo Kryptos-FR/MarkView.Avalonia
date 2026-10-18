@@ -53,6 +53,9 @@ public class GitHubThemeContrastTests
             data.Add(variant, "MarkdownTableBorder", "Page", NonText);
             data.Add(variant, "MarkdownTableBorder", "MarkdownTableRowAlternateBackground", NonText);
             data.Add(variant, "MarkdownThematicBreakBackground", "Page", NonText);
+            data.Add(variant, "MarkdownKbdForeground", "MarkdownKbdBackground", Text);
+            data.Add(variant, "MarkdownKbdBorder", "Page", NonText);
+            data.Add(variant, "MarkdownKbdBorder", "MarkdownKbdBackground", NonText);
             foreach (var kind in new[] { "Default", "Note", "Tip", "Important", "Warning", "Caution" })
             {
                 // The alert title is drawn in the bar's colour on the alert background.

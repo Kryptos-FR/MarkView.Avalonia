@@ -14,7 +14,8 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// foldable alert (see <see cref="CollapsibleAlert"/>): a <c>markdown-details</c> <see cref="Border"/> holding
 /// the summary line (<c>markdown-details-summary</c>, starting with a <c>markdown-details-chevron</c>), which
 /// toggles the body (<c>markdown-details-content</c>) on click, Enter or Space. The body starts shown for
-/// <c>&lt;details open&gt;</c>, hidden otherwise.
+/// <c>&lt;details open&gt;</c>, hidden otherwise. With the HTML subset, the summary shows its inline HTML
+/// (<see cref="DetailsBlock.SummaryInline"/>); otherwise its plain text.
 /// </summary>
 internal sealed class DetailsBlockRenderer : AvaloniaObjectRenderer<DetailsBlock>
 {
@@ -30,7 +31,16 @@ internal sealed class DetailsBlockRenderer : AvaloniaObjectRenderer<DetailsBlock
         summary.Classes.Add("markdown-details-summary");
         summary.Inlines!.Add(new InlineUIContainer(chevron));
         summary.Inlines.Add(new Run(" "));
-        summary.Inlines.Add(new Run(obj.Summary ?? DefaultSummary));
+        if (obj.SummaryInline is { } inline)
+        {
+            renderer.Push(summary.Inlines);
+            renderer.WriteChildren(inline);
+            renderer.Pop();
+        }
+        else
+        {
+            summary.Inlines.Add(new Run(obj.Summary ?? DefaultSummary));
+        }
 
         var content = new StackPanel { Spacing = 8 };
         content.Classes.Add("markdown-details-content");

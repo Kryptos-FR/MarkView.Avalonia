@@ -202,6 +202,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | CJK-friendly emphasis | parser-only fix for emphasis next to Chinese/Japanese/Korean (CJK) punctuation |
 | YAML front matter | `---` metadata block at the top of a document is parsed and hidden |
 | Collapsible details | HTML `<details>` / `<summary>`, as on GitHub (also `UseHtmlDetails()` on its own) |
+| HTML subset | The HTML READMEs use, with native controls: `<p align="center">` / `<div align>` headers, `<a><img></a>` badges, `<kbd>`, `<sub>`, `<sup>`, `<mark>`, `<b>`, `<code>`, `<hr>`… Nothing runs; only `<img>` sources are fetched (also `UseHtmlSubset()` on its own; see [HTML subset](docs/configuration.md#html-subset)) |
 
 `UseSupportedExtensions()`, the previous default, enables the same features except alerts, footnotes and details, and adds subscript (`~text~`), superscript (`^text^`), underline (`++text++`), highlight (`==text==`) and grid tables.
 

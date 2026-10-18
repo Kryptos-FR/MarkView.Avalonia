@@ -91,6 +91,22 @@ public class MarkdownExtensionsTests : RenderTestBase
     }
 
     [AvaloniaFact]
+    public void UseSupportedExtensions_renders_the_html_subset()
+    {
+        var result = Render("x<sup>2</sup>", _pipeline);
+        var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
+        Assert.Contains(textBlock.Inlines!, i => i is Span span && span.Classes.Contains("markdown-superscript"));
+    }
+
+    [Fact]
+    public void UseHtmlSubset_adds_its_extension_once()
+    {
+        var builder = new MarkdownPipelineBuilder().UseHtmlSubset().UseSupportedExtensions().UseGitHubExtensions();
+
+        Assert.Single(builder.Extensions, e => e is MarkView.Avalonia.Parsing.HtmlSubsetExtension);
+    }
+
+    [AvaloniaFact]
     public void UseSupportedExtensions_renders_emoji_shortcode_as_unicode_glyph()
     {
         var result = Render("Launch :rocket: now", _pipeline);
