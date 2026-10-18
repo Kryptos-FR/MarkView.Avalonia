@@ -508,6 +508,8 @@ public partial class MarkdownViewer : ContentControl
 
     internal void RenderMarkdown()
     {
+        // Whatever is rendered now replaces what an active streaming session renders, so the session ends.
+        EndStreamingSession();
         var markdown = _sourceMarkdown ?? Markdown;
         _renderedMarkdown = markdown;
         // A focused link is about to be replaced; keep focus in the viewer rather than losing it.
@@ -693,6 +695,8 @@ public partial class MarkdownViewer : ContentControl
         var (start, line) = ToSourcePosition(_sourceShifts, e.SourceStart, e.Line);
         if (_renderedMarkdown is { } rendered)
             _renderedMarkdown = string.Concat(rendered.AsSpan(0, start), e.IsChecked ? "[x]" : "[ ]", rendered.AsSpan(start + e.SourceLength));
+        // The session's next update renders its own text, which must not revert the toggle.
+        _streamingSession?.PatchText(start, e.SourceLength, e.IsChecked ? "[x]" : "[ ]");
         RaiseEvent(new TaskToggledEventArgs(e.IsChecked, start, e.SourceLength, line) { RoutedEvent = TaskToggledEvent });
     }
 
@@ -1151,7 +1155,11 @@ public partial class MarkdownViewer : ContentControl
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
+        if (_scrollViewer is not null)
+            _scrollViewer.ScrollChanged -= OnScrollChanged;
         _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+        if (_scrollViewer is not null)
+            _scrollViewer.ScrollChanged += OnScrollChanged;
         // Applying a template replaces every visual child, the open lightbox included.
         if (_lightbox is not null)
             VisualChildren.Add(_lightbox);

@@ -24,4 +24,10 @@ internal sealed class MarkdownViewerAutomationPeer(MarkdownViewer owner) : Contr
     protected override bool IsContentElementCore() => true;
 
     protected override bool IsControlElementCore() => true;
+
+    /// <summary>
+    /// Tells assistive technology that the document changed as a whole (a streaming session completed),
+    /// so it reads the viewer's children again.
+    /// </summary>
+    internal void NotifyDocumentChanged() => InvalidateChildren();
 }
