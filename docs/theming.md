@@ -29,27 +29,30 @@ Each extension theme is independent — it does not import the core `MarkdownThe
 |---|---|---|---|
 | `MarkdownCodeBlockBackground` | Fenced and indented code blocks | `#1E1E1E` | `#F3F3F3` |
 | `MarkdownCodeBlockForeground` | Code block text (before syntax highlighting); the copy icon under the pointer | `#D4D4D4` | `#1E1E1E` |
-| `MarkdownCodeInlineBackground` | Inline code | `#1A000000` | `#0A000000` |
-| `MarkdownCodeInlineForeground` | Inline code text | `#CE9178` | `#A31515` |
+| `MarkdownCodeInlineBackground` | Inline code | `#1AFFFFFF` | `#0A000000` |
+| `MarkdownCodeInlineForeground` | Inline code text | `#F4B49A` | `#A31515` |
 | `MarkdownCodeHeaderBackground` | Code block toolbar | `#2D2D2D` | `#E4E4E4` |
 | `MarkdownCodeHeaderForeground` | Toolbar language label and copy icon | `#A0A0A0` | `#5F5F5F` |
 | `MarkdownCodeCopyButtonHoverBackground` | Copy button under the pointer | `#1AFFFFFF` | `#14000000` |
 | `MarkdownCodeLineNumberForeground` | Code block line numbers | `#8A8A8A` | `#6A6A6A` |
-| `MarkdownAlertDefaultBorder` | Bar and title of alert kinds without their own colours (e.g. `[!QUESTION]`) | `#71717A` | `#71717A` |
+| `MarkdownLinkForeground` | Links and footnote references | FluentTheme's `SystemAccentColorLight2` | FluentTheme's `SystemAccentColorDark2` |
+| `MarkdownBlockquoteBorder` | Blockquote bar | `#4A9ECC` | `#2F7FB3` |
+| `MarkdownTableBorder` | Table cell borders | `#6B6B6B` | `#8A8A8A` |
+| `MarkdownAlertDefaultBorder` | Bar and title of alert kinds without their own colours (e.g. `[!QUESTION]`) | `#A1A1AA` | `#52525B` |
 | `MarkdownAlertDefaultBackground` | Background of those alerts | `#1A71717A` | `#F4F4F5` |
 | `MarkdownAlertNoteBorder` | `[!NOTE]` bar and title | `#3B82F6` | `#2563EB` |
 | `MarkdownAlertNoteBackground` | `[!NOTE]` background | `#1A3B82F6` | `#EFF6FF` |
-| `MarkdownAlertTipBorder` | `[!TIP]` bar and title | `#22C55E` | `#16A34A` |
+| `MarkdownAlertTipBorder` | `[!TIP]` bar and title | `#22C55E` | `#15803D` |
 | `MarkdownAlertTipBackground` | `[!TIP]` background | `#1A22C55E` | `#F0FDF4` |
 | `MarkdownAlertImportantBorder` | `[!IMPORTANT]` bar and title | `#A855F7` | `#9333EA` |
 | `MarkdownAlertImportantBackground` | `[!IMPORTANT]` background | `#1AA855F7` | `#FAF5FF` |
-| `MarkdownAlertWarningBorder` | `[!WARNING]` bar and title | `#EAB308` | `#CA8A04` |
+| `MarkdownAlertWarningBorder` | `[!WARNING]` bar and title | `#EAB308` | `#A16207` |
 | `MarkdownAlertWarningBackground` | `[!WARNING]` background | `#1AEAB308` | `#FEFCE8` |
-| `MarkdownAlertCautionBorder` | `[!CAUTION]` bar and title | `#EF4444` | `#DC2626` |
+| `MarkdownAlertCautionBorder` | `[!CAUTION]` bar and title | `#EF4444` | `#B91C1C` |
 | `MarkdownAlertCautionBackground` | `[!CAUTION]` background | `#1AEF4444` | `#FEF2F2` |
 | `MarkdownMarkedBackground` | Highlighted text (`==text==`) | `#5C4B00` | `#FFFF00` |
 
-Colours are `#AARRGGBB` when translucent. The theme also defines two `StreamGeometry` resources, the same in both variants: `MarkdownCodeCopyIcon` and `MarkdownCodeCopiedIcon`, the copy button's icons (see [Code block toolbar](#code-block-toolbar)). The default theme sets a few colours directly in its styles rather than through a key: the blockquote bar (`#4A9ECC`), the table and figure borders (`#40808080`), the table header background (`#20808080`) and links (`SystemAccentColor`); restyle those selectors to change them.
+Colours are `#AARRGGBB` when translucent. The theme also defines two `StreamGeometry` resources, the same in both variants: `MarkdownCodeCopyIcon` and `MarkdownCodeCopiedIcon`, the copy button's icons (see [Code block toolbar](#code-block-toolbar)). The default theme sets a few colours directly in its styles rather than through a key: the figure border (`#40808080`) and the table header background (`#20808080`); restyle those selectors to change them. The defaults meet WCAG 2.2 AA contrast; see [Accessibility](accessibility.md#colour-contrast). The `MarkdownHighContrast*` keys, the palette of the high-contrast mode, are listed under [High contrast](accessibility.md#high-contrast).
 
 ## Theme presets
 
@@ -100,10 +103,7 @@ It adds these resource keys to the ones it redefines from the default theme:
 | `MarkdownBackground` | `MarkdownViewer`'s background | `#0D1117` | `#FFFFFF` |
 | `MarkdownForeground` | Body text (`MarkdownViewer.Foreground`) | `#F0F6FC` | `#1F2328` |
 | `MarkdownMutedForeground` | Blockquotes, h6, footnotes, task check boxes | `#9198A1` | `#59636E` |
-| `MarkdownLinkForeground` | Links and footnote references | `#4493F8` | `#0969DA` |
 | `MarkdownHeadingBorder` | Rule under h1 and h2 | `#B33D444D` | `#B3D1D9E0` |
-| `MarkdownBlockquoteBorder` | Blockquote bar | `#656C76` | `#818B98` |
-| `MarkdownTableBorder` | Table grid | `#656C76` | `#818B98` |
 | `MarkdownTableRowAlternateBackground` | Striped table rows | `#151B23` | `#F6F8FA` |
 | `MarkdownThematicBreakBackground` | Horizontal rule | `#656C76` | `#818B98` |
 | `MarkdownFootnoteSeparatorBackground` | Line above the footnotes | `#3D444D` | `#D1D9E0` |
@@ -113,6 +113,8 @@ and redefines the default theme's keys as follows:
 
 | Resource key | Dark | Light |
 |---|---|---|
+| `MarkdownLinkForeground` | `#4493F8` | `#0969DA` |
+| `MarkdownBlockquoteBorder`, `MarkdownTableBorder` | `#656C76` | `#818B98` |
 | `MarkdownCodeBlockBackground`, `MarkdownCodeHeaderBackground` | `#151B23` | `#F6F8FA` |
 | `MarkdownCodeBlockForeground`, `MarkdownCodeInlineForeground` | `#F0F6FC` | `#1F2328` |
 | `MarkdownCodeInlineBackground` | `#33656C76` | `#1F818B98` |
@@ -126,6 +128,14 @@ and redefines the default theme's keys as follows:
 | `MarkdownAlertCautionBorder` | `#F85149` | `#D1242F` |
 | `MarkdownAlert<Kind>Background` (all six) | `#00000000` | `#00000000` |
 | `MarkdownMarkedBackground` | `#26BB8009` | `#FFF8C5` |
+| `MarkdownHighContrastBackground` | `#0A0C10` | `#FFFFFF` |
+| `MarkdownHighContrastForeground` | `#F0F3F6` | `#0E1116` |
+| `MarkdownHighContrastLink` | `#71B7FF` | `#0349B4` |
+| `MarkdownHighContrastHighlightBackground` | `#F0B72F` | `#744500` |
+| `MarkdownHighContrastHighlightForeground` | `#0A0C10` | `#FFFFFF` |
+| `MarkdownHighContrastBorder` | `#B7BDC8` | `#20252C` |
+
+**In high contrast.** When the viewer has the `:high-contrast` pseudo-class (see [High contrast](accessibility.md#high-contrast)), the preset uses the colours of Primer's "dark high contrast" and "light high contrast" themes for the `MarkdownHighContrast*` keys above, every pair 7:1 or more, and gives up its muted text, striped table rows and grey rules and borders for them, as the default theme does. Find highlights keep the preset's colours, on which its high-contrast text stays above 8:1 but links drop to 4.3:1 (dark) and 4.7:1 (light).
 
 **Next to the extension packages.** Their themes stay as they are. Syntax highlighting (`MarkView.Avalonia.SyntaxHighlighting`) keeps its TextMate colours, Dark+ and Light+ by default, drawn on the preset's code background: GitHub's own highlighting colours differ, but Dark+ and Light+ have at least the same contrast on it as on the default theme's (the light background is a little lighter, the dark one a little darker). Mermaid diagrams keep the colours of `MermaidTheme.axaml`: in the light variant their white background matches the page, while in the dark one their `#18181B` background shows as a slightly lighter card on GitHub's `#0D1117`; redefine `MarkdownMermaidBackground` in the `Dark` dictionary to blend it in. Math formulas follow the theme variant on their own.
 

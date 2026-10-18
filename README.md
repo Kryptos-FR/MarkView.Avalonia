@@ -402,6 +402,8 @@ Override any style class in your own `Styles` to customise appearance:
 | `markdown-custom-inline` | Inline custom container (`::text::`) | `Span` |
 | `markdown-footer` | Footer (`^^`) | `StackPanel` |
 
+Colours are `DynamicResource` brushes (`MarkdownLinkForeground`, `MarkdownTableBorder`, …) that meet WCAG 2.2 AA contrast, with a high-contrast palette that follows the OS setting; see [Accessibility](docs/accessibility.md).
+
 Extension packages may ship their own theme file with additional overridable colours — check the extension's README for its `StyleInclude` path and resource keys.
 
 Example — increase heading size and add a bottom border:
@@ -475,6 +477,7 @@ and search, how incomplete syntax is healed, and how custom renderers can tell t
 
 - **Keyboard.** `Tab` / `Shift+Tab` move through the document's links and interactive elements in reading order, with a focus ring, and `Enter` opens the focused link.
 - **Screen readers.** Headings report their level, and lists, tables, quotes, alerts, images and links report their roles.
+- **Contrast.** Default colours meet WCAG 2.2 AA, and a high-contrast palette follows the OS setting.
 
 See [Accessibility](docs/accessibility.md).
 
