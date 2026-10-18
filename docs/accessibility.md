@@ -112,4 +112,4 @@ Every pair is at least 7:1, as Windows' contrast themes are, and `ThemeContrastT
 </Style>
 ```
 
-Syntax-highlighted code keeps its token colours in high contrast. The Dark+ and Light+ themes already contrast with black and white backgrounds. Mermaid diagrams keep their regular palette.
+Syntax-highlighted code keeps its token colours in high contrast. The Dark+ and Light+ themes already contrast with black and white backgrounds. Mermaid diagrams keep their regular palette. [Find](find-in-document.md) highlights keep their colours too; the default palette's high-contrast text and links stay above 7:1 on them.
