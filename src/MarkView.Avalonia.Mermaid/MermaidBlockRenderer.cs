@@ -29,17 +29,21 @@ namespace MarkView.Avalonia.Mermaid;
 /// being streamed), a Mermaid fence is rendered as a <c>mermaid</c> code block and no diagram render is
 /// scheduled; it renders as a diagram once a blank line or another block follows it.
 /// </summary>
-public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
+/// <param name="style">The visual style diagrams are painted in.</param>
+public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet) : AvaloniaObjectRenderer<FencedCodeBlock>
 {
+    /// <summary>The visual style diagrams are painted in.</summary>
+    public MermaidStyle Style { get; } = style;
+
     protected override void Write(AvaloniaRenderer renderer, FencedCodeBlock obj)
     {
         if (string.Equals(obj.Info, "mermaid", StringComparison.OrdinalIgnoreCase) && !renderer.IsProvisional(obj))
-            WriteMermaid(renderer, obj);
+            WriteMermaid(renderer, obj, Style);
         else
             WriteStandardCodeBlock(renderer, obj);
     }
 
-    private static void WriteMermaid(AvaloniaRenderer renderer, FencedCodeBlock obj)
+    private static void WriteMermaid(AvaloniaRenderer renderer, FencedCodeBlock obj, MermaidStyle style)
     {
         var source = ExtractSource(obj);
 
@@ -117,7 +121,7 @@ public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBloc
             var localCts = cts = new CancellationTokenSource();
             var token = localCts.Token;
 
-            var opts = MermaidSvgTheme.GetRenderOptions();
+            var opts = MermaidSvgTheme.GetRenderOptions(style);
             var colours = (opts.Bg, opts.Fg, opts.Accent);
             if (rendered.TryGetValue(colours, out var cached))
             {

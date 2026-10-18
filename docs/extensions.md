@@ -79,6 +79,24 @@ viewer.UseMermaid();
 MarkdownViewerDefaults.Extensions.AddMermaid();
 ```
 
+### Diagram style
+
+Diagrams are painted in one of Mermaider's three style presets, `MermaidStyle.Quiet` by default:
+
+```csharp
+viewer.UseMermaid(MermaidStyle.Blueprint);
+// or globally:
+MarkdownViewerDefaults.Extensions.AddMermaid(MermaidStyle.Tonal);
+```
+
+| Style | Look |
+|---|---|
+| `Quiet` | Tinted boxes with a soft gradient and a light shadow, the accent marking what to look at |
+| `Blueprint` | A technical drawing: outlines first, square corners, monospace captions, accent heads and rules |
+| `Tonal` | Filled tonal blocks without outlines, with generous corner radii and a soft shadow |
+
+Every style uses the same layout and the colours below; only the paint changes.
+
 ### Markdown syntax
 
 ````markdown

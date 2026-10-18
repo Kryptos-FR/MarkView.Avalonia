@@ -11,6 +11,8 @@ using MarkView.Avalonia.Tests.Shared;
 
 using Xunit;
 
+using Mermaider.Models;
+
 using MermaidRenderOptions = Mermaider.Models.RenderOptions;
 
 namespace MarkView.Avalonia.Mermaid.Tests;
@@ -38,6 +40,25 @@ public class MermaidSvgThemeTests
         Assert.Equal(fg, options.Fg);
         Assert.Equal(accent, options.Accent);
         Assert.False(options.Transparent);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(MermaidStyle.Quiet, DiagramStyle.Quiet)]
+    [InlineData(MermaidStyle.Blueprint, DiagramStyle.Blueprint)]
+    [InlineData(MermaidStyle.Tonal, DiagramStyle.Tonal)]
+    public void GetRenderOptions_paints_in_the_requested_style(MermaidStyle style, DiagramStyle expected)
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+
+        Assert.Equal(expected, MermaidSvgTheme.GetRenderOptions(style).Style);
+    }
+
+    [AvaloniaFact]
+    public void GetRenderOptions_paints_in_the_quiet_style_by_default()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+
+        Assert.Equal(DiagramStyle.Quiet, MermaidSvgTheme.GetRenderOptions().Style);
     }
 
     [AvaloniaFact]
@@ -270,7 +291,9 @@ public class MermaidSvgThemeTests
     [InlineData("graph LR\n  A:::success --> B:::failure --> C:::warning --> D:::info")]
     public void InlineCssVariables_leaves_no_css_function_in_mermaider_output(string source)
     {
-        foreach (var options in new[] { Options(), new MermaidRenderOptions { Bg = "#18181B", Fg = "#FAFAFA", Accent = "#60A5FA" } })
+        var styles = new[] { DiagramStyle.Quiet, DiagramStyle.Blueprint, DiagramStyle.Tonal };
+        var colours = new[] { Options(), new MermaidRenderOptions { Bg = "#18181B", Fg = "#FAFAFA", Accent = "#60A5FA" } };
+        foreach (var options in styles.SelectMany(style => colours.Select(c => new MermaidRenderOptions { Bg = c.Bg, Fg = c.Fg, Accent = c.Accent, Style = style })))
         {
             var svg = MermaidSvgTheme.InlineCssVariables(Mermaider.MermaidRenderer.RenderSvg(source, options), options);
             var drawing = svg.Remove(svg.IndexOf("<style>", StringComparison.Ordinal), svg.IndexOf("</style>", StringComparison.Ordinal) - svg.IndexOf("<style>", StringComparison.Ordinal));

@@ -59,6 +59,22 @@ The extension targets the diagram types supported by the version of Mermaider th
 
 See the [Mermaid documentation](https://mermaid.js.org/intro/) for syntax reference. If a diagram fails to render, the extension falls back to a plain-text block containing the original source. While a document is streaming, a `mermaid` fence at the end of the text is shown as a `mermaid` code block and becomes a diagram once a blank line or another block follows it.
 
+## Diagram Style
+
+Diagrams are painted in one of Mermaider's three style presets, chosen when the extension is added (`MermaidStyle.Quiet` by default):
+
+```csharp
+viewer.UseMermaid(MermaidStyle.Blueprint);
+// or globally:
+MarkdownViewerDefaults.Extensions.AddMermaid(MermaidStyle.Tonal);
+```
+
+- `Quiet`: tinted boxes with a soft gradient and a light shadow, the accent marking what to look at.
+- `Blueprint`: a technical drawing, with outlines first, square corners, monospace captions, accent heads and rules.
+- `Tonal`: filled tonal blocks without outlines, with generous corner radii and a soft shadow.
+
+Every style uses the same layout and the colours of the theme below; only the paint changes.
+
 ## Theme Awareness
 
 Diagram colours come from `MermaidTheme.axaml`, included the same way as the core package's theme:

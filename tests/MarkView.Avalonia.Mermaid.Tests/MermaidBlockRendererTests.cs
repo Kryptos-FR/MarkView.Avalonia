@@ -96,6 +96,25 @@ public class MermaidBlockRendererTests
         var viewer = new MarkdownViewer();
         viewer.UseMermaid();
         Assert.Single(viewer.Extensions);
-        Assert.IsType<MermaidExtension>(viewer.Extensions[0]);
+        Assert.Equal(MermaidStyle.Quiet, Assert.IsType<MermaidExtension>(viewer.Extensions[0]).Style);
     }
+
+    [AvaloniaTheory]
+    [InlineData(MermaidStyle.Quiet)]
+    [InlineData(MermaidStyle.Blueprint)]
+    [InlineData(MermaidStyle.Tonal)]
+    public void The_style_given_to_UseMermaid_reaches_the_block_renderer(MermaidStyle style)
+    {
+        var viewer = new MarkdownViewer().UseMermaid(style);
+        var renderer = new AvaloniaRenderer();
+
+        Assert.Equal(style, Assert.IsType<MermaidExtension>(Assert.Single(viewer.Extensions)).Style);
+        viewer.Extensions[0].Register(renderer);
+
+        Assert.Equal(style, Assert.Single(renderer.ObjectRenderers.OfType<MermaidBlockRenderer>()).Style);
+    }
+
+    [Fact]
+    public void A_block_renderer_paints_in_the_quiet_style_by_default() =>
+        Assert.Equal(MermaidStyle.Quiet, new MermaidBlockRenderer().Style);
 }
