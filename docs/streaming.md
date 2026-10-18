@@ -236,7 +236,8 @@ update renders it again. Once the text has moved past it, with a blank line or a
 update renders it for real, with the addresses, the images, the diagrams and the formulas. The
 final update, from `Complete()`, renders nothing as provisional.
 
-The demo's View options menu has a **Stream the document** command that replays the current page.
+The demo's View options menu has a **Stream the document** command that replays the current page,
+with a toggle for healing and sliders for the chunk size and the interval.
 
 ## How rendering works
 

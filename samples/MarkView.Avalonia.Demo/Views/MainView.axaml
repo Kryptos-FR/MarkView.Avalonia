@@ -169,7 +169,32 @@
               <Separator />
               <MenuItem Header="Stream the document" Click="OnStreamClicked"
                         IsEnabled="{Binding !IsColorExtensionSelected}"
-                        ToolTip.Tip="Replay the page through a streaming session, 40 characters every 20 ms, following the end. Changing the page, opening a file or changing a view option stops the replay." />
+                        ToolTip.Tip="Replay the page through a streaming session, with the chunk size and interval below, following the end. Changing the page, opening a file or changing a view option above stops the replay." />
+              <MenuItem Header="Heal incomplete syntax" ToggleType="CheckBox"
+                        IsChecked="{Binding HealIncompleteSyntax, Mode=TwoWay}"
+                        ToolTip.Tip="Close the syntax left open at the end of the streamed text (an unmatched ` or **, a link without its closing parenthesis) between updates, so it renders as it will once complete. Takes effect at once in a replay." />
+              <MenuItem StaysOpenOnClick="True"
+                        ToolTip.Tip="Characters appended at each step of a replay; takes effect at once.">
+                <MenuItem.Header>
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding ReplayChunkSizeLabel}" />
+                    <Slider Minimum="8" Maximum="64" TickFrequency="1" IsSnapToTickEnabled="True" Width="240"
+                            Value="{Binding ReplayChunkSize, Mode=TwoWay}"
+                            AutomationProperties.Name="Replay chunk size" />
+                  </StackPanel>
+                </MenuItem.Header>
+              </MenuItem>
+              <MenuItem StaysOpenOnClick="True"
+                        ToolTip.Tip="Pause between two steps of a replay; takes effect at once. Around 200 ms with a small chunk is the pace of a language model.">
+                <MenuItem.Header>
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding ReplayIntervalLabel}" />
+                    <Slider Minimum="16" Maximum="256" TickFrequency="1" IsSnapToTickEnabled="True" Width="240"
+                            Value="{Binding ReplayInterval, Mode=TwoWay}"
+                            AutomationProperties.Name="Replay interval" />
+                  </StackPanel>
+                </MenuItem.Header>
+              </MenuItem>
             </MenuFlyout>
           </DropDownButton.Flyout>
         </DropDownButton>

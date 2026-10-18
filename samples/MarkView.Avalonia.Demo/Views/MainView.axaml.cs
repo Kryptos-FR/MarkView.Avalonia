@@ -8,12 +8,6 @@ namespace MarkView.Avalonia.Demo.Views;
 
 public partial class MainView : UserControl
 {
-    /// <summary>The number of characters each step of the Stream command appends.</summary>
-    private const int StreamChunkSize = 40;
-
-    /// <summary>The pause between two steps of the Stream command.</summary>
-    private static readonly TimeSpan StreamChunkInterval = TimeSpan.FromMilliseconds(20);
-
     // Cancels the replay in progress; replaced by each click on Stream.
     private CancellationTokenSource? _streamCts;
 
@@ -165,19 +159,27 @@ public partial class MainView : UserControl
             return;
 
         viewModel.BeginReplay();
+        var healing = viewModel.HealIncompleteSyntax;
+        var session = MarkdownView.BeginStreaming(healIncompleteSyntax: healing);
         try
         {
-            using var session = MarkdownView.BeginStreaming();
             var position = 0;
             // The viewer ends the session itself when the page changes (another tab, a file), which stops the loop.
             while (position < text.Length && !token.IsCancellationRequested && MarkdownView.IsStreaming)
             {
-                var length = int.Min(StreamChunkSize, text.Length - position);
+                if (healing != viewModel.HealIncompleteSyntax)
+                {
+                    // Healing is a session option: a new session continues from the text streamed so far.
+                    healing = viewModel.HealIncompleteSyntax;
+                    await session.CompleteAsync();
+                    session = MarkdownView.BeginStreaming(healIncompleteSyntax: healing);
+                }
+                var length = int.Min(viewModel.ReplayChunkSize, text.Length - position);
                 session.Append(text.AsSpan(position, length));
                 position += length;
                 try
                 {
-                    await Task.Delay(StreamChunkInterval, token);
+                    await Task.Delay(TimeSpan.FromMilliseconds(viewModel.ReplayInterval), token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -187,6 +189,7 @@ public partial class MainView : UserControl
         }
         finally
         {
+            session.Dispose();
             // After the session is disposed: the view model gets the page's text back, unless the page changed.
             viewModel.EndReplay(text);
         }

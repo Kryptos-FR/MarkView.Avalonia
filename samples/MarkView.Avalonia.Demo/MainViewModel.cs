@@ -259,6 +259,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isLightTheme;
     private bool _isCustomStyled;
     private bool _isColorExtensionSelected;
+    private bool _healIncompleteSyntax = true;
+    private int _replayChunkSize = 40;
+    private int _replayInterval = 20;
     private bool _isCodeHeightLimited;
     private int _themePresetIndex;
     private GitHubPreset? _gitHubTheme;
@@ -318,6 +321,54 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     private const double LimitedCodeBlockHeight = 160;
+
+    /// <summary>
+    /// Whether a replay closes the syntax left open at the end of the streamed text between updates
+    /// (<c>BeginStreaming(healIncompleteSyntax:)</c>). A change takes effect at once in a replay.
+    /// </summary>
+    public bool HealIncompleteSyntax
+    {
+        get => _healIncompleteSyntax;
+        set => SetField(ref _healIncompleteSyntax, value);
+    }
+
+    /// <summary>How many characters each step of a replay appends: <see cref="MinReplayChunkSize"/> to <see cref="MaxReplayChunkSize"/>.</summary>
+    public int ReplayChunkSize
+    {
+        get => _replayChunkSize;
+        set
+        {
+            if (SetField(ref _replayChunkSize, System.Math.Clamp(value, MinReplayChunkSize, MaxReplayChunkSize)))
+                NotifyReplayLabels();
+        }
+    }
+
+    /// <summary>The pause between two steps of a replay, in milliseconds: <see cref="MinReplayInterval"/> to <see cref="MaxReplayInterval"/>.</summary>
+    public int ReplayInterval
+    {
+        get => _replayInterval;
+        set
+        {
+            if (SetField(ref _replayInterval, System.Math.Clamp(value, MinReplayInterval, MaxReplayInterval)))
+                NotifyReplayLabels();
+        }
+    }
+
+    public const int MinReplayChunkSize = 8;
+    public const int MaxReplayChunkSize = 64;
+    public const int MinReplayInterval = 16;
+    public const int MaxReplayInterval = 256;
+
+    public string ReplayChunkSizeLabel => $"Chunk size: {_replayChunkSize} characters";
+
+    public string ReplayIntervalLabel =>
+        $"Interval: {_replayInterval} ms ({_replayChunkSize * 1000.0 / _replayInterval:N0} characters per second)";
+
+    private void NotifyReplayLabels()
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ReplayChunkSizeLabel)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ReplayIntervalLabel)));
+    }
 
     public double CodeBlockMaxHeight => _isCodeHeightLimited ? LimitedCodeBlockHeight : double.PositiveInfinity;
 
