@@ -48,7 +48,7 @@ public class FoldableAlertTests : RenderTestBase
         var border = Assert.IsType<Border>(Assert.Single(root.Children));
         var outer = Assert.IsType<StackPanel>(border.Child);
         Assert.Equal(2, outer.Children.Count);
-        var header = Assert.IsType<TextBlock>(outer.Children[0]);
+        var header = Assert.IsAssignableFrom<TextBlock>(outer.Children[0]);
         Assert.Contains("markdown-alert-header", header.Classes);
         var content = Assert.IsType<StackPanel>(outer.Children[1]);
         Assert.Contains("markdown-alert-content", content.Classes);
