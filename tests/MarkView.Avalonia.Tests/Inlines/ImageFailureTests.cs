@@ -4,6 +4,7 @@
 using System.Net;
 
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
@@ -43,7 +44,9 @@ public sealed class ImageFailureTests : IDisposable
         public void Dispose() => Window.Close();
     }
 
-    private static Fixture Show(string markdown, params IImageLoader[] loaders)
+    private static Fixture Show(string markdown, params IImageLoader[] loaders) => Show(markdown, theme: false, loaders);
+
+    private static Fixture Show(string markdown, bool theme, params IImageLoader[] loaders)
     {
         var pipeline = new MarkdownPipelineBuilder().Build();
         var renderer = new AvaloniaRenderer();
@@ -52,6 +55,8 @@ public sealed class ImageFailureTests : IDisposable
         pipeline.Setup(renderer);
         renderer.Render(Markdown.Parse(markdown, pipeline));
         var window = new Window { Width = 600, Height = 400, Content = renderer.RootPanel };
+        if (theme)
+            window.Styles.Add(new StyleInclude((Uri?)null) { Source = new Uri("avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml") });
         window.Show();
         return new Fixture(window, renderer);
     }
@@ -78,6 +83,31 @@ public sealed class ImageFailureTests : IDisposable
         await f.WaitForPlaceholderAsync();
 
         Assert.Contains("markdown-image-failed", f.Placeholder.Classes);
+    }
+
+    [AvaloniaFact]
+    public async Task Screen_readers_see_the_placeholder_as_the_image_that_could_not_be_loaded()
+    {
+        using var f = Show("![A diagram](unknown://diagram.png)", theme: true);
+
+        await f.WaitForPlaceholderAsync();
+        var peer = ControlAutomationPeer.CreatePeerForElement(f.Placeholder);
+
+        Assert.Equal(AutomationControlType.Image, peer.GetAutomationControlType());
+        Assert.Equal("A diagram", peer.GetName());
+        Assert.Equal("Image could not be loaded", peer.GetHelpText());
+    }
+
+    [AvaloniaFact]
+    public async Task A_placeholder_without_alt_text_is_hidden_as_decorative()
+    {
+        using var f = Show("![](unknown://divider.png)");
+
+        await f.WaitForPlaceholderAsync();
+        var peer = ControlAutomationPeer.CreatePeerForElement(f.Placeholder);
+
+        Assert.False(peer.IsControlElement());
+        Assert.False(peer.IsContentElement());
     }
 
     [AvaloniaFact]

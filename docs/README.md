@@ -12,6 +12,7 @@ This folder contains developer-facing documentation for the MarkView.Avalonia li
 | [text-selection.md](text-selection.md) | Text selection, clipboard, and programmatic API |
 | [find-in-document.md](find-in-document.md) | Finding text in the document: API, options, and highlight colours |
 | [theming.md](theming.md) | Colour resources, the GitHub theme preset, style classes, theme switching, and customisation |
+| [accessibility.md](accessibility.md) | Screen reader roles and keyboard navigation of links and interactive elements |
 | [custom-extensions.md](custom-extensions.md) | Writing your own `IMarkViewExtension`, image loaders, and renderers |
 
 For a quick overview, see the [root README](../README.md).

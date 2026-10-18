@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Layout;
 
@@ -20,6 +21,7 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
     {
         var grid = new Grid();
         grid.Classes.Add("markdown-table");
+        AutomationRoles.Set(grid, AutomationControlType.Table);
 
         // Define columns
         for (int i = 0; i < obj.ColumnDefinitions.Count; i++)
@@ -46,9 +48,16 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
                 };
                 border.Classes.Add("markdown-table-cell");
                 if (row.IsHeader)
+                {
                     border.Classes.Add("markdown-table-header");
-                else if (isEvenBodyRow)
-                    border.Classes.Add("markdown-table-row-even");
+                    AutomationRoles.Set(border, AutomationControlType.HeaderItem);
+                }
+                else
+                {
+                    if (isEvenBodyRow)
+                        border.Classes.Add("markdown-table-row-even");
+                    AutomationRoles.Set(border, AutomationControlType.DataItem);
+                }
 
                 // Apply text alignment from column definition
                 if (colIndex < obj.ColumnDefinitions.Count)

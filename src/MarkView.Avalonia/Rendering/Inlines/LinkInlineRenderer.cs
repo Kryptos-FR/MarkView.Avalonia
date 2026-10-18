@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 
 using Avalonia;
 using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Input;
@@ -78,6 +79,11 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             ToolTip.SetTip(image, altText);
             AutomationProperties.SetName(image, altText);
         }
+        else
+        {
+            // An image without alt text is treated as decorative, as browsers do with alt="".
+            AutomationRoles.Hide(image);
+        }
         MarkdownSelection.SetCopyText(image, altText);
 
         // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor), or from the
@@ -147,12 +153,16 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
     /// <summary>
     /// Makes a loaded image ask the renderer to zoom it when clicked, or when Enter or Space is pressed
-    /// while it has focus.
+    /// while it has focus. Screen readers see it as an image named by its alt text, whose help text
+    /// (from the theme's <c>markdown-image-zoomable</c> style) says what it does.
     /// </summary>
     private static void MakeZoomable(AvaloniaRenderer renderer, Image image)
     {
         image.Cursor = ZoomCursor.Instance;
         image.Focusable = true;
+        image.Classes.Add("markdown-image-zoomable");
+        // A Tab stop, so not decorative even without alt text.
+        AutomationRoles.Set(image, AutomationControlType.Image);
         // A click, like a foldable alert header's (see CollapsibleAlert): the press implicitly captures
         // the pointer to the image, so the image sees no release once the viewer has turned the press
         // into a selection drag.
@@ -205,6 +215,16 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         };
         placeholder.Classes.Add("markdown-image-failed");
         MarkdownSelection.SetCopyText(placeholder, altText);
+        // Named by its alt text, the theme's style saying that it could not be loaded; decorative without one.
+        if (string.IsNullOrEmpty(altText))
+        {
+            AutomationRoles.Hide(placeholder);
+        }
+        else
+        {
+            AutomationRoles.Set(placeholder, AutomationControlType.Image);
+            AutomationProperties.SetName(placeholder, altText);
+        }
 
         // Written by AvaloniaRenderer.WriteInline, the image is the child of an InlineUIContainer.
         if (image.Parent is InlineUIContainer container)
@@ -313,7 +333,10 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         var button = new Button { Content = overlayGrid };
         button.Classes.Add("markdown-youtube");
         button.Click += (_, _) => renderer.OnLinkClicked(videoUri.ToString());
-        MarkdownSelection.SetCopyText(button, ExtractAltText(obj));
+        var altText = ExtractAltText(obj);
+        MarkdownSelection.SetCopyText(button, altText);
+        AutomationProperties.SetControlTypeOverride(button, AutomationControlType.Hyperlink);
+        AutomationProperties.SetName(button, string.IsNullOrEmpty(altText) ? videoUri.ToString() : altText);
 
         CancellationTokenSource? cts = null;
         thumbnail.AttachedToVisualTree += (_, _) =>

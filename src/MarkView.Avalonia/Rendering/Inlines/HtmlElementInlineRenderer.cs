@@ -1,6 +1,8 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 
@@ -56,7 +58,12 @@ internal sealed class HtmlElementInlineRenderer : AvaloniaObjectRenderer<HtmlEle
 
         var key = new HtmlKeyboardKey { Child = text };
         key.Classes.Add("markdown-html-kbd");
-        MarkdownSelection.SetCopyText(key, MarkdownSelectableTextBlock.ExtractPlainText(text.Inlines!));
+        var plainText = MarkdownSelectableTextBlock.ExtractPlainText(text.Inlines!);
+        MarkdownSelection.SetCopyText(key, plainText);
+        // Read as the key's text, once: the text block inside it is hidden.
+        AutomationRoles.Set(key, AutomationControlType.Text);
+        AutomationProperties.SetName(key, plainText);
+        AutomationRoles.Hide(text);
         renderer.WriteInline(key);
     }
 }

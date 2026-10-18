@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 
 using Markdig.Syntax;
@@ -14,6 +15,7 @@ public sealed class QuoteBlockRenderer : AvaloniaObjectRenderer<QuoteBlock>
         var contentPanel = new StackPanel { Spacing = 8 };
         var border = new Border { Child = contentPanel };
         border.Classes.Add("markdown-blockquote");
+        AutomationRoles.Set(border, AutomationControlType.Group);
 
         renderer.Push(contentPanel);
         renderer.WriteChildren(obj);

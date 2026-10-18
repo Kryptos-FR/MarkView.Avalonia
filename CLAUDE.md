@@ -46,7 +46,7 @@ ImageSizePreprocessor  ("![alt](url =WxH)" normalisation)
   → IMarkViewExtension[].Register(renderer)   ← extension packages plug in here
   → pipeline.Setup(renderer)
   → AvaloniaRenderer.Render(document)
-  → Grid { StackPanel (root), DocumentSelectionLayer }   ← this becomes MarkdownViewer.Content
+  → Grid { StackPanel (root), DocumentSelectionLayer, LinkFocusLayer }   ← this becomes MarkdownViewer.Content
 ```
 
 `Content` is hosted by `PART_ScrollViewer`, the named part inside `MarkdownViewer`'s default `ControlTemplate` (shipped in `MarkdownTheme.axaml`); `viewer.Content` itself is the `Grid`, not a `ScrollViewer`.
@@ -58,6 +58,7 @@ ImageSizePreprocessor  ("![alt](url =WxH)" normalisation)
 - Theme switching is live: an `IDualThemeCodeHighlighter` (the TextMate one) tokenises each line once with both variants' colours, and a theme switch only recolours the existing runs through shared per-block brushes (`Rendering/Blocks/HighlightedCode.cs`, used by both the TextMate and Mermaid code block renderers). A plain `IThemeAwareCodeHighlighter` gets its runs rebuilt via `HighlightVariant()` instead.
 - Cross-block text selection is owned entirely by `DocumentSelectionLayer` (a transparent overlay `Control`), not by individual `TextBlock`s — see [docs/text-selection.md](docs/text-selection.md).
 - Find in document (`MarkdownViewer.Find`/`FindNext`/`FindPrevious`) searches the same registered entries in `DocumentSelectionLayer`, which draws the matches under the selection — see [docs/find-in-document.md](docs/find-in-document.md).
+- Links are `Span`s, so they can't take focus or have automation peers. `LinkFocusLayer` (another overlay) hosts one focusable `LinkFocusTarget` per link, kept over the link's text, and `MarkdownViewer` implements `ICustomKeyboardNavigation` to Tab through them in reading order. Each target's Hyperlink peer is reported as a child of its paragraph's peer — see [docs/accessibility.md](docs/accessibility.md).
 
 ## Conventions
 

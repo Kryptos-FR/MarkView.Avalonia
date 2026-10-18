@@ -294,6 +294,17 @@
     <Setter Property="Margin" Value="0,4" />
   </Style>
   <!-- Placeholder of an image that could not be loaded: a broken-image glyph and the alt text -->
+  <!-- What a zoomable image does, and what a failed one or the lightbox is called without alt text, for
+       screen readers. Set here so they can be translated. -->
+  <Style Selector="Image.markdown-image-zoomable">
+    <Setter Property="AutomationProperties.HelpText" Value="Zoom" />
+  </Style>
+  <Style Selector="Border.markdown-image-failed">
+    <Setter Property="AutomationProperties.HelpText" Value="Image could not be loaded" />
+  </Style>
+  <Style Selector=":is(Panel).markdown-image-lightbox">
+    <Setter Property="AutomationProperties.Name" Value="Image" />
+  </Style>
   <Style Selector="Border.markdown-image-failed">
     <Setter Property="Background" Value="{DynamicResource MarkdownImageFailedBackground}" />
     <Setter Property="BorderBrush" Value="{DynamicResource MarkdownImageFailedBorder}" />

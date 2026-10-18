@@ -3,6 +3,7 @@
 
 using Avalonia;
 using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Input;
@@ -37,6 +38,8 @@ internal sealed class ImageLightbox : Panel
     {
         ReturnFocus = returnFocus;
         Classes.Add("markdown-image-lightbox");
+        // Focused when it opens, so it is announced: by the image's alt text, or the theme's name without one.
+        AutomationRoles.Set(this, AutomationControlType.Image);
         if (!string.IsNullOrEmpty(altText))
             AutomationProperties.SetName(this, altText);
 
