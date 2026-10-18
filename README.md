@@ -226,6 +226,7 @@ These require adding `.UseXxx()` to the pipeline (see [Extension Methods](#exten
 | Citations | `UseCitations()` | `""quoted text""` |
 | Figures | `UseFigures()` | `^^^` / `^^^ caption` |
 | Hardline breaks | `UseHardlineBreaks()` | every soft line break renders as a hard break |
+| Thinking blocks | `UseThinkingBlocks()` (also `viewer.UseThinkingBlocks()`) | a reasoning model's `<think>…</think>` folded away under "Thinking…" / "Thought for 12 seconds" (see [Thinking blocks](docs/configuration.md#thinking-blocks)) |
 | YouTube embeds | `UseMediaLinks()` | `![title](https://youtu.be/…)` |
 | Definition lists | `UseDefinitionLists()` | `Term` followed by `:   definition` |
 | Custom containers | `UseCustomContainers()` | `:::name` … `:::` blocks, `::text::` inline |
@@ -392,6 +393,10 @@ Override any style class in your own `Styles` to customise appearance:
 | `markdown-alert-header` | Alert kind label or custom title | `TextBlock` |
 | `markdown-alert-collapsible` | Foldable alert (`:expanded` while open) | `Border` |
 | `markdown-alert-chevron` | Fold indicator in a foldable alert's header | `Run` |
+| `markdown-thinking` | Language model reasoning (`UseThinkingBlocks`; `:expanded` while open, `:thinking` while it arrives) | `Border` |
+| `markdown-thinking-header` | Thinking block title, the fold target | `TextBlock` |
+| `markdown-thinking-chevron` | Fold indicator in a thinking block's title | `Control` |
+| `markdown-thinking-content` | Reasoning text of a thinking block | `Border` |
 | `markdown-figure` | Figure container | `Border` |
 | `markdown-figure-caption` | Figure caption | `TextBlock` |
 | `markdown-abbr` | Abbreviation with tooltip | `TextBlock` |

@@ -106,4 +106,19 @@ public static class MarkdownViewerExtensions
             .Build();
         return viewer;
     }
+
+    /// <summary>
+    /// Shows a language model's reasoning (<c>&lt;think&gt;…&lt;/think&gt;</c>) in a block that folds away, as
+    /// <see cref="MarkdownExtensions.UseThinkingBlocks"/> describes.
+    /// </summary>
+    /// <param name="viewer">The viewer.</param>
+    /// <param name="options">The tags, titles and fold behaviour; the defaults when <c>null</c>.</param>
+    public static MarkdownViewer UseThinkingBlocks(this MarkdownViewer viewer, ThinkingBlockOptions? options = null)
+    {
+        viewer.Pipeline = new MarkdownPipelineBuilder()
+            .UseGitHubExtensions()
+            .UseThinkingBlocks(options)
+            .Build();
+        return viewer;
+    }
 }

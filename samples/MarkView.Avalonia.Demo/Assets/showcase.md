@@ -11,6 +11,7 @@
 - [Emphasis Extras](#emphasis-extras)
 - [HTML](#html)
 - [Blockquotes](#blockquotes)
+- [Thinking Blocks](#thinking-blocks)
 - [Task List](#task-list)
 - [Tables](#tables)
 - [Code Blocks](#code-blocks)
@@ -88,6 +89,22 @@ Markdown inside a `<div align="right">`, separated from its tags by **blank line
 > > Nested content can also span multiple lines.
 >
 > Back to the outer blockquote.
+
+---
+
+## Thinking Blocks
+
+A language model's reasoning between `<think>` tags (with `UseThinkingBlocks()`) folds into a block.
+Stream this page (View options, Stream the document) to see it expanded while it arrives, then collapsed once it ends.
+
+<think>
+The user wants to know how many legs **three spiders** have.
+
+- A spider has 8 legs.
+- 3 × 8 = 24.
+</think>
+
+Three spiders have **24 legs** in total.
 
 ---
 

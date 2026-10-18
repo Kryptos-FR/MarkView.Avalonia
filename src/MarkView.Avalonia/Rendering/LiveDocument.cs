@@ -83,58 +83,54 @@ internal sealed class LiveDocument
         var keys = CollectInvalidationKeys(document);
         // Before the first update there are no records, so ReusablePrefix returns 0 by itself.
         var keysUnchanged = keys.SequenceEqual(_invalidationKeys, StringComparer.Ordinal);
-        var reused = keysUnchanged ? ReusablePrefix(document) : 0;
+        var reused = keysUnchanged ? ReusablePrefix(_records, document) : 0;
 
-        // The state the first `reused` blocks produced: the sum of their counts.
-        int children = 0, entries = 0, stops = 0, targets = 0, anchors = 0, headings = 0, slugs = 0;
-        for (var i = 0; i < reused; i++)
+        // The last block may still be growing inside the control rendered for it (see IGrowingBlockRenderer):
+        // that control is kept, and only the children that changed are rendered again.
+        var growing = keysUnchanged && reused == _records.Count - 1 ? GrowingTailFor(_records[reused], document, reused) : null;
+        var childrenReused = growing is null ? 0 : ReusablePrefix(growing.Children, (ContainerBlock)document[reused]);
+
+        // The state the kept blocks produced: the sum of their counts.
+        var kept = Sum(_records, reused);
+        var rootChildren = kept.Children;
+        var panelChildren = 0;
+        if (growing is not null)
         {
-            var record = _records[i];
-            children += record.ChildCount;
-            entries += record.SelectionEntries;
-            stops += record.LinkStops;
-            targets += record.LinkTargets;
-            anchors += record.Anchors;
-            headings += record.Headings;
-            slugs += record.Slugs;
+            var keptChildren = Sum(growing.Children, childrenReused);
+            rootChildren += growing.Shell.Children;
+            panelChildren = keptChildren.Children;
+            kept += growing.Shell + keptChildren;
         }
 
-        var focusDiscarded = IsInDiscardedChildren(focusedElement, children);
-        var removedHeadings = Renderer.HeadingCount - headings;
+        var focusDiscarded = IsInDiscarded(focusedElement,
+            RootPanel.Children.Skip(rootChildren).Concat(growing?.Panel.Children.Skip(panelChildren) ?? []));
+        var removedHeadings = Renderer.HeadingCount - kept.Headings;
 
-        RootPanel.Children.RemoveRange(children, RootPanel.Children.Count - children);
-        SelectionLayer.TruncateTo(entries);
-        LinkLayer.TruncateTo(stops, targets);
-        Renderer.TruncateAnchors(anchors);
-        Renderer.TruncateHeadings(headings);
-        Renderer.SlugGenerator.TruncateTo(slugs);
+        RootPanel.Children.RemoveRange(rootChildren, RootPanel.Children.Count - rootChildren);
+        growing?.Panel.Children.RemoveRange(panelChildren, growing.Panel.Children.Count - panelChildren);
+        SelectionLayer.TruncateTo(kept.Entries);
+        LinkLayer.TruncateTo(kept.Stops, kept.Targets);
+        Renderer.TruncateAnchors(kept.Anchors);
+        Renderer.TruncateHeadings(kept.Headings);
+        Renderer.SlugGenerator.TruncateTo(kept.Slugs);
+
+        if (growing is not null)
+        {
+            var container = (ContainerBlock)document[reused];
+            growing.Children.RemoveRange(childrenReused, growing.Children.Count - childrenReused);
+            WriteChildren(container, growing, childrenReused);
+            _records[reused] = TailRecord(container, growing);
+            reused++;
+        }
         _records.RemoveRange(reused, _records.Count - reused);
 
         for (var i = reused; i < document.Count; i++)
         {
             var block = document[i];
-            var childrenBefore = RootPanel.Children.Count;
-            var entriesBefore = SelectionLayer.EntryCount;
-            var stopsBefore = LinkLayer.StopCount;
-            var targetsBefore = LinkLayer.TargetCount;
-            var anchorsBefore = Renderer.AnchorCount;
-            var headingsBefore = Renderer.HeadingCount;
-            var slugsBefore = Renderer.SlugGenerator.Count;
-
-            Renderer.WriteTopLevel(block);
-            MarkdownViewer.RegisterBlocks(SelectionLayer, RootPanel, childrenBefore);
-            for (var c = childrenBefore; c < RootPanel.Children.Count; c++)
-                LinkLayer.Collect(RootPanel.Children[c]);
-
-            _records.Add(new BlockRecord(
-                block.GetType(), block.Span.Start, block.Span.End, block.IsOpen, Renderer.IsProvisional(block),
-                RootPanel.Children.Count - childrenBefore,
-                SelectionLayer.EntryCount - entriesBefore,
-                LinkLayer.StopCount - stopsBefore,
-                LinkLayer.TargetCount - targetsBefore,
-                Renderer.AnchorCount - anchorsBefore,
-                Renderer.HeadingCount - headingsBefore,
-                Renderer.SlugGenerator.Count - slugsBefore));
+            // Only the last block can grow with appended text.
+            _records.Add(i == document.Count - 1 && block is ContainerBlock container && GrowingRendererFor(container) is { } growingRenderer
+                ? WriteGrowing(container, growingRenderer)
+                : Write(block, RootPanel, Renderer.WriteTopLevel));
         }
 
         // New blocks after a collapsed heading belong to its section, and a heading rendered again keeps the
@@ -144,7 +140,93 @@ internal sealed class LiveDocument
 
         Document = document;
         _invalidationKeys = keys;
-        return new UpdateResult(reused, removedHeadings > 0 || Renderer.HeadingCount != headings, focusDiscarded);
+        return new UpdateResult(reused - (growing is null ? 0 : 1), removedHeadings > 0 || Renderer.HeadingCount != kept.Headings, focusDiscarded);
+    }
+
+    /// <summary>
+    /// Writes <paramref name="block"/> with <paramref name="write"/>, which adds its controls to the end of
+    /// <paramref name="panel"/>, registers what they hold with the selection and link layers, and returns the
+    /// record of what the block added.
+    /// </summary>
+    private BlockRecord Write(Block block, Panel panel, Action<Block> write)
+    {
+        var before = Snapshot(panel);
+        write(block);
+        MarkdownViewer.RegisterBlocks(SelectionLayer, panel, before.Children);
+        for (var c = before.Children; c < panel.Children.Count; c++)
+            LinkLayer.Collect(panel.Children[c]);
+        return new BlockRecord(block.GetType(), block.Span.Start, block.Span.End, block.IsOpen, Renderer.IsProvisional(block),
+            Snapshot(panel) - before);
+    }
+
+    /// <summary>
+    /// Writes the last block of the document, a container that may keep growing, as its shell (see
+    /// <see cref="IGrowingBlockRenderer"/>) and then each child, keeping a record per child so that the next
+    /// update renders only the children that changed.
+    /// </summary>
+    private BlockRecord WriteGrowing(ContainerBlock container, IGrowingBlockRenderer growingRenderer)
+    {
+        Panel? panel = null;
+        var shell = Write(container, RootPanel, _ => panel = growingRenderer.WriteShell(Renderer, container));
+        if (panel is null)
+            return shell;
+
+        var tail = new GrowingTail(growingRenderer, growingRenderer.ShellKey(Renderer, container), panel, shell.Counts, []);
+        WriteChildren(container, tail, 0);
+        return TailRecord(container, tail);
+    }
+
+    private void WriteChildren(ContainerBlock container, GrowingTail tail, int start)
+    {
+        Renderer.Push(tail.Panel);
+        for (var c = start; c < container.Count; c++)
+            tail.Children.Add(Write(container[c], tail.Panel, Renderer.Write));
+        Renderer.Pop();
+        HeadingFold.Apply(tail.Panel);
+    }
+
+    private BlockRecord TailRecord(ContainerBlock container, GrowingTail tail)
+    {
+        // The children are in the shell's panel: in the root panel, the block still adds its shell only.
+        var counts = tail.Shell + Sum(tail.Children, tail.Children.Count);
+        return new BlockRecord(container.GetType(), container.Span.Start, container.Span.End, container.IsOpen,
+            Renderer.IsProvisional(container), counts with { Children = tail.Shell.Children }, tail);
+    }
+
+    /// <summary>
+    /// The growing tail of <paramref name="record"/> when the block now at <paramref name="index"/> can still
+    /// take its new children into the control rendered for it: same type and start, and the same shell.
+    /// </summary>
+    private GrowingTail? GrowingTailFor(BlockRecord record, MarkdownDocument document, int index)
+    {
+        if (record.Tail is not { } tail || index >= document.Count || document[index] is not ContainerBlock container)
+            return null;
+        if (record.BlockType != container.GetType() || record.SpanStart != container.Span.Start)
+            return null;
+        return Equals(tail.Renderer.ShellKey(Renderer, container), tail.Key) ? tail : null;
+    }
+
+    private IGrowingBlockRenderer? GrowingRendererFor(ContainerBlock container)
+    {
+        // The renderer Markdig dispatches to: the first that accepts the block's type.
+        foreach (var renderer in Renderer.ObjectRenderers)
+        {
+            if (renderer.Accept(Renderer, container.GetType()))
+                return renderer as IGrowingBlockRenderer;
+        }
+        return null;
+    }
+
+    private Counts Snapshot(Panel panel) => new(
+        panel.Children.Count, SelectionLayer.EntryCount, LinkLayer.StopCount, LinkLayer.TargetCount,
+        Renderer.AnchorCount, Renderer.HeadingCount, Renderer.SlugGenerator.Count);
+
+    private static Counts Sum(List<BlockRecord> records, int count)
+    {
+        var sum = default(Counts);
+        for (var i = 0; i < count; i++)
+            sum += records[i].Counts;
+        return sum;
     }
 
     /// <summary>
@@ -186,7 +268,8 @@ internal sealed class LiveDocument
     }
 
     /// <summary>
-    /// The number of leading blocks of <paramref name="document"/> whose controls can be kept: same
+    /// The number of leading blocks of <paramref name="blocks"/> (the document's, or those of a growing
+    /// container) whose controls can be kept, by their <paramref name="records"/>: same
     /// type and same source span as when rendered, and not still growing then. Only the last
     /// top-level block can grow with appended text, so <see cref="BlockRecord.WasOpen"/> is consulted
     /// for that block alone: Markdig reports some earlier blocks open although they cannot change (a
@@ -198,15 +281,15 @@ internal sealed class LiveDocument
     /// reports it closed (an ATX heading), so that it is rendered again once it no longer contains
     /// the end of the text.
     /// </summary>
-    private int ReusablePrefix(MarkdownDocument document)
+    private static int ReusablePrefix(List<BlockRecord> records, ContainerBlock blocks)
     {
-        var limit = Math.Min(_records.Count, document.Count);
-        var last = _records.Count - 1;
+        var limit = Math.Min(records.Count, blocks.Count);
+        var last = records.Count - 1;
         var k = 0;
         while (k < limit)
         {
-            var record = _records[k];
-            var block = document[k];
+            var record = records[k];
+            var block = blocks[k];
             if (record.WasProvisional || (record.WasOpen && k == last))
                 break;
             if (record.SpanEnd != block.Span.End)
@@ -221,20 +304,44 @@ internal sealed class LiveDocument
     }
 
     /// <summary>
-    /// Whether <paramref name="focused"/> sits in <c>RootPanel.Children[firstDiscarded..]</c>. A link
+    /// Whether <paramref name="focused"/> sits in one of the <paramref name="discarded"/> controls. A link
     /// target lives in the link layer, so it is judged by the text block it stands over.
     /// </summary>
-    private bool IsInDiscardedChildren(IInputElement? focused, int firstDiscarded)
+    private static bool IsInDiscarded(IInputElement? focused, IEnumerable<Control> discarded)
     {
         var visual = focused is LinkFocusTarget target ? target.TextBlock : focused as Visual;
         if (visual is null) return false;
 
-        var discarded = RootPanel.Children.Skip(firstDiscarded).ToHashSet();
-        return visual.GetSelfAndVisualAncestors().Any(v => v is Control control && discarded.Contains(control));
+        var set = discarded.ToHashSet();
+        return visual.GetSelfAndVisualAncestors().Any(v => v is Control control && set.Contains(control));
     }
 
+    /// <summary>
+    /// What rendering blocks added: controls to their panel (the root panel, or a growing container's), entries to
+    /// the selection layer, stops and targets to the link layer, anchors, headings and slugs.
+    /// </summary>
+    private readonly record struct Counts(int Children, int Entries, int Stops, int Targets, int Anchors, int Headings, int Slugs)
+    {
+        public static Counts operator +(Counts a, Counts b) => new(
+            a.Children + b.Children, a.Entries + b.Entries, a.Stops + b.Stops, a.Targets + b.Targets,
+            a.Anchors + b.Anchors, a.Headings + b.Headings, a.Slugs + b.Slugs);
+
+        public static Counts operator -(Counts a, Counts b) => new(
+            a.Children - b.Children, a.Entries - b.Entries, a.Stops - b.Stops, a.Targets - b.Targets,
+            a.Anchors - b.Anchors, a.Headings - b.Headings, a.Slugs - b.Slugs);
+    }
+
+    /// <param name="Tail">For the last block, when it was written as a growing container: its shell and children.</param>
     private readonly record struct BlockRecord(
-        Type BlockType, int SpanStart, int SpanEnd, bool WasOpen, bool WasProvisional,
-        int ChildCount, int SelectionEntries, int LinkStops, int LinkTargets,
-        int Anchors, int Headings, int Slugs);
+        Type BlockType, int SpanStart, int SpanEnd, bool WasOpen, bool WasProvisional, Counts Counts, GrowingTail? Tail = null);
+
+    /// <summary>
+    /// A growing container written as a shell and then child by child.
+    /// </summary>
+    /// <param name="Renderer">The renderer that wrote the shell.</param>
+    /// <param name="Key">The shell's key (see <see cref="IGrowingBlockRenderer.ShellKey"/>) when it was written.</param>
+    /// <param name="Panel">The panel of the shell the children are written into.</param>
+    /// <param name="Shell">What writing the shell added, before any child.</param>
+    /// <param name="Children">A record per child, in order.</param>
+    private sealed record GrowingTail(IGrowingBlockRenderer Renderer, object? Key, Panel Panel, Counts Shell, List<BlockRecord> Children);
 }

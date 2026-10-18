@@ -27,13 +27,14 @@ public class StreamingEquivalenceTests
     public static TheoryData<string, int, bool> Documents()
     {
         var data = new TheoryData<string, int, bool>();
-        foreach (var asset in new[] { "chat.md", "readme.md", "theming.md", "references.md", "abbreviations.md", "healing.md" })
+        foreach (var asset in new[] { "chat.md", "readme.md", "theming.md", "references.md", "abbreviations.md", "healing.md", "thinking.md" })
             for (var seed = 1; seed <= 3; seed++)
                 data.Add(asset, seed, false);
         data.Add("chat.md", 1, true);
         data.Add("readme.md", 2, true);
         data.Add("references.md", 3, true);
         data.Add("healing.md", 1, true);
+        data.Add("thinking.md", 2, true);
         return data;
     }
 
@@ -46,11 +47,13 @@ public class StreamingEquivalenceTests
     }
 
     // The alert extras of UseAlertBlocks, plus abbreviations, which Markdig applies to every paragraph
-    // once their definition, typically at the end, is parsed.
+    // once their definition, typically at the end, is parsed, and thinking blocks, expanded once complete so
+    // that selection compares their content too.
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UseGitHubExtensions()
         .UseExtendedAlertBlocks()
         .UseAbbreviations()
+        .UseThinkingBlocks(new ThinkingBlockOptions { ExpandWhenDone = true })
         .Build();
 
     private static MarkdownViewer Viewer() =>
