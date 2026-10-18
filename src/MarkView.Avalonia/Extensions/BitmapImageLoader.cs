@@ -3,14 +3,13 @@
 
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 
 namespace MarkView.Avalonia.Extensions;
 
 /// <summary>
 /// Default image loader for bitmap formats (PNG, JPEG, GIF, BMP, WebP, …).
-/// Handles <c>avares://</c> embedded resources, <c>http/https</c> URLs, and
-/// <c>data:image/…;base64,…</c> data URIs.
+/// Handles <c>data:image/…;base64,…</c> data URIs, and any absolute URL whose content the
+/// <see cref="IResourceResolver"/> can open (<c>avares://</c>, <c>file://</c> and <c>http/https</c> by default).
 /// Registered last in <see cref="Rendering.AvaloniaRenderer.ImageLoaders"/> so that
 /// specialised loaders (e.g. SVG) take priority.
 /// </summary>
@@ -21,17 +20,17 @@ internal sealed class BitmapImageLoader : IImageLoader
     {
         if (string.IsNullOrEmpty(url)) return false;
 
-        if (url.StartsWith("avares://", StringComparison.OrdinalIgnoreCase)) return true;
+        if (url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+            return url.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase);
 
-        if (url.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase)) return true;
-
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            return uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps;
-
-        return false;
+        // Whatever the scheme, the resource resolver may open it.
+        return Uri.TryCreate(url, UriKind.Absolute, out _);
     }
 
-    public async Task<IImage?> LoadAsync(string url, CancellationToken cancellationToken = default)
+    public Task<IImage?> LoadAsync(string url, CancellationToken cancellationToken = default) =>
+        LoadAsync(url, DefaultResourceResolver.Instance, cancellationToken);
+
+    public async Task<IImage?> LoadAsync(string url, IResourceResolver resources, CancellationToken cancellationToken = default)
     {
         // Every image is decoded on the thread pool: a large one would otherwise stall the layout pass
         // that attaches it (data: and avares: images load synchronously up to here). Bitmap is not an
@@ -51,17 +50,18 @@ internal sealed class BitmapImageLoader : IImageLoader
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 return null;
 
-            if (uri.Scheme == "avares")
+            using var stream = await resources.OpenAsync(uri, cancellationToken).ConfigureAwait(false);
+            if (stream is null)
+                return null;
+            return await Task.Run(async () =>
             {
-                return await Task.Run(() =>
-                {
-                    using var stream = AssetLoader.Open(uri);
+                if (stream.CanSeek)
                     return new Bitmap(stream);
-                }, cancellationToken).ConfigureAwait(false);
-            }
-
-            using var buffer = await SharedHttpClient.DownloadAsync(uri, cancellationToken).ConfigureAwait(false);
-            return await Task.Run(() => new Bitmap(buffer), cancellationToken).ConfigureAwait(false);
+                using var buffer = new MemoryStream();
+                await stream.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
+                buffer.Position = 0;
+                return new Bitmap(buffer);
+            }, cancellationToken).ConfigureAwait(false);
         }
         // Stryker restore Boolean
         catch (OperationCanceledException) { throw; }

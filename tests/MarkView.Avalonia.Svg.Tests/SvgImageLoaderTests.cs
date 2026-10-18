@@ -79,6 +79,36 @@ public class SvgImageLoaderTests
         Assert.Equal(System.Text.Encoding.UTF8.GetBytes(svg), ImageExport.GetSvg(result));
     }
 
+    private sealed class MemoryResolver(string? content) : IResourceResolver
+    {
+        public Uri? Requested { get; private set; }
+
+        public Task<Stream?> OpenAsync(Uri uri, CancellationToken cancellationToken = default)
+        {
+            Requested = uri;
+            return Task.FromResult<Stream?>(content is null ? null : new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content)));
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task LoadAsync_reads_the_svg_through_the_resource_resolver()
+    {
+        var resolver = new MemoryResolver("""<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>""");
+
+        var result = await new SvgImageLoader().LoadAsync("zip://manual/icon.svg", resolver, TestContext.Current.CancellationToken);
+
+        Assert.IsType<SvgImage>(result);
+        Assert.Equal(new Uri("zip://manual/icon.svg"), resolver.Requested);
+    }
+
+    [AvaloniaFact]
+    public async Task LoadAsync_returns_null_when_nothing_opens_the_url()
+    {
+        var result = await new SvgImageLoader().LoadAsync("zip://manual/icon.svg", new MemoryResolver(null), TestContext.Current.CancellationToken);
+
+        Assert.Null(result);
+    }
+
     [AvaloniaFact]
     public async Task LoadAsync_with_url_encoded_data_uri_returns_SvgImage()
     {

@@ -29,11 +29,68 @@ viewer.Source = null;   // back to the Markdown property
 | `avares://` | Synchronous | `ManifestResourceStream`, already in memory |
 | `file://` | Async | Local and network paths |
 | `http`, `https` | Async | The request is cancelled when `Source` changes; a response over 64 MB is not loaded (remote images too) |
+| Any other | Through [`ResourceResolver`](#reading-from-your-own-storage) | Synchronous when the resolver's task has already completed |
 
 - When both are set, `Source` wins over `Markdown`.
+- A document that cannot be loaded (missing, forbidden, a scheme nothing opens) leaves the current document on screen.
 - The base address for relative links and images is the folder of `Source`, unless `BaseUri` is set.
 - A `#fragment` scrolls to that anchor once the document is rendered: `new Uri(path + "#installation")` behaves like setting `Source` and then calling `ScrollToAnchor("installation")`, without waiting for the render.
 - For `avares://`, everything after the first `#` is the fragment, so an asset whose path contains `#` (such as `Docs/C#.md`) cannot be loaded through `Source`. Rename it, or read it with `AssetLoader.Open` and set `Markdown`.
+
+## Reading from your own storage
+
+The viewer reads `avares://`, `file://` and `http(s)://` by itself. For anything else (a zip archive, a database, files the application keeps in its own storage, a server that needs credentials), give it an `IResourceResolver`. It opens both the document of `Source` and every image of the document, so a document from a zip archive shows the images stored next to it:
+
+```csharp
+using System.IO.Compression;
+using MarkView.Avalonia.Extensions;
+
+/// Serves the entries of a zip archive as zip://manual/<path>.
+public sealed class ZipResolver(ZipArchive archive) : IResourceResolver
+{
+    private readonly Lock _gate = new(); // a ZipArchive cannot be read from two threads at once
+
+    public Task<Stream?> OpenAsync(Uri uri, CancellationToken cancellationToken = default)
+    {
+        if (uri is not { Scheme: "zip", Host: "manual" })
+            return Task.FromResult<Stream?>(null); // not ours: the viewer opens it itself
+
+        lock (_gate)
+        {
+            var entry = archive.GetEntry(Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/')))
+                ?? throw new FileNotFoundException(null, uri.AbsolutePath);
+            var copy = new MemoryStream();
+            using (var stream = entry.Open())
+                stream.CopyTo(copy);
+            copy.Position = 0;
+            return Task.FromResult<Stream?>(copy);
+        }
+    }
+}
+
+viewer.ResourceResolver = new ZipResolver(ZipFile.OpenRead("manual.zip"));
+viewer.Source = new Uri("zip://manual/guide/index.md"); // ![](../img/a.png) reads zip://manual/img/a.png
+```
+
+- The resolver gets absolute addresses without their fragment: relative ones are resolved first against [`BaseUri`](#relative-links-and-images), or the folder of `Source`. Any scheme that looks like a URL (`scheme://host/path`) resolves relative paths as `http` does. Images given as `data:` URIs never reach it.
+- Return `null` for an address the resolver does not handle: the viewer then opens it itself. Throw (or fail the task) for one it handles but cannot read: the image shows its [placeholder](images.md#images-that-fail-to-load) and a `Source` keeps the current document.
+- A task that has already completed when it is returned, as above, renders `Source` before the property setter returns, as for `avares://`.
+- It can be called from any thread and for several images at once. The viewer disposes of the streams it gets.
+- Setting `ResourceResolver` loads `Source` again and re-renders the document. `MarkdownViewerDefaults.ResourceResolver` applies to every viewer that has none of its own.
+
+The same hook covers servers that need credentials, through an `HttpClient` set up for them:
+
+```csharp
+public sealed class IntranetResolver(HttpClient client) : IResourceResolver
+{
+    public async Task<Stream?> OpenAsync(Uri uri, CancellationToken cancellationToken = default) =>
+        uri.Host == "docs.intranet.example"
+            ? await client.GetStreamAsync(uri, cancellationToken) // client sends the Authorization header
+            : null;
+}
+```
+
+[Custom image loaders](custom-extensions.md#writing-a-custom-image-loader) read through the resolver too when they implement the `LoadAsync` overload that takes one, as the built-in and SVG loaders do.
 
 ## Relative links and images
 
@@ -153,7 +210,7 @@ MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
 MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new MyChart(code));
 ```
 
-1. A viewer uses its own `Pipeline` if set, otherwise `MarkdownViewerDefaults.Pipeline`, otherwise the built-in default (`UseGitHubExtensions()`).
+1. A viewer uses its own `Pipeline` if set, otherwise `MarkdownViewerDefaults.Pipeline`, otherwise the built-in default (`UseGitHubExtensions()`). `ResourceResolver` falls back to `MarkdownViewerDefaults.ResourceResolver` the same way.
 2. The default extensions are registered first, then the viewer's `Extensions`. An extension object in both lists is registered once.
 3. For [fence renderers](code-blocks.md#custom-fenced-blocks), the last one registered for a language wins, so a viewer's own replaces a default one.
 
