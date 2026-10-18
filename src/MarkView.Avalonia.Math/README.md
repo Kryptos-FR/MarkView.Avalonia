@@ -103,7 +103,7 @@ math blocks too, so the same applies to them.
 
 ## Streaming
 
-While a document is streaming, a `$$` or `\[` block at the end of the text is shown as a plain code block (its source as text) and becomes a formula on the update after its block closes.
+While a document is streaming, a `$$` or `\[` block at the end of the text is shown as a plain code block (its source as text) and becomes a formula once a blank line or another block follows it.
 
 ## Error Handling
 

@@ -19,7 +19,7 @@ namespace MarkView.Avalonia.Math;
 /// once <c>UseMathBracketDelimiters()</c> is enabled) as a centred image
 /// produced by CSharpMath.SkiaSharp. While a document is streaming, a block that is still provisional
 /// (see <see cref="AvaloniaRenderer.IsProvisional"/>) is rendered as a plain code block, its source as
-/// text, until the update after the block closes.
+/// text, until a blank line or another block follows it.
 /// </summary>
 public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
 {

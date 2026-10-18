@@ -26,8 +26,8 @@ namespace MarkView.Avalonia.Mermaid;
 /// non-mermaid fenced blocks are rendered as styled code blocks and respect any
 /// <see cref="AvaloniaRenderer.CodeHighlighter"/> registered by the SyntaxHighlighting extension.
 /// While <see cref="AvaloniaRenderer.IsProvisional"/> holds for a block (it contains the end of the text
-/// being streamed), a Mermaid fence is rendered as a highlighted <c>mermaid</c> code block and no diagram
-/// render is scheduled; it renders as a diagram on the update after its block closes.
+/// being streamed), a Mermaid fence is rendered as a <c>mermaid</c> code block and no diagram render is
+/// scheduled; it renders as a diagram once a blank line or another block follows it.
 /// </summary>
 public sealed class MermaidBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 {
