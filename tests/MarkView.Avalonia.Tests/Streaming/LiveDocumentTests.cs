@@ -126,7 +126,7 @@ public class LiveDocumentTests
         var result = Update(live, "***");
 
         Assert.Equal(0, result.ReusedBlocks);
-        Assert.Equal(1, live.RootPanel.Children.Count);
+        Assert.Single(live.RootPanel.Children);
         Assert.NotSame(paragraph, live.RootPanel.Children[0]);
         Assert.IsNotType<TextBlock>(live.RootPanel.Children[0]);
     }
