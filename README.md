@@ -339,7 +339,16 @@ viewer.Extensions.Add(new MyExtension());
 
 ## Theming / Customisation
 
-Include `MarkdownTheme.axaml` for default styles. Override any style class in your own `Styles` to customise appearance:
+Include `MarkdownTheme.axaml` for default styles. For a document that looks like Markdown on github.com (GitHub's fonts, spacing and Primer colours, in light and dark, with every colour meeting WCAG AA contrast), also include the **GitHub theme preset** after it:
+
+```xml
+<StyleInclude Source="avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml" />
+<StyleInclude Source="avares://MarkView.Avalonia/Themes/GitHubTheme.axaml" />
+```
+
+See [Theme presets](docs/theming.md#theme-presets) for what it changes, and [Colour resources](docs/theming.md#colour-resources) for every colour key you can redefine.
+
+Override any style class in your own `Styles` to customise appearance:
 
 | Style class | Applied to | Controls |
 |-------------|------------|----------|
@@ -366,6 +375,7 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-table` | Tables | `Grid` |
 | `markdown-table-cell` | Table cells | `Border` |
 | `markdown-table-header` | Header cells | `Border` |
+| `markdown-table-row-even` | Cells of every second body row (2nd, 4th, …) | `Border` |
 | `markdown-marked` | Highlighted text (`==…==`) | `Span` |
 | `markdown-alert` | Alert block container | `Border` |
 | `markdown-alert-note` … `markdown-alert-caution` | Per-kind border colour | `Border` |
@@ -376,6 +386,7 @@ Include `MarkdownTheme.axaml` for default styles. Override any style class in yo
 | `markdown-figure-caption` | Figure caption | `TextBlock` |
 | `markdown-abbr` | Abbreviation with tooltip | `TextBlock` |
 | `markdown-footnote-ref` | Footnote reference link | `HyperlinkButton` |
+| `markdown-footnote-separator` | Line above the footnotes (also `markdown-thematic-break`) | `Separator` |
 | `markdown-footnote-group` | Footnote definition list | `StackPanel` |
 | `markdown-footnote-item` | Individual footnote row | `Grid` |
 | `markdown-definition-list` | Definition list | `StackPanel` |

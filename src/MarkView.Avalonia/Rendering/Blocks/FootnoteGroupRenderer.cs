@@ -19,6 +19,7 @@ public sealed class FootnoteGroupRenderer : AvaloniaObjectRenderer<FootnoteGroup
     {
         var separator = new Separator();
         separator.Classes.Add("markdown-thematic-break");
+        separator.Classes.Add("markdown-footnote-separator");
         renderer.WriteBlock(separator);
 
         var group = new StackPanel { Spacing = 4 };

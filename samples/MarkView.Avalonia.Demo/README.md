@@ -33,6 +33,8 @@ The demo window contains a page tab strip, a toolbar, and a full-screen content 
 
 The **Light theme** toggle button switches the entire application between Avalonia's `Light` and `Dark` theme variants. Syntax-highlighted code blocks and Mermaid diagrams update in-place — no document rebuild or scroll reset.
 
+The **theme preset** drop-down switches the documents between the default theme and the [GitHub theme preset](../../docs/theming.md#theme-presets) (`GitHubTheme.axaml`), by inserting or removing its `StyleInclude` right after `MarkdownTheme.axaml` in the application's styles (see `MainViewModel.ThemePresetIndex`). Both presets follow the Light/Dark toggle.
+
 ## How the Demo Is Configured
 
 Most configuration is done once in `App.axaml.cs` and applies globally to every `MarkdownViewer` instance. The **Color Extension** page is the exception: its dedicated control sets `Pipeline` and `Extensions` on its own `MarkdownViewer` instance instead, bypassing these app-wide defaults for parsing (see [docs/configuration.md](../../docs/configuration.md#markdig-pipeline) for the precedence rules, and [docs/custom-extensions.md](../../docs/custom-extensions.md) for the extension itself).

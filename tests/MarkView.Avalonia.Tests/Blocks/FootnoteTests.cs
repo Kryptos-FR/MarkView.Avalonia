@@ -36,6 +36,17 @@ public class FootnoteTests : RenderTestBase
     }
 
     [AvaloniaFact]
+    public void Footnote_group_follows_a_separator_of_its_own()
+    {
+        var result = Render("Text[^1]\n\n[^1]: Definition", FootnotePipeline());
+
+        var separator = Assert.IsType<Separator>(result.Children[^2]);
+        // Styled like a thematic break by default, but a theme can tell the two apart
+        Assert.Contains("markdown-thematic-break", separator.Classes);
+        Assert.Contains("markdown-footnote-separator", separator.Classes);
+    }
+
+    [AvaloniaFact]
     public void Footnote_group_renders_at_bottom()
     {
         var result = Render("Text[^1]\n\n[^1]: Definition", FootnotePipeline());

@@ -255,6 +255,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isCustomStyled;
     private bool _isColorExtensionSelected;
     private bool _isCodeHeightLimited;
+    private int _themePresetIndex;
+    private GitHubPreset? _gitHubTheme;
 
     public int SelectedIndex
     {
@@ -273,6 +275,29 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             if (!SetField(ref _isLightTheme, value)) return;
             Application.Current!.RequestedThemeVariant = value ? ThemeVariant.Light : ThemeVariant.Dark;
+        }
+    }
+
+    /// <summary>The theme preset the documents use: 0 for the default theme, 1 for the GitHub theme.</summary>
+    public int ThemePresetIndex
+    {
+        get => _themePresetIndex;
+        set
+        {
+            if (!SetField(ref _themePresetIndex, value)) return;
+            var styles = Application.Current!.Styles;
+            if (value == 1)
+            {
+                // Right after MarkdownTheme.axaml, which it builds on, so the app's own styles below still win.
+                _gitHubTheme ??= new GitHubPreset();
+                // App.axaml's StyleInclude is compiled into the theme's own Styles, so it is found by one of its resources.
+                var markdownTheme = styles.First(s => s.TryGetResource("MarkdownCodeBlockBackground", ThemeVariant.Dark, out _));
+                styles.Insert(styles.IndexOf(markdownTheme) + 1, _gitHubTheme);
+            }
+            else if (_gitHubTheme is not null)
+            {
+                styles.Remove(_gitHubTheme);
+            }
         }
     }
 

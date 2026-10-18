@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Input;
+using Avalonia.Media;
 
 using MarkView.Avalonia.Rendering.Inlines;
 
@@ -17,6 +18,8 @@ namespace MarkView.Avalonia.Rendering;
 /// A <see cref="TextBlock"/> that exposes hyperlink hit-testing and plain-text extraction
 /// for use by <see cref="MarkdownViewer"/>'s pointer handling and selection layer registration.
 /// Does not own selection — that is managed by <see cref="DocumentSelectionLayer"/>.
+/// It can also draw a border along its edges (<see cref="BorderBrush"/>, <see cref="BorderThickness"/>),
+/// which a theme uses to rule off a heading.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public class MarkdownSelectableTextBlock : TextBlock
@@ -27,6 +30,44 @@ public class MarkdownSelectableTextBlock : TextBlock
     /// </summary>
     internal const char ObjectReplacementCharacter = '\uFFFC';
 
+    /// <summary>
+    /// Defines the <see cref="BorderBrush"/> property.
+    /// </summary>
+    public static readonly StyledProperty<IBrush?> BorderBrushProperty =
+        Border.BorderBrushProperty.AddOwner<MarkdownSelectableTextBlock>();
+
+    /// <summary>
+    /// Defines the <see cref="BorderThickness"/> property.
+    /// </summary>
+    public static readonly StyledProperty<Thickness> BorderThicknessProperty =
+        Border.BorderThicknessProperty.AddOwner<MarkdownSelectableTextBlock>();
+
+    static MarkdownSelectableTextBlock()
+    {
+        AffectsRender<MarkdownSelectableTextBlock>(BorderBrushProperty, BorderThicknessProperty);
+    }
+
+    /// <summary>
+    /// Gets or sets the brush of the border drawn along the edges given by <see cref="BorderThickness"/>.
+    /// No border is drawn by default; the GitHub theme sets one under level 1 and 2 headings.
+    /// </summary>
+    public IBrush? BorderBrush
+    {
+        get => GetValue(BorderBrushProperty);
+        set => SetValue(BorderBrushProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the width of the border on each edge. The border is drawn over the edges of the
+    /// <see cref="TextBlock.Padding"/> area rather than outside it, so give the block at least as much
+    /// padding on those edges, or the border overlaps its text.
+    /// </summary>
+    public Thickness BorderThickness
+    {
+        get => GetValue(BorderThicknessProperty);
+        set => SetValue(BorderThicknessProperty, value);
+    }
+
     internal AvaloniaRenderer? Renderer { get; set; }
 
     /// <inheritdoc />
@@ -36,6 +77,39 @@ public class MarkdownSelectableTextBlock : TextBlock
         // (https://github.com/AvaloniaUI/Avalonia/issues/22505).
         StyledInlinesTextBlock.ApplyInlineStyling(Inlines);
         return base.MeasureOverride(availableSize);
+    }
+
+    /// <inheritdoc />
+    protected override void RenderTextLayout(DrawingContext context, Point origin)
+    {
+        // Over the background, which is already drawn, and under the text.
+        if (BorderBrush is { } brush)
+        {
+            foreach (var edge in GetBorderEdges())
+                context.FillRectangle(brush, edge);
+        }
+        base.RenderTextLayout(context, origin);
+    }
+
+    /// <summary>
+    /// The rectangles of the border's edges, in the control's coordinates: the top and bottom edges span
+    /// the whole width, the left and right ones the height between them. Edges of zero width are left out.
+    /// </summary>
+    internal List<Rect> GetBorderEdges()
+    {
+        var size = Bounds.Size;
+        var thickness = BorderThickness;
+        var middle = Math.Max(0, size.Height - thickness.Top - thickness.Bottom);
+        var edges = new List<Rect>(4);
+        if (thickness.Top > 0)
+            edges.Add(new Rect(0, 0, size.Width, thickness.Top));
+        if (thickness.Bottom > 0)
+            edges.Add(new Rect(0, size.Height - thickness.Bottom, size.Width, thickness.Bottom));
+        if (thickness.Left > 0)
+            edges.Add(new Rect(0, thickness.Top, thickness.Left, middle));
+        if (thickness.Right > 0)
+            edges.Add(new Rect(size.Width - thickness.Right, thickness.Top, thickness.Right, middle));
+        return edges;
     }
 
     /// <summary>
