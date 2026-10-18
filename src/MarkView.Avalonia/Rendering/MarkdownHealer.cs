@@ -18,6 +18,9 @@ namespace MarkView.Avalonia.Rendering;
 /// scanned, apart from the character just before it, which later rules read to decide whether a
 /// delimiter run is flanking. When there is nothing to close, the input string instance itself is
 /// returned, so a caller can tell with a reference comparison that the text needs no second parse.
+/// An unmatched backtick run is closed with a run of the same length, unless the content (the text
+/// without its trailing whitespace) ends with a backtick: the closer would merge with that backtick
+/// into a longer run that closes nothing, so the run is left literal.
 /// </remarks>
 internal static class MarkdownHealer
 {
@@ -30,8 +33,11 @@ internal static class MarkdownHealer
     /// <param name="tailStart">The index the scan starts at; the syntax before it is left as it is.</param>
     /// <param name="options">The optional syntaxes the scan recognises.</param>
     /// <returns>The healed text, or <paramref name="text"/> itself when nothing is left open.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="tailStart"/> is negative.</exception>
     internal static string Heal(string text, int tailStart, HealingOptions options)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(tailStart);
+
         var end = text.Length;
         while (end > tailStart && IsWhitespace(text[end - 1]))
             end--;
@@ -56,9 +62,11 @@ internal static class MarkdownHealer
                 {
                     i = spanEnd;
                 }
-                else if (runEnd == end)
+                else if (text[end - 1] == '`')
                 {
-                    // An opener with nothing after it: closing it would add nothing visible.
+                    // The content ends with a backtick (this run itself when nothing follows it): a closer
+                    // would merge with it into a longer run, and an opener with nothing after it would
+                    // show nothing anyway, so the run is literal.
                     i = runEnd;
                 }
                 else

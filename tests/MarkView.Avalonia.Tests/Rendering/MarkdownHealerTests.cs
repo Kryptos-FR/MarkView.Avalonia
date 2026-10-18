@@ -56,6 +56,18 @@ public class MarkdownHealerTests
     public void Closers_go_before_trailing_whitespace(string text, string expected) =>
         Assert.Equal(expected, Heal(text));
 
+    [Theory]
+    [InlineData("a ``b`")]
+    [InlineData("a `b ``")]
+    [InlineData("a `b`` ")]
+    public void Backtick_run_is_left_alone_when_the_content_ends_with_a_backtick(string text) =>
+        // A closer written there would merge with the last backtick into a longer run that closes nothing.
+        Assert.Same(text, Heal(text));
+
+    [Fact]
+    public void Negative_tail_start_is_rejected() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => MarkdownHealer.Heal("a", -1, None));
+
     [Fact]
     public void Escaped_backtick_does_not_open_a_code_span() =>
         Assert.Same("a \\`b", Heal("a \\`b"));
