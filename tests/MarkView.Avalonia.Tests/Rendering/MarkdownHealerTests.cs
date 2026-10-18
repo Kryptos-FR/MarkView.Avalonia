@@ -1,6 +1,9 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Reflection;
+using System.Reflection.Emit;
+
 using Markdig;
 using Markdig.Extensions.Footnotes;
 using Markdig.Syntax;
@@ -345,6 +348,112 @@ public class MarkdownHealerTests
     [Fact]
     public void Escaped_backslash_at_the_end_still_heals() =>
         Assert.Equal("**a\\\\**", Heal("**a\\\\"));
+
+    private static readonly HealingOptions Math = new(true, false);
+    private static readonly HealingOptions Bracket = new(true, true);
+
+    [Theory]
+    [InlineData("$a *b$ *c", "$a *b$ *c*")]
+    [InlineData("$$a *b$$ *c", "$$a *b$$ *c*")]
+    public void Complete_dollar_math_is_opaque(string text, string expected) =>
+        Assert.Equal(expected, MarkdownHealer.Heal(text, 0, Math));
+
+    [Theory]
+    [InlineData("$5 and *c", "$5 and *c*")]
+    [InlineData("$a *b", "$a *b*")]
+    // A run closes only a run of the same length.
+    [InlineData("$a$$ *c", "$a$$ *c*")]
+    [InlineData("$$a$ *c", "$$a$ *c*")]
+    public void Unclosed_dollar_is_literal_and_never_healed(string text, string expected) =>
+        Assert.Equal(expected, MarkdownHealer.Heal(text, 0, Math));
+
+    [Fact]
+    public void Dollar_run_of_three_is_literal() =>
+        Assert.Equal("$$$a *b$$$ c*", MarkdownHealer.Heal("$$$a *b$$$ c", 0, Math));
+
+    [Fact]
+    public void Dollar_math_is_not_opaque_without_the_option() =>
+        Assert.Equal("$a *b$ c*", MarkdownHealer.Heal("$a *b$ c", 0, None));
+
+    [Theory]
+    [InlineData("\\(x^2", "\\(x^2\\)")]
+    [InlineData("\\[x *y", "\\[x *y\\]")]
+    [InlineData("**b \\(x", "**b \\(x\\)**")]
+    [InlineData("\\(a\\) *c", "\\(a\\) *c*")]
+    [InlineData("\\[a\\] *c", "\\[a\\] *c*")]
+    // The formula is opaque to the other rules.
+    [InlineData("\\(x `y *z", "\\(x `y *z\\)")]
+    // An escaped backslash and a parenthesis are not a closer: the formula is still open.
+    [InlineData("\\(x \\\\)", "\\(x \\\\)\\)")]
+    [InlineData("\\[x \\\\]", "\\[x \\\\]\\]")]
+    // An escaped backslash followed by a real closer: closed.
+    [InlineData("\\(x \\\\\\) *y", "\\(x \\\\\\) *y*")]
+    public void Bracket_math_is_closed_when_enabled(string text, string expected) =>
+        Assert.Equal(expected, MarkdownHealer.Heal(text, 0, Bracket));
+
+    [Fact]
+    public void Bracket_math_closer_is_not_a_link_text_bracket() =>
+        // The ] after the opened \[ is part of the formula, not the end of a link text.
+        Assert.Equal("[a](b) \\[x] *y\\]", MarkdownHealer.Heal("[a](b) \\[x] *y", 0, Bracket));
+
+    [Fact]
+    public void Bracket_math_does_not_close_the_link_text_bracket()
+    {
+        // The open [ stays open under the formula, and the bracket entry writes nothing.
+        Assert.Equal("[a \\(x\\)", MarkdownHealer.Heal("[a \\(x", 0, Bracket));
+        // A ] inside the formula is not matched with the [ before it, since the scan has stopped.
+        Assert.Equal("[a \\(x]\\)", MarkdownHealer.Heal("[a \\(x]", 0, Bracket));
+    }
+
+    [Fact]
+    public void Bracket_math_parenthesis_is_an_escape_without_the_option() =>
+        Assert.Equal("\\(x *y*", MarkdownHealer.Heal("\\(x *y", 0, Math));
+
+    [Fact]
+    public void Bracket_math_bracket_is_an_escape_without_the_option() =>
+        Assert.Same("\\[x", MarkdownHealer.Heal("\\[x", 0, Math));
+
+    [Fact]
+    public void OptionsFor_reads_the_pipeline()
+    {
+        Assert.Equal(new HealingOptions(false, false), MarkdownHealer.OptionsFor(new MarkdownPipelineBuilder().Build()));
+        Assert.Equal(new HealingOptions(true, false), MarkdownHealer.OptionsFor(new MarkdownPipelineBuilder().UseMathematics().Build()));
+    }
+
+    [Fact]
+    public void OptionsFor_recognises_the_bracket_math_extension_by_its_type_name()
+    {
+        // The extension is declared in MarkView.Avalonia.Math, which this project does not reference: a
+        // type of the same full name stands in for it.
+        var builder = new MarkdownPipelineBuilder();
+        builder.Extensions.Add(NamedExtension("MarkView.Avalonia.Math.Parsing.BracketMathExtension"));
+        Assert.Equal(new HealingOptions(false, true), MarkdownHealer.OptionsFor(builder.Build()));
+
+        var other = new MarkdownPipelineBuilder();
+        other.Extensions.Add(NamedExtension("MarkView.Avalonia.Math.Parsing.OtherExtension"));
+        Assert.Equal(new HealingOptions(false, false), MarkdownHealer.OptionsFor(other.Build()));
+    }
+
+    /// <summary>An extension that does nothing, of a type with the full name <paramref name="fullName"/>.</summary>
+    private static IMarkdownExtension NamedExtension(string fullName)
+    {
+        var module = AssemblyBuilder
+            .DefineDynamicAssembly(new AssemblyName(fullName), AssemblyBuilderAccess.Run)
+            .DefineDynamicModule("Main");
+        var type = module.DefineType(fullName, TypeAttributes.Public | TypeAttributes.Sealed, typeof(object), [typeof(IMarkdownExtension)]);
+        type.DefineDefaultConstructor(MethodAttributes.Public);
+        foreach (var method in typeof(IMarkdownExtension).GetMethods())
+        {
+            var implementation = type.DefineMethod(
+                method.Name,
+                MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
+                method.ReturnType,
+                method.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
+            implementation.GetILGenerator().Emit(OpCodes.Ret);
+            type.DefineMethodOverride(implementation, method);
+        }
+        return (IMarkdownExtension)Activator.CreateInstance(type.CreateType())!;
+    }
 
     [Fact]
     public void TailBlock_is_the_paragraph_at_the_end()

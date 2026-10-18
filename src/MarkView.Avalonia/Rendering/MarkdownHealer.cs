@@ -3,6 +3,8 @@
 
 using System.Text;
 
+using Markdig;
+using Markdig.Extensions.Mathematics;
 using Markdig.Syntax;
 
 namespace MarkView.Avalonia.Rendering;
@@ -36,6 +38,12 @@ namespace MarkView.Avalonia.Rendering;
 /// after that one become literal; what is left of it opens when it can. CommonMark's rule of
 /// multiples of 3 is not applied. Other runs of <c>~</c>, and <c>^</c>, <c>+</c> and <c>=</c>, are
 /// literal. A run with nothing after it is not closed: closing it would show nothing.
+/// With <see cref="HealingOptions.Math"/>, a run of one or two <c>$</c> and the next run of the same
+/// length enclose a math span, opaque to the other rules; a run with no match, or of three or more, is
+/// literal, and an unmatched one is never closed, since <c>$5</c> is a price. With
+/// <see cref="HealingOptions.BracketMath"/>, <c>\(</c> and <c>\[</c> do the same up to <c>\)</c> and
+/// <c>\]</c> (a backslash escapes the character after it), except that an unmatched one is closed
+/// with its closer, the rest of the text being the formula; without the option they are plain escapes.
 /// When the content ends with an unescaped backslash, the text is returned as it is, since any closer
 /// written after it would be escaped.
 /// </remarks>
@@ -68,7 +76,19 @@ internal static class MarkdownHealer
         while (i < end)
         {
             var c = text[i];
-            if (c == '\\')
+            if (options.BracketMath && c == '\\' && i + 1 < end && text[i + 1] is '(' or '[')
+            {
+                var round = text[i + 1] == '(';
+                var mathEnd = BracketMathEnd(text, i + 2, end, round ? ')' : ']');
+                if (mathEnd == -1)
+                {
+                    // The rest of the text is formula, opaque to the other rules.
+                    open.Add(('\\', round ? 1 : 2));
+                    break;
+                }
+                i = mathEnd;
+            }
+            else if (c == '\\')
             {
                 // CommonMark lets a backslash escape only ASCII punctuation, but every character this scan
                 // reacts to is ASCII punctuation, so skipping whatever follows the backslash is the same.
@@ -78,7 +98,7 @@ internal static class MarkdownHealer
             {
                 var runEnd = RunEnd(text, i, end, '`');
                 var length = runEnd - i;
-                var spanEnd = CodeSpanEnd(text, runEnd, end, length);
+                var spanEnd = ClosingRunEnd(text, runEnd, end, '`', length);
                 if (spanEnd != -1)
                 {
                     i = spanEnd;
@@ -96,6 +116,15 @@ internal static class MarkdownHealer
                     open.Add(('`', length));
                     break;
                 }
+            }
+            else if (c == '$' && options.Math)
+            {
+                var runEnd = RunEnd(text, i, end, '$');
+                var length = runEnd - i;
+                // Math is opaque up to the next run of the same length; a run of three or more, or one that
+                // finds no match, is literal.
+                var mathEnd = length <= 2 ? ClosingRunEnd(text, runEnd, end, '$', length) : -1;
+                i = mathEnd == -1 ? runEnd : mathEnd;
             }
             else if (c is '*' or '_' or '~')
             {
@@ -167,6 +196,26 @@ internal static class MarkdownHealer
     }
 
     /// <summary>
+    /// The full name of the extension, declared in the <c>MarkView.Avalonia.Math</c> package, that turns
+    /// <c>\(…\)</c> and <c>\[…\]</c> into math. The core package does not reference that package, so
+    /// the extension is recognised by its type name; the Math package's tests pin the name.
+    /// </summary>
+    private const string BracketMathExtensionName = "MarkView.Avalonia.Math.Parsing.BracketMathExtension";
+
+    /// <summary>
+    /// The optional syntaxes <paramref name="pipeline"/> enables that <see cref="Heal"/> recognises.
+    /// </summary>
+    /// <param name="pipeline">The pipeline the healed text is parsed with.</param>
+    /// <returns>
+    /// <see cref="HealingOptions.Math"/> when the pipeline has Markdig's math extension, and
+    /// <see cref="HealingOptions.BracketMath"/> when it has the Math package's bracket math extension.
+    /// </returns>
+    internal static HealingOptions OptionsFor(MarkdownPipeline pipeline) =>
+        new(
+            pipeline.Extensions.Contains<MathExtension>(),
+            pipeline.Extensions.Any(extension => extension.GetType().FullName == BracketMathExtensionName));
+
+    /// <summary>
     /// Returns the block that contains the end of <paramref name="text"/>: the deepest last descendant
     /// (following <see cref="ContainerBlock.LastChild"/>) of the top-level block that ends last, when
     /// nothing but whitespace holding at most one line break follows that descendant.
@@ -220,14 +269,19 @@ internal static class MarkdownHealer
     /// <summary>
     /// Appends the closers of the <paramref name="open"/> delimiters, the last opened first: each
     /// entry's character, as many times as its count. A link text entry, <c>('[', 0)</c>, so writes
-    /// nothing.
+    /// nothing. The entries of unclosed bracket math use the backslash as their character:
+    /// <c>('\\', 1)</c> for <c>\(</c>, closed by <c>\)</c>, and <c>('\\', 2)</c> for <c>\[</c>, closed by
+    /// <c>\]</c>; they cannot reuse <c>(</c> or <c>[</c>, which stand for an address and a link text.
     /// </summary>
     private static void WriteClosers(StringBuilder closers, List<(char Char, int Count)> open)
     {
         for (var i = open.Count - 1; i >= 0; i--)
         {
             var (c, count) = open[i];
-            closers.Append(c, count);
+            if (c == '\\')
+                closers.Append('\\').Append(count == 1 ? ')' : ']');
+            else
+                closers.Append(c, count);
         }
     }
 
@@ -317,25 +371,46 @@ internal static class MarkdownHealer
     private static bool IsPunctuation(char c) => char.IsPunctuation(c) || char.IsSymbol(c);
 
     /// <summary>
-    /// The index just after the first run of exactly <paramref name="length"/> backticks between
-    /// <paramref name="start"/> and <paramref name="end"/>, which closes the code span opened just
-    /// before <paramref name="start"/>; -1 when there is none.
+    /// The index just after the first run of exactly <paramref name="length"/> characters
+    /// <paramref name="c"/> between <paramref name="start"/> and <paramref name="end"/>, which closes the
+    /// code span or math span opened just before <paramref name="start"/>; -1 when there is none.
     /// </summary>
-    private static int CodeSpanEnd(string text, int start, int end, int length)
+    private static int ClosingRunEnd(string text, int start, int end, char c, int length)
     {
         var i = start;
         while (i < end)
         {
-            if (text[i] != '`')
+            if (text[i] != c)
             {
                 i++;
                 continue;
             }
 
-            var runEnd = RunEnd(text, i, end, '`');
+            var runEnd = RunEnd(text, i, end, c);
             if (runEnd - i == length)
                 return runEnd;
             i = runEnd;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// The index just after the first <c>\</c> followed by <paramref name="closer"/> (<c>)</c> or
+    /// <c>]</c>) between <paramref name="start"/> and <paramref name="end"/>, which closes the bracket
+    /// math opened just before <paramref name="start"/>; -1 when there is none. A backslash escapes the
+    /// character after it, so in <c>\\)</c> the parenthesis is not part of a closer.
+    /// </summary>
+    private static int BracketMathEnd(string text, int start, int end, char closer)
+    {
+        var i = start;
+        while (i + 1 < end)
+        {
+            if (text[i] != '\\')
+                i++;
+            else if (text[i + 1] == closer)
+                return i + 2;
+            else
+                i += 2;
         }
         return -1;
     }
