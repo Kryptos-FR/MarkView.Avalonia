@@ -29,7 +29,7 @@ public class ThemePresetContrastTests
     // High contrast: WCAG 2.2 AAA enhanced contrast (1.4.6), which Windows' contrast themes meet.
     private const double HighContrast = 7.0;
 
-    private static readonly string[] Presets = ["GitHubTheme", "ChatTheme"];
+    private static readonly string[] Presets = ["GitHubTheme", "ChatTheme", "DocsTheme"];
 
     // Pages and chat bubbles a preset without its own background is drawn on: Fluent's window, and
     // the neutral bubbles of chat applications. Body text is Fluent's.

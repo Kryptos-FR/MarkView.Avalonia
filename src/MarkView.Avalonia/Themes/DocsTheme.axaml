@@ -1,0 +1,388 @@
+<!-- Docs preset: the look of a documentation site, modelled on VitePress' default theme: Inter at 16px with
+     airy line spacing, a column at most 768px wide, a divider above h2, code on a soft background and
+     alerts as tinted boxes. Include it after MarkdownTheme.axaml, which it builds on: it only redefines
+     resources and styles where its look differs. -->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mv="using:MarkView.Avalonia"
+        xmlns:mr="using:MarkView.Avalonia.Rendering"
+        xmlns:mri="using:MarkView.Avalonia.Rendering.Inlines">
+
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <!-- VitePress' dark colours. Translucent colours are written #AARRGGBB, Avalonia's order. -->
+        <ResourceDictionary x:Key="Dark">
+          <!-- The document's own background and text, set on MarkdownViewer -->
+          <SolidColorBrush x:Key="MarkdownBackground">#1B1B1F</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownForeground">#DFDFD6</SolidColorBrush>
+          <!-- Secondary text: blockquotes, h6, table headers, footnotes -->
+          <SolidColorBrush x:Key="MarkdownMutedForeground">#98989F</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownLinkForeground">#A8B1FF</SolidColorBrush>
+          <!-- VitePress' divider, for the decorative line above h2 and above the footnotes -->
+          <SolidColorBrush x:Key="MarkdownHeadingBorder">#2E2E32</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFootnoteSeparatorBackground">#2E2E32</SolidColorBrush>
+          <!-- VitePress draws the quote bar, table grid and rule in its divider colour, below the 3:1
+               WCAG AA minimum for borders that carry meaning; this grey meets it on the page and on the
+               striped rows. -->
+          <SolidColorBrush x:Key="MarkdownBlockquoteBorder">#75757C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownTableBorder">#75757C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownThematicBreakBackground">#75757C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownTableHeaderBackground">#202127</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownTableRowAlternateBackground">#202127</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#161618</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#DFDFD6</SolidColorBrush>
+          <!-- Inline code: the link colour on VitePress' translucent grey chip -->
+          <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#29657585</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#A8B1FF</SolidColorBrush>
+          <!-- The toolbar shares the code's background, so the copy button sits in the block's corner -->
+          <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#161618</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#98989F</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeCopyButtonBorder">#2E2E32</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#202127</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeLineNumberForeground">#98989F</SolidColorBrush>
+          <!-- Alerts: VitePress' tinted boxes, the title in the kind's colour -->
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#98989F</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBackground">#29657585</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#A8B1FF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#29646CFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBorder">#3DD68C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBackground">#2910B981</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBorder">#C8ABFA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBackground">#299F7AEA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBorder">#F9B44E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBackground">#29EAB308</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#F66F81</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#29F43F5E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownMarkedBackground">#5C4B00</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBackground">#202127</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdForeground">#DFDFD6</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBorder">#75757C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindMatchBackground">#453A00</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#652A00</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedForeground">#98989F</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBackground">#202127</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBorder">#75757C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxBackdrop">#E0000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
+          <!-- High-contrast palette (MarkdownViewer:high-contrast): the default theme's -->
+          <SolidColorBrush x:Key="MarkdownHighContrastBackground">#000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastLink">#FFFF00</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastHighlightBackground">#1AEBFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastHighlightForeground">#000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastBorder">#FFFFFF</SolidColorBrush>
+        </ResourceDictionary>
+        <!-- VitePress' light colours -->
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="MarkdownBackground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownForeground">#3C3C43</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownMutedForeground">#67676C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownLinkForeground">#3451B2</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHeadingBorder">#E2E2E3</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFootnoteSeparatorBackground">#E2E2E3</SolidColorBrush>
+          <!-- VitePress' #E2E2E3 divider is below 3:1 on white; see the Dark dictionary -->
+          <SolidColorBrush x:Key="MarkdownBlockquoteBorder">#87878C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownTableBorder">#87878C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownThematicBreakBackground">#87878C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownTableHeaderBackground">#F6F6F7</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownTableRowAlternateBackground">#F6F6F7</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeBlockBackground">#F6F6F7</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeBlockForeground">#3C3C43</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineBackground">#248E96AA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeInlineForeground">#3451B2</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeHeaderBackground">#F6F6F7</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeHeaderForeground">#67676C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeCopyButtonBorder">#E2E2E3</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeCopyButtonHoverBackground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownCodeLineNumberForeground">#67676C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBorder">#67676C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertDefaultBackground">#248E96AA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertNoteBorder">#3451B2</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertNoteBackground">#24646CFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBorder">#18794E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertTipBackground">#2410B981</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBorder">#6F42C1</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertImportantBackground">#249F7AEA</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBorder">#915930</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertWarningBackground">#24EAB308</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBorder">#B8272C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownAlertCautionBackground">#24F43F5E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownMarkedBackground">#FFF3C4</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBackground">#F6F6F7</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdForeground">#3C3C43</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownKbdBorder">#87878C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownFindMatchBackground">#FFF176</SolidColorBrush>
+          <!-- A paler orange than the default theme's, so inline code (link colour on its chip) keeps 4.5:1 -->
+          <SolidColorBrush x:Key="MarkdownFindCurrentMatchBackground">#FFD3A3</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedForeground">#67676C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBackground">#F6F6F7</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageFailedBorder">#87878C</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxBackdrop">#CC000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastBackground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastForeground">#000000</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastLink">#00009F</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastHighlightBackground">#37006E</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastHighlightForeground">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="MarkdownHighContrastBorder">#000000</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <!-- Document: VitePress' background, text colour and Inter at 16px. Local values set on a
+       MarkdownViewer (Background="Transparent", FontSize="14") still win. -->
+  <Style Selector=":is(mv|MarkdownViewer)">
+    <Setter Property="Background" Value="{DynamicResource MarkdownBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownForeground}" />
+    <Setter Property="FontFamily" Value="Inter, Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial" />
+    <Setter Property="FontSize" Value="16" />
+  </Style>
+  <!-- A reading column at most 768px wide, centred in a wider viewer (a stretched control narrower
+       than its slot is centred in it) -->
+  <Style Selector="Grid.markdown-document">
+    <Setter Property="MaxWidth" Value="768" />
+  </Style>
+
+  <!-- Headings: semibold, 32 / 24 / 20 / 18 / 16 / 16px, more space above than below -->
+  <Style Selector=":is(TextBlock).markdown-heading">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,16,0,0" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h1">
+    <Setter Property="FontSize" Value="32" />
+    <Setter Property="LineHeight" Value="40" />
+  </Style>
+  <!-- h2 opens a section: a divider above it, 24px over the text -->
+  <Style Selector=":is(TextBlock).markdown-h2">
+    <Setter Property="FontSize" Value="24" />
+    <Setter Property="LineHeight" Value="32" />
+    <Setter Property="Margin" Value="0,32,0,0" />
+  </Style>
+  <Style Selector=":is(mr|MarkdownSelectableTextBlock).markdown-h2">
+    <Setter Property="Padding" Value="0,24,0,0" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHeadingBorder}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h3">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="LineHeight" Value="28" />
+    <Setter Property="Margin" Value="0,24,0,0" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h4">
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="LineHeight" Value="24" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h5">
+    <Setter Property="FontSize" Value="16" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-h6">
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+  </Style>
+  <!-- No space or divider above a heading that starts the document, a quote or an alert -->
+  <Style Selector=":is(TextBlock).markdown-heading:nth-child(1)">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector=":is(mr|MarkdownSelectableTextBlock).markdown-h2:nth-child(1)">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <!-- Paragraphs: 16px apart, 28px lines; tight inside list items, table cells, quotes and alerts -->
+  <Style Selector=":is(TextBlock).markdown-paragraph">
+    <Setter Property="Margin" Value="0,4" />
+    <Setter Property="LineSpacing" Value="6" />
+  </Style>
+  <Style Selector="StackPanel.markdown-list :is(TextBlock).markdown-paragraph">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="Border.markdown-table-cell :is(TextBlock).markdown-paragraph">
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="LineSpacing" Value="0" />
+  </Style>
+  <Style Selector="Border.markdown-blockquote :is(TextBlock).markdown-paragraph">
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="Border.markdown-alert :is(TextBlock).markdown-paragraph">
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="LineSpacing" Value="4" />
+  </Style>
+
+  <!-- Links: medium weight, underlined -->
+  <Style Selector="mri|MarkdownHyperlink.markdown-link">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownLinkForeground}" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+
+  <!-- Code blocks: 24px side padding, 20px above and below, 8px corners, 14px monospace on 24px lines -->
+  <Style Selector="Border.markdown-code-block">
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="24,20" />
+    <Setter Property="Margin" Value="0,8" />
+  </Style>
+  <Style Selector="Border.markdown-code-block TextBlock">
+    <Setter Property="FontFamily" Value="SF Mono, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="LineHeight" Value="24" />
+  </Style>
+  <Style Selector="StackPanel.markdown-code-container">
+    <Setter Property="Margin" Value="0,8" />
+  </Style>
+  <Style Selector="StackPanel.markdown-code-container > Border.markdown-code-block">
+    <Setter Property="CornerRadius" Value="0,0,8,8" />
+    <Setter Property="Padding" Value="24,4,24,20" />
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="Border.markdown-code-header">
+    <Setter Property="CornerRadius" Value="8,8,0,0" />
+    <Setter Property="Padding" Value="24,8,8,0" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownCodeCopyButtonBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="7" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownCodeCopyButtonBorder}" />
+  </Style>
+
+  <!-- Inline code: monospace in the link colour on a grey chip, at 14px in body text -->
+  <Style Selector="Run.markdown-code-inline">
+    <Setter Property="FontFamily" Value="SF Mono, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace" />
+  </Style>
+  <Style Selector=":is(TextBlock).markdown-paragraph Run.markdown-code-inline">
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+
+  <!-- Blockquote: a 2px bar and secondary text, no dimming -->
+  <Style Selector="Border.markdown-blockquote">
+    <Setter Property="BorderThickness" Value="2,0,0,0" />
+    <Setter Property="Padding" Value="16,0" />
+    <Setter Property="Margin" Value="0,8" />
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+  </Style>
+
+  <!-- Lists: 20px indent, nested lists without extra space -->
+  <Style Selector="StackPanel.markdown-list">
+    <Setter Property="Margin" Value="20,4,0,4" />
+  </Style>
+  <Style Selector="StackPanel.markdown-list StackPanel.markdown-list">
+    <Setter Property="Margin" Value="20,0,0,0" />
+  </Style>
+
+  <!-- Horizontal rule: a 1px line -->
+  <Style Selector="Separator.markdown-thematic-break">
+    <Setter Property="Background" Value="{DynamicResource MarkdownThematicBreakBackground}" />
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Margin" Value="0,8" />
+  </Style>
+
+  <!-- Tables: a 1px grid, 14px text, a soft header in semibold secondary text and striped rows.
+       Cells only draw their right and bottom borders, so that neighbours don't double them; the
+       first row and column add the top and left ones. -->
+  <Style Selector="Grid.markdown-table">
+    <Setter Property="Margin" Value="0,12" />
+  </Style>
+  <Style Selector="Border.markdown-table-cell">
+    <Setter Property="BorderThickness" Value="0,0,1,1" />
+    <Setter Property="Padding" Value="16,8" />
+    <Setter Property="TextElement.FontSize" Value="14" />
+  </Style>
+  <Style Selector="Border.markdown-table-cell[(Grid.Row)=0]">
+    <Setter Property="BorderThickness" Value="0,1,1,1" />
+  </Style>
+  <Style Selector="Border.markdown-table-cell[(Grid.Column)=0]">
+    <Setter Property="BorderThickness" Value="1,0,1,1" />
+    <Style Selector="^[(Grid.Row)=0]">
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+  </Style>
+  <Style Selector="Border.markdown-table-header">
+    <Setter Property="Background" Value="{DynamicResource MarkdownTableHeaderBackground}" />
+  </Style>
+  <Style Selector="Border.markdown-table-header :is(TextBlock)">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+  </Style>
+  <Style Selector="Border.markdown-table-row-even">
+    <Setter Property="Background" Value="{DynamicResource MarkdownTableRowAlternateBackground}" />
+  </Style>
+
+  <!-- Alerts: tinted boxes with 8px corners and no bar, 14px text, the title in the kind's colour -->
+  <Style Selector="Border.markdown-alert">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="16,12" />
+    <Setter Property="Margin" Value="0,8" />
+    <Setter Property="TextElement.FontSize" Value="14" />
+  </Style>
+  <Style Selector="TextBlock.markdown-alert-header">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+
+  <!-- Footnotes: below a 1px line, in 14px secondary text -->
+  <Style Selector="Separator.markdown-footnote-separator">
+    <Setter Property="Background" Value="{DynamicResource MarkdownFootnoteSeparatorBackground}" />
+    <Setter Property="Margin" Value="0,24,0,0" />
+  </Style>
+  <Style Selector="StackPanel.markdown-footnote-group">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+    <Setter Property="TextElement.FontSize" Value="14" />
+  </Style>
+
+  <!-- High contrast (MarkdownViewer:high-contrast, see MarkdownTheme.axaml). The styles above come after
+       the default theme's high-contrast ones and would win over them, so the colours this preset sets
+       go back to the MarkdownHighContrast* palette here: no muted text, soft headers or striped rows,
+       solid borders for the dividers and rules, and an outline around alerts, which have no bar. -->
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast">
+    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(TextBlock).markdown-h6">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(mr|MarkdownSelectableTextBlock).markdown-heading">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast mri|MarkdownHyperlink">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastLink}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Button.markdown-code-copy">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Button.markdown-code-copy:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-blockquote">
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Separator.markdown-thematic-break">
+    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBorder}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-table-header">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-table-header :is(TextBlock)">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-table-row-even">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-alert">
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast StackPanel.markdown-footnote-group">
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
+  </Style>
+
+</Styles>

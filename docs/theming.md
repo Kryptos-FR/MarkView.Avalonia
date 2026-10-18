@@ -200,6 +200,81 @@ and redefines the default theme's keys as follows:
 
 The find highlights, the image lightbox and the `MarkdownHighContrast*` palette keep the default theme's colours: the preset has no page colours of its own, so in high contrast the document takes the default theme's black or white page, and the code card's outline, quote bar, table lines and rules turn solid, as the default theme's do.
 
+### Docs
+
+`DocsTheme.axaml` gives the document the look of a documentation site, modelled on the default theme of [VitePress](https://vitepress.dev/): Inter at 16px with airy line spacing, a reading column at most 768px wide, a divider above each section heading, code on a soft background and alerts as tinted boxes, in VitePress' light and dark colours. Like the GitHub preset, it sets its own page colours.
+
+```xml
+<Application.Styles>
+  <FluentTheme />
+  <StyleInclude Source="avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml" />
+  <StyleInclude Source="avares://MarkView.Avalonia/Themes/DocsTheme.axaml" />
+</Application.Styles>
+```
+
+What it changes:
+
+| Element | Docs look |
+|---|---|
+| Document | VitePress' page background and text colour (`#FFFFFF` / `#3C3C43` light, `#1B1B1F` / `#DFDFD6` dark) set on `MarkdownViewer`, Inter (then Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial) at 16px, paragraphs 16px apart with 6px of extra line spacing. The document is at most 768px wide, centred in a wider viewer (the `markdown-document` style class) |
+| Headings | 32 / 24 / 20 / 18 / 16 / 16px, semibold, with space above them (none at the start of the document, a quote or an alert); h2 opens a section with a 1px divider 24px above its text; h6 in the secondary text colour |
+| Links | VitePress' indigo (`#3451B2` / `#A8B1FF`), medium weight, underlined |
+| Code blocks | VitePress' code background, 20×24px padding, 8px corners, 14px monospace (SF Mono, Menlo, Monaco, Consolas, Liberation Mono) on 24px lines. The toolbar takes the code's background, with an outlined copy button |
+| Inline code | Monospace in the link colour on a translucent grey chip, at 14px in body text |
+| Blockquotes | A 2px grey bar, secondary text colour, no dimming |
+| Tables | A 1px grid, 14px text, 8×16px cell padding, a header row in semibold secondary text on a soft background, and every second body row striped |
+| Horizontal rules | A 1px grey line |
+| Alerts | Tinted boxes with 8px corners and no bar, 14px text, the title in semibold and the kind's colour: note in indigo, tip in green, important in purple, warning in amber, caution in red |
+| Footnotes | Below a 1px line, in 14px secondary text |
+
+Where it departs from VitePress:
+
+- **Contrast.** As with the GitHub preset, every text colour meets 4.5:1 and every border that carries meaning (blockquote bar, table grid, horizontal rule) meets 3:1. VitePress draws those in its divider colour, `#E2E2E3` (dark `#2E2E32`), below 3:1, so the preset uses `#87878C` (dark `#75757C`). Its language label (`#929295`) is below 4.5:1 on the code background, so the label uses the secondary text colour. Decorative lines keep VitePress' divider: the one above h2, the line above the footnotes and the copy button's outline.
+- **Alert colours.** VitePress shows tips in its brand colour; the preset keeps GitHub's meaning of each kind (tips in green, notes in the brand indigo).
+- **What styles can't express.** As with the GitHub preset, inline code has no padding or rounded corners, and tables fill the width of the column.
+
+To give the document the viewer's whole width, lift the cap in a style after the preset:
+
+```xml
+<Style Selector="Grid.markdown-document">
+  <Setter Property="MaxWidth" Value="Infinity" />
+</Style>
+```
+
+It adds these resource keys to the ones it redefines from the default theme (the GitHub and Chat presets use the same names):
+
+| Resource key | Colours | Dark | Light |
+|---|---|---|---|
+| `MarkdownBackground` | `MarkdownViewer`'s background | `#1B1B1F` | `#FFFFFF` |
+| `MarkdownForeground` | Body text (`MarkdownViewer.Foreground`) | `#DFDFD6` | `#3C3C43` |
+| `MarkdownMutedForeground` | Blockquotes, h6, table headers, footnotes | `#98989F` | `#67676C` |
+| `MarkdownHeadingBorder` | Divider above h2 | `#2E2E32` | `#E2E2E3` |
+| `MarkdownTableHeaderBackground`, `MarkdownTableRowAlternateBackground` | Table header row, striped rows | `#202127` | `#F6F6F7` |
+| `MarkdownThematicBreakBackground` | Horizontal rule | `#75757C` | `#87878C` |
+| `MarkdownFootnoteSeparatorBackground` | Line above the footnotes | `#2E2E32` | `#E2E2E3` |
+| `MarkdownCodeCopyButtonBorder` | Copy button outline | `#2E2E32` | `#E2E2E3` |
+
+and redefines the default theme's keys as follows:
+
+| Resource key | Dark | Light |
+|---|---|---|
+| `MarkdownLinkForeground`, `MarkdownCodeInlineForeground`, `MarkdownAlertNoteBorder` | `#A8B1FF` | `#3451B2` |
+| `MarkdownBlockquoteBorder`, `MarkdownTableBorder`, `MarkdownKbdBorder`, `MarkdownImageFailedBorder` | `#75757C` | `#87878C` |
+| `MarkdownCodeBlockBackground`, `MarkdownCodeHeaderBackground` | `#161618` | `#F6F6F7` |
+| `MarkdownCodeBlockForeground`, `MarkdownKbdForeground` | `#DFDFD6` | `#3C3C43` |
+| `MarkdownCodeInlineBackground`, `MarkdownAlertDefaultBackground` | `#29657585` | `#248E96AA` |
+| `MarkdownCodeHeaderForeground`, `MarkdownCodeLineNumberForeground`, `MarkdownImageFailedForeground`, `MarkdownAlertDefaultBorder` | `#98989F` | `#67676C` |
+| `MarkdownCodeCopyButtonHoverBackground`, `MarkdownKbdBackground`, `MarkdownImageFailedBackground` | `#202127` | `#FFFFFF`, `#F6F6F7`, `#F6F6F7` |
+| `MarkdownAlertTipBorder` | `#3DD68C` | `#18794E` |
+| `MarkdownAlertImportantBorder` | `#C8ABFA` | `#6F42C1` |
+| `MarkdownAlertWarningBorder` | `#F9B44E` | `#915930` |
+| `MarkdownAlertCautionBorder` | `#F66F81` | `#B8272C` |
+| `MarkdownAlert<Kind>Background` | VitePress' soft tints, 16% (`#29…`) | 14% (`#24…`) |
+| `MarkdownMarkedBackground` | `#5C4B00` | `#FFF3C4` |
+| `MarkdownFindCurrentMatchBackground` | `#652A00` | `#FFD3A3` |
+
+The current find match is a paler orange than the default theme's in the light variant, so inline code, drawn in the link colour, keeps 4.5:1 on it. The other find highlight, the image lightbox and the `MarkdownHighContrast*` palette keep the default theme's colours. In high contrast the preset gives up its own page colours, muted text, soft table headers and striped rows for that palette, the divider above h2 turns solid, and alerts, which have no bar, get a 1px outline.
+
 ### Overriding a preset
 
 The preset's colours are resources, so the usual Avalonia lookup order applies: a key defined closer to the viewer wins. Redefine keys in `Application.Resources` (which Avalonia searches before `Application.Styles`), in a `Styles` block included after the preset, or in the `Resources` of a window or of the viewer itself:
@@ -220,7 +295,7 @@ The preset's colours are resources, so the usual Avalonia lookup order applies: 
 </Application.Resources>
 ```
 
-Styles work as with the default theme: a style declared after the preset's include wins over the preset's for the same property, whatever its selector. A value set on the viewer itself always wins over both themes, e.g. `<mv:MarkdownViewer Background="Transparent" FontSize="14" />`. The GitHub preset sets `Background`, `Foreground`, `FontFamily` and `FontSize` on `MarkdownViewer`, so local values of these replace GitHub's for the whole document.
+Styles work as with the default theme: a style declared after the preset's include wins over the preset's for the same property, whatever its selector. A value set on the viewer itself always wins over both themes, e.g. `<mv:MarkdownViewer Background="Transparent" FontSize="14" />`. The GitHub and Docs presets set `Background`, `Foreground`, `FontFamily` and `FontSize` on `MarkdownViewer`, so local values of these replace the preset's for the whole document.
 
 To switch presets at run time, add or remove the preset's `StyleInclude`; every open document restyles in place, without being rebuilt:
 
@@ -247,6 +322,7 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 
 | Class | Control | Element |
 |-------|---------|---------|
+| `markdown-document` | `Grid` | The whole rendered document (`MarkdownViewer.Content`): its root panel with the selection and link focus layers. A theme can size it, as the [Docs preset](#docs) caps its width |
 | `markdown-h1` … `markdown-h6` | `TextBlock` | Headings |
 | `markdown-paragraph` | `TextBlock` | Paragraphs |
 | `markdown-code-block` | `Border` | Fenced code block container |

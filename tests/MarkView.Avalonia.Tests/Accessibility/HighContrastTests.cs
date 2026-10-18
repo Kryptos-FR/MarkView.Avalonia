@@ -174,9 +174,11 @@ public class HighContrastTests
     }
 
     [AvaloniaTheory]
-    [InlineData("Light", "#FFFFFF", "#0E1116", "#0349B4", "#20252C", "#744500", "#FFFFFF")]
-    [InlineData("Dark", "#0A0C10", "#F0F3F6", "#71B7FF", "#B7BDC8", "#F0B72F", "#0A0C10")]
-    public void High_contrast_wins_over_the_GitHub_preset(string variant, string background, string foreground,
+    [InlineData("GitHubTheme", "Light", "#FFFFFF", "#0E1116", "#0349B4", "#20252C", "#744500", "#FFFFFF")]
+    [InlineData("GitHubTheme", "Dark", "#0A0C10", "#F0F3F6", "#71B7FF", "#B7BDC8", "#F0B72F", "#0A0C10")]
+    [InlineData("DocsTheme", "Light", "#FFFFFF", "#000000", "#00009F", "#000000", "#37006E", "#FFFFFF")]
+    [InlineData("DocsTheme", "Dark", "#000000", "#FFFFFF", "#FFFF00", "#FFFFFF", "#1AEBFF", "#000000")]
+    public void High_contrast_wins_over_a_preset_with_its_own_page(string preset, string variant, string background, string foreground,
         string link, string border, string highlightBackground, string highlightForeground)
     {
         using var _ = new ThemeScope(variant == "Light" ? ThemeVariant.Light : ThemeVariant.Dark);
@@ -210,7 +212,7 @@ public class HighContrastTests
                 """,
         };
         viewer.Styles.Add(MarkdownThemeInclude());
-        viewer.Styles.Add(new StyleInclude((Uri?)null) { Source = new Uri("avares://MarkView.Avalonia/Themes/GitHubTheme.axaml") });
+        viewer.Styles.Add(new StyleInclude((Uri?)null) { Source = new Uri($"avares://MarkView.Avalonia/Themes/{preset}.axaml") });
         new Window { Width = 800, Height = 600, Content = viewer }.Show();
 
         static Color ColorOf(IBrush? brush) => Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;

@@ -265,7 +265,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isCodeHeightLimited;
     private int _themePresetIndex;
     // The presets of the drop-down after the default theme (index 0), each created when first picked
-    private readonly Styles?[] _themePresets = new Styles?[3];
+    private readonly Styles?[] _themePresets = new Styles?[4];
 
     public int SelectedIndex
     {
@@ -287,7 +287,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>The theme preset the documents use: 0 for the default theme, 1 for GitHub, 2 for Chat.</summary>
+    /// <summary>The theme preset the documents use: 0 for the default theme, 1 for GitHub, 2 for Chat, 3 for Docs.</summary>
     public int ThemePresetIndex
     {
         get => _themePresetIndex;
@@ -304,7 +304,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 var preset = _themePresets[value] ??= value switch
                 {
                     1 => new GitHubPreset(),
-                    _ => new ChatPreset(),
+                    2 => new ChatPreset(),
+                    _ => new DocsPreset(),
                 };
                 // App.axaml's StyleInclude is compiled into the theme's own Styles, so it is found by one of its resources.
                 var markdownTheme = styles.First(s => s.TryGetResource("MarkdownCodeBlockBackground", ThemeVariant.Dark, out _));

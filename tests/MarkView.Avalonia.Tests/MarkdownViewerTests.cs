@@ -30,6 +30,14 @@ public class MarkdownViewerTests
     }
 
     [AvaloniaFact]
+    public void The_rendered_document_has_a_class_for_themes()
+    {
+        var viewer = new MarkdownViewer { Markdown = "Text" };
+
+        Assert.Contains("markdown-document", Assert.IsType<Grid>(viewer.Content).Classes);
+    }
+
+    [AvaloniaFact]
     public void Changing_Markdown_rerenders()
     {
         var viewer = new MarkdownViewer { Markdown = "First" };
