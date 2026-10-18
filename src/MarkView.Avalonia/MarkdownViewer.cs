@@ -1202,6 +1202,9 @@ public partial class MarkdownViewer : ContentControl
             Focus();
     }
 
+    /// <summary>The ids of the rendered document's anchors, for tests.</summary>
+    internal IEnumerable<string> AnchorIds => _anchors.Keys;
+
     public void ScrollToAnchor(string anchorId)
     {
         if (!_anchors.TryGetValue(anchorId, out var control))
