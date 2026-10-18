@@ -7,6 +7,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 
 using Markdig.Extensions.Mathematics;
+using Markdig.Renderers;
 
 using MarkView.Avalonia.Math.Parsing;
 using MarkView.Avalonia.Rendering;
@@ -16,12 +17,20 @@ namespace MarkView.Avalonia.Math;
 /// <summary>
 /// Renders Markdig <see cref="MathBlock"/> nodes (<c>$$...$$</c>, and <c>\[...\]</c> on lines of its own
 /// once <c>UseMathBracketDelimiters()</c> is enabled) as a centred image
-/// produced by CSharpMath.SkiaSharp.
+/// produced by CSharpMath.SkiaSharp. While a document is streaming, a block that is still provisional
+/// (see <see cref="AvaloniaRenderer.IsProvisional"/>) is rendered as a plain code block, its source as
+/// text, until a blank line or another block follows it.
 /// </summary>
 public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, MathBlock obj)
     {
+        if (renderer.IsProvisional(obj) && FallbackRenderer(renderer, obj) is { } fallback)
+        {
+            fallback.Write(renderer, obj);
+            return;
+        }
+
         var source = ExtractSource(obj);
 
         var image = new Image
@@ -57,6 +66,17 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
                 border.Classes.Add("markdown-math-fallback");
             }
         }
+    }
+
+    /// <summary>
+    /// Finds the renderer that would render <paramref name="block"/> as a fenced code block, whichever
+    /// package registered it, so a half-streamed formula never reaches CSharpMath.
+    /// </summary>
+    /// <returns>The first registered renderer other than a <see cref="MathBlockRenderer"/> that accepts the block's type, or <c>null</c> when none does.</returns>
+    private static IMarkdownObjectRenderer? FallbackRenderer(AvaloniaRenderer renderer, MathBlock block)
+    {
+        var type = block.GetType();
+        return renderer.ObjectRenderers.FirstOrDefault(r => r is not MathBlockRenderer && r.Accept(renderer, type));
     }
 
     private static string ExtractSource(MathBlock block)

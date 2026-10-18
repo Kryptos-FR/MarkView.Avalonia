@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 using Avalonia;
+using Avalonia.Platform;
 using Avalonia.Styling;
 
 namespace MarkView.Avalonia.Demo;
@@ -248,13 +249,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly List<(int SelectedIndex, Uri? Source, string? Markdown)> _history = [];
     private int _historyIndex = -1;
     private bool _navigating;
+    // Whether the page is empty only because a replay emptied it; any other assignment to the page ends that.
+    private bool _isReplaying;
 
     private Uri? _source;
+    private Uri? _baseUri;
     private string? _markdown;
     private int _selectedIndex;
     private bool _isLightTheme;
     private bool _isCustomStyled;
     private bool _isColorExtensionSelected;
+    private bool _healIncompleteSyntax = true;
+    private int _replayChunkSize = 40;
+    private int _replayInterval = 20;
     private bool _isCodeHeightLimited;
     private int _themePresetIndex;
     private GitHubPreset? _gitHubTheme;
@@ -315,6 +322,54 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private const double LimitedCodeBlockHeight = 160;
 
+    /// <summary>
+    /// Whether a replay closes the syntax left open at the end of the streamed text between updates
+    /// (<c>BeginStreaming(healIncompleteSyntax:)</c>). A change takes effect at once in a replay.
+    /// </summary>
+    public bool HealIncompleteSyntax
+    {
+        get => _healIncompleteSyntax;
+        set => SetField(ref _healIncompleteSyntax, value);
+    }
+
+    /// <summary>How many characters each step of a replay appends: <see cref="MinReplayChunkSize"/> to <see cref="MaxReplayChunkSize"/>.</summary>
+    public int ReplayChunkSize
+    {
+        get => _replayChunkSize;
+        set
+        {
+            if (SetField(ref _replayChunkSize, System.Math.Clamp(value, MinReplayChunkSize, MaxReplayChunkSize)))
+                NotifyReplayLabels();
+        }
+    }
+
+    /// <summary>The pause between two steps of a replay, in milliseconds: <see cref="MinReplayInterval"/> to <see cref="MaxReplayInterval"/>.</summary>
+    public int ReplayInterval
+    {
+        get => _replayInterval;
+        set
+        {
+            if (SetField(ref _replayInterval, System.Math.Clamp(value, MinReplayInterval, MaxReplayInterval)))
+                NotifyReplayLabels();
+        }
+    }
+
+    public const int MinReplayChunkSize = 8;
+    public const int MaxReplayChunkSize = 64;
+    public const int MinReplayInterval = 16;
+    public const int MaxReplayInterval = 256;
+
+    public string ReplayChunkSizeLabel => $"Chunk size: {_replayChunkSize} characters";
+
+    public string ReplayIntervalLabel =>
+        $"Interval: {_replayInterval} ms ({_replayChunkSize * 1000.0 / _replayInterval:N0} characters per second)";
+
+    private void NotifyReplayLabels()
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ReplayChunkSizeLabel)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ReplayIntervalLabel)));
+    }
+
     public double CodeBlockMaxHeight => _isCodeHeightLimited ? LimitedCodeBlockHeight : double.PositiveInfinity;
 
     public bool IsCustomStyled
@@ -332,13 +387,33 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public Uri? Source
     {
         get => _source;
-        private set => SetField(ref _source, value);
+        private set
+        {
+            _isReplaying = false;
+            // A replay's base belongs to the page it replayed; the viewer infers the new page's from its Source.
+            BaseUri = null;
+            SetField(ref _source, value);
+        }
+    }
+
+    /// <summary>
+    /// The folder relative links and images resolve against while a page is replayed. The viewer infers
+    /// it from <see cref="Source"/> otherwise, and a replay unbinds the page from <see cref="Source"/>.
+    /// </summary>
+    public Uri? BaseUri
+    {
+        get => _baseUri;
+        private set => SetField(ref _baseUri, value);
     }
 
     public string? Markdown
     {
         get => _markdown;
-        private set => SetField(ref _markdown, value);
+        private set
+        {
+            _isReplaying = false;
+            SetField(ref _markdown, value);
+        }
     }
 
     public bool CanGoBack => _historyIndex > 0;
@@ -441,6 +516,82 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Source = null;
         Markdown = markdown;
         PushEntry(null, markdown);
+    }
+
+    /// <summary>
+    /// Reads the markdown the current page shows: <see cref="Markdown"/> when it is set, otherwise the
+    /// text behind <see cref="Source"/> (an <c>avares:</c> resource or a file, without any fragment).
+    /// </summary>
+    /// <returns>
+    /// The markdown, or <c>null</c> when the page has neither (the Color Extension page, whose content
+    /// is not markdown from this view model) or when its file can no longer be read (moved or locked).
+    /// </returns>
+    public async Task<string?> ReadCurrentMarkdownAsync()
+    {
+        if (Markdown is not null)
+            return Markdown;
+
+        switch (Source)
+        {
+            case { Scheme: "avares" } resource:
+            {
+                await using var stream = AssetLoader.Open(new Uri(resource.GetLeftPart(UriPartial.Path)));
+                using var reader = new StreamReader(stream);
+                return await reader.ReadToEndAsync();
+            }
+            case { IsFile: true } file:
+                try
+                {
+                    return await File.ReadAllTextAsync(file.LocalPath);
+                }
+                catch (IOException)
+                {
+                    // A moved or locked file; the viewer swallows the same failure when it loads the page.
+                    return null;
+                }
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// Empties the page so the viewer can stream its text back in. <c>BeginStreaming</c> refuses a
+    /// viewer whose <c>Source</c> is set, so the page is unbound from <see cref="Source"/> first and
+    /// the viewer cleared; the page's folder stays its <see cref="BaseUri"/>, so the relative links and
+    /// images of the streamed text still resolve. The history is left alone: the entry pushed when the
+    /// page loaded is still what Back and Forward restore.
+    /// </summary>
+    public void BeginReplay()
+    {
+        var source = Source;
+        Source = null;
+        BaseUri = FolderOf(source);
+        Markdown = "";
+        _isReplaying = true;
+    }
+
+    /// <summary>The folder of a document, with the trailing slash, or <c>null</c> without a document.</summary>
+    private static Uri? FolderOf(Uri? document)
+    {
+        if (document is null) return null;
+        var absolute = document.AbsoluteUri;
+        var lastSlash = absolute.LastIndexOf('/');
+        return lastSlash > 0 ? new Uri(absolute[..(lastSlash + 1)]) : null;
+    }
+
+    /// <summary>
+    /// Restores the page's text once the replay ends so the view model and the viewer agree again. After
+    /// a completed replay the viewer normally already shows that text, so nothing changes; after an
+    /// interrupted one (a second click, a view option toggled, a task toggled mid-replay) the restored
+    /// text is rendered once. Does nothing when the page has changed since <see cref="BeginReplay"/>
+    /// (another tab, a file, Back or Forward), so a replay never overwrites the page that interrupted it.
+    /// </summary>
+    /// <param name="text">The text the replay streamed.</param>
+    public void EndReplay(string text)
+    {
+        if (!_isReplaying)
+            return;
+        Markdown = text;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

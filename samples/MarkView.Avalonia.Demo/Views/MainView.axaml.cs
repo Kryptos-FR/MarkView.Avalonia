@@ -8,6 +8,12 @@ namespace MarkView.Avalonia.Demo.Views;
 
 public partial class MainView : UserControl
 {
+    // Cancels the replay in progress; replaced by each click on Stream.
+    private CancellationTokenSource? _streamCts;
+
+    // The replay in progress or last started, which a new one waits for: a viewer has one session at a time.
+    private Task? _streamTask;
+
     public MainView()
     {
         InitializeComponent();
@@ -124,6 +130,68 @@ public partial class MainView : UserControl
                 var markdown = await reader.ReadToEndAsync();
                 ((MainViewModel)DataContext!).LoadMarkdownContent(markdown);
             }
+        }
+    }
+
+    // ── Streaming replay ─────────────────────────────────────────────────────
+
+    private async void OnStreamClicked(object? sender, RoutedEventArgs e)
+    {
+        var viewModel = (MainViewModel)DataContext!;
+        _streamCts?.Cancel();
+        _streamCts?.Dispose();
+        var cts = _streamCts = new CancellationTokenSource();
+        var replay = _streamTask = ReplayAsync(viewModel, _streamTask, cts);
+        await replay;
+    }
+
+    private async Task ReplayAsync(MainViewModel viewModel, Task? previous, CancellationTokenSource cts)
+    {
+        var token = cts.Token;
+        // The replay a click interrupted ends its session as it unwinds; WhenAny does not rethrow its failure.
+        if (previous is not null)
+            await Task.WhenAny(previous);
+        if (token.IsCancellationRequested)
+            return;
+
+        var text = await viewModel.ReadCurrentMarkdownAsync();
+        if (text is null || token.IsCancellationRequested)
+            return;
+
+        viewModel.BeginReplay();
+        var healing = viewModel.HealIncompleteSyntax;
+        var session = MarkdownView.BeginStreaming(healIncompleteSyntax: healing);
+        try
+        {
+            var position = 0;
+            // The viewer ends the session itself when the page changes (another tab, a file), which stops the loop.
+            while (position < text.Length && !token.IsCancellationRequested && MarkdownView.IsStreaming)
+            {
+                if (healing != viewModel.HealIncompleteSyntax)
+                {
+                    // Healing is a session option: a new session continues from the text streamed so far.
+                    healing = viewModel.HealIncompleteSyntax;
+                    await session.CompleteAsync();
+                    session = MarkdownView.BeginStreaming(healIncompleteSyntax: healing);
+                }
+                var length = int.Min(viewModel.ReplayChunkSize, text.Length - position);
+                session.Append(text.AsSpan(position, length));
+                position += length;
+                try
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(viewModel.ReplayInterval), token);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+            }
+        }
+        finally
+        {
+            session.Dispose();
+            // After the session is disposed: the view model gets the page's text back, unless the page changed.
+            viewModel.EndReplay(text);
         }
     }
 

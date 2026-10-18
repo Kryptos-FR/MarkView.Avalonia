@@ -101,6 +101,10 @@ dark.
 for a Mermaid diagram or a plain code block regardless of registration order. `\[...\]` blocks are
 math blocks too, so the same applies to them.
 
+## Streaming
+
+While a document is streaming, a `$$` or `\[` block at the end of the text is shown as a plain code block (its source as text) and becomes a formula once a blank line or another block follows it.
+
 ## Error Handling
 
 Invalid LaTeX renders CSharpMath's own inline error text rather than throwing. Unexpected

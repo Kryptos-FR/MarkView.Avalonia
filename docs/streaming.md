@@ -26,7 +26,9 @@ async Task ShowAnswerAsync(MarkdownViewer viewer, IAsyncEnumerable<string> chunk
 `BeginStreaming` appends to the current `Markdown`. Set it to an empty string (or `null`) first to
 stream a new document; leave it as it is to continue one. Call it on the UI thread. It throws
 `InvalidOperationException` when a session is already active on the viewer, or when `Source` is
-set: streaming appends to `Markdown`, not to a file or a URL.
+set: streaming appends to `Markdown`, not to a file or a URL. To stream the text of a document
+that has a location, set `BaseUri` to its folder before `BeginStreaming()`, so its relative links
+and images resolve as they would with `Source` (the demo's replay does this).
 
 Use one viewer per answer when you can, for example one per chat message. A viewer has one session
 at a time, and a new one starts from the viewer's current text.
@@ -125,8 +127,9 @@ exception handling instead.
 - **Scroll position.** An update never resets the scroll offset, unlike setting `Markdown`.
 - **`AutoScrollToEnd`.** Set it to `true` to keep the end of the document in view as text arrives.
   Scrolling up pauses following, so the user can read earlier text while the answer goes on;
-  scrolling back to the bottom resumes it. Each new session starts following again. It has no
-  effect outside a session, and it defaults to `false`.
+  scrolling back to the bottom resumes it. A scroll inside a scroll viewer nested in the content,
+  such as a height-limited code block, does not pause following the end. Each new session starts
+  following again. It has no effect outside a session, and it defaults to `false`.
 - **Selection.** A selection in text that was kept survives the update. A selection that reaches
   into the re-rendered tail is clamped to the kept text; one inside the tail is cleared. See
   [text selection](text-selection.md).
@@ -217,14 +220,24 @@ images of the block that contains the end of the text as provisional:
   tabbing to a link that is not complete does nothing.
 - **Images** show their alt text, and nothing is requested: a half-written address is never
   fetched.
+- **Mermaid diagrams** (the MarkView.Avalonia.Mermaid package) show as a `mermaid` code block, and
+  nothing is rendered until the block is no longer provisional, which is once a blank line or
+  another block follows it. The diagram appears then.
+- **Formula blocks** (the MarkView.Avalonia.Math package) show their source as a code block until
+  a blank line or another block follows them, whether they are written with `$$` or with `\[`.
+  **Inline formulas** (`$…$`, `\(…\)`) are only parsed once complete, so they render for real;
+  healing closes a `\(` that is still open (see [Healing](#healing)).
 
 Provisional applies to every `[text](address)` link and image of that block, bare URLs turned into
 links by the pipeline included, even the ones that were already complete in it. An angle-bracket
 autolink (`<https://…>`) or a footnote reference keeps its address, since it is only parsed once
 complete. A block that was rendered as provisional is never kept as it is, so the next
 update renders it again. Once the text has moved past it, with a blank line or another block, that
-update renders it for real, with the addresses and the images. The final update, from
-`Complete()`, renders nothing as provisional.
+update renders it for real, with the addresses, the images, the diagrams and the formulas. The
+final update, from `Complete()`, renders nothing as provisional.
+
+The demo's View options menu has a **Stream the document** command that replays the current page,
+with a toggle for healing and sliders for the chunk size and the interval.
 
 ## How rendering works
 
@@ -281,6 +294,12 @@ A fenced code block is provisional while its fence is open, and also just after 
 until a blank line or another block follows. A heading is provisional until the same happens.
 A block that was rendered as provisional is rendered again on the next update.
 
+The Mermaid and Math packages take exactly the path of the sketch below for their blocks: while
+`IsProvisional(obj)` is true, a `mermaid` fence is written as the standard code block, and a
+`$$` or `\[` block is written by the renderer that would otherwise accept the fenced block
+(Mermaid's whenever the Mermaid package is registered, the core code block renderer otherwise), so
+the source is shown. The diagram or the formula is made once the block is no longer provisional.
+
 In this sketch `MyChart` stands for your own control. See
 [custom extensions](custom-extensions.md) for how a renderer is registered.
 
@@ -304,5 +323,3 @@ public class ChartBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
     }
 }
 ```
-
-Provisional rendering of Mermaid diagrams and formulas arrives in a later release.

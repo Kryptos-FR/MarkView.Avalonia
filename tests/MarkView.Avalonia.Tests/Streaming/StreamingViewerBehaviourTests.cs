@@ -282,6 +282,34 @@ public class StreamingViewerBehaviourTests
     }
 
     [AvaloniaFact]
+    public async Task AutoScrollToEnd_ignores_scrolling_inside_a_code_block()
+    {
+        using var f = Show("", v => { v.AutoScrollToEnd = true; v.CodeBlockMaxHeight = 40; });
+        var session = f.Viewer.BeginStreaming();
+        var code = "```\n" + string.Join('\n', Enumerable.Range(1, 30).Select(i => $"line {i}")) + "\n```\n\n";
+        session.Append(code + string.Concat(Enumerable.Repeat("paragraph\n\n", 40)));
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+        AssertAtBottom(f);
+
+        var inner = f.Viewer.GetVisualDescendants().OfType<ScrollViewer>().Single(s => s.Classes.Contains("markdown-code-scroll"));
+        session.Append("more\n\nmore\n\n");
+        session.ApplyPendingUpdate();            // requests a scroll to the end on the next layout pass
+        // Set between ApplyPendingUpdate() and the pump on purpose: the inner scroll must be reported in the same layout pass as the scroll-to-end.
+        inner.Offset = new Vector(0, 20);        // a user scroll inside the code block, reported in that same pass
+        await AsyncTestHelpers.PumpAsync();
+        AssertAtBottom(f);
+
+        session.Append("more\n\n");
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+        var requeried = f.Viewer.GetVisualDescendants().OfType<ScrollViewer>().Single(s => s.Classes.Contains("markdown-code-scroll"));
+        Assert.Same(inner, requeried);
+        Assert.InRange(f.ScrollViewer.Offset.Y, f.Bottom - 1, f.Bottom + 1);
+        Assert.Equal(20, inner.Offset.Y);
+    }
+
+    [AvaloniaFact]
     public async Task Following_restarts_with_each_session()
     {
         using var f = Show("", v => v.AutoScrollToEnd = true);

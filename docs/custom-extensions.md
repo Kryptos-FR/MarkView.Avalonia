@@ -157,6 +157,16 @@ A custom code block renderer does not get the built-in [code block toolbar](conf
 `renderer.WriteInline(inline)` adds an inline to the current `InlineCollection`.  
 `renderer.Push(container)` / `renderer.Pop()` manage the render stack.
 
+### Renderers and streaming
+
+While a document is [streamed](streaming.md), a renderer runs again for the block that contains the
+end of the text on every update. `renderer.IsProvisional(obj)` says whether the block is in that
+state, so a renderer can show a cheap placeholder, such as the source text, instead of building a
+chart or fetching a resource from a half-written block. See
+[For custom renderers](streaming.md#for-custom-renderers) for a sketch. A renderer for
+`FencedCodeBlock` registered before `UseMath()` receives the `MathBlock` (empty `Info`, fence
+character `$`) in the provisional frame, so it must dispatch on `Info` as the built-in ones do.
+
 ### Content that depends on the theme
 
 Controls styled through `DynamicResource` follow light/dark switches on their own. Content whose
