@@ -213,6 +213,33 @@ Pass an element that stays in the document for as long as the content should fol
 here the `Border`, not the `Image`, so that a renderer swapping the image for an error fallback
 keeps tracking the theme.
 
+### Content that is costly to build
+
+When the viewer's [lazy rendering](configuration.md#lazy-rendering) is on, its own renderers build
+images, formulas, diagrams and syntax colours only once they are about to scroll into view. A custom
+renderer can do the same with `ViewportTracking.RunWhenNearViewport`, when
+`renderer.IsLazyRenderingEnabled` is set:
+
+```csharp
+var built = false;
+ThemeTracking.ReapplyOnThemeChange(border, () => { if (built) Bake(); });
+
+if (renderer.IsLazyRenderingEnabled)
+    ViewportTracking.RunWhenNearViewport(border, () => { built = true; Bake(); });
+else
+{
+    built = true;
+    Bake();
+}
+renderer.WriteBlock(border);
+```
+
+The callback runs once, the first time the element is laid out within one viewport height of the
+visible area, during that layout pass and before it is drawn: content it builds is laid out before
+it is ever seen. An element that is never shown never runs it, and is garbage-collected normally.
+A bare `AvaloniaRenderer` has the switch off by default, since nothing guarantees that its output will
+be laid out in a viewport; `MarkdownViewer` turns it on from its `IsLazyRenderingEnabled` property.
+
 ### Content that is not text
 
 Document-wide [text selection](text-selection.md) only knows how to copy text. Give a non-text

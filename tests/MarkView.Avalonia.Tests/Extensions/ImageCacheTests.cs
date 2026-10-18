@@ -193,6 +193,43 @@ public class ImageCacheTests
     }
 
     [Fact]
+    public async Task TryGet_returns_the_cached_image_of_the_same_url_and_loader_types()
+    {
+        var cache = new ImageCache(Ten);
+        var image = await cache.GetOrLoadAsync("a", [new CountingLoader()], Token);
+
+        Assert.Same(image, cache.TryGet("a", [new CountingLoader()]));
+        Assert.Null(cache.TryGet("b", [new CountingLoader()]));
+        Assert.Null(cache.TryGet("a", [new OtherLoader()]));
+    }
+
+    [Fact]
+    public void TryGet_loads_nothing()
+    {
+        var cache = new ImageCache(Ten);
+        var loader = new CountingLoader();
+
+        Assert.Null(cache.TryGet("a", [loader]));
+        Assert.Equal(0, loader.Loads);
+        Assert.Equal(0, cache.Count);
+    }
+
+    [Fact]
+    public async Task TryGet_marks_the_image_as_the_most_recently_used()
+    {
+        var cache = new ImageCache(Ten);
+        var loader = new CountingLoader();
+        foreach (var url in Urls(10))
+            await cache.GetOrLoadAsync(url, [loader], Token);
+        cache.TryGet("u0", [loader]); // "u1" is now the least recently used
+
+        await cache.GetOrLoadAsync("c", [loader], Token);
+
+        Assert.NotNull(cache.TryGet("u0", [loader]));
+        Assert.Null(cache.TryGet("u1", [loader]));
+    }
+
+    [Fact]
     public async Task An_evicted_image_is_not_disposed()
     {
         var cache = new ImageCache(Ten);

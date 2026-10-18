@@ -173,6 +173,18 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     public bool DetectTextDirection { get; set; } = true;
 
+    /// <summary>
+    /// When <c>true</c>, costly content waits until its element first comes within one viewport height
+    /// of the visible area (see <see cref="ViewportTracking.RunWhenNearViewport"/>): images start
+    /// loading (unless already cached), formulas and Mermaid diagrams render, and code blocks, shown as
+    /// plain text until then, get their colours. When <c>false</c>, formulas and colours are built during
+    /// <see cref="RendererBase.Render"/>, and images and diagrams start as soon as their element is
+    /// attached to a visual tree. Defaults to <c>false</c>, since the output of a renderer may never be
+    /// laid out in a viewport; <see cref="MarkdownViewer"/> turns it on from its
+    /// <see cref="MarkdownViewer.IsLazyRenderingEnabled"/>.
+    /// </summary>
+    public bool IsLazyRenderingEnabled { get; set; }
+
     /// <summary>Raised with the clicked image when <see cref="IsImageZoomEnabled"/> is set.</summary>
     internal event Action<Image>? ImageZoomRequested;
 

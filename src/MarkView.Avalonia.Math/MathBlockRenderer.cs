@@ -18,7 +18,8 @@ namespace MarkView.Avalonia.Math;
 /// <summary>
 /// Renders Markdig <see cref="MathBlock"/> nodes (<c>$$...$$</c>, and <c>\[...\]</c> on lines of its own
 /// once <c>UseMathBracketDelimiters()</c> is enabled) as a centred image
-/// produced by CSharpMath.SkiaSharp. While a document is streaming, a block that is still provisional
+/// produced by CSharpMath.SkiaSharp, once it comes near the viewport when
+/// <see cref="AvaloniaRenderer.IsLazyRenderingEnabled"/> is set. While a document is streaming, a block that is still provisional
 /// (see <see cref="AvaloniaRenderer.IsProvisional"/>) is rendered as a plain code block, its source as
 /// text, until a blank line or another block follows it. With <see cref="AvaloniaRenderer.ShowCodeBlockCopyButton"/>,
 /// the formula is written inside a <c>markdown-math-container</c> grid, with a copy button for its TeX source
@@ -48,10 +49,25 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
         border.Classes.Add("markdown-math-block");
         MarkdownSelection.SetCopyText(border, obj is BracketMathBlock ? $"\\[\n{source}\n\\]" : $"$$\n{source}\n$$");
 
-        ThemeTracking.ReapplyOnThemeChange(border, ApplyTheme);
+        // With lazy rendering, the formula is only baked once it comes within a screen of the viewport;
+        // a theme switch before then changes nothing, the formula picking up the theme of that moment.
+        var rendered = false;
+        ThemeTracking.ReapplyOnThemeChange(border, () =>
+        {
+            if (rendered) ApplyTheme();
+        });
 
-        ApplyTheme();
+        if (renderer.IsLazyRenderingEnabled)
+            ViewportTracking.RunWhenNearViewport(border, Render);
+        else
+            Render();
         renderer.WriteBlock(renderer.ShowCodeBlockCopyButton ? WithCopyButton(renderer, border, source) : border);
+
+        void Render()
+        {
+            rendered = true;
+            ApplyTheme();
+        }
 
         void ApplyTheme()
         {

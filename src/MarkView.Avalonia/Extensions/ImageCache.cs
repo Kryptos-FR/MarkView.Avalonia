@@ -81,6 +81,23 @@ internal sealed class ImageCache(long capacity)
     }
 
     /// <summary>
+    /// Returns the image cached for <paramref name="url"/> and <paramref name="loaders"/>, if any, marking
+    /// it as the most recently used, without loading anything.
+    /// </summary>
+    public IImage? TryGet(string url, IList<IImageLoader> loaders)
+    {
+        var key = KeyOf(url, loaders);
+        lock (_gate)
+        {
+            if (!_entries.TryGetValue(key, out var node))
+                return null;
+            _recency.Remove(node);
+            _recency.AddFirst(node);
+            return node.Value.Image;
+        }
+    }
+
+    /// <summary>
     /// Returns the image cached for <paramref name="url"/> and <paramref name="loaders"/>, or loads it
     /// with the first loader that accepts the URL and returns an image (see <see cref="LoadAsync"/>).
     /// Returns <c>null</c> when no loader could load it; a loader's exception propagates.
@@ -90,7 +107,7 @@ internal sealed class ImageCache(long capacity)
         if (Capacity == 0)
             return await LoadAsync(url, loaders, cancellationToken);
 
-        var key = new Key(url, string.Join('|', loaders.Select(l => l.GetType().FullName)));
+        var key = KeyOf(url, loaders);
         SharedLoad? load;
         bool start;
         lock (_gate)
@@ -129,6 +146,9 @@ internal sealed class ImageCache(long capacity)
             throw;
         }
     }
+
+    private static Key KeyOf(string url, IList<IImageLoader> loaders) =>
+        new(url, string.Join('|', loaders.Select(l => l.GetType().FullName)));
 
     private async Task RunAsync(Key key, SharedLoad load, string url, IList<IImageLoader> loaders)
     {

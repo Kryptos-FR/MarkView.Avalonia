@@ -64,7 +64,7 @@ Available themes (from `TextMateSharp.Grammars.ThemeName`):
 1. Creates a `DualThemeTextMateHighlighter` wrapping two `TextMateHighlighter` instances (one per variant).
 2. Replaces the built-in `CodeBlockRenderer` with `TextMateCodeBlockRenderer`.
 
-At render time, each line is tokenised via `IGrammar.TokenizeLine` and emitted as coloured `Run` elements inside a `TextBlock`. Grammars are cached per language per highlighter instance.
+Each line is tokenised via `IGrammar.TokenizeLine` and emitted as coloured `Run` elements inside a `TextBlock`. Grammars are cached per language per highlighter instance. With the viewer's lazy rendering (`IsLazyRenderingEnabled`, on by default), a block is written as plain text first and only tokenised once it comes within a screen of the viewport, before it is first drawn; with it off, every block is tokenised at render time.
 
 Every viewer that uses the same pair of themes shares one highlighter, so its themes and grammars are loaded once, however many viewers call `UseTextMateHighlighting()` (a chat with a viewer per message, for instance). It is released once no viewer uses it.
 

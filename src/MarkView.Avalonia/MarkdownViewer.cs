@@ -161,6 +161,12 @@ public partial class MarkdownViewer : ContentControl
         AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(DetectTextDirection), true);
 
     /// <summary>
+    /// Defines the <see cref="IsLazyRenderingEnabled"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsLazyRenderingEnabledProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(IsLazyRenderingEnabled), true);
+
+    /// <summary>
     /// Defines the <see cref="TableOfContentsMaxDepth"/> property.
     /// </summary>
     public static readonly StyledProperty<int> TableOfContentsMaxDepthProperty =
@@ -365,6 +371,21 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets whether costly content waits until it is about to scroll into view: images start
+    /// loading, formulas and Mermaid diagrams render, and code blocks, shown as plain text until then,
+    /// get their syntax colours once they come within one viewport height of the visible area. The
+    /// content is laid out before it is shown, and an image already loaded by an earlier render shows at
+    /// once. Turn it off when the viewer is never scrolled into view, e.g. when it is rendered to a bitmap
+    /// for printing or export, so that everything renders without being seen first. Defaults to
+    /// <c>true</c>. Can be set from a style, e.g. for every viewer of an application.
+    /// </summary>
+    public bool IsLazyRenderingEnabled
+    {
+        get => GetValue(IsLazyRenderingEnabledProperty);
+        set => SetValue(IsLazyRenderingEnabledProperty, value);
+    }
+
+    /// <summary>
     /// Gets or sets the maximum heading level included in <see cref="TableOfContents"/>.
     /// Headings deeper than this level, and their descendants, are excluded. Defaults to 6 (no limit).
     /// </summary>
@@ -470,6 +491,7 @@ public partial class MarkdownViewer : ContentControl
         AreHeadingsFoldableProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         IsImageZoomEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         DetectTextDirectionProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        IsLazyRenderingEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
     }
@@ -652,6 +674,7 @@ public partial class MarkdownViewer : ContentControl
             IsImageZoomEnabled = IsImageZoomEnabled,
             DetectTextDirection = DetectTextDirection,
             Themes = Themes,
+            IsLazyRenderingEnabled = IsLazyRenderingEnabled,
         };
         renderer.LinkClicked += OnLinkClicked;
         renderer.ImageZoomRequested += OpenLightbox;

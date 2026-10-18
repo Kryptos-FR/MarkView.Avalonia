@@ -96,21 +96,15 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
             if (started) _ = ApplyThemeAsync();
         });
 
-        // Rendering waits until the diagram first comes within a screen of the viewport, so
-        // diagrams further down a long document cost nothing while it loads. This matters
-        // most in the browser, where Task.Run below shares the UI thread.
-        border.EffectiveViewportChanged += OnEffectiveViewportChanged;
-
         // A diagram that appears after the document has been laid out moves everything below it, which costs a
         // relayout of the document each. Rendered in the background from the moment the document is attached,
-        // the diagrams are mostly ready by the time the document is first laid out.
-        if (inBackground)
-            border.AttachedToVisualTree += (_, _) =>
-            {
-                // Stryker disable once all : starting a diagram already rendering cancels that render and renders it again
-                if (!started)
-                    Start();
-            };
+        // the diagrams are mostly ready by the time the document is first laid out. In the browser, where
+        // Task.Run below shares the UI thread, lazy rendering waits instead until the diagram first comes
+        // within a screen of the viewport, so diagrams further down a long document cost nothing while it loads.
+        if (inBackground || !renderer.IsLazyRenderingEnabled)
+            border.AttachedToVisualTree += (_, _) => Start();
+        else
+            ViewportTracking.RunWhenNearViewport(border, Start);
 
         // A ScrollViewer passes infinite available width to its children.
         // Constrain MaxWidth to the viewport width, updating on resize.
@@ -134,15 +128,12 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
 
         renderer.WriteBlock(border);
 
-        void OnEffectiveViewportChanged(object? sender, EffectiveViewportChangedEventArgs e)
-        {
-            if (!IsNearViewport(border.Bounds.Size, e.EffectiveViewport)) return;
-            Start();
-        }
-
         void Start()
         {
-            border.EffectiveViewportChanged -= OnEffectiveViewportChanged;
+            // Attached again after a theme switch, the diagram is re-rendered by the theme tracking; starting
+            // a diagram already rendering would cancel that render and render it again.
+            // Stryker disable once all : see above
+            if (started) return;
             started = true;
             _ = ApplyThemeAsync();
         }
@@ -215,16 +206,6 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
         }
     }
 
-    // The viewport is in the element's own coordinates; it is widened by its own height so a
-    // diagram starts rendering a screen before it scrolls into view. Edges count as touching,
-    // since a diagram not rendered yet may have no height at all.
-    private static bool IsNearViewport(Size size, Rect viewport)
-    {
-        var area = viewport.Inflate(new Thickness(0, viewport.Height));
-        return size.Width >= area.Left && area.Right >= 0
-            && size.Height >= area.Top && area.Bottom >= 0;
-    }
-
     private static string ExtractSource(FencedCodeBlock block)
     {
         if (block.Lines.Lines == null)
@@ -250,7 +231,7 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
         if (!string.IsNullOrEmpty(language))
             border.Classes.Add($"language-{language}");
 
-        HighlightedCode.Write(border, textBlock, obj, language, renderer.CodeHighlighter);
+        HighlightedCode.Write(renderer, border, textBlock, obj, language);
 
         CodeBlockToolbar.Write(renderer, border, obj, language);
     }

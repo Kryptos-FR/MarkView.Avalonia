@@ -14,21 +14,24 @@ using MarkView.Avalonia.Extensions;
 namespace MarkView.Avalonia.Rendering.Blocks;
 
 /// <summary>
-/// Fills a code block's <see cref="TextBlock"/> with highlighted lines and keeps the token
-/// colours following the theme. Shared by the code block renderers of the extension packages.
+/// Fills a code block's <see cref="TextBlock"/> with highlighted lines, at once or once the block nears
+/// the viewport, and keeps the token colours following the theme. Shared by the code block renderers of the extension packages.
 /// </summary>
 internal static class HighlightedCode
 {
     /// <summary>
-    /// Writes the lines of <paramref name="block"/> into <paramref name="textBlock"/> and, when the
-    /// highlighter is theme-aware, recolours them whenever the theme of <paramref name="border"/> changes.
+    /// Writes the lines of <paramref name="block"/> into <paramref name="textBlock"/>, highlighted by the
+    /// renderer's <see cref="AvaloniaRenderer.CodeHighlighter"/>, and, when the highlighter is theme-aware,
+    /// recolours them whenever the theme of <paramref name="border"/> changes. With
+    /// <see cref="AvaloniaRenderer.IsLazyRenderingEnabled"/>, the lines are written as plain text and only
+    /// highlighted once <paramref name="border"/> comes within a screen of the viewport.
     /// </summary>
     public static void Write(
+        AvaloniaRenderer renderer,
         Border border,
         TextBlock textBlock,
         CodeBlock block,
-        string? language,
-        ICodeHighlighter? highlighter)
+        string? language)
     {
         if (block.Lines.Lines == null)
             return;
@@ -42,6 +45,31 @@ internal static class HighlightedCode
             lines.Add(slice.Text.AsMemory(slice.Start, slice.Length));
         }
 
+        var highlighter = renderer.CodeHighlighter;
+        if (highlighter != null && renderer.IsLazyRenderingEnabled)
+        {
+            // The plain lines have the same text and the same monospace layout as the highlighted
+            // ones, so the block can be selected, searched and copied before it is coloured, and the
+            // colours, applied before the block is first shown, move nothing.
+            BuildInlines(textBlock, null, language, false, lines);
+            ViewportTracking.RunWhenNearViewport(border, () =>
+            {
+                textBlock.Inlines!.Clear();
+                Highlight(border, textBlock, highlighter, language, lines);
+            });
+            return;
+        }
+
+        Highlight(border, textBlock, highlighter, language, lines);
+    }
+
+    private static void Highlight(
+        Border border,
+        TextBlock textBlock,
+        ICodeHighlighter? highlighter,
+        string? language,
+        IReadOnlyList<ReadOnlyMemory<char>> lines)
+    {
         var isDark = IsDark();
         switch (highlighter)
         {

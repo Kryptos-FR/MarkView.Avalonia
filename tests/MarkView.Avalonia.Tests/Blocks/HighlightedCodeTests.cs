@@ -12,6 +12,7 @@ using Markdig;
 using Markdig.Syntax;
 
 using MarkView.Avalonia.Extensions;
+using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Tests.Shared;
 
@@ -105,12 +106,13 @@ public class HighlightedCodeTests
             [("a", LightKeyword), ("b", new SolidColorBrush(Colors.DarkBlue).ToImmutable()), ("c", null), ("d", null), ("e", LightOnly)];
     }
 
-    private static (Border Border, TextBlock Text) Write(ICodeHighlighter? highlighter, string language = "fake")
+    private static (Border Border, TextBlock Text) Write(ICodeHighlighter? highlighter, string language = "fake", bool lazy = false)
     {
         var block = Assert.IsType<FencedCodeBlock>(Assert.Single(Markdown.Parse($"```{language}\nfirst\nsecond\n```")));
         var text = new TextBlock();
         var border = new Border { Child = text };
-        HighlightedCode.Write(border, text, block, language, highlighter);
+        var renderer = new AvaloniaRenderer { CodeHighlighter = highlighter, IsLazyRenderingEnabled = lazy };
+        HighlightedCode.Write(renderer, border, text, block, language);
         return (border, text);
     }
 
@@ -324,5 +326,95 @@ public class HighlightedCodeTests
         Assert.Equal(Colors.DarkBlue, ColourOf(runs[0]));
         Assert.Null(ColourOf(runs[1]));
         Assert.Equal(Colors.Purple, ColourOf(runs[2]));
+    }
+
+    // A code block 1000 px below the top of a 300 px window, so more than a viewport height away
+    // until the window scrolls.
+    private sealed class FarBelow : IDisposable
+    {
+        private readonly ScrollViewer _scrollViewer;
+
+        public Window Window { get; }
+
+        public FarBelow(Control block)
+        {
+            _scrollViewer = new ScrollViewer { Content = new StackPanel { Children = { new Border { Height = 1000 }, block } } };
+            Window = new Window { Width = 400, Height = 300, Content = _scrollViewer };
+            Window.Show();
+        }
+
+        public void ScrollToEnd()
+        {
+            _scrollViewer.ScrollToEnd();
+            Window.UpdateLayout();
+        }
+
+        public void Dispose() => Window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Lazy_block_far_from_the_viewport_keeps_plain_lines_without_highlighting()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var highlighter = new FakeDualHighlighter();
+        var (border, text) = Write(highlighter, lazy: true);
+        using var shown = new FarBelow(border);
+
+        Assert.Equal(0, highlighter.Calls);
+        Assert.IsType<Run>(text.Inlines![0]);
+        Assert.Equal(["first", "second"], text.Inlines!.OfType<Run>().Select(r => r.Text));
+        Assert.All(text.Inlines!.OfType<Run>(), r => Assert.False(r.IsSet(TextElement.ForegroundProperty)));
+        Assert.Single(text.Inlines!.OfType<LineBreak>());
+    }
+
+    [AvaloniaFact]
+    public void Lazy_block_is_highlighted_once_scrolled_near()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var highlighter = new FakeDualHighlighter();
+        var (border, text) = Write(highlighter, lazy: true);
+        using var shown = new FarBelow(border);
+
+        shown.ScrollToEnd();
+
+        Assert.Equal(2, highlighter.Calls);
+        var runs = text.Inlines!.OfType<Run>().ToList();
+        Assert.Equal(["kw", "dark", "light", "first", "kw", "dark", "light", "second"], runs.Select(r => r.Text));
+        Assert.Equal(Colors.DarkBlue, ColourOf(runs[0]));
+        Assert.Single(text.Inlines!.OfType<LineBreak>());
+    }
+
+    [AvaloniaFact]
+    public void Lazy_block_highlighted_after_a_theme_switch_uses_the_new_theme_and_keeps_following_it()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (border, text) = Write(new FakeDualHighlighter(), lazy: true);
+        using var shown = new FarBelow(border);
+
+        theme.Switch(ThemeVariant.Dark);
+        Assert.All(text.Inlines!.OfType<Run>(), r => Assert.False(r.IsSet(TextElement.ForegroundProperty)));
+        shown.ScrollToEnd();
+        Assert.Equal(Colors.LightBlue, ColourOf(text.Inlines!.OfType<Run>().First()));
+
+        theme.Switch(ThemeVariant.Light);
+        Assert.Equal(Colors.DarkBlue, ColourOf(text.Inlines!.OfType<Run>().First()));
+    }
+
+    [AvaloniaFact]
+    public void Lazy_block_in_view_is_highlighted_before_it_is_first_rendered()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (border, text) = Write(new FakeHighlighter(), lazy: true);
+        var window = new Window { Width = 400, Height = 300, Content = border };
+        try
+        {
+            window.Show();
+
+            Assert.Equal(["kw", "first", "kw", "second"], text.Inlines!.OfType<Run>().Select(r => r.Text));
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 }

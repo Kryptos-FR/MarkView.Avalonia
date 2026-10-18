@@ -97,6 +97,8 @@ public class TextMateCodeBlockOptionsTests
             ShowCodeBlockLineNumbers = true,
             WrapCodeBlockLines = true,
             CodeBlockMaxHeight = 40,
+            // Coloured during the render, not once laid out near the viewport.
+            IsLazyRenderingEnabled = false,
         }.UseTextMateHighlighting();
         viewer.Markdown = "Intro\n\n" + Code + "\n\nOutro";
         var code = CodeBlockAssert.Layout(viewer.GetLogicalDescendants().OfType<Border>()
