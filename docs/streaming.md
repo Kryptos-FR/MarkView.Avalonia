@@ -177,8 +177,8 @@ What is healed:
 - **Emphasis and strikethrough.** `*`, `_` and `~~` runs that open and are not closed get their
   closing run, following CommonMark's flanking rules: in short, a run opens when it is followed by
   a non-space character and closes when it is preceded by one, and `_` does neither inside a word.
-  `snake_case` and `2 * 3` stay as they are. A run with nothing after it is not closed, as that
-  would show nothing. Nested emphasis is closed innermost first. Only a run of exactly two `~`
+  `snake_case` and `2 * 3` stay as they are. A run with nothing after it opens nothing, so it
+  gets no closer. Nested emphasis is closed innermost first. Only a run of exactly two `~`
   is strikethrough; other runs of `~`, and `^`, `+` and `=`, are left as they are.
 - **Bracket math.** With the Math package's bracket delimiters enabled (`UseMath()` does, unless
   you pass `bracketDelimiters: false`), `\(` and `\[` that are not closed get `\)` and `\]`, the
@@ -193,7 +193,7 @@ What is never healed:
   comes after it is not healed either, since it may be part of the tag.
 - A reference link or a footnote marker (`[text][ref]`, `[^note]`).
 - `$`, with or without the math extension: an unmatched `$` stays as it is, since `$5` is a price.
-  `$…$` and `$$…$$` pairs are not scanned for the syntax inside them.
+  With the math extension on, `$…$` and `$$…$$` pairs are not scanned for the syntax inside them.
 - A paragraph that ends with an unescaped backslash: a closer written after it would be escaped.
 
 Healing is on by default. Pass `healIncompleteSyntax: false` to render the text as it is:
