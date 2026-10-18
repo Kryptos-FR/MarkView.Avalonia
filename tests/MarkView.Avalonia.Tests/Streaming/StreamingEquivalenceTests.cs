@@ -33,6 +33,7 @@ public class StreamingEquivalenceTests
         data.Add("chat.md", 1, true);
         data.Add("readme.md", 2, true);
         data.Add("references.md", 3, true);
+        data.Add("healing.md", 1, true);
         return data;
     }
 

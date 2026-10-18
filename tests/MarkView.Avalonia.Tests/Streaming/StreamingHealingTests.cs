@@ -269,6 +269,6 @@ public class StreamingHealingTests
         Toggles(f.Viewer)[0].IsChecked = true;
         session.Append(" more");
         session.ApplyPendingUpdate();
-        Assert.StartsWith("- [x] a", f.Viewer.Markdown, StringComparison.Ordinal);
+        Assert.Equal("- [x] a\n- [ ] **b more", f.Viewer.Markdown);
     }
 }
