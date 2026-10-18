@@ -54,9 +54,9 @@ The interval is `MarkdownViewer.DefaultStreamingUpdateInterval`, 32 ms, unless y
 
 ```csharp
 // At most ten updates per second
-using var session = viewer.BeginStreaming(TimeSpan.FromMilliseconds(100));
+var session = viewer.BeginStreaming(TimeSpan.FromMilliseconds(100));
 
-// From a background thread
+// Append from a background thread, and complete the session when the text ends
 _ = Task.Run(async () =>
 {
     await foreach (var token in tokens)
@@ -64,6 +64,10 @@ _ = Task.Run(async () =>
     await session.CompleteAsync();
 });
 ```
+
+Do not put the session in a `using` block when another thread appends to it: leaving the block
+completes the session, and the next `Append` throws. Complete it where the text ends instead, or
+await the task inside the block.
 
 A longer interval renders less often and costs less CPU; a shorter one makes the text appear more
 smoothly. The interval must be positive, or `BeginStreaming` throws `ArgumentOutOfRangeException`.
@@ -88,13 +92,17 @@ await session.CompleteAsync();
 when an update throws, the task is faulted with that exception instead.
 
 `Dispose()` does the same as `Complete()`, so a `using` block completes the session even when the
-code that produces the text throws. `IsCompleted` is true as soon as the session accepts no more
+code that produces the text throws. If the final update itself throws, that exception comes out of
+`Dispose()`; call `Complete()` or `CompleteAsync()` where you want to observe it. `IsCompleted` is true as soon as the session accepts no more
 text.
 
 A session also ends, silently and without a final update, when the viewer renders something else:
-setting `Markdown`, `Source`, `Pipeline`, `Extensions` or a render option such as
-`ShowCodeBlockLineNumbers`. `IsCompleted` becomes true, `IsStreaming` becomes false, and a later
+setting `Markdown`, `Source`, `Pipeline` or a render option such as `BaseUri` or
+`ShowCodeBlockLineNumbers`, or calling `UseFenceRenderer`. `IsCompleted` becomes true, `IsStreaming` becomes false, and a later
 `Append` throws. Setting `Markdown` yourself is how you drop an answer that is no longer wanted.
+
+Adding to `Extensions` does not end a session, and does not reach it either: the session's
+renderer is created by its first update. Add extensions before `BeginStreaming()`.
 
 If a renderer or an `Updated` handler throws during an update, the session ends too. The exception
 is thrown from the call that applied the update, and `CompleteAsync()`'s task is faulted with it.
@@ -125,11 +133,7 @@ exception handling instead.
   control that had it is replaced.
 - **Screen readers.** Assistive technology gets one children-changed notification when the
   session completes, not one per update. It is sent through the viewer's own automation peer; a
-  subclass that supplies its own peer gets none.
-
-```xml
-<md:MarkdownViewer x:Name="Viewer" AutoScrollToEnd="True" />
-```
+  peer that is not a `MarkdownViewerAutomationPeer` gets none.
 
 ```csharp
 viewer.AutoScrollToEnd = true;
@@ -183,6 +187,9 @@ of that block:
   is open, or a fenced code block has no closing fence yet. An inline is judged by the leaf block
   it sits in. It always returns false when `IsStreaming` is false, so a renderer can call it
   without checking.
+
+In this sketch `MyChart` stands for your own control. See
+[custom extensions](custom-extensions.md) for how a renderer is registered.
 
 ```csharp
 using Avalonia.Controls;
