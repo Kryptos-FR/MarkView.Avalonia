@@ -218,7 +218,29 @@ A `<div align="center">` and its `</div>`, each separated by blank lines from th
 - A `<p>` or heading ends at its end tag, at the next block tag, or at the end of its HTML block. Whitespace collapses as in HTML.
 - HTML blocks Markdig starts with `<script>`, `<style>`, `<pre>`, `<textarea>`, a comment or a declaration are still not rendered.
 - A link inside a details summary shows as a link but is not clickable: clicking the summary toggles the details block.
-- A pipeline that disables HTML (Markdig's `DisableHtml()`) shows HTML as literal text, as before. See [Theming](theming.md#html-subset) for the style classes.
+- A pipeline that disables HTML (Markdig's `DisableHtml()`, or `UseHtmlMode(HtmlMode.Escape)`) shows HTML as literal text. See [Theming](theming.md#html-subset) for the style classes.
+
+### HTML mode
+
+`UseHtmlMode()` sets how a pipeline treats HTML, whichever extensions come before or after it (the last call wins):
+
+| Mode | HTML renders as | For |
+|------|-----------------|-----|
+| `HtmlMode.SafeSubset` | The [HTML subset](#html-subset) and [details blocks](#html-details-blocks); other elements are dropped and their text shows, as on GitHub. The mode of the default pipeline | READMEs and documentation |
+| `HtmlMode.Escape` | The literal text it was typed as: `<b>x</b>` reads `<b>x</b>`, as with Markdig's `DisableHtml()` | Text whose tags are not meant as HTML, such as chat messages that mention `List<string>` or `<div>` |
+| `HtmlMode.Ignore` | Nothing: tags are dropped, the text between inline tags shows, and HTML blocks don't show. `<br>` still breaks the line, as markdown has no other way to do so in a table cell | Showing only the markdown |
+
+```csharp
+// Chat messages: show what was typed
+MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
+    .UseGitHubExtensions()
+    .UseHtmlMode(HtmlMode.Escape)
+    .Build();
+```
+
+- In every mode, nothing is run, and nothing is fetched but the `<img>` sources of the subset.
+- With `Escape`, the markdown between the tags of what would be an HTML block is parsed as usual: in `<div>` / `**bold**` / `</div>` on three lines, the tags show and **bold** is bold. Autolinks (`<https://example.com>`) and entities (`&amp;`) are not HTML and still work.
+- With `Ignore`, the markdown between the tags of an HTML block does not show either, since CommonMark makes the whole block HTML. Leave blank lines around the markdown inside a `<div>` or `<details>` to keep it.
 
 ### Convenience extension methods
 
