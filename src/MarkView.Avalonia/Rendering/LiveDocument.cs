@@ -79,9 +79,10 @@ internal sealed class LiveDocument
     public UpdateResult Update(MarkdownDocument document, IInputElement? focusedElement = null)
     {
         var labels = CollectLabels(document);
-        var reused = Document is null || !labels.SequenceEqual(_labels, StringComparer.Ordinal)
-            ? 0
-            : ReusablePrefix(document);
+        var labelsUnchanged = labels.SequenceEqual(_labels, StringComparer.Ordinal);
+        // Stryker disable once all : before the first update there are no records, so ReusablePrefix returns 0 as well
+        labelsUnchanged &= Document is not null;
+        var reused = labelsUnchanged ? ReusablePrefix(document) : 0;
 
         // The state the first `reused` blocks produced: the sum of their counts.
         int children = 0, entries = 0, stops = 0, targets = 0, anchors = 0, headings = 0, slugs = 0;
@@ -122,7 +123,7 @@ internal sealed class LiveDocument
             Renderer.WriteTopLevel(block);
             MarkdownViewer.RegisterBlocks(SelectionLayer, RootPanel, childrenBefore);
             for (var c = childrenBefore; c < RootPanel.Children.Count; c++)
-                LinkLayer.Collect((Control)RootPanel.Children[c]);
+                LinkLayer.Collect(RootPanel.Children[c]);
 
             _records.Add(new BlockRecord(
                 block.GetType(), block.Span.Start, block.Span.End, block.IsOpen,
@@ -180,10 +181,12 @@ internal sealed class LiveDocument
         {
             var record = _records[k];
             var block = document[k];
-            if ((record.WasOpen && block is not LinkReferenceDefinitionGroup)
-                || record.BlockType != block.GetType()
-                || record.SpanStart != block.Span.Start
-                || record.SpanEnd != block.Span.End)
+            if (record.WasOpen && block is not LinkReferenceDefinitionGroup)
+                break;
+            if (record.SpanEnd != block.Span.End)
+                break;
+            // Stryker disable once all : in append-only text a block that was closed and still ends where it did cannot have changed type or start (no counterexample in randomised comparison of parses); the check is kept as a guard
+            if (record.BlockType != block.GetType() || record.SpanStart != block.Span.Start)
                 break;
             k++;
         }

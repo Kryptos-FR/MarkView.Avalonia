@@ -2,8 +2,9 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Controls;
-using Avalonia.Controls.Documents;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 
 using Markdig;
 using Markdig.Syntax;
@@ -61,6 +62,7 @@ public class LiveDocumentTests
         Update(live, "a\n\nb");
 
         var second = Update(live, "a\n\nb\n\nc");
+        Assert.Equal(3, live.RootPanel.Children.Count);
         var third = Update(live, "a\n\nb\n\nc\n\nd");
 
         Assert.Equal(1, second.ReusedBlocks);
@@ -181,6 +183,8 @@ public class LiveDocumentTests
         Assert.Equal(1, rebuilt.Renderer.HeadingCount);
         Assert.True(Update(rebuilt, "> # B\n> more").HeadingsChanged);
         Assert.Equal(1, rebuilt.Renderer.HeadingCount);
+        Assert.Equal(["b"], rebuilt.Renderer.HeadingEntries.Select(h => h.Slug));
+        Assert.Equal(1, rebuilt.Renderer.AnchorCount);
 
         // Nothing heading-related happens in the tail.
         var unchanged = Live();
@@ -189,6 +193,53 @@ public class LiveDocumentTests
         var closedHeading = Live();
         Update(closedHeading, "a\n\n# B");
         Assert.False(Update(closedHeading, "a\n\n# B\n\nc").HeadingsChanged);
+    }
+
+    [AvaloniaFact]
+    public void HeadingsChanged_when_the_discarded_tail_loses_its_heading()
+    {
+        var live = Live();
+        Update(live, "a\n\nb\n-");
+        Assert.IsType<HeadingBlock>(Doc("a\n\nb\n-")[1]);
+        Assert.Equal(1, live.Renderer.HeadingCount);
+
+        var result = Update(live, "a\n\nb\n- c");
+
+        Assert.IsType<ParagraphBlock>(live.Document![1]);
+        Assert.IsType<ListBlock>(live.Document[2]);
+        Assert.True(result.HeadingsChanged);
+        Assert.Equal(0, live.Renderer.HeadingCount);
+    }
+
+    [AvaloniaFact]
+    public void A_re_rendered_heading_takes_the_next_free_slug()
+    {
+        var live = Live();
+        Update(live, "# A\n\nx");
+        var kept = live.Renderer.Anchors["a"];
+
+        Update(live, "# A\n\nx\n\n# A");
+
+        Assert.Equal(["a", "a-1"], live.Renderer.HeadingEntries.Select(h => h.Slug));
+        Assert.Same(kept, live.Renderer.Anchors["a"]);
+        Assert.Same(live.RootPanel.Children[0], live.Renderer.Anchors["a"]);
+        Assert.Same(live.RootPanel.Children[2], live.Renderer.Anchors["a-1"]);
+        Assert.Equal(2, live.Renderer.AnchorCount);
+    }
+
+    [AvaloniaFact]
+    public void A_discarded_heading_leaves_no_anchor_behind()
+    {
+        var live = Live();
+        Update(live, "> # B");
+        Assert.True(live.Renderer.Anchors.ContainsKey("b"));
+
+        Update(live, "> # Bc");
+
+        Assert.False(live.Renderer.Anchors.ContainsKey("b"));
+        Assert.True(live.Renderer.Anchors.ContainsKey("bc"));
+        Assert.Equal(1, live.Renderer.AnchorCount);
+        Assert.Equal(["bc"], live.Renderer.HeadingEntries.Select(h => h.Slug));
     }
 
     [AvaloniaFact]
@@ -207,20 +258,60 @@ public class LiveDocumentTests
             Assert.Equal(2, stops.Count);
             var first = Assert.IsType<LinkFocusTarget>(stops[0]);
             var second = Assert.IsType<LinkFocusTarget>(stops[1]);
-            second.Focus();
-            Assert.True(second.IsFocused);
 
+            first.Focus();
+            Assert.True(first.IsFocused);
             var kept = live.Update(Doc("[a](x)\n\n[b](y) z"), first);
             Assert.False(kept.FocusDiscarded);
+            Assert.Equal(1, kept.ReusedBlocks);
 
             var secondAgain = Assert.IsType<LinkFocusTarget>(live.LinkLayer.GetActiveStops()[1]);
+            secondAgain.Focus();
+            Assert.True(secondAgain.IsFocused);
             var discarded = live.Update(Doc("[a](x)\n\n[b](y) z w"), secondAgain);
             Assert.True(discarded.FocusDiscarded);
+            Assert.NotSame(second, secondAgain);
         }
         finally
         {
             window.Close();
         }
+    }
+
+    [AvaloniaFact]
+    public void Focus_on_a_task_toggle_is_reported_by_the_block_that_holds_it()
+    {
+        var live = Live();
+        Update(live, "- [ ] a");
+        var inTail = live.RootPanel.GetVisualDescendants().OfType<ToggleButton>().Single();
+
+        var discarded = live.Update(Doc("- [ ] a b"), inTail);
+        Assert.True(discarded.FocusDiscarded);
+        Assert.Equal(0, discarded.ReusedBlocks);
+
+        var kept = Live();
+        Update(kept, "- [ ] a\n\nb");
+        var inKept = kept.RootPanel.GetVisualDescendants().OfType<ToggleButton>().Single();
+
+        var result = kept.Update(Doc("- [ ] a\n\nb more"), inKept);
+        Assert.False(result.FocusDiscarded);
+        Assert.Equal(1, result.ReusedBlocks);
+        Assert.Same(inKept, kept.RootPanel.GetVisualDescendants().OfType<ToggleButton>().Single());
+    }
+
+    [AvaloniaFact]
+    public void Blocks_that_merge_leave_fewer_records()
+    {
+        var live = Live();
+        Update(live, "- a\n\nb");
+        Assert.Equal(2, live.BlockCount);
+
+        var result = Update(live, "- a\n\n  b");
+
+        Assert.Single(live.Document!);
+        Assert.Equal(0, result.ReusedBlocks);
+        Assert.Equal(1, live.BlockCount);
+        Assert.Single(live.RootPanel.Children);
     }
 
     [AvaloniaFact]
