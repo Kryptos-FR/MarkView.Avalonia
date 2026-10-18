@@ -429,8 +429,12 @@ Programmatic API:
 ```csharp
 viewer.SelectAll();
 viewer.ClearSelection();
-string text = viewer.GetSelectedText();
+string text = viewer.SelectedText;
 await viewer.CopyToClipboardAsync();
+
+// React to the selection, or change what is copied
+viewer.SelectionChanged += (_, _) => copyButton.IsEnabled = viewer.HasSelection;
+viewer.CopyingToClipboard += (_, e) => e.Text = e.Text.Trim();
 ```
 
 A selection that spans an image copies the image's alt text in its place; math formulas and Mermaid diagrams copy their source. See [Text Selection](docs/text-selection.md) for details.

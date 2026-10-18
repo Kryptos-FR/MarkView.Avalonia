@@ -20,11 +20,49 @@ viewer.SelectAll();
 viewer.ClearSelection();
 
 // Read the current selection (lines separated by '\n')
-string text = viewer.GetSelectedText();
+string text = viewer.SelectedText;          // or viewer.GetSelectedText()
 
 // Copy to clipboard (with the platform's line endings, "\r\n" on Windows)
 await viewer.CopyToClipboardAsync();
 ```
+
+## Selection changes
+
+`SelectionChanged` is raised whenever the selected range changes: at each step of a drag that moves its end, on `SelectAll()` and `ClearSelection()`, on a click that clears it, when a new document replaces the one it was in, and when a [streaming](streaming.md) update shortens or clears it. It is not raised when the range stays the same, so pressing `Ctrl+A` twice raises it once.
+
+`HasSelection` is a bindable read-only property, `true` while some text is selected. It only changes when the selection starts or stops being empty, so it suits a Copy button's `IsEnabled`:
+
+```xml
+<Button Content="Copy" IsEnabled="{Binding #Viewer.HasSelection}" Click="OnCopy" />
+```
+
+```csharp
+viewer.SelectionChanged += (_, _) => status.Text = $"{viewer.SelectedText.Length} characters selected";
+```
+
+`SelectedText` is computed on each read, so it is not a bindable property. During a drag, `SelectionChanged` fires at the pace of the pointer; a handler that does real work can debounce itself.
+
+`SelectionChanged` is a bubbling routed event (`MarkdownViewer.SelectionChangedEvent`), so a container holding several viewers, such as a chat list, can handle it once for all of them; `e.Source` is the viewer.
+
+## Changing what is copied
+
+`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C` or `CopyToClipboardAsync()`) and when a code block's [copy button](configuration.md#code-block-toolbar) is clicked. It is not raised when there is nothing to copy.
+
+| Property | Meaning |
+|----------|---------|
+| `Origin` | What is copied: `MarkdownCopyOrigin.Selection` or `MarkdownCopyOrigin.CodeBlock` |
+| `Text` | The text to write, lines separated by `\n`. Set it to change what is written; it is written with the platform's line endings. Set to `null` or `""`, nothing is written. |
+| `Cancel` | Set to `true` to write nothing, for instance when the application writes the clipboard itself. A code block's copy button then shows no confirmation. |
+
+```csharp
+viewer.CopyingToClipboard += (_, e) =>
+{
+    if (e.Origin == MarkdownCopyOrigin.Selection)
+        e.Text += "\n\nCopied from the docs";
+};
+```
+
+Like `SelectionChanged`, it is a bubbling routed event (`MarkdownViewer.CopyingToClipboardEvent`).
 
 ## What is selectable
 

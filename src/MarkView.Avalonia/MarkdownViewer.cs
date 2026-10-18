@@ -523,7 +523,7 @@ public partial class MarkdownViewer : ContentControl
             _anchors = new(StringComparer.OrdinalIgnoreCase);
             _headingEntries = [];
             RebuildTableOfContents();
-            _selectionLayer = null;
+            SetSelectionLayer(null);
             _linkFocusLayer = null;
             UpdateFind(CurrentFindMatchIndex);
             if (focusWasInDocument) Focus();
@@ -543,7 +543,7 @@ public partial class MarkdownViewer : ContentControl
         // Set up document-wide selection layer
         var layer = new DocumentSelectionLayer();
         RegisterBlocks(layer, renderer.RootPanel);
-        _selectionLayer = layer;
+        SetSelectionLayer(layer);
 
         // Keyboard stand-ins for the document's links
         _linkFocusLayer = LinkFocusLayer.Create(renderer.RootPanel, ActivateLink);
@@ -975,26 +975,6 @@ public partial class MarkdownViewer : ContentControl
     {
         if (hyperlink.NavigateUri is { } uri)
             OnLinkClicked(this, new LinkClickedEventArgs(uri.ToString()));
-    }
-
-    // ── Selection API ─────────────────────────────────────────────────────────
-
-    /// <summary>Selects all text in the rendered document.</summary>
-    public void SelectAll() => _selectionLayer?.SelectAll();
-
-    /// <summary>Clears the current selection.</summary>
-    public void ClearSelection() => _selectionLayer?.ClearSelection();
-
-    /// <summary>Returns the currently selected plain text, with lines separated by <c>'\n'</c>.</summary>
-    public string GetSelectedText() => _selectionLayer?.GetSelectedText() ?? string.Empty;
-
-    /// <summary>Copies selected text to the clipboard, with the platform's line endings.</summary>
-    public Task CopyToClipboardAsync()
-    {
-        var topLevel = TopLevel.GetTopLevel(this);
-        return topLevel is not null
-            ? _selectionLayer?.CopyToClipboardAsync(topLevel) ?? Task.CompletedTask
-            : Task.CompletedTask;
     }
 
     // ── Find API ──────────────────────────────────────────────────────────────

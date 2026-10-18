@@ -5,7 +5,6 @@ using System.Text;
 
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input.Platform;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Media.TextFormatting;
@@ -48,6 +47,9 @@ internal sealed class DocumentSelectionLayer : Control
     // Anchor and focus as absolute char offsets.
     private int? _anchor;
     private int? _focus;
+
+    // The range last reported through SelectionChanged; null when it was empty.
+    private (int Start, int End)? _reportedRange;
 
     private readonly List<FindMatch> _findMatches = [];
 
@@ -107,6 +109,31 @@ internal sealed class DocumentSelectionLayer : Control
         // Stryker disable once Equality,Logical : drawing again without any match draws the same nothing
         if (_anchor is not null || _findMatches.Count > 0)
             InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Raised when the selected range changes: each drag step that moves its end, <see cref="SelectAll"/>,
+    /// <see cref="ClearSelection"/>, a press that clears it, a <see cref="TruncateTo"/> that shortens or
+    /// clears it. Not raised when the range stays the same.
+    /// </summary>
+    public event EventHandler? SelectionChanged;
+
+    /// <summary>Whether a non-empty range is selected.</summary>
+    public bool HasSelection => SelectedRange is not null;
+
+    /// <summary>The selected range in reading order, <c>null</c> when it is empty.</summary>
+    private (int Start, int End)? SelectedRange =>
+        _anchor is { } anchor && _focus is { } focus && anchor != focus
+            ? (Math.Min(anchor, focus), Math.Max(anchor, focus))
+            : null;
+
+    /// <summary>Raises <see cref="SelectionChanged"/> when the selected range differs from the one last reported.</summary>
+    private void ReportSelectionChange()
+    {
+        var range = SelectedRange;
+        if (range == _reportedRange) return;
+        _reportedRange = range;
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // ── Registration ─────────────────────────────────────────────────────────
@@ -170,6 +197,7 @@ internal sealed class DocumentSelectionLayer : Control
             CurrentFindMatch = -1;
 
         InvalidateVisual();
+        ReportSelectionChange();
     }
 
     // ── Public selection API ──────────────────────────────────────────────────
@@ -181,6 +209,7 @@ internal sealed class DocumentSelectionLayer : Control
         _anchor = 0;
         _focus = _entries[^1].AbsEnd;   // up to (not including) trailing separator
         InvalidateVisual();
+        ReportSelectionChange();
     }
 
     /// <summary>Clears selection.</summary>
@@ -189,6 +218,7 @@ internal sealed class DocumentSelectionLayer : Control
         _anchor = null;
         _focus = null;
         InvalidateVisual();
+        ReportSelectionChange();
     }
 
     /// <summary>
@@ -242,13 +272,6 @@ internal sealed class DocumentSelectionLayer : Control
         }
     }
 
-    /// <summary>Copies selected text to the clipboard, with the platform's line endings.</summary>
-    public async Task CopyToClipboardAsync(TopLevel topLevel)
-    {
-        var text = GetSelectedText();
-        if (!string.IsNullOrEmpty(text) && topLevel.Clipboard is { } clipboard)
-            await clipboard.SetTextAsync(text.ReplaceLineEndings());
-    }
 
     // ── Pointer event integration ─────────────────────────────────────────────
 
@@ -277,6 +300,7 @@ internal sealed class DocumentSelectionLayer : Control
         if (offset is null) return;
         _focus = offset;
         InvalidateVisual();
+        ReportSelectionChange();
     }
 
     // ── Hit testing ───────────────────────────────────────────────────────────
@@ -514,6 +538,7 @@ internal sealed class DocumentSelectionLayer : Control
     {
         _anchor = start;
         _focus = end;
+        ReportSelectionChange();
     }
 
     /// <summary>The anchor and focus as absolute offsets, <c>null</c> when nothing is selected. For unit tests only.</summary>

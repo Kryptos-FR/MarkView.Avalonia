@@ -10,6 +10,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 using Markdig.Syntax;
 
@@ -187,13 +188,11 @@ internal static class CodeBlockToolbar
         button.Click += async (_, e) =>
         {
             e.Handled = true;
-            if (TopLevel.GetTopLevel(button)?.Clipboard is not { } clipboard)
-                return;
-
             try
             {
-                // Like a copied selection, the code gets the platform's line endings.
-                await clipboard.SetTextAsync(code.ReplaceLineEndings());
+                // In a viewer, the copy goes through its CopyingToClipboard event.
+                if (!await CopyAsync(button, code))
+                    return;
             }
             catch (Exception)
             {
@@ -207,6 +206,22 @@ internal static class CodeBlockToolbar
             resetTimer = DispatcherTimer.RunOnce(() => button.Classes.Remove("copied"), CopiedFeedbackDuration);
         };
         return button;
+    }
+
+    /// <summary>
+    /// Copies <paramref name="code"/> through the viewer <paramref name="button"/> is in, or straight to the
+    /// clipboard when it is in none. Returns whether anything was written.
+    /// </summary>
+    private static async Task<bool> CopyAsync(Button button, string code)
+    {
+        if (button.FindAncestorOfType<MarkdownViewer>() is { } viewer)
+            return await viewer.CopyAsync(MarkdownCopyOrigin.CodeBlock, code);
+
+        if (TopLevel.GetTopLevel(button)?.Clipboard is not { } clipboard)
+            return false;
+        // Like a copied selection, the code gets the platform's line endings.
+        await clipboard.SetTextAsync(code.ReplaceLineEndings());
+        return true;
     }
 
     /// <summary>Returns the code of <paramref name="block"/>, one line per source line.</summary>
