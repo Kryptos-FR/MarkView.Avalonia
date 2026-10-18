@@ -2,7 +2,6 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Controls;
-using Avalonia.Controls.Presenters;
 using Avalonia.Logging;
 using Avalonia.Media;
 
@@ -109,9 +108,6 @@ public sealed class CustomContainerRenderer : AvaloniaObjectRenderer<CustomConta
                 break;
             case Decorator decorator:
                 decorator.Child = null;
-                break;
-            case ContentPresenter presenter:
-                presenter.Content = null;
                 break;
         }
         if (content.Parent is null)

@@ -143,7 +143,7 @@ Behaviour:
 - **Failures.** When the factory throws (or returns a control that already has a parent), the
   container renders as if it had no renderer and the exception is logged as a warning through
   Avalonia's logger (area `Control`). If the factory placed `content` in a control before failing,
-  `content` is taken back from a panel, a content control, a decorator or a content presenter;
+  `content` is taken back from a panel, a content control or a decorator;
   from anything else it can't be, and the container is left out with a warning.
 - **Styling.** The control is written inside a `Border` with the `markdown-container-control` and
   `markdown-container-<name>` classes (the name in lower case, e.g. `markdown-container-spoiler`);

@@ -2,11 +2,11 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Controls;
-using Avalonia.Controls.Presenters;
 using Avalonia.Headless.XUnit;
 using Avalonia.Logging;
 
 using Markdig;
+using Markdig.Extensions.CustomContainers;
 
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
@@ -126,6 +126,25 @@ public class ContainerRendererTests
         Assert.Equal(expected, arguments);
     }
 
+    [AvaloniaFact]
+    public void Container_without_arguments_passes_an_empty_string()
+    {
+        // Markdig's parser always sets Arguments, but the syntax tree allows null.
+        var document = new Markdig.Syntax.MarkdownDocument { new CustomContainer(null!) { Info = "card", Arguments = null } };
+        var renderer = new AvaloniaRenderer();
+        string? arguments = null;
+        Card((c, a) =>
+        {
+            arguments = a;
+            return new ContentControl { Content = c };
+        }).Register(renderer);
+
+        renderer.Render(document);
+
+        Host(renderer.RootPanel);
+        Assert.Equal(string.Empty, arguments);
+    }
+
     [AvaloniaTheory]
     [InlineData("card", "CARD")]
     [InlineData("Card", "card")]
@@ -175,25 +194,27 @@ public class ContainerRendererTests
         Assert.Contains("markdown-custom-container-title", content.Children[0].Classes);
     }
 
-    public static TheoryData<string> Parents => ["panel", "content control", "decorator", "presenter"];
-
     [AvaloniaTheory]
-    [MemberData(nameof(Parents))]
+    [InlineData("panel")]
+    [InlineData("content control")]
+    [InlineData("decorator")]
     public void Content_placed_in_a_dropped_control_is_taken_back_when_the_factory_returns_null(string parent)
     {
+        Control? dropped = null, parentSeen = null;
         var root = Render(CardDocument, Card((c, _) =>
         {
-            Control dropped = parent switch
+            dropped = parent switch
             {
                 "panel" => new StackPanel { Children = { c } },
                 "content control" => new ContentControl { Content = c },
-                "decorator" => new Border { Child = c },
-                _ => new ContentPresenter { Content = c },
+                _ => new Border { Child = c },
             };
-            Assert.Same(dropped, c.Parent);
+            parentSeen = c.Parent as Control;
             return null;
         }));
 
+        Assert.NotNull(dropped);
+        Assert.Same(dropped, parentSeen);
         Assert.Equal(["Read this first", "First", "Second"], DefaultContent(Assert.Single(root.Children)).Children.Select(TextOf));
     }
 
