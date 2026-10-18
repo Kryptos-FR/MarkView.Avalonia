@@ -217,14 +217,23 @@ images of the block that contains the end of the text as provisional:
   tabbing to a link that is not complete does nothing.
 - **Images** show their alt text, and nothing is requested: a half-written address is never
   fetched.
+- **Mermaid diagrams** (the MarkView.Avalonia.Mermaid package) show as a highlighted `mermaid` code
+  block, and nothing is rendered until the block is no longer provisional, which is the update
+  after a blank line or another block follows it. The diagram appears then.
+- **Formula blocks** (the MarkView.Avalonia.Math package) show their source as a code block while
+  they are provisional, whether they are written with `$$` or with `\[`. **Inline formulas**
+  (`$…$`, `\(…\)`) are only parsed once complete, so they render for real; healing closes a `\(`
+  that is still open (see [Healing](#healing)).
 
 Provisional applies to every `[text](address)` link and image of that block, bare URLs turned into
 links by the pipeline included, even the ones that were already complete in it. An angle-bracket
 autolink (`<https://…>`) or a footnote reference keeps its address, since it is only parsed once
 complete. A block that was rendered as provisional is never kept as it is, so the next
 update renders it again. Once the text has moved past it, with a blank line or another block, that
-update renders it for real, with the addresses and the images. The final update, from
-`Complete()`, renders nothing as provisional.
+update renders it for real, with the addresses, the images, the diagrams and the formulas. The
+final update, from `Complete()`, renders nothing as provisional.
+
+The demo's View options menu has a **Stream the document** command that replays the current page.
 
 ## How rendering works
 
@@ -281,6 +290,12 @@ A fenced code block is provisional while its fence is open, and also just after 
 until a blank line or another block follows. A heading is provisional until the same happens.
 A block that was rendered as provisional is rendered again on the next update.
 
+The Mermaid and Math packages take exactly the path of the sketch below for their blocks: while
+`IsProvisional(obj)` is true, a `mermaid` fence is written as the standard code block, and a
+`$$` or `\[` block is written by the renderer that would otherwise accept the fenced block (the
+core code block renderer, or Mermaid's), so the source is shown. The diagram or the formula is made once the block is no longer
+provisional.
+
 In this sketch `MyChart` stands for your own control. See
 [custom extensions](custom-extensions.md) for how a renderer is registered.
 
@@ -304,5 +319,3 @@ public class ChartBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
     }
 }
 ```
-
-Provisional rendering of Mermaid diagrams and formulas arrives in a later release.

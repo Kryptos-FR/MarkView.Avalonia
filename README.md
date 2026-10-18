@@ -456,7 +456,8 @@ to a streaming session is rendered in one update per interval (32 ms by default)
 re-renders only the open tail of the document, so the rest keeps its controls, selection and scroll
 position. The syntax left open at the end of the text, such as an unmatched `` ` `` or `**`, is closed
 between updates so the text renders as it will once complete; pass `healIncompleteSyntax: false` to
-`BeginStreaming` to turn it off.
+`BeginStreaming` to turn it off. Mermaid diagrams and formula blocks render as code until their
+block is complete.
 
 ```csharp
 viewer.Markdown = "";
