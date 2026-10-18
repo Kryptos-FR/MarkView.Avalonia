@@ -34,7 +34,7 @@ internal sealed class CustomFenceRenderer : AvaloniaObjectRenderer<FencedCodeBlo
 
     // The factory is application code: a failure renders the block as code instead of losing the
     // rest of the document.
-    private Border? TryCreate(FenceRendererFactory factory, FencedCodeBlock obj, string language)
+    private ComponentHost? TryCreate(FenceRendererFactory factory, FencedCodeBlock obj, string language)
     {
         var code = CodeBlockToolbar.GetCode(obj);
         var info = string.IsNullOrEmpty(obj.Arguments) ? language : $"{language} {obj.Arguments}";
@@ -44,7 +44,7 @@ internal sealed class CustomFenceRenderer : AvaloniaObjectRenderer<FencedCodeBlo
                 return null;
 
             // Assigning the child throws when the factory returns a control that already has a parent.
-            var border = new Border { Child = control };
+            var border = new ComponentHost { Child = control };
             border.Classes.Add("markdown-custom-fence");
             border.Classes.Add($"markdown-fence-{language.ToLowerInvariant()}");
 

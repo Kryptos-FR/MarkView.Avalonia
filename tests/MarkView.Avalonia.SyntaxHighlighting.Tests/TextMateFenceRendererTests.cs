@@ -27,7 +27,7 @@ public class TextMateFenceRendererTests
         viewer.Markdown = "```csharp\nvar x = 1;\n```\n\n```python\nx = 1\n```";
 
         var blocks = Assert.IsType<StackPanel>(Assert.IsType<Grid>(viewer.Content).Children[0]).Children;
-        var custom = Assert.IsType<Border>(blocks[0]);
+        var custom = Assert.IsType<Border>(blocks[0], exactMatch: false);
         Assert.Contains("markdown-custom-fence", custom.Classes);
         Assert.IsType<Button>(custom.Child);
         var code = Assert.IsType<TextBlock>(CodeBlockAssert.CodeBorder(blocks[1]).Child);

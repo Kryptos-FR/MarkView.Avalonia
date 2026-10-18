@@ -10,6 +10,8 @@ All extension points are accessed through `IMarkViewExtension`.
 
 To show the fenced code blocks of one language as your own control (```` ```chart ```` → a chart),
 you don't need any of them: register a [fence renderer](#rendering-a-fence-language-as-your-own-control).
+The same goes for a custom container (`:::spoiler` → an expander around its markdown): register a
+[container renderer](#rendering-a-custom-container-as-your-own-control).
 
 ## Rendering a fence language as your own control
 
@@ -85,6 +87,76 @@ viewer.UseFenceRenderer("chart", (code, info) =>
     return image;
 });
 ```
+
+## Rendering a custom container as your own control
+
+A container renderer maps the name of a custom container (Markdig's `UseCustomContainers()`,
+`:::name` … `:::`) to a factory that builds a control around the container's markdown, already
+rendered:
+
+```csharp
+using Markdig;
+using MarkView.Avalonia;
+
+viewer.Pipeline = new MarkdownPipelineBuilder()
+    .UseGitHubExtensions()
+    .UseCustomContainers()
+    .Build();
+viewer.UseContainerRenderer("spoiler", (content, title) => new Expander { Header = title, Content = content });
+// or for every viewer of the application (App.axaml.cs):
+MarkdownViewerDefaults.Extensions.AddContainerRenderer("spoiler",
+    (content, title) => new Expander { Header = title, Content = content });
+```
+
+```markdown
+:::spoiler What is the answer?
+The **answer** is [42](https://example.com/42).
+:::
+```
+
+The factory is a `ContainerRendererFactory`, `Control? (Control content, string arguments)`:
+
+- `content` is the container's blocks, rendered as anywhere else in the document. Place it in the
+  control you return: as an expander's content, in a panel, a card's body…
+- `arguments` is the text after the name on the opening line, trimmed (`What is the answer?`
+  above), or an empty string. With Markdig's `UseGenericAttributes()` in the pipeline, a trailing
+  `{...}` is parsed as [attributes](theming.md#classes-from-generic-attributes) instead, and is
+  not part of `arguments`.
+- Return a **new** control on every call. Return `null` to render that container as it would be
+  without a renderer (a `Border.markdown-custom-container` with `arguments` as its title).
+
+Behaviour:
+
+- **Pipeline.** Custom containers need Markdig's `UseCustomContainers()`, which the default
+  pipeline doesn't have. Without it, `:::` lines are plain text and the factory is never called.
+- **One renderer per name.** The name is matched case-insensitively. When several are registered
+  for the same name, the last one registered wins: a viewer's own `Extensions` override
+  `MarkdownViewerDefaults.Extensions`. `UseContainerRenderer` also removes the viewer's earlier
+  container renderer for that name, and re-renders the document; adding a
+  `ContainerRendererExtension` to `Extensions` directly (or with `AddContainerRenderer`) takes
+  effect on the next render.
+- **The markdown inside.** Selection, find in document, links and the keyboard work in `content`
+  as in the rest of the document. A container nested in another one gets its own renderer.
+- **Keyboard.** Tab reaches the focusable parts of your control, such as an expander's header,
+  then the links inside `content`, in reading order. Parts that are hidden or disabled are
+  skipped, and so are the links of content your control hides (a collapsed expander).
+- **Failures.** When the factory throws (or returns a control that already has a parent), the
+  container renders as if it had no renderer and the exception is logged as a warning through
+  Avalonia's logger (area `Control`). If the factory placed `content` in a control before failing,
+  `content` is taken back from a panel, a content control, a decorator or a content presenter;
+  from anything else it can't be, and the container is left out with a warning.
+- **Styling.** The control is written inside a `Border` with the `markdown-container-control` and
+  `markdown-container-<name>` classes (the name in lower case, e.g. `markdown-container-spoiler`);
+  see [Theming](theming.md#custom-containers).
+- **Selection.** The text of your control itself (an expander's header) is not part of the
+  document's text. To select the whole container as one block instead, set
+  [`MarkdownSelection.CopyText`](#content-that-is-not-text) on the control the factory returns.
+- **Streaming.** While a [streaming session](streaming.md) renders the document, the container
+  that holds the end of the text is built again on each update, so its control does not keep
+  state (an expander's `IsExpanded`) until the container is closed.
+
+A container renderer is itself an `IMarkViewExtension` — `new ContainerRendererExtension("spoiler", factory)`
+— so it can be added to an `Extensions` list like any other extension.
 
 ## IMarkViewExtension
 

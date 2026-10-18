@@ -68,7 +68,7 @@ public class CustomFenceTests
 
     private static Border CustomFence(StackPanel root)
     {
-        var border = Assert.IsType<Border>(Assert.Single(root.Children));
+        var border = Assert.IsType<Border>(Assert.Single(root.Children), exactMatch: false);
         Assert.Contains("markdown-custom-fence", border.Classes);
         return border;
     }
@@ -247,8 +247,8 @@ public class CustomFenceTests
         var root = Render("```chart\nx\n```\n\n```map\ny\n```",
             Chart((_, _) => new Button()), new FenceRendererExtension("map", (_, _) => new CheckBox()));
 
-        Assert.IsType<Button>(Assert.IsType<Border>(root.Children[0]).Child);
-        Assert.IsType<CheckBox>(Assert.IsType<Border>(root.Children[1]).Child);
+        Assert.IsType<Button>(Assert.IsType<Border>(root.Children[0], exactMatch: false).Child);
+        Assert.IsType<CheckBox>(Assert.IsType<Border>(root.Children[1], exactMatch: false).Child);
         Assert.Contains("markdown-fence-map", root.Children[1].Classes);
     }
 

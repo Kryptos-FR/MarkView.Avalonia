@@ -288,6 +288,30 @@ The factory also receives the rest of the info string, so a fence can take argum
 ```
 ````
 
+## Custom Containers as Controls
+
+Custom containers can render as the application's own control, built around their markdown. This
+demo registers `spoiler`, which shows its content in an expander titled by the text after the name:
+
+:::spoiler What does `UseContainerRenderer` give the factory?
+The container's blocks, already rendered: **formatting**, [links](https://github.com/Kryptos-FR/MarkView.Avalonia)
+and lists work as anywhere else, and so do selection, find and the keyboard.
+
+- Tab reaches the header, then the links inside.
+:::
+
+````markdown
+:::spoiler What does `UseContainerRenderer` give the factory?
+The container's blocks, already rendered: …
+:::
+````
+
+Other names keep the default look:
+
+:::note A plain container
+Styled by its name with `Border.markdown-custom-container.note`.
+:::
+
 ---
 
 *End of showcase.*

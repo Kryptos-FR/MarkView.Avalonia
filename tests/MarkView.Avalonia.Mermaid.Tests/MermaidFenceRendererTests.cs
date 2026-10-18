@@ -33,7 +33,7 @@ public class MermaidFenceRendererTests
     {
         var blocks = Render(fenceRendererFirst);
 
-        var border = Assert.IsType<Border>(blocks[0]);
+        var border = Assert.IsType<Border>(blocks[0], exactMatch: false);
         Assert.Contains("markdown-custom-fence", border.Classes);
         Assert.IsType<Button>(border.Child);
     }

@@ -563,6 +563,10 @@
   <Style Selector=":is(TextBlock).markdown-custom-container-title">
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
+  <!-- The control a container renderer built around a container's blocks -->
+  <Style Selector="Border.markdown-container-control">
+    <Setter Property="Margin" Value="0,4" />
+  </Style>
 
   <!-- Footers (^^) -->
   <Style Selector="StackPanel.markdown-footer">

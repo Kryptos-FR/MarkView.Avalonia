@@ -3,6 +3,7 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 
@@ -57,6 +58,15 @@ public class App : Application
         // Global fence renderer — every ```palette block renders as a row of colour swatches,
         // sized by an optional argument after the language (```palette size=24)
         MarkdownViewerDefaults.Extensions.AddFenceRenderer("palette", (code, info) => CreatePalette(code, info));
+
+        // Global container renderer — every :::spoiler container renders as an expander around its
+        // markdown, titled by the text after the name (:::spoiler The answer)
+        MarkdownViewerDefaults.Extensions.AddContainerRenderer("spoiler", (content, title) => new Expander
+        {
+            Header = title.Length > 0 ? title : "Spoiler",
+            Content = content,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        });
 
         // Global link handler — handles external links for every MarkdownViewer in the app
         MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>(OnLinkClicked);

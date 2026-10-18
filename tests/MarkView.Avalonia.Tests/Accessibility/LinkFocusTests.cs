@@ -6,6 +6,7 @@ using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -177,6 +178,24 @@ public class LinkFocusTests
         Assert.Equal("after", f.FocusedLink);
         f.Tab(shift: true);
         Assert.IsType<Button>(f.Focused);
+    }
+
+    [AvaloniaFact]
+    public void Focusable_parts_of_a_fence_renderers_control_template_are_stops_in_reading_order()
+    {
+        using var f = Show("[before](https://example.com/b)\n\n```chart\nx\n```\n\n[after](https://example.com/a)");
+        f.Viewer.UseFenceRenderer("chart", (code, _) => new Expander { Header = code, IsExpanded = true });
+        Dispatcher.UIThread.RunJobs();
+        f.Viewer.Focus();
+
+        f.Tab();
+        Assert.Equal("before", f.FocusedLink);
+        f.Tab();
+        var header = Assert.IsType<ToggleButton>(f.Focused);
+        f.Tab();
+        Assert.Equal("after", f.FocusedLink);
+        f.Tab(shift: true);
+        Assert.Same(header, f.Focused);
     }
 
     [AvaloniaFact]
