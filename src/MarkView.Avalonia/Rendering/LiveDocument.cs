@@ -167,20 +167,24 @@ internal sealed class LiveDocument
 
     /// <summary>
     /// The number of leading blocks of <paramref name="document"/> whose controls can be kept: same
-    /// type and same source span as when rendered, and closed then. Markdig keeps a
-    /// <see cref="LinkReferenceDefinitionGroup"/> open for ever, at the place its first definition
-    /// appeared, and adds later definitions to it, so it is exempt from the closed test: it renders no
-    /// control, and a new definition changes the labels, which already invalidates everything.
+    /// type and same source span as when rendered, and not still growing then. Only the last
+    /// top-level block can grow with appended text, so <see cref="BlockRecord.WasOpen"/> is consulted
+    /// for that block alone: Markdig reports some earlier blocks open although they cannot change (a
+    /// pipe table closed by a blank line, a <see cref="LinkReferenceDefinitionGroup"/>, which stays
+    /// where its first definition appeared and collects later ones; a new definition changes the
+    /// labels, which already invalidates everything). The span check catches a last block Markdig
+    /// reports closed but that still grows (a list with several items).
     /// </summary>
     private int ReusablePrefix(MarkdownDocument document)
     {
         var limit = Math.Min(_records.Count, document.Count);
+        var last = _records.Count - 1;
         var k = 0;
         while (k < limit)
         {
             var record = _records[k];
             var block = document[k];
-            if (record.WasOpen && block is not LinkReferenceDefinitionGroup)
+            if (record.WasOpen && k == last)
                 break;
             if (record.SpanEnd != block.Span.End)
                 break;

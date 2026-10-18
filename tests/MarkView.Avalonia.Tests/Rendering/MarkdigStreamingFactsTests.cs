@@ -3,6 +3,7 @@
 
 using Markdig;
 using Markdig.Extensions.Footnotes;
+using Markdig.Extensions.Tables;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 
@@ -121,6 +122,18 @@ public class MarkdigStreamingFactsTests
         var paragraph = Assert.IsType<ParagraphBlock>(later[0]);
         Assert.Contains(Descendants(paragraph), d => d is LinkInline);
         Assert.IsType<LinkReferenceDefinitionGroup>(later[1]);
+    }
+
+    [Fact]
+    public void Pipe_table_stays_open_after_the_blank_line_that_ends_it()
+    {
+        var document = Parse("| a |\n|---|\n| 1 |\n\nafter");
+
+        Assert.Equal(2, document.Count);
+        var table = Assert.IsType<Table>(document[0]);
+        Assert.True(table.IsOpen);
+        Assert.Equal((0, 16), (table.Span.Start, table.Span.End));
+        Assert.IsType<ParagraphBlock>(document[1]);
     }
 
     [Fact]

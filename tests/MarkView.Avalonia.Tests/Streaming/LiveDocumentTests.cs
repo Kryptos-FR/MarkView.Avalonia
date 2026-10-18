@@ -359,6 +359,36 @@ public class LiveDocumentTests
     }
 
     [AvaloniaFact]
+    public void Closed_table_before_the_tail_is_reused()
+    {
+        // Markdig keeps a pipe table open after the blank line that ends it (see
+        // MarkdigStreamingFactsTests); it still cannot change once a block follows it.
+        var live = Live();
+        Update(live, "| a |\n|---|\n| 1 |\n\np");
+        var table = live.RootPanel.Children[0];
+
+        var result = Update(live, "| a |\n|---|\n| 1 |\n\np q");
+
+        Assert.Equal(1, result.ReusedBlocks);
+        Assert.Equal(2, live.RootPanel.Children.Count);
+        Assert.Same(table, live.RootPanel.Children[0]);
+    }
+
+    [AvaloniaFact]
+    public void Open_table_at_the_end_is_re_rendered()
+    {
+        var live = Live();
+        Update(live, "| a |\n|---|\n| 1 |");
+        var table = live.RootPanel.Children[0];
+
+        var result = Update(live, "| a |\n|---|\n| 1 |\n| 2 |");
+
+        Assert.Equal(0, result.ReusedBlocks);
+        Assert.Single(live.RootPanel.Children);
+        Assert.NotSame(table, live.RootPanel.Children[0]);
+    }
+
+    [AvaloniaFact]
     public void Footnote_group_is_re_rendered_each_update()
     {
         var live = Live();
