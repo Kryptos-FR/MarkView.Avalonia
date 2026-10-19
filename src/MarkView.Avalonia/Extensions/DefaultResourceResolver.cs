@@ -37,9 +37,11 @@ internal sealed class DefaultResourceResolver : IResourceResolver
         }
     }
 
-    // Read whole, so that the content is seekable and the file is not held open while it is decoded.
+    // Read whole, so that the content is seekable and the file is not held open while it is decoded. On the
+    // thread pool, because Windows can complete an asynchronous read of a small file synchronously, which
+    // would read it on the UI thread and render a file Source before its setter returns.
     private static async Task<Stream?> OpenFileAsync(string path, CancellationToken cancellationToken) =>
-        new MemoryStream(await File.ReadAllBytesAsync(path, cancellationToken));
+        new MemoryStream(await Task.Run(() => File.ReadAllBytesAsync(path, cancellationToken), cancellationToken));
 
     private static async Task<Stream?> OpenHttpAsync(Uri uri, CancellationToken cancellationToken) =>
         await SharedHttpClient.DownloadAsync(uri, cancellationToken);
