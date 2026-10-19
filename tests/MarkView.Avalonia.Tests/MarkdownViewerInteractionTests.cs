@@ -285,6 +285,58 @@ public class MarkdownViewerInteractionTests
     }
 
     [AvaloniaTheory]
+    [InlineData(0, 1)]
+    [InlineData(1, 1)]
+    [InlineData(2, 2)]
+    public void Clicking_a_footnote_reference_scrolls_to_its_definition(int reference, int footnote)
+    {
+        // The demo's footnote paragraph, narrow enough to wrap: references after the first
+        // sit on later lines, which a hit test that only accepted the first line ignored.
+        var viewer = new MarkdownViewer { Template = ScrollingViewerTemplate.Create() };
+        var filler = string.Join("\n\n", Enumerable.Range(0, 40).Select(i => $"Paragraph {i}"));
+        // Long enough that both definitions can scroll to the top of the viewport.
+        var longText = string.Join(" ", Enumerable.Repeat("word", 300));
+        viewer.Markdown = $"""
+            The CommonMark spec does not define footnotes, but Markdig supports them.[^1]
+            You can reference the same note multiple times.[^1]
+            Or add a second footnote.[^2]
+
+            {filler}
+
+            [^1]: This is the first footnote definition.
+            [^2]: This is the second footnote definition. {longText}
+            """;
+        var window = new Window { Width = 1400, Height = 200, Content = viewer };
+        MakeTextBlocksHitTestable(window);
+        window.Show();
+        try
+        {
+            var scrollViewer = viewer.GetVisualDescendants().OfType<ScrollViewer>().Single();
+            var paragraph = viewer.GetVisualDescendants().OfType<MarkdownSelectableTextBlock>().First();
+            var text = MarkdownSelectableTextBlock.ExtractPlainText(paragraph.Inlines!);
+            var index = -1;
+            for (var i = 0; i <= reference; i++)
+                index = text.IndexOf('[', index + 1);
+            var firstLineLength = paragraph.TextLayout.TextLines[0].Length;
+            Assert.True(text.IndexOf('[') < firstLineLength && text.LastIndexOf('[') >= firstLineLength,
+                "test assumes the first reference is on the first line and the last one wraps");
+
+            var row = viewer.GetVisualDescendants().OfType<Grid>()
+                .Where(g => g.Classes.Contains("markdown-footnote-item"))
+                .ElementAt(footnote - 1);
+            var expectedY = row.TranslatePoint(new Point(0, 0), scrollViewer)!.Value.Y - 16;
+
+            Click(window, At(window, paragraph, index + 1));
+
+            Assert.Equal(expectedY, scrollViewer.Offset.Y, 3);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaTheory]
     [InlineData("target-heading", true)]
     [InlineData("no-such-anchor", false)]
     public void ScrollToAnchor_without_a_templated_scroll_viewer_brings_the_anchor_into_view(string anchor, bool scrolls)
