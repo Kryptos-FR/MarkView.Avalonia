@@ -11,7 +11,7 @@ Give the viewer its text with `Markdown`, or a location to load it from with `So
 <mv:MarkdownViewer Source="avares://MyApp/Docs/guide.md" />
 ```
 
-Setting either renders the whole document again and scrolls back to the top. To show text that grows at its end, such as the answer of a language model, use a [streaming session](streaming.md) instead.
+Setting either renders the whole document again and scrolls back to the top. To show text that grows at its end, such as the answer of a language model, use a [streaming session](streaming.md) instead. For a preview next to an editor, where the text changes anywhere on every keystroke, turn on [incremental rendering](live-preview.md): only the blocks an edit changes are rendered again, and the scroll position is kept.
 
 ## Loading a file or a URL
 

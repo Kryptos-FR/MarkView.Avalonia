@@ -26,7 +26,7 @@ public class LiveDocumentTests
 
     private static MarkdownDocument Doc(string text) => Markdown.Parse(text, Pipeline);
 
-    private static UpdateResult Update(LiveDocument live, string text) => live.Update(Doc(text));
+    private static UpdateResult Update(LiveDocument live, string text) => live.Update(Doc(text), text);
 
     private static MarkdownHyperlink FirstLink(LiveDocument live)
     {
@@ -38,7 +38,7 @@ public class LiveDocumentTests
     private static LiveDocument Direct(string text, MarkdownPipeline? pipeline = null)
     {
         var live = Live();
-        live.Update(Markdown.Parse(text, pipeline ?? Pipeline));
+        live.Update(Markdown.Parse(text, pipeline ?? Pipeline), text);
         return live;
     }
 
@@ -237,10 +237,10 @@ public class LiveDocumentTests
             return abbreviation;
         }
         var live = Live();
-        live.Update(Markdown.Parse(partial, pipeline));
+        live.Update(Markdown.Parse(partial, pipeline), partial);
         Assert.Equal("Hyper", ToolTip.GetTip(Abbreviation(live)));
 
-        var result = live.Update(Markdown.Parse(full, pipeline));
+        var result = live.Update(Markdown.Parse(full, pipeline), full);
 
         Assert.Equal(0, result.ReusedBlocks);
         Assert.Equal("Hyper Text", ToolTip.GetTip(Abbreviation(live)));
@@ -253,10 +253,10 @@ public class LiveDocumentTests
     {
         var pipeline = new MarkdownPipelineBuilder().UseGitHubExtensions().UseAbbreviations().Build();
         var live = Live();
-        live.Update(Markdown.Parse("HTML is\n\n*[HTML]: Hyper Text\n\nmore", pipeline));
+        live.Update(Markdown.Parse("HTML is\n\n*[HTML]: Hyper Text\n\nmore", pipeline), "HTML is\n\n*[HTML]: Hyper Text\n\nmore");
         var paragraph = live.RootPanel.Children[0];
 
-        var result = live.Update(Markdown.Parse("HTML is\n\n*[HTML]: Hyper Text\n\nmore text", pipeline));
+        var result = live.Update(Markdown.Parse("HTML is\n\n*[HTML]: Hyper Text\n\nmore text", pipeline), "HTML is\n\n*[HTML]: Hyper Text\n\nmore text");
 
         Assert.Equal(1, result.ReusedBlocks);
         Assert.Same(paragraph, live.RootPanel.Children[0]);
@@ -289,7 +289,7 @@ public class LiveDocumentTests
     }
 
     [AvaloniaFact]
-    public void HeadingsChanged_when_a_heading_is_added_or_discarded()
+    public void HeadingsChanged_only_when_the_heading_list_differs()
     {
         // A closed heading keeps its entry, so only the new one counts as a change.
         var added = Live();
@@ -297,11 +297,11 @@ public class LiveDocumentTests
         Assert.True(Update(added, "a\n\n# B\n\n# C").HeadingsChanged);
         Assert.Equal(["B", "C"], added.Renderer.HeadingEntries.Select(h => h.Text));
 
-        // A heading in an open block is discarded and rendered again.
+        // A heading in an open block is discarded and rendered again, the same as before.
         var rebuilt = Live();
         Update(rebuilt, "> # B");
         Assert.Equal(1, rebuilt.Renderer.HeadingCount);
-        Assert.True(Update(rebuilt, "> # B\n> more").HeadingsChanged);
+        Assert.False(Update(rebuilt, "> # B\n> more").HeadingsChanged);
         Assert.Equal(1, rebuilt.Renderer.HeadingCount);
         Assert.Equal(["b"], rebuilt.Renderer.HeadingEntries.Select(h => h.Slug));
         Assert.Equal(1, rebuilt.Renderer.AnchorCount);
@@ -381,14 +381,14 @@ public class LiveDocumentTests
 
             first.Focus();
             Assert.True(first.IsFocused);
-            var kept = live.Update(Doc("[a](x)\n\n[b](y) z"), first);
+            var kept = live.Update(Doc("[a](x)\n\n[b](y) z"), "[a](x)\n\n[b](y) z", first);
             Assert.False(kept.FocusDiscarded);
             Assert.Equal(1, kept.ReusedBlocks);
 
             var secondAgain = Assert.IsType<LinkFocusTarget>(live.LinkLayer.GetActiveStops()[1]);
             secondAgain.Focus();
             Assert.True(secondAgain.IsFocused);
-            var discarded = live.Update(Doc("[a](x)\n\n[b](y) z w"), secondAgain);
+            var discarded = live.Update(Doc("[a](x)\n\n[b](y) z w"), "[a](x)\n\n[b](y) z w", secondAgain);
             Assert.True(discarded.FocusDiscarded);
             Assert.NotSame(second, secondAgain);
         }
@@ -405,7 +405,7 @@ public class LiveDocumentTests
         Update(live, "- [ ] a");
         var inTail = live.RootPanel.GetVisualDescendants().OfType<ToggleButton>().Single();
 
-        var discarded = live.Update(Doc("- [ ] a b"), inTail);
+        var discarded = live.Update(Doc("- [ ] a b"), "- [ ] a b", inTail);
         Assert.True(discarded.FocusDiscarded);
         Assert.Equal(0, discarded.ReusedBlocks);
 
@@ -413,7 +413,7 @@ public class LiveDocumentTests
         Update(kept, "- [ ] a\n\nb");
         var inKept = kept.RootPanel.GetVisualDescendants().OfType<ToggleButton>().Single();
 
-        var result = kept.Update(Doc("- [ ] a\n\nb more"), inKept);
+        var result = kept.Update(Doc("- [ ] a\n\nb more"), "- [ ] a\n\nb more", inKept);
         Assert.False(result.FocusDiscarded);
         Assert.Equal(1, result.ReusedBlocks);
         Assert.Same(inKept, kept.RootPanel.GetVisualDescendants().OfType<ToggleButton>().Single());
