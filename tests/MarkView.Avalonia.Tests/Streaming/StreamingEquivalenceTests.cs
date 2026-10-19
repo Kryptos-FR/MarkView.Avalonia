@@ -38,7 +38,7 @@ public class StreamingEquivalenceTests
         return data;
     }
 
-    private static string Load(string asset, bool crlf)
+    internal static string Load(string asset, bool crlf)
     {
         using var stream = AssetLoader.Open(new Uri($"avares://MarkView.Avalonia.Tests/TestAssets/Streaming/{asset}"));
         using var reader = new StreamReader(stream);
@@ -49,7 +49,7 @@ public class StreamingEquivalenceTests
     // The alert extras of UseAlertBlocks, plus abbreviations, which Markdig applies to every paragraph
     // once their definition, typically at the end, is parsed, and thinking blocks, expanded once complete so
     // that selection compares their content too.
-    private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
+    internal static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UseGitHubExtensions()
         .UseExtendedAlertBlocks()
         .UseAbbreviations()
@@ -59,10 +59,10 @@ public class StreamingEquivalenceTests
     private static MarkdownViewer Viewer() =>
         new() { Template = ScrollingViewerTemplate.Create(), Pipeline = Pipeline };
 
-    private static StackPanel Root(MarkdownViewer viewer) =>
+    internal static StackPanel Root(MarkdownViewer viewer) =>
         Assert.IsType<StackPanel>(Assert.IsType<Grid>(viewer.Content).Children[0]);
 
-    private static IEnumerable<(int Level, string Text, string Slug)> Flatten(IEnumerable<TocEntry> entries) =>
+    internal static IEnumerable<(int Level, string Text, string Slug)> Flatten(IEnumerable<TocEntry> entries) =>
         entries.SelectMany(e => Flatten(e.Children).Prepend((e.Level, e.Text, e.Slug)));
 
     /// <summary>
@@ -70,7 +70,7 @@ public class StreamingEquivalenceTests
     /// type and classes, every link's address and title, every image's source and copy text, and
     /// every tooltip.
     /// </summary>
-    private static List<string> Structure(MarkdownViewer viewer) =>
+    internal static List<string> Structure(MarkdownViewer viewer) =>
         Root(viewer).Children.Select(child =>
         {
             var dump = new StringBuilder();
@@ -124,7 +124,7 @@ public class StreamingEquivalenceTests
         }
     }
 
-    private static string AllText(MarkdownViewer viewer)
+    internal static string AllText(MarkdownViewer viewer)
     {
         viewer.SelectAll();
         return viewer.GetSelectedText();
