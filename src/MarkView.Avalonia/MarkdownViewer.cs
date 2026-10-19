@@ -570,16 +570,9 @@ public partial class MarkdownViewer : ContentControl
         _sourceLoadCts = cts;
         var custom = CustomResourceResolver;
         IResourceResolver resolver = custom is null ? DefaultResourceResolver.Instance : new FallbackResourceResolver(custom);
-        Task<Stream?> opening;
-        try
-        {
-            opening = resolver.OpenAsync(source, cts.Token);
-        }
-        catch (Exception)
-        {
-            // A resolver that throws instead of failing its task: the load failed, as an asynchronous failure would.
-            return;
-        }
+        // Neither throws: the default resolver fails its task, and the fallback wrapper, an async method,
+        // turns whatever the application's resolver throws into a failed task.
+        var opening = resolver.OpenAsync(source, cts.Token);
 
         // Completed already (avares://, or a resolver reading from memory): render before the setter returns.
         if (opening.IsCompleted)

@@ -46,6 +46,12 @@ public class MarkdownViewerResourceResolverTests
             Task.FromException<Stream?>(new UnauthorizedAccessException());
     }
 
+    private sealed class ThrowingResolver : IResourceResolver
+    {
+        public Task<Stream?> OpenAsync(Uri uri, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Thrown instead of failing the task.");
+    }
+
     private static byte[] Pixel()
     {
         using var stream = AssetLoader.Open(new Uri("avares://MarkView.Avalonia.Tests/TestAssets/pixel.png"));
@@ -126,6 +132,17 @@ public class MarkdownViewerResourceResolverTests
         viewer.ResourceResolver = new FailingResolver();
         viewer.Source = new Uri("zip://manual/index.md");
         await Task.Yield();
+
+        Assert.Equal("Current", FirstText(viewer));
+    }
+
+    [AvaloniaFact]
+    public void A_resolver_that_throws_keeps_the_current_document()
+    {
+        var viewer = new MarkdownViewer { Markdown = "Current" };
+
+        viewer.ResourceResolver = new ThrowingResolver();
+        viewer.Source = new Uri("zip://manual/index.md");
 
         Assert.Equal("Current", FirstText(viewer));
     }

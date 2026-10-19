@@ -39,7 +39,7 @@ internal sealed class DefaultResourceResolver : IResourceResolver
 
     // Read whole, so that the content is seekable and the file is not held open while it is decoded.
     private static async Task<Stream?> OpenFileAsync(string path, CancellationToken cancellationToken) =>
-        new MemoryStream(await File.ReadAllBytesAsync(path, cancellationToken), writable: false);
+        new MemoryStream(await File.ReadAllBytesAsync(path, cancellationToken));
 
     private static async Task<Stream?> OpenHttpAsync(Uri uri, CancellationToken cancellationToken) =>
         await SharedHttpClient.DownloadAsync(uri, cancellationToken);
