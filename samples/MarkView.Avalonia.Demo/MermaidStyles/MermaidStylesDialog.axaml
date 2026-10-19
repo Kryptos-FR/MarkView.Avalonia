@@ -9,7 +9,7 @@
     <!-- Dims the page; a click on it closes the dialog -->
     <Border Background="#99000000" PointerPressed="OnBackdropPressed" />
 
-    <Border Margin="24" MaxWidth="1280" VerticalAlignment="Center" Padding="16"
+    <Border Margin="32" MaxWidth="1280" Padding="16"
             Background="{DynamicResource MenuFlyoutPresenterBackground}"
             BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
             BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
@@ -27,9 +27,9 @@
         </DockPanel>
         <TextBlock DockPanel.Dock="Top" Margin="0,0,0,12" TextWrapping="Wrap"
                    Foreground="{DynamicResource TextControlPlaceholderForeground}"
-                   Text="The same diagram in each style, each drawn by its own viewer set up with UseMermaid(style). The pages of this demo use the default, Quiet." />
-        <!-- One column per style, filled by Show() -->
-        <Grid x:Name="Columns" ColumnSpacing="12" />
+                   Text="The same diagram in each style, each tab drawn by its own viewer set up with UseMermaid(style). The pages of this demo use the default, Quiet. Click a diagram to zoom into it." />
+        <!-- One tab per style, filled by Show() -->
+        <TabControl x:Name="Tabs" />
       </DockPanel>
     </Border>
   </Panel>

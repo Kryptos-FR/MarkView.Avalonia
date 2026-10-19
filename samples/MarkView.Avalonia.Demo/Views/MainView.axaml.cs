@@ -27,7 +27,7 @@ public partial class MainView : UserControl
             if (e.Property == MarkdownViewer.FindMatchCountProperty || e.Property == MarkdownViewer.CurrentFindMatchIndexProperty)
                 UpdateFindStatus();
         };
-        // The "Styles" button of a Mermaid diagram, on any page.
+        // The styles button of a Mermaid diagram, on any page.
         AddHandler(MermaidStylesDialog.RequestedEvent, (_, e) => StylesDialog.Show(e.Code, e.Source as IInputElement));
     }
 

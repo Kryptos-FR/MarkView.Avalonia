@@ -50,7 +50,7 @@ public class App : Application
         MarkdownViewerDefaults.Extensions.AddMermaid();
         MarkdownViewerDefaults.Extensions.AddMath();
 
-        // Demo only, not part of the library: a "Styles" button on every Mermaid diagram that compares
+        // Demo only, not part of the library: a styles button (a palette icon) on every Mermaid diagram that compares
         // the diagram in each MermaidStyle. It wraps the Mermaid renderer, so it comes after AddMermaid().
         MarkdownViewerDefaults.Extensions.Add(new MermaidStylesExtension());
 

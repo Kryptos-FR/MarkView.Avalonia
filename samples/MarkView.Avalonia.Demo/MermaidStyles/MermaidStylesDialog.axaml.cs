@@ -5,7 +5,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 
@@ -14,19 +13,21 @@ using MarkView.Avalonia.Mermaid;
 namespace MarkView.Avalonia.Demo.MermaidStyles;
 
 /// <summary>
-/// Demo-only dialog laid over the page that shows one diagram side by side in each
-/// <see cref="MermaidStyle"/>, each in its own <see cref="MarkdownViewer"/> set up with
-/// <c>UseMermaid(style)</c>. It is a panel of the page rather than a window, so it works in the browser too.
+/// Demo-only dialog laid over the page that shows one diagram in each <see cref="MermaidStyle"/>, one
+/// tab per style, each in its own <see cref="MarkdownViewer"/> set up with <c>UseMermaid(style)</c>. It is a panel of the page rather than a window, so it works in the browser too.
 /// Escape, the close button or a click outside closes it.
 /// </summary>
 public partial class MermaidStylesDialog : UserControl
 {
-    /// <summary>Raised by the "Styles" button of a diagram (<see cref="MermaidStylesExtension"/>); bubbles.</summary>
+    /// <summary>Raised by the styles button of a diagram (<see cref="MermaidStylesExtension"/>); bubbles.</summary>
     public static readonly RoutedEvent<MermaidStylesRequestedEventArgs> RequestedEvent =
         RoutedEvent.Register<MermaidStylesDialog, MermaidStylesRequestedEventArgs>("Requested", RoutingStrategies.Bubble);
 
     // What had focus when the dialog opened (the diagram's button), focused again when it closes.
     private IInputElement? _returnFocus;
+
+    // The style last looked at, selected again next time to compare it across diagrams.
+    private int _selectedTab;
 
     public MermaidStylesDialog()
     {
@@ -46,15 +47,9 @@ public partial class MermaidStylesDialog : UserControl
         var markdown = Fence(code);
         var styles = Enum.GetValues<MermaidStyle>();
 
-        Columns.Children.Clear();
-        Columns.ColumnDefinitions.Clear();
-        for (var i = 0; i < styles.Length; i++)
-        {
-            Columns.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-            var column = CreateColumn(styles[i], markdown);
-            Grid.SetColumn(column, i);
-            Columns.Children.Add(column);
-        }
+        foreach (var style in styles)
+            Tabs.Items.Add(CreateTab(style, markdown));
+        Tabs.SelectedIndex = _selectedTab;
 
         IsVisible = true;
         // Focus only moves to a control that has been laid out since it became visible.
@@ -65,38 +60,33 @@ public partial class MermaidStylesDialog : UserControl
     {
         if (!IsVisible) return;
         IsVisible = false;
-        Columns.Children.Clear();
+        _selectedTab = Tabs.SelectedIndex;
+        Tabs.Items.Clear();
         _returnFocus?.Focus();
         _returnFocus = null;
     }
 
-    private static Control CreateColumn(MermaidStyle style, string markdown)
+    private static TabItem CreateTab(MermaidStyle style, string markdown)
     {
-        var title = new TextBlock
-        {
-            Text = style == MermaidStyle.Quiet ? $"{style} (default)" : style.ToString(),
-            FontWeight = FontWeight.SemiBold,
-        };
         var call = new TextBlock
         {
             Text = $"UseMermaid(MermaidStyle.{style})",
             FontFamily = new FontFamily("Cascadia Code, Consolas, Menlo, monospace"),
             FontSize = 12,
-            Margin = new Thickness(0, 2, 0, 8),
+            Margin = new Thickness(0, 8),
         };
         call.Bind(TextBlock.ForegroundProperty, call.GetResourceObservable("TextControlPlaceholderForeground"));
 
         // A viewer of its own: its UseMermaid() renderer goes ahead of the app-wide one, so the
-        // diagram renders in this style, without a "Styles" button.
+        // diagram renders in this style, without a styles button.
         var viewer = new MarkdownViewer().UseMermaid(style);
         viewer.Markdown = markdown;
 
-        var header = new StackPanel { Children = { title, call } };
-        DockPanel.SetDock(header, Dock.Top);
-        return new DockPanel
+        DockPanel.SetDock(call, Dock.Top);
+        return new TabItem
         {
-            VerticalAlignment = VerticalAlignment.Top,
-            Children = { header, viewer },
+            Header = style == MermaidStyle.Quiet ? $"{style} (default)" : style.ToString(),
+            Content = new DockPanel { Children = { call, viewer } },
         };
     }
 

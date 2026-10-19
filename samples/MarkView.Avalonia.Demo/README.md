@@ -51,7 +51,7 @@ The **View options** menu (the sliders icon) toggles the viewer settings that ch
 
 ### Mermaid Diagram Styles
 
-Every Mermaid diagram has a **Styles** button on its top-right corner. It opens a dialog over the page that shows the diagram side by side in each `MermaidStyle` (Quiet, Blueprint, Tonal), each in its own `MarkdownViewer` set up with `UseMermaid(style)`. Escape, the close button or a click outside the dialog closes it. The dialog follows the Light/Dark switch, and clicking a diagram in it opens the lightbox as on the page.
+Every Mermaid diagram has a palette button on its top-right corner (*Compare this diagram in each Mermaid style*). It opens a dialog over the page that shows the diagram in each `MermaidStyle` (Quiet, Blueprint, Tonal), one tab per style, each in its own `MarkdownViewer` set up with `UseMermaid(style)`. Escape, the close button or a click outside the dialog closes it. The dialog fills the page, follows the Light/Dark switch and keeps the last style looked at selected; clicking a diagram in it opens the lightbox as on the page.
 
 The button is not a library feature: the demo adds it with `MermaidStylesExtension`, an `IMarkViewExtension` registered after `AddMermaid()` that wraps the `MermaidBlockRenderer` (see `MermaidStyles/`). The same approach adds controls around any block another renderer draws.
 
@@ -102,7 +102,7 @@ MarkView.Avalonia.Demo/
 │   ├── ColorSpanExtension.cs     — MarkView.Avalonia IMarkViewExtension
 │   └── ColorExtensionView.axaml(.cs) — Dedicated control with its own Pipeline/Extensions
 ├── MermaidStyles/
-│   ├── MermaidStylesExtension.cs        — Wraps the Mermaid renderer to add a Styles button
+│   ├── MermaidStylesExtension.cs        — Wraps the Mermaid renderer to add a styles button
 │   ├── MermaidStylesButtonRenderer.cs   — Draws the diagram, then the button over its corner
 │   ├── MermaidStylesRequestedEventArgs.cs — Routed event raised by the button
 │   └── MermaidStylesDialog.axaml(.cs)   — The diagram in each MermaidStyle, one viewer per style
