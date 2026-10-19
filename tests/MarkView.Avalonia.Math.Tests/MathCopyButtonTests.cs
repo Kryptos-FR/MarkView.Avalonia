@@ -80,6 +80,30 @@ public class MathCopyButtonTests
             $"{button.Bounds.Width} + {button.Margin.Right} > {border.Margin.Right}");
     }
 
+    [AvaloniaTheory]
+    [InlineData("GitHubTheme")]
+    [InlineData("ChatTheme")]
+    [InlineData("DocsTheme")]
+    public void Formula_keeps_clear_of_the_copy_button_in_a_preset(string preset)
+    {
+        using var f = Show("$$\nx^2\n$$\n\n```\ncode\n```");
+        f.Window.Styles.Add(new StyleInclude((Uri?)null)
+        {
+            Source = new Uri($"avares://MarkView.Avalonia/Themes/{preset}.axaml"),
+        });
+        Dispatcher.UIThread.RunJobs();
+        f.Window.UpdateLayout();
+
+        var border = MathBlockAssert.MathBorder(Assert.IsType<Grid>(Block(f.Viewer)));
+        var button = f.CopyButton;
+        Assert.Equal(border.Margin.Left, border.Margin.Right);
+        Assert.True(button.Bounds.Width + button.Margin.Right <= border.Margin.Right,
+            $"{button.Bounds.Width} + {button.Margin.Right} > {border.Margin.Right}");
+        // Lined up with the copy button of a code block
+        var header = f.Viewer.GetVisualDescendants().OfType<Border>().Single(b => b.Classes.Contains("markdown-code-header"));
+        Assert.Equal(header.Padding.Right, button.Margin.Right);
+    }
+
     [AvaloniaFact]
     public void Default_theme_names_the_button_after_the_formula_and_confirms_a_copy()
     {
