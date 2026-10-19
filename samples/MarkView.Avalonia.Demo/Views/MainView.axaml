@@ -168,6 +168,9 @@
               <MenuItem Header="Short code blocks" ToggleType="CheckBox"
                         IsChecked="{Binding IsCodeHeightLimited, Mode=TwoWay}"
                         ToolTip.Tip="Cap code blocks at 160 pixels; taller blocks scroll inside themselves" />
+              <MenuItem Header="Copy buttons on hover" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.ShowCodeBlockCopyButtonOnHover, Mode=TwoWay}"
+                        ToolTip.Tip="Show the copy buttons of code blocks and formulas only while the pointer is over them" />
               <Separator />
               <MenuItem Header="Stream the document" Click="OnStreamClicked"
                         IsEnabled="{Binding !IsColorExtensionSelected}"

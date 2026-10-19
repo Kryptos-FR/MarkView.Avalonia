@@ -41,6 +41,9 @@ public class ThemeContrastTests
             data.Add(variant, "MarkdownCodeInlineForeground", "MarkdownCodeInlineBackground", Text);
             // The language label and the copy icon above a code block.
             data.Add(variant, "MarkdownCodeHeaderForeground", "MarkdownCodeHeaderBackground", Text);
+            // The copy icon of a display formula (MarkView.Avalonia.Math), on the page, and its hover.
+            data.Add(variant, "MarkdownCodeHeaderForeground", "Page", NonText);
+            data.Add(variant, "MarkdownCodeBlockForeground", "MarkdownCodeCopyButtonHoverBackground over Page", NonText);
             // The line-number gutter beside the code.
             data.Add(variant, "MarkdownCodeLineNumberForeground", "MarkdownCodeBlockBackground", Text);
             data.Add(variant, "Body", "MarkdownMarkedBackground", Text);

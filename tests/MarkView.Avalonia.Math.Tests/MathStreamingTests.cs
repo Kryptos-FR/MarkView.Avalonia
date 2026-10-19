@@ -75,14 +75,14 @@ public class MathStreamingTests
     public void Math_block_before_the_tail_renders_the_formula_while_streaming()
     {
         var child = Assert.Single(Render("$$\nx^2\n$$", provisional: false).Children);
-        Assert.Contains("markdown-math-block", Assert.IsType<Border>(child).Classes);
+        Assert.Contains("markdown-math-block", MathBlockAssert.MathBorder(child).Classes);
     }
 
     [AvaloniaFact]
     public void Provisional_math_block_renders_the_formula_when_no_other_renderer_accepts_it()
     {
         var child = Assert.Single(Render("$$\nx^2", provisional: true, withCodeBlockRenderer: false).Children);
-        Assert.Contains("markdown-math-block", Assert.IsType<Border>(child).Classes);
+        Assert.Contains("markdown-math-block", MathBlockAssert.MathBorder(child).Classes);
     }
 
     [AvaloniaFact]
@@ -96,7 +96,7 @@ public class MathStreamingTests
 
         session.Append("\n\nAfter the formula.");
         await AsyncTestHelpers.WaitUntilAsync(() => TryRoot(viewer)?.Children.Count == 2);
-        Assert.Contains("markdown-math-block", Assert.IsType<Border>(Root(viewer).Children[0]).Classes);
+        Assert.Contains("markdown-math-block", MathBlockAssert.MathBorder(Root(viewer).Children[0]).Classes);
     }
 
     /// <summary>The rendered root panel, or <c>null</c> before the first update has produced any content.</summary>

@@ -101,6 +101,17 @@ dark.
 for a Mermaid diagram or a plain code block regardless of registration order. `\[...\]` blocks are
 math blocks too, so the same applies to them.
 
+## Copy Button
+
+Each display formula gets a copy button in its top right corner, which copies its TeX source
+without the `$$`/`\[` delimiters. It follows the viewer's `ShowCodeBlockCopyButton` and
+`ShowCodeBlockCopyButtonOnHover`, like the code block copy button, and its look, tooltip and
+accessible name ("Copy formula") come from `MarkdownTheme.axaml`.
+
+```xml
+<mv:MarkdownViewer ShowCodeBlockCopyButton="False" />
+```
+
 ## Streaming
 
 While a document is streaming, a `$$` or `\[` block at the end of the text is shown as a plain code block (its source as text) and becomes a formula once a blank line or another block follows it.
