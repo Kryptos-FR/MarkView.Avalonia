@@ -29,7 +29,7 @@ The toolbar has three groups: the outline, history and **Open…** buttons on th
 
 - **← / →** buttons navigate backward and forward through the history stack (loaded files and in-app anchor jumps).
 - **Open file…** opens a file picker to load any local Markdown file. Once loaded, in-document relative links (`[text](./other.md)`) open further files in the same viewer.
-- **In-document anchor links** (e.g. the Table of Contents) scroll immediately to the target heading via `ScrollToAnchor()`.
+- **In-document anchor links** (e.g. the Table of Contents) scroll to the target heading via `ScrollToAnchor()`, in a short animation (`IsSmoothScrollingEnabled`, on in the demo; see **Smooth scrolling** in View options).
 
 ### Theme Toggle
 
@@ -42,6 +42,7 @@ The **theme preset** drop-down switches the documents between the default theme 
 The **View options** menu (the sliders icon) toggles the viewer settings that change how the document is drawn:
 
 - **Clickable tasks**: `AreTaskListsInteractive`, task-list items as check boxes you can toggle.
+- **Smooth scrolling**: `IsSmoothScrollingEnabled`, animated jumps to headings from the outline and from anchor links. On in the demo.
 - **Code line numbers**: `ShowCodeBlockLineNumbers`.
 - **Wrap long code lines**: `WrapCodeBlockLines`.
 - **Short code blocks**: `CodeBlockMaxHeight` at 160 pixels, so taller blocks scroll inside themselves.
