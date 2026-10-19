@@ -10,6 +10,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.TextFormatting;
 
 using MarkView.Avalonia.Automation;
 using MarkView.Avalonia.Rendering.Inlines;
@@ -130,13 +131,30 @@ public class MarkdownSelectableTextBlock : TextBlock
     {
         if (TextLayout == null || Inlines == null) return null;
         var adjusted = new Point(point.X - Padding.Left, point.Y - Padding.Top);
+        if (!IsOnLineText(TextLayout, adjusted)) return null;
         var hitResult = TextLayout.HitTestPoint(adjusted);
-        if (!hitResult.IsInside) return null;
 
         // TextPosition is a caret stop (FirstCharacterIndex + TrailingLength), which lands
         // one character past a link when the pointer is over the trailing half of its last
         // glyph. FirstCharacterIndex is the character cluster actually under the pointer.
         return FindHyperlinkAtIndex(Inlines, hitResult.CharacterHit.FirstCharacterIndex);
+    }
+
+    // TextHitTestResult.IsInside can't be used: TextLayout.HitTestPoint compares the layout-wide
+    // Y against the hit line's own height, so every line below the first reads as outside and
+    // a link that wrapped onto a later line could never be clicked.
+    // Remove once https://github.com/AvaloniaUI/Avalonia/pull/22433 is released.
+    private static bool IsOnLineText(TextLayout layout, Point point)
+    {
+        if (point.Y < 0) return false;
+        var top = 0.0;
+        foreach (var line in layout.TextLines)
+        {
+            if (point.Y < top + line.Height)
+                return point.X >= line.Start && point.X <= line.Start + line.Width;
+            top += line.Height;
+        }
+        return false;
     }
 
     private static MarkdownHyperlink? FindHyperlinkAtIndex(InlineCollection inlines, int targetIndex)

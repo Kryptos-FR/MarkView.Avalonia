@@ -22,9 +22,9 @@ namespace MarkView.Avalonia.Tests.Rendering;
 /// </summary>
 public class HyperlinkHitTestingTests
 {
-    private static MarkdownSelectableTextBlock RenderAndLayout(MarkdownViewer viewer)
+    private static MarkdownSelectableTextBlock RenderAndLayout(MarkdownViewer viewer, double width = 400)
     {
-        var window = new Window { Width = 400, Height = 200, Content = viewer };
+        var window = new Window { Width = width, Height = 200, Content = viewer };
         window.Show();
         return viewer.GetVisualDescendants().OfType<MarkdownSelectableTextBlock>().Single();
     }
@@ -58,6 +58,51 @@ public class HyperlinkHitTestingTests
 
         var hyperlink = textBlock.HitTestHyperlink(point);
         Assert.Equal(new Uri("https://example.com/a"), hyperlink?.NavigateUri);
+    }
+
+    [AvaloniaFact]
+    public void HitTestHyperlink_finds_a_link_on_a_wrapped_line()
+    {
+        // TextLayout.HitTestPoint checks IsInside against the hit line's own height, not its
+        // offset in the layout, so every line below the first came back "outside" and a link
+        // there could not be clicked (the demo's second and third footnote references).
+        var viewer = new MarkdownViewer { Markdown = "word word word word word word word word word word [link](https://example.com/)" };
+        var textBlock = RenderAndLayout(viewer, width: 120);
+
+        var start = textBlock.Inlines!.Sum(MarkdownSelectableTextBlock.MeasureInlineLength) - "link".Length;
+        var linkRect = textBlock.TextLayout!.HitTestTextRange(start, "link".Length).First();
+        Assert.True(linkRect.Y > 0, "test assumes the link wraps below the first line");
+        var point = new Point(linkRect.X + linkRect.Width / 2, linkRect.Y + linkRect.Height / 2);
+
+        var hyperlink = textBlock.HitTestHyperlink(point);
+        Assert.Equal(new Uri("https://example.com/"), hyperlink?.NavigateUri);
+    }
+
+    [AvaloniaTheory]
+    [InlineData("above")]
+    [InlineData("left")]
+    [InlineData("below")]
+    [InlineData("right")]
+    public void HitTestHyperlink_just_outside_the_text_lines_returns_null(string side)
+    {
+        // A link that both starts the first line and ends the last one, so each edge of the
+        // text is the link's own edge.
+        var viewer = new MarkdownViewer { Markdown = "[word word word word word word word word word word word word](https://example.com/)" };
+        var textBlock = RenderAndLayout(viewer, width: 120);
+        var lines = textBlock.TextLayout!.TextLines;
+        Assert.True(lines.Count > 1, "test assumes the link wraps");
+        var height = lines.Sum(l => l.Height);
+        var last = lines[^1];
+        var point = side switch
+        {
+            "above" => new Point(1, -1),
+            "left" => new Point(-1, 1),
+            "below" => new Point(1, height + 1),
+            _ => new Point(last.Start + last.Width + 1, height - last.Height / 2),
+        };
+        point += new Vector(textBlock.Padding.Left, textBlock.Padding.Top);
+
+        Assert.Null(textBlock.HitTestHyperlink(point));
     }
 
     [AvaloniaFact]
