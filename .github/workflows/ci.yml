@@ -29,8 +29,9 @@ jobs:
   # - mutation testing only covers the packages the pull request touches, and within them only
   #   the code it changes (Stryker's `--since`), unless labelled `ci-full`;
   # - the AOT publish runs on Ubuntu only, unless labelled `ci-full`.
-  # Pushes to main and manual runs run everything in full; releases skip mutation testing,
-  # which already ran in full on main.
+  # Pushes to main run everything, but mutation testing only covers the code changed since the
+  # previous main commit (in full when that commit is not an ancestor, e.g. after a force push).
+  # Manual runs run everything in full; releases skip mutation testing, which already ran on main.
   changes:
     runs-on: ubuntu-latest
     permissions:
@@ -83,6 +84,8 @@ jobs:
           DRAFT: ${{ github.event.pull_request.draft }}
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
@@ -103,6 +106,13 @@ jobs:
             aot_os=$all_os
             if [ "$EVENT" = "release" ]; then mutation_projects='[]'; else mutation_projects=$all_projects; fi
             since=''
+            # The commit main pointed to before this push, when this push only added commits on top
+            # of it: a new branch has no previous commit (all zeros) and a force push leaves it off
+            # the history.
+            if [ "$EVENT" = "push" ] && [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+              status=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq .status || true)
+              if [ "$status" = "ahead" ]; then since=$BEFORE; fi
+            fi
           else
             full=false
             if has_label ci-full; then full=true; fi
