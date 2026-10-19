@@ -18,7 +18,7 @@ namespace MarkView.Avalonia.Rendering;
 /// inline code or a link would keep none of its style. Measuring the text block applies them first.
 /// Remove once https://github.com/AvaloniaUI/Avalonia/issues/22505 is fixed.
 /// </remarks>
-internal sealed class StyledInlinesTextBlock : TextBlock
+internal class StyledInlinesTextBlock : TextBlock
 {
     protected override Type StyleKeyOverride => typeof(TextBlock);
 

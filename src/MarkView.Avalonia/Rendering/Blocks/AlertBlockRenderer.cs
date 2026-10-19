@@ -53,7 +53,8 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         var titleParagraph = extended is { HasTitle: true } ? firstParagraph : null;
         var skipFirstParagraph = titleParagraph is not null || firstParagraph is { Inline.FirstChild: null };
 
-        var header = new StyledInlinesTextBlock();
+        // A foldable alert's header is a button for screen readers.
+        var header = fold == AlertFold.None ? new StyledInlinesTextBlock() : new FoldHeader();
         header.Classes.Add("markdown-alert-header");
 
         var contentPanel = new StackPanel { Spacing = 4 };
@@ -109,7 +110,7 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         renderer.Pop();
 
         if (chevron is not null)
-            CollapsibleAlert.Attach(border, header, chevron, contentPanel,
+            CollapsibleAlert.Attach(border, (FoldHeader)header, chevron, contentPanel,
                 renderer.GetFoldState(obj, defaultValue: fold == AlertFold.Expanded), renderer.FoldStateRecorder(obj));
 
         renderer.WriteBlock(border);

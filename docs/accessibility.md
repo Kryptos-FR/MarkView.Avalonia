@@ -18,8 +18,9 @@ Avalonia forwards automation peers to each platform's accessibility API: UI Auto
 | Table / header cell / body cell | `Table` / `HeaderItem` / `DataItem` |
 | Blockquote, figure | `Group`. A figure is named by its caption. |
 | Alert (`> [!NOTE]`) | `Group`, named by its title ("NOTE", "TIP", …), so the alert kind is announced as text and not only shown by colour |
-| `<details>` (`UseHtmlDetails()`) | `Group`, named by its summary |
-| Thinking block (`UseThinkingBlocks()`) | `Group`, named by its header ("Thinking…", "Thought for 12 seconds") |
+| Header of a foldable alert (`> [!NOTE]-`, `UseExtendedAlertBlocks()`) | `Button`, named by the alert's title, that expands and collapses (whether the alert is expanded is reported) |
+| `<details>` (`UseHtmlDetails()`) | `Group`, named by its summary. The summary is a `Button`, named by the same text, that expands and collapses the body and reports whether it is expanded. |
+| Thinking block (`UseThinkingBlocks()`) | `Group`, named by its header ("Thinking…", "Thought for 12 seconds"). The header is a `Button`, named by the same text, that expands and collapses the reasoning and reports whether it is expanded. |
 | Code block line numbers | Hidden, so only the code is read |
 | Thematic break | `Separator` |
 | Image | `Image`, named by its alt text. An image with empty alt text (`![](…)`) is decorative and hidden, as browsers do with `alt=""`, unless it can be zoomed. |

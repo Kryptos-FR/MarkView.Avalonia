@@ -30,7 +30,7 @@ internal sealed class DetailsBlockRenderer : AvaloniaObjectRenderer<DetailsBlock
         chevron.Classes.Add("markdown-details-chevron");
 
         var summaryText = obj.Summary ?? DefaultSummary;
-        var summary = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        var summary = new FoldHeader { TextWrapping = TextWrapping.Wrap };
         summary.Classes.Add("markdown-details-summary");
         summary.Inlines!.Add(new InlineUIContainer(chevron));
         summary.Inlines.Add(new Run(" "));

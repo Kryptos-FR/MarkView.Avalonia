@@ -6,6 +6,8 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 
+using MarkView.Avalonia.Automation;
+
 namespace MarkView.Avalonia.Rendering.Blocks;
 
 /// <summary>
@@ -22,18 +24,21 @@ internal sealed class CollapsibleAlert
         AvaloniaProperty.RegisterAttached<Border, CollapsibleAlert?>("State", typeof(CollapsibleAlert));
 
     private readonly Border _border;
+    private readonly FoldHeader _header;
     private readonly Control _body;
     private readonly AlertChevron _chevron;
     private readonly Action<bool>? _expandedChanged;
 
-    private CollapsibleAlert(Border border, TextBlock header, AlertChevron chevron, Control body, bool isExpanded, Action<bool>? expandedChanged)
+    private CollapsibleAlert(Border border, FoldHeader header, AlertChevron chevron, Control body, bool isExpanded, Action<bool>? expandedChanged)
     {
         _border = border;
+        _header = header;
         _body = body;
         _chevron = chevron;
         SetState(isExpanded);
         _expandedChanged = expandedChanged;
 
+        header.Fold = this;
         header.Focusable = true;
         // A click, like a link's in MarkdownViewer: the press implicitly captures the pointer to the header,
         // so the header sees the release only when the press started on it, and no release at all once
@@ -66,6 +71,7 @@ internal sealed class CollapsibleAlert
         {
             if (value == IsExpanded) return;
             SetState(value);
+            FoldButtonAutomationPeer.RaiseExpandCollapseStateChanged(_header, !value, value);
             _expandedChanged?.Invoke(value);
         }
     }
@@ -77,6 +83,9 @@ internal sealed class CollapsibleAlert
         ((IPseudoClasses)_border.Classes).Set(":expanded", isExpanded);
     }
 
+    /// <summary>The block's border, named by its title for screen readers.</summary>
+    internal Border Border => _border;
+
     /// <summary>Shows the body if hidden, hides it otherwise.</summary>
     public void Toggle() => IsExpanded = !IsExpanded;
 
@@ -85,7 +94,7 @@ internal sealed class CollapsibleAlert
     /// <paramref name="body"/>, with <paramref name="chevron"/> (inline in the header) showing the state.
     /// <paramref name="expandedChanged"/>, when given, is called with the new state each time the body is shown or hidden.
     /// </summary>
-    public static CollapsibleAlert Attach(Border border, TextBlock header, AlertChevron chevron, Control body, bool isExpanded,
+    public static CollapsibleAlert Attach(Border border, FoldHeader header, AlertChevron chevron, Control body, bool isExpanded,
         Action<bool>? expandedChanged = null) =>
         new(border, header, chevron, body, isExpanded, expandedChanged);
 

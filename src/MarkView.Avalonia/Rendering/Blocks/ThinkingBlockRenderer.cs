@@ -56,7 +56,7 @@ internal sealed class ThinkingBlockRenderer : AvaloniaObjectRenderer<ThinkingBlo
 
         var chevron = new AlertChevron();
         chevron.Classes.Add("markdown-thinking-chevron");
-        var header = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        var header = new FoldHeader { TextWrapping = TextWrapping.Wrap };
         header.Classes.Add("markdown-thinking-header");
         header.Inlines!.Add(new InlineUIContainer(chevron));
         header.Inlines.Add(new Run(" "));
