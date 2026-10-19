@@ -18,7 +18,7 @@ internal interface IFoldButton
     bool IsExpanded { get; }
 
     /// <summary>The text screen readers announce for the button, when no automation name is set.</summary>
-    string AccessibleName { get; }
+    string? AccessibleName { get; }
 
     /// <summary>Shows the part if hidden, hides it otherwise, as a click would.</summary>
     void Toggle();

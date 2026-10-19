@@ -16,14 +16,14 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 internal sealed class FoldHeader : StyledInlinesTextBlock, IFoldButton
 {
     /// <summary>The fold state this header toggles, set by <see cref="CollapsibleAlert.Attach"/>.</summary>
-    internal CollapsibleAlert? Fold { get; set; }
+    internal CollapsibleAlert Fold { get; set; } = null!;
 
-    public bool IsExpanded => Fold?.IsExpanded ?? true;
+    public bool IsExpanded => Fold.IsExpanded;
 
     /// <summary>The title of the block, as its group is named.</summary>
-    public string AccessibleName => Fold is { } fold ? AutomationProperties.GetName(fold.Border) ?? string.Empty : string.Empty;
+    public string? AccessibleName => AutomationProperties.GetName(Fold.Border);
 
-    public void Toggle() => Fold?.Toggle();
+    public void Toggle() => Fold.Toggle();
 
     protected override AutomationPeer OnCreateAutomationPeer() => new FoldButtonAutomationPeer(this);
 }
