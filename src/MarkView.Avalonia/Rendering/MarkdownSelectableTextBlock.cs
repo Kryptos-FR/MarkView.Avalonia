@@ -143,6 +143,7 @@ public class MarkdownSelectableTextBlock : TextBlock
     // TextHitTestResult.IsInside can't be used: TextLayout.HitTestPoint compares the layout-wide
     // Y against the hit line's own height, so every line below the first reads as outside and
     // a link that wrapped onto a later line could never be clicked.
+    // Remove once https://github.com/AvaloniaUI/Avalonia/pull/22521 is released.
     private static bool IsOnLineText(TextLayout layout, Point point)
     {
         if (point.Y < 0) return false;
