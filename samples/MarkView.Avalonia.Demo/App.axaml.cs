@@ -8,6 +8,7 @@ using Avalonia.Media;
 
 using Markdig;
 using Markdig.Extensions.Tables;
+using MarkView.Avalonia.Demo.MermaidStyles;
 using MarkView.Avalonia.Demo.Views;
 
 namespace MarkView.Avalonia.Demo;
@@ -48,6 +49,10 @@ public class App : Application
         MarkdownViewerDefaults.Extensions.AddSvg();
         MarkdownViewerDefaults.Extensions.AddMermaid();
         MarkdownViewerDefaults.Extensions.AddMath();
+
+        // Demo only, not part of the library: a "Styles" button on every Mermaid diagram that compares
+        // the diagram in each MermaidStyle. It wraps the Mermaid renderer, so it comes after AddMermaid().
+        MarkdownViewerDefaults.Extensions.Add(new MermaidStylesExtension());
 
         // Global fence renderer — every ```palette block renders as a row of colour swatches,
         // sized by an optional argument after the language (```palette size=24)

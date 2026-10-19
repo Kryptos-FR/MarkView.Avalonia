@@ -5,6 +5,7 @@
              xmlns:mv="using:MarkView.Avalonia"
              xmlns:local="using:MarkView.Avalonia.Demo"
              xmlns:ce="using:MarkView.Avalonia.Demo.ColorExtension"
+             xmlns:ms="using:MarkView.Avalonia.Demo.MermaidStyles"
              mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="768"
              x:Class="MarkView.Avalonia.Demo.Views.MainView"
              x:DataType="local:MainViewModel">
@@ -211,6 +212,8 @@
                          IsVisible="{Binding !IsColorExtensionSelected}"
                          Padding="4" />
       <ce:ColorExtensionView IsVisible="{Binding IsColorExtensionSelected}" />
+      <!-- Opened by the "Styles" button of a Mermaid diagram -->
+      <ms:MermaidStylesDialog x:Name="StylesDialog" />
     </Grid>
   </DockPanel>
 
