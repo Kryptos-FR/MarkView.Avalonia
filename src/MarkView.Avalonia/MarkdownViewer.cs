@@ -1157,6 +1157,7 @@ public partial class MarkdownViewer : ContentControl
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
+        if (!e.Handled && HandleScrollKey(e)) { e.Handled = true; return; }
         var hotkeys = Application.Current?.PlatformSettings?.HotkeyConfiguration;
         if (hotkeys is null) return;
         if (hotkeys.Copy.Any(g => g.Matches(e))) { _ = CopyToClipboardAsync(); e.Handled = true; }

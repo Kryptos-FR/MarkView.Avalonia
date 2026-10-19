@@ -57,6 +57,11 @@ The viewer is one Tab stop, followed by each link and each focusable control in 
 | `Shift+Tab` | Move to the previous link, then back to the viewer. Entering the viewer this way lands on its last link. |
 | `Enter` | Open the focused link, as a click does: `#anchor` links scroll to their target, and other links raise `LinkClicked`. |
 | Menu key | Open the viewer's [context menu](text-selection.md#context-menu); on a focused link, it offers to copy the link's address. |
+| `↑` / `↓` | Scroll the document by a line (`←` / `→` sideways, when it is wider than the viewer). |
+| `Page Up` / `Page Down`, `Shift+Space` / `Space` | Scroll the document by a page. |
+| `Home` / `End`, with or without `Ctrl` | Scroll to the top or the bottom of the document. |
+
+The scrolling keys work while the viewer itself has the focus, as it does after a click in the document or after a jump to an anchor, and while a link or a control in the document has it, unless that control uses the key itself (`Space` ticks a focused task). They do nothing while the lightbox is open. A key for a direction the document cannot scroll in, such as any of them on a document that fits in the viewer, is left to the viewer's parents, so a page that holds the viewer scrolls instead.
 
 After a jump to an anchor (an `#anchor` link clicked or opened with `Enter`, or `ScrollToAnchor`), the viewer keeps the focus and `Tab` goes on from the anchor, as in a browser: to the first link at or below it, and `Shift+Tab` to the last link above it. A click elsewhere in the document drops that starting point.
 
