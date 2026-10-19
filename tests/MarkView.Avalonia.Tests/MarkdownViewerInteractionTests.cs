@@ -95,6 +95,25 @@ public class MarkdownViewerInteractionTests
         Assert.True(f.Viewer.IsFocused);
     }
 
+    [AvaloniaTheory]
+    [InlineData("ראשון עם [קישור](https://example.com/)")]
+    [InlineData("- פריט ראשון עם **הדגשה** ו[קישור](https://example.com/)")]
+    [InlineData("> ציטוט עם [קישור](https://example.com/) באמצע")]
+    public void Clicking_a_link_in_right_to_left_text_raises_LinkClicked(string markdown)
+    {
+        using var f = Show(markdown);
+        var urls = new List<string>();
+        f.Viewer.LinkClicked += (_, e) => { urls.Add(e.Url); e.Handled = true; };
+        var block = Assert.Single(f.Blocks);
+        var start = MarkdownSelectableTextBlock.ExtractPlainText(block.Inlines!).IndexOf("קישור", StringComparison.Ordinal);
+        var link = Assert.Single(block.TextLayout.HitTestTextRange(start, "קישור".Length));
+        var origin = block.TranslatePoint(new Point(block.Padding.Left, block.Padding.Top), f.Window)!.Value;
+
+        Click(f.Window, origin + link.Center);
+
+        Assert.Equal(["https://example.com/"], urls);
+    }
+
     [AvaloniaFact]
     public void Click_with_tiny_jitter_on_a_link_raises_LinkClicked_and_selects_nothing()
     {

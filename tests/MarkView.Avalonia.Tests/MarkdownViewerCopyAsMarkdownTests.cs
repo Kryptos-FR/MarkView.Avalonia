@@ -186,6 +186,16 @@ public class MarkdownViewerCopyAsMarkdownTests
     }
 
     [AvaloniaFact]
+    public void Part_of_right_to_left_text_leaves_out_the_marks_around_its_code()
+    {
+        using var f = Show("הפקודה `foo()` נשארת שלמה");
+
+        f.Select("הפקודה", "נשארת");
+
+        Assert.Equal("הפקודה `foo()` נשארת", f.Viewer.GetSelectedMarkdown());
+    }
+
+    [AvaloniaFact]
     public void Whole_blocks_and_a_partial_block_at_the_end()
     {
         using var f = Show("# Title\n\nPara *one*\n\nPara two");
