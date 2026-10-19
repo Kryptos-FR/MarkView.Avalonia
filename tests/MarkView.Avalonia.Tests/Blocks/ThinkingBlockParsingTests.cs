@@ -250,6 +250,25 @@ public class ThinkingBlockParsingTests
         Assert.IsType<ThinkingBlock>(Markdown.Parse("<scratchpad>\nIdea\n</scratchpad>", pipeline)[0]);
     }
 
+    [Fact]
+    public void A_pipeline_without_html_blocks_still_parses_the_tags()
+    {
+        var builder = new MarkdownPipelineBuilder();
+        builder.BlockParsers.TryRemove<Markdig.Parsers.HtmlBlockParser>();
+
+        var document = Markdown.Parse("<think>\nIdea\n</think>", builder.UseThinkingBlocks().Build());
+
+        Assert.True(Assert.IsType<ThinkingBlock>(Assert.Single(document)).HasClosingTag);
+    }
+
+    [Fact]
+    public void Another_renderer_writes_the_reasoning_as_its_content()
+    {
+        var html = Markdown.ToHtml("<think>\nIdea\n</think>\n\nAnswer", new MarkdownPipelineBuilder().UseThinkingBlocks().Build());
+
+        Assert.Equal("<p>Idea</p>\n<p>Answer</p>\n", html);
+    }
+
     [Theory]
     [InlineData(0.2, "Thought for 1 second")]
     [InlineData(1.4, "Thought for 1 second")]
