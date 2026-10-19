@@ -264,7 +264,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private int _replayInterval = 20;
     private bool _isCodeHeightLimited;
     private int _themePresetIndex;
-    private GitHubPreset? _gitHubTheme;
+    // The presets of the drop-down after the default theme (index 0), each created when first picked
+    private readonly Styles?[] _themePresets = new Styles?[3];
 
     public int SelectedIndex
     {
@@ -286,25 +287,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>The theme preset the documents use: 0 for the default theme, 1 for the GitHub theme.</summary>
+    /// <summary>The theme preset the documents use: 0 for the default theme, 1 for GitHub, 2 for Chat.</summary>
     public int ThemePresetIndex
     {
         get => _themePresetIndex;
         set
         {
+            var previous = _themePresetIndex;
             if (!SetField(ref _themePresetIndex, value)) return;
             var styles = Application.Current!.Styles;
-            if (value == 1)
+            if (_themePresets[previous] is { } shown)
+                styles.Remove(shown);
+            if (value > 0)
             {
                 // Right after MarkdownTheme.axaml, which it builds on, so the app's own styles below still win.
-                _gitHubTheme ??= new GitHubPreset();
+                var preset = _themePresets[value] ??= value switch
+                {
+                    1 => new GitHubPreset(),
+                    _ => new ChatPreset(),
+                };
                 // App.axaml's StyleInclude is compiled into the theme's own Styles, so it is found by one of its resources.
                 var markdownTheme = styles.First(s => s.TryGetResource("MarkdownCodeBlockBackground", ThemeVariant.Dark, out _));
-                styles.Insert(styles.IndexOf(markdownTheme) + 1, _gitHubTheme);
-            }
-            else if (_gitHubTheme is not null)
-            {
-                styles.Remove(_gitHubTheme);
+                styles.Insert(styles.IndexOf(markdownTheme) + 1, preset);
             }
         }
     }

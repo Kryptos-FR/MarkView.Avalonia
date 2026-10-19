@@ -245,4 +245,66 @@ public class HighContrastTests
         AssertColor(border, Single<Button>("markdown-code-copy").BorderBrush);
         AssertColor(background, Single<Border>("markdown-code-block").Background);
     }
+
+    [AvaloniaTheory]
+    [InlineData("Light", "#FFFFFF", "#000000", "#00009F", "#000000")]
+    [InlineData("Dark", "#000000", "#FFFFFF", "#FFFF00", "#FFFFFF")]
+    public void High_contrast_wins_over_the_Chat_preset(string variant, string background, string foreground, string link, string border)
+    {
+        using var _ = new ThemeScope(variant == "Light" ? ThemeVariant.Light : ThemeVariant.Dark);
+        var viewer = new MarkdownViewer
+        {
+            HighContrastMode = HighContrastMode.Enabled,
+            Pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseAlertBlocks().Build(),
+            Markdown = """
+                Text with a [link](https://example.com).[^1]
+
+                ###### Level 6
+
+                > A quote.
+
+                | Name | Value |
+                |------|-------|
+                | a    | 1     |
+
+                ---
+
+                ```cs
+                var x = 1;
+                ```
+
+                [^1]: The footnote.
+                """,
+        };
+        viewer.Styles.Add(MarkdownThemeInclude());
+        viewer.Styles.Add(new StyleInclude((Uri?)null) { Source = new Uri("avares://MarkView.Avalonia/Themes/ChatTheme.axaml") });
+        new Window { Width = 800, Height = 600, Content = viewer }.Show();
+
+        static Color ColorOf(IBrush? brush) => Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;
+        void AssertColor(string expected, IBrush? brush) => Assert.Equal(Color.Parse(expected), ColorOf(brush));
+        T Single<T>(string styleClass) where T : StyledElement =>
+            viewer.GetVisualDescendants().OfType<T>().Single(c => c.Classes.Contains(styleClass));
+        MarkdownSelectableTextBlock Paragraph(string text) => viewer.GetVisualDescendants().OfType<MarkdownSelectableTextBlock>()
+            .Single(t => MarkdownSelectableTextBlock.ExtractPlainText(t.Inlines!).StartsWith(text, StringComparison.Ordinal));
+
+        AssertColor(background, viewer.Background);
+        AssertColor(foreground, viewer.Foreground);
+        var links = viewer.GetVisualDescendants().OfType<TextBlock>().SelectMany(t => t.Inlines!).OfType<MarkdownHyperlink>().ToList();
+        Assert.Equal(2, links.Count); // the link and the footnote reference
+        Assert.All(links, l => AssertColor(link, l.Foreground));
+
+        // What the preset recolours: muted text, the code card's outline, rules and table lines
+        AssertColor(foreground, Single<TextBlock>("markdown-h6").Foreground);
+        AssertColor(border, Single<Border>("markdown-blockquote").BorderBrush);
+        AssertColor(foreground, Paragraph("A quote.").Foreground);
+        Assert.All(viewer.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("markdown-table-cell")),
+            cell => AssertColor(border, cell.BorderBrush));
+        Assert.All(viewer.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("markdown-table-header")),
+            cell => Assert.Equal(Colors.Transparent, ColorOf(cell.Background)));
+        Assert.All(viewer.GetVisualDescendants().OfType<Separator>(), rule => AssertColor(border, rule.Background));
+        AssertColor(foreground, Paragraph("The footnote.").Foreground);
+        AssertColor(border, Single<Border>("markdown-code-header").BorderBrush);
+        AssertColor(border, Single<Border>("markdown-code-block").BorderBrush);
+        AssertColor(background, Single<Border>("markdown-code-block").Background);
+    }
 }
