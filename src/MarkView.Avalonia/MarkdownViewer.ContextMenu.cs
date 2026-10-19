@@ -23,10 +23,13 @@ public partial class MarkdownViewer
     // The table the context menu was opened on, for its Copy table items.
     private Grid? _contextTable;
 
+    // The anchor of the heading the context menu was opened on, for its Copy link to heading item.
+    private string? _contextHeading;
+
     // Noted on the way down, before the viewer opens its menu: a click on a cell's padding, outside its text,
     // reaches the viewer's background rather than the document.
-    private static readonly IDisposable ContextTableHandler = ContextRequestedEvent.AddClassHandler<MarkdownViewer>(
-        (viewer, e) => viewer.NoteContextTable(e), RoutingStrategies.Tunnel);
+    private static readonly IDisposable ContextBlockHandler = ContextRequestedEvent.AddClassHandler<MarkdownViewer>(
+        (viewer, e) => viewer.NoteContextBlock(e), RoutingStrategies.Tunnel);
 
     /// <inheritdoc/>
     protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
@@ -40,11 +43,12 @@ public partial class MarkdownViewer
 
     /// <summary>
     /// The viewer's default context menu: Copy and Copy as Markdown (enabled while something is selected),
-    /// Copy link (shown when opened on a link), Copy table and Copy table as Markdown (shown when opened on a
-    /// table) and Select all. Its labels are the resources <c>StringTextFlyoutCopyText</c> (the one a
-    /// <see cref="TextBox"/> uses), <c>MarkdownStringCopyAsMarkdown</c>, <c>MarkdownStringCopyLink</c>,
-    /// <c>MarkdownStringCopyTable</c>, <c>MarkdownStringCopyTableAsMarkdown</c> and <c>MarkdownStringSelectAll</c>,
-    /// read when it opens, in English when they are not found.
+    /// Copy link (shown when opened on a link), Copy link to heading (shown when opened on a heading), Copy table
+    /// and Copy table as Markdown (shown when opened on a table) and Select all. Its labels are the resources
+    /// <c>StringTextFlyoutCopyText</c> (the one a <see cref="TextBox"/> uses), <c>MarkdownStringCopyAsMarkdown</c>,
+    /// <c>MarkdownStringCopyLink</c>, <c>MarkdownStringCopyHeadingLink</c>, <c>MarkdownStringCopyTable</c>,
+    /// <c>MarkdownStringCopyTableAsMarkdown</c> and <c>MarkdownStringSelectAll</c>, read when it opens, in English
+    /// when they are not found.
     /// </summary>
     private MenuFlyout CreateDefaultContextFlyout()
     {
@@ -62,6 +66,14 @@ public partial class MarkdownViewer
         {
             if (_contextLink?.NavigateUri is { } uri)
                 _ = CopyAsync(MarkdownCopyOrigin.Link, uri.OriginalString);
+        };
+
+        var copyHeadingLink = new MenuItem();
+        copyHeadingLink.Classes.Add("markdown-context-copy-heading-link");
+        copyHeadingLink.Click += (_, _) =>
+        {
+            if (_contextHeading is { } anchor)
+                _ = CopyAsync(MarkdownCopyOrigin.HeadingLink, HeadingLink(anchor));
         };
 
         var copyTable = new MenuItem();
@@ -84,12 +96,13 @@ public partial class MarkdownViewer
         selectAll.Classes.Add("markdown-context-select-all");
         selectAll.Click += (_, _) => SelectAll();
 
-        var flyout = new MenuFlyout { Items = { copy, copyAsMarkdown, copyLink, copyTable, copyTableAsMarkdown, selectAll } };
+        var flyout = new MenuFlyout { Items = { copy, copyAsMarkdown, copyLink, copyHeadingLink, copyTable, copyTableAsMarkdown, selectAll } };
         flyout.Opening += (_, _) =>
         {
             copy.Header = Text("StringTextFlyoutCopyText", "Copy");
             copyAsMarkdown.Header = Text("MarkdownStringCopyAsMarkdown", "Copy as Markdown");
             copyLink.Header = Text("MarkdownStringCopyLink", "Copy link");
+            copyHeadingLink.Header = Text("MarkdownStringCopyHeadingLink", "Copy link to heading");
             copyTable.Header = Text("MarkdownStringCopyTable", "Copy table");
             copyTableAsMarkdown.Header = Text("MarkdownStringCopyTableAsMarkdown", "Copy table as Markdown");
             selectAll.Header = Text("MarkdownStringSelectAll", "Select all");
@@ -100,12 +113,14 @@ public partial class MarkdownViewer
 
             copy.IsEnabled = copyAsMarkdown.IsEnabled = HasSelection;
             copyLink.IsVisible = _contextLink?.NavigateUri is not null;
+            copyHeadingLink.IsVisible = _contextHeading is not null;
             copyTable.IsVisible = copyTableAsMarkdown.IsVisible = _contextTable is not null;
         };
         flyout.Closed += (_, _) =>
         {
             _contextLink = null;
             _contextTable = null;
+            _contextHeading = null;
         };
         return flyout;
     }
@@ -132,17 +147,47 @@ public partial class MarkdownViewer
     }
 
     /// <summary>
-    /// Notes the table a context menu is requested on: the one under the pointer, or the one holding the focused
-    /// link. None while the lightbox covers the document.
+    /// Notes the table a context menu is requested on, the one under the pointer or the one holding the focused
+    /// link, and the heading under the pointer. None while the lightbox covers the document.
     /// </summary>
-    private void NoteContextTable(ContextRequestedEventArgs e)
+    private void NoteContextBlock(ContextRequestedEventArgs e)
     {
         _contextTable = null;
+        _contextHeading = null;
         if (_lightbox is not null || _selectionLayer is not { } layer || Content is not Grid { Children: [Panel root, ..] })
             return;
         if (e.TryGetPosition(layer, out var position))
+        {
             _contextTable = TableCopy.TableAt(root, layer, position);
+            _contextHeading = HeadingAt(layer, position);
+        }
         else if (e.Source is LinkFocusTarget target)
             _contextTable = TableCopy.TableOf(target.Link);
     }
+
+    /// <summary>
+    /// The anchor of the visible heading at <paramref name="position"/>, a position in <paramref name="relativeTo"/>,
+    /// or <c>null</c>.
+    /// </summary>
+    private string? HeadingAt(Visual relativeTo, Point position)
+    {
+        foreach (var (anchor, control) in _anchors)
+        {
+            if (control.Classes.Contains("markdown-heading") && control.IsEffectivelyVisible
+                && control.TranslatePoint(default, relativeTo) is { } origin
+                && new Rect(origin, control.Bounds.Size).Contains(position))
+                return anchor;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// The link to the heading with the given anchor: the <see cref="Source"/> address with the anchor as its
+    /// fragment when the document was loaded from the web or a file, which opens it from anywhere, and
+    /// <c>#anchor</c> otherwise, which links to it from the same document.
+    /// </summary>
+    private string HeadingLink(string anchor) =>
+        Source is { IsAbsoluteUri: true, Scheme: "http" or "https" or "file" } source
+            ? $"{source.GetLeftPart(UriPartial.Query)}#{anchor}"
+            : $"#{anchor}";
 }
