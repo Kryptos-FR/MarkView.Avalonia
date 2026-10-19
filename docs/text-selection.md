@@ -9,6 +9,7 @@
 | Click + drag | Select a text range |
 | `Ctrl+A` | Select all text in the document |
 | `Ctrl+C` | Copy the current selection to the clipboard |
+| Right-click or the menu key | Open the [context menu](#context-menu) |
 
 ## Programmatic API
 
@@ -50,6 +51,51 @@ Avalonia has no cross-platform HTML clipboard format, so the viewer writes `HTML
 
 Set `IsHtmlCopyEnabled="False"` to write the plain text alone. `CopyAsMarkdownAsync()` and a code block's copy button never write HTML.
 
+## Context menu
+
+The viewer has a context menu, opened by a right-click or, when the viewer or a link has the focus, by the menu key (the platform's `OpenContextMenu` hotkeys):
+
+| Item | Action |
+|------|--------|
+| Copy | Copies the selection, as `Ctrl+C` does. Disabled when nothing is selected. |
+| Copy as Markdown | Copies the selection [as Markdown](#copying-as-markdown). Disabled when nothing is selected. |
+| Copy link | Copies the address of the link the menu was opened on, as written in the document. Shown only on a link, under the pointer or focused with `Tab`. |
+| Select all | Selects the whole document, as `Ctrl+A` does. |
+
+A right-click on text outside the selection clears it first, as in a text editor; a right-click inside it keeps it, so it can be copied.
+
+The menu is the viewer's default `ContextFlyout`, used only when the application sets neither `ContextFlyout` nor `ContextMenu`. Set either one, locally or in a style, to show your own menu, or set `ContextFlyout` to `null` to have none:
+
+```xml
+<mv:MarkdownViewer ContextFlyout="{x:Null}" />
+```
+
+The labels are resources, read each time the menu opens, so they can be translated or reworded like any other resource:
+
+| Resource key | Default |
+|--------------|---------|
+| `StringTextFlyoutCopyText` | `Copy` (the key a `TextBox`'s own menu uses, so a translation of it applies to both) |
+| `MarkdownStringCopyAsMarkdown` | `Copy as Markdown` |
+| `MarkdownStringCopyLink` | `Copy link` |
+| `MarkdownStringSelectAll` | `Select all` |
+
+```xml
+<Application.Resources>
+  <x:String x:Key="StringTextFlyoutCopyText">Copier</x:String>
+  <x:String x:Key="MarkdownStringCopyAsMarkdown">Copier en Markdown</x:String>
+  <x:String x:Key="MarkdownStringCopyLink">Copier le lien</x:String>
+  <x:String x:Key="MarkdownStringSelectAll">Tout sélectionner</x:String>
+</Application.Resources>
+```
+
+Each item has a style class (`markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-select-all`), for instance to give it an icon or hide it:
+
+```xml
+<Style Selector="MenuItem.markdown-context-copy-markdown">
+  <Setter Property="IsVisible" Value="False" />
+</Style>
+```
+
 ## Selection changes
 
 `SelectionChanged` is raised whenever the selected range changes: at each step of a drag that moves its end to another character, on `SelectAll()` and `ClearSelection()`, on a click that clears it, when a new document replaces the one it was in, and when a [streaming](streaming.md) update shortens or clears it. It is not raised when the range stays the same, so pressing `Ctrl+A` twice raises it once.
@@ -79,11 +125,11 @@ The event args carry no text, so raising the event allocates no string. `Selecte
 
 ## Changing what is copied
 
-`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C`, `CopyToClipboardAsync()` or `CopyAsMarkdownAsync()`) and when a code block's [copy button](configuration.md#code-block-toolbar) is clicked. It is not raised when there is nothing to copy.
+`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C`, `CopyToClipboardAsync()` or `CopyAsMarkdownAsync()`), when a code block's [copy button](configuration.md#code-block-toolbar) is clicked, and when the [context menu](#context-menu) copies a link. It is not raised when there is nothing to copy.
 
 | Property | Meaning |
 |----------|---------|
-| `Origin` | What is copied: `MarkdownCopyOrigin.Selection`, `MarkdownCopyOrigin.SelectionAsMarkdown` or `MarkdownCopyOrigin.CodeBlock` |
+| `Origin` | What is copied: `MarkdownCopyOrigin.Selection`, `MarkdownCopyOrigin.SelectionAsMarkdown`, `MarkdownCopyOrigin.CodeBlock` or `MarkdownCopyOrigin.Link` |
 | `Text` | The text to write, lines separated by `\n`. Set it to change what is written; it is written with the platform's line endings. Set to `null` or `""`, nothing is written. |
 | `Html` | The [HTML](#html-on-the-clipboard) written next to the text, for `Selection` only; `null` otherwise, and when `IsHtmlCopyEnabled` is off or the platform has no HTML format. Set it to change or drop the HTML. |
 | `Cancel` | Set to `true` to write nothing, for instance when the application writes the clipboard itself. A code block's copy button then shows no confirmation. |

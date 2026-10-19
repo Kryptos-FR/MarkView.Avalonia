@@ -284,6 +284,8 @@ public class MarkdownViewerImageZoomTests
 
         Click(f.Window, corner, MouseButton.Right);
         Assert.Null(f.Lightbox);
+        // The right click opened the viewer's context menu, which would take the next click to close.
+        f.Viewer.ContextFlyout!.Hide();
 
         Click(f.Window, corner);
         Assert.NotNull(f.Lightbox);

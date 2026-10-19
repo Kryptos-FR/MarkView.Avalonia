@@ -177,6 +177,8 @@ public class MarkdownViewerFoldableAlertTests
         f.Window.MouseDown(bottom, MouseButton.Right);
         f.Window.MouseUp(bottom, MouseButton.Right);
         Assert.False(f.State.IsExpanded);
+        // The right click opened the viewer's context menu, which would take the next click to close.
+        f.Viewer.ContextFlyout!.Hide();
 
         Click(f.Window, bottom);
         Assert.True(f.State.IsExpanded);

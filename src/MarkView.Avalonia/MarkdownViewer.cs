@@ -636,6 +636,7 @@ public partial class MarkdownViewer : ContentControl
         contentGrid.AddHandler(InputElement.PointerReleasedEvent,
             OnContentPointerReleased, RoutingStrategies.Tunnel);
         contentGrid.PointerCaptureLost += OnContentPointerCaptureLost;
+        contentGrid.AddHandler(InputElement.ContextRequestedEvent, OnContentContextRequested);
 
         Content = contentGrid;
         // The image it shows may not be part of the new document. Closed once the old document is gone,
@@ -946,8 +947,8 @@ public partial class MarkdownViewer : ContentControl
             return;
         }
 
-        // Click without drag — check for hyperlink
-        if (_selectionLayer is not null)
+        // Left click without drag — check for hyperlink. A right click opens the context menu instead.
+        if (e.InitialPressMouseButton == MouseButton.Left && _selectionLayer is not null)
             TryFireHyperlinkClick(e.GetPosition(_selectionLayer));
     }
 
@@ -983,13 +984,18 @@ public partial class MarkdownViewer : ContentControl
 
     private void TryFireHyperlinkClick(Point posInLayer)
     {
-        if (_selectionLayer is null) return;
-        var entry = _selectionLayer.HitTestEntry(posInLayer);
-        if (entry?.TextBlock is not MarkdownSelectableTextBlock mstb) return;
-        var origin = mstb.TranslatePoint(new Point(0, 0), _selectionLayer) ?? default;
-        var hyperlink = mstb.HitTestHyperlink(posInLayer - origin);
-        if (hyperlink is not null)
+        if (HyperlinkAt(posInLayer) is { } hyperlink)
             ActivateLink(hyperlink);
+    }
+
+    /// <summary>The link at <paramref name="posInLayer"/>, a position in the selection layer, if any.</summary>
+    private MarkdownHyperlink? HyperlinkAt(Point posInLayer)
+    {
+        if (_selectionLayer is null) return null;
+        var entry = _selectionLayer.HitTestEntry(posInLayer);
+        if (entry?.TextBlock is not MarkdownSelectableTextBlock mstb) return null;
+        var origin = mstb.TranslatePoint(new Point(0, 0), _selectionLayer) ?? default;
+        return mstb.HitTestHyperlink(posInLayer - origin);
     }
 
     /// <summary>Opens <paramref name="hyperlink"/>, whether it was clicked or activated from the keyboard.</summary>
