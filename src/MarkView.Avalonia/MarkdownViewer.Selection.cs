@@ -15,8 +15,8 @@ public partial class MarkdownViewer
     /// <summary>
     /// Identifies the <see cref="SelectionChanged"/> routed event.
     /// </summary>
-    public static readonly RoutedEvent<RoutedEventArgs> SelectionChangedEvent =
-        RoutedEvent.Register<MarkdownViewer, RoutedEventArgs>(nameof(SelectionChanged), RoutingStrategies.Bubble);
+    public static readonly RoutedEvent<MarkdownSelectionChangedEventArgs> SelectionChangedEvent =
+        RoutedEvent.Register<MarkdownViewer, MarkdownSelectionChangedEventArgs>(nameof(SelectionChanged), RoutingStrategies.Bubble);
 
     /// <summary>
     /// Identifies the <see cref="CopyingToClipboard"/> routed event.
@@ -34,9 +34,11 @@ public partial class MarkdownViewer
     /// Raised when the selected range changes: at each step of a drag that moves its end, on
     /// <see cref="SelectAll"/> and <see cref="ClearSelection"/>, on a click that clears it, when a new document
     /// replaces the one it was in, and when a streaming update shortens or clears it. Not raised when the range
-    /// stays the same. Bubbles up the visual tree.
+    /// stays the same, except once more when a drag that changed it ends: the events raised during the drag
+    /// have <see cref="MarkdownSelectionChangedEventArgs.IsSelecting"/> set, the last one does not. Bubbles up
+    /// the visual tree.
     /// </summary>
-    public event EventHandler<RoutedEventArgs>? SelectionChanged
+    public event EventHandler<MarkdownSelectionChangedEventArgs>? SelectionChanged
     {
         add => AddHandler(SelectionChangedEvent, value);
         remove => RemoveHandler(SelectionChangedEvent, value);
@@ -66,8 +68,8 @@ public partial class MarkdownViewer
 
     /// <summary>
     /// Gets the selected plain text, with lines separated by <c>'\n'</c>; the same as <see cref="GetSelectedText"/>.
-    /// It is computed on each read, so it is not a bindable property; bind to <see cref="HasSelection"/> or handle
-    /// <see cref="SelectionChanged"/> instead.
+    /// It is built on the first read after the selection changes, and later reads return the same string. It is
+    /// not a bindable property; bind to <see cref="HasSelection"/> or handle <see cref="SelectionChanged"/> instead.
     /// </summary>
     public string SelectedText => GetSelectedText();
 
@@ -124,6 +126,6 @@ public partial class MarkdownViewer
     private void OnLayerSelectionChanged(object? sender, EventArgs e)
     {
         HasSelection = _selectionLayer?.HasSelection ?? false;
-        RaiseEvent(new RoutedEventArgs(SelectionChangedEvent, this));
+        RaiseEvent(new MarkdownSelectionChangedEventArgs(this, _selectionLayer?.IsSelecting ?? false));
     }
 }

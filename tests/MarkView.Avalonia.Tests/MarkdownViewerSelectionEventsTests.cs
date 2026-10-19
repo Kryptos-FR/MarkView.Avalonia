@@ -13,6 +13,8 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
+using Markdig;
+
 using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Rendering.Blocks;
 
@@ -26,7 +28,7 @@ namespace MarkView.Avalonia.Tests;
 /// </summary>
 public class MarkdownViewerSelectionEventsTests
 {
-    private sealed record Fixture(Window Window, MarkdownViewer Viewer, List<string> Changes) : IDisposable
+    private sealed record Fixture(Window Window, MarkdownViewer Viewer, List<string> Changes, List<bool> Selecting) : IDisposable
     {
         public MarkdownSelectableTextBlock[] Blocks =>
             Viewer.GetVisualDescendants().OfType<MarkdownSelectableTextBlock>().ToArray();
@@ -43,7 +45,8 @@ public class MarkdownViewerSelectionEventsTests
         Beta
         """;
 
-    // Each SelectionChanged is recorded with the text selected when it was raised.
+    // Each SelectionChanged is recorded with the text selected when it was raised (Changes) and its
+    // IsSelecting (Selecting).
     private static Fixture Show(string markdown, Action<MarkdownViewer>? configure = null)
     {
         var viewer = new MarkdownViewer();
@@ -57,8 +60,13 @@ public class MarkdownViewerSelectionEventsTests
         });
         window.Show();
         var changes = new List<string>();
-        viewer.SelectionChanged += (_, _) => changes.Add(viewer.SelectedText);
-        return new Fixture(window, viewer, changes);
+        var selecting = new List<bool>();
+        viewer.SelectionChanged += (_, e) =>
+        {
+            changes.Add(viewer.SelectedText);
+            selecting.Add(e.IsSelecting);
+        };
+        return new Fixture(window, viewer, changes, selecting);
     }
 
     private static Point At(Window window, TextBlock block, int index)
@@ -88,7 +96,7 @@ public class MarkdownViewerSelectionEventsTests
     }
 
     [AvaloniaFact]
-    public void Dragging_raises_SelectionChanged_once_per_new_range()
+    public void Dragging_raises_SelectionChanged_once_per_new_range_and_once_more_when_it_ends()
     {
         using var f = Show(AlphaBeta);
         var blocks = f.Blocks;
@@ -98,10 +106,63 @@ public class MarkdownViewerSelectionEventsTests
         f.Window.MouseMove(At(f.Window, blocks[0], 3), RawInputModifiers.LeftMouseButton);
         f.Window.MouseMove(At(f.Window, blocks[0], 3), RawInputModifiers.LeftMouseButton);
         f.Window.MouseMove(At(f.Window, blocks[1], 2), RawInputModifiers.LeftMouseButton);
+        Assert.Equal([true, true], f.Selecting);
         f.Window.MouseUp(At(f.Window, blocks[1], 2), MouseButton.Left);
 
-        Assert.Equal(["lp", "lpha\nBe"], f.Changes);
+        Assert.Equal(["lp", "lpha\nBe", "lpha\nBe"], f.Changes);
+        Assert.Equal([true, true, false], f.Selecting);
         Assert.True(f.Viewer.HasSelection);
+    }
+
+    [AvaloniaFact]
+    public void A_drag_that_leaves_the_selection_as_it_was_raises_nothing_when_it_ends()
+    {
+        using var f = Show(AlphaBeta);
+        var block = f.Blocks[0];
+        f.Window.MouseDown(At(f.Window, block, 1), MouseButton.Left);
+        f.Window.MouseMove(At(f.Window, block, 3), RawInputModifiers.LeftMouseButton);
+        f.Window.MouseUp(At(f.Window, block, 3), MouseButton.Left);
+        f.Changes.Clear();
+        f.Selecting.Clear();
+
+        // Past the drag threshold, but still on the same character: the press cleared the selection, the
+        // drag selects nothing.
+        var start = At(f.Window, block, 2);
+        f.Window.MouseDown(start, MouseButton.Left);
+        f.Window.MouseMove(start + new Point(0, 4), RawInputModifiers.LeftMouseButton);
+        f.Window.MouseUp(start + new Point(0, 4), MouseButton.Left);
+
+        Assert.Equal([""], f.Changes);
+        Assert.Equal([false], f.Selecting);
+    }
+
+    [AvaloniaFact]
+    public void A_drag_ends_when_the_pointer_capture_is_lost()
+    {
+        using var f = Show(AlphaBeta);
+        var block = f.Blocks[0];
+        f.Window.MouseDown(At(f.Window, block, 1), MouseButton.Left);
+        f.Window.MouseMove(At(f.Window, block, 3), RawInputModifiers.LeftMouseButton);
+
+        var grid = Assert.IsType<Grid>(f.Viewer.Content);
+        grid.RaiseEvent(new PointerCaptureLostEventArgs(grid, new Pointer(Pointer.GetNextFreeId(), PointerType.Mouse, true)));
+        f.Window.MouseUp(At(f.Window, block, 3), MouseButton.Left);
+
+        Assert.Equal(["lp", "lp"], f.Changes);
+        Assert.Equal([true, false], f.Selecting);
+    }
+
+    [AvaloniaFact]
+    public void A_lost_pointer_capture_without_a_drag_raises_nothing()
+    {
+        using var f = Show(AlphaBeta);
+        f.Viewer.SelectAll();
+        f.Changes.Clear();
+
+        var grid = Assert.IsType<Grid>(f.Viewer.Content);
+        grid.RaiseEvent(new PointerCaptureLostEventArgs(grid, new Pointer(Pointer.GetNextFreeId(), PointerType.Mouse, true)));
+
+        Assert.Empty(f.Changes);
     }
 
     [AvaloniaFact]
@@ -144,7 +205,40 @@ public class MarkdownViewerSelectionEventsTests
         f.Viewer.ClearSelection();
         f.Viewer.ClearSelection();
         Assert.Equal(["Alpha\nBeta", ""], f.Changes);
+        Assert.Equal([false, false], f.Selecting);
         Assert.False(f.Viewer.HasSelection);
+    }
+
+    // ── SelectedText ──────────────────────────────────────────────────────────
+
+    [AvaloniaFact]
+    public void SelectedText_is_built_once_per_selection()
+    {
+        using var f = Show(AlphaBeta);
+        f.Viewer.SelectAll();
+
+        var text = f.Viewer.SelectedText;
+        Assert.Same(text, f.Viewer.SelectedText);
+        Assert.Same(text, f.Viewer.GetSelectedText());
+
+        f.Layer.SetSelectionForTest(1, 3);
+        Assert.Equal("lp", f.Viewer.SelectedText);
+    }
+
+    [AvaloniaFact]
+    public void SelectedText_follows_an_alert_folded_or_unfolded_inside_the_selection()
+    {
+        using var f = Show("Before\n\n> [!NOTE]-\n> Body\n\nAfter",
+            v => v.Pipeline = new MarkdownPipelineBuilder().UseExtendedAlertBlocks().Build());
+        var alert = f.Viewer.GetVisualDescendants().OfType<Border>().Select(CollapsibleAlert.Get).Single(a => a is not null)!;
+        f.Viewer.SelectAll();
+        Assert.Equal("Before\nAfter", f.Viewer.SelectedText);
+
+        alert.IsExpanded = true;
+        Assert.Equal("Before\nBody\nAfter", f.Viewer.SelectedText);
+
+        alert.IsExpanded = false;
+        Assert.Equal("Before\nAfter", f.Viewer.SelectedText);
     }
 
     [AvaloniaFact]

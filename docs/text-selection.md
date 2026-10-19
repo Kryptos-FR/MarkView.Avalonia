@@ -28,7 +28,16 @@ await viewer.CopyToClipboardAsync();
 
 ## Selection changes
 
-`SelectionChanged` is raised whenever the selected range changes: at each step of a drag that moves its end, on `SelectAll()` and `ClearSelection()`, on a click that clears it, when a new document replaces the one it was in, and when a [streaming](streaming.md) update shortens or clears it. It is not raised when the range stays the same, so pressing `Ctrl+A` twice raises it once.
+`SelectionChanged` is raised whenever the selected range changes: at each step of a drag that moves its end to another character, on `SelectAll()` and `ClearSelection()`, on a click that clears it, when a new document replaces the one it was in, and when a [streaming](streaming.md) update shortens or clears it. It is not raised when the range stays the same, so pressing `Ctrl+A` twice raises it once.
+
+When a drag that changed the selection ends, `SelectionChanged` is raised once more. `e.IsSelecting` (`MarkdownSelectionChangedEventArgs`) is `true` for the events raised during the drag and `false` for that last one and every other change, so a handler that only needs the final selection skips the rest:
+
+```csharp
+viewer.SelectionChanged += (_, e) =>
+{
+    if (!e.IsSelecting) preview.Text = viewer.SelectedText;
+};
+```
 
 `HasSelection` is a bindable read-only property, `true` while some text is selected. It only changes when the selection starts or stops being empty, so it suits a Copy button's `IsEnabled`:
 
@@ -40,7 +49,7 @@ await viewer.CopyToClipboardAsync();
 viewer.SelectionChanged += (_, _) => status.Text = $"{viewer.SelectedText.Length} characters selected";
 ```
 
-`SelectedText` is computed on each read, so it is not a bindable property. During a drag, `SelectionChanged` fires at the pace of the pointer; a handler that does real work can debounce itself.
+The event args carry no text, so raising the event allocates no string. `SelectedText` is built on the first read after the selection changes, and later reads return the same string until it changes again (or an alert in it is folded or unfolded). It is not a bindable property.
 
 `SelectionChanged` is a bubbling routed event (`MarkdownViewer.SelectionChangedEvent`), so a container holding several viewers, such as a chat list, can handle it once for all of them; `e.Source` is the viewer.
 

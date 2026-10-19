@@ -122,13 +122,19 @@ public class MarkdownViewerFenceRendererTests
         Assert.Equal("before\n```chart\n1 2 3\n```\nafter", viewer.GetSelectedText());
     }
 
-    [AvaloniaFact]
-    public void Copy_text_with_CRLF_line_endings_is_selected_with_line_feeds()
+    [AvaloniaTheory]
+    [InlineData("1\r\n2")]
+    [InlineData("1\r2")]
+    [InlineData("1\f2")]
+    [InlineData("1\u00852")]
+    [InlineData("1\u20282")]
+    [InlineData("1\u20292")]
+    public void Copy_text_with_other_line_endings_is_selected_with_line_feeds(string copyText)
     {
         var viewer = new MarkdownViewer().UseFenceRenderer("chart", (_, _) =>
         {
             var control = new Button();
-            MarkdownSelection.SetCopyText(control, "1\r\n2");
+            MarkdownSelection.SetCopyText(control, copyText);
             return control;
         });
         viewer.Markdown = ChartDocument;

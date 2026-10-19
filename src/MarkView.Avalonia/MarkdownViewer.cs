@@ -635,6 +635,7 @@ public partial class MarkdownViewer : ContentControl
             OnContentPointerMoved, RoutingStrategies.Tunnel);
         contentGrid.AddHandler(InputElement.PointerReleasedEvent,
             OnContentPointerReleased, RoutingStrategies.Tunnel);
+        contentGrid.PointerCaptureLost += OnContentPointerCaptureLost;
 
         Content = contentGrid;
         // The image it shows may not be part of the new document. Closed once the old document is gone,
@@ -931,14 +932,26 @@ public partial class MarkdownViewer : ContentControl
     {
         if (_isDragging)
         {
+            EndDrag();
             e.Pointer.Capture(null);
-            _isDragging = false;
             return;
         }
 
         // Click without drag — check for hyperlink
         if (_selectionLayer is not null)
             TryFireHyperlinkClick(e.GetPosition(_selectionLayer));
+    }
+
+    // The window lost the pointer in the middle of a drag (e.g. another window took it): the drag is over.
+    private void OnContentPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        if (_isDragging) EndDrag();
+    }
+
+    private void EndDrag()
+    {
+        _isDragging = false;
+        _selectionLayer?.EndSelecting();
     }
 
     private void UpdateHyperlinkCursor(Point posInLayer)
