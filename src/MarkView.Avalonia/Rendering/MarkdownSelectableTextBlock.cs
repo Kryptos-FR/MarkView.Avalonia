@@ -89,7 +89,8 @@ public class MarkdownSelectableTextBlock : TextBlock
         // Avalonia ends a TextBlock's text with a TextEndOfParagraph run, and hit testing then places the
         // characters of a right-to-left run that ends the paragraph one position off: a selection or a find
         // match over them misses a character or has no width. A text source that ends without that run, as
-        // the one of a TextLayout built from a string does, measures them right.
+        // the one of a TextLayout built from a string does, measures them right. Remove once
+        // https://github.com/AvaloniaUI/Avalonia/issues/22530 is fixed.
         if (_textRuns is not { } runs || !HasRightToLeftText(runs))
             return base.CreateTextLayout(text);
 
