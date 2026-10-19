@@ -52,6 +52,21 @@ public class LinkFocusTests
 
         public string? FocusedLink => (Focused as LinkFocusTarget)?.AccessibleName;
 
+        /// <summary>Clicks the first character of the document's text block number <paramref name="index"/>.</summary>
+        public void Click(int index)
+        {
+            var block = Viewer.GetVisualDescendants().OfType<MarkdownSelectableTextBlock>().ElementAt(index);
+            var glyph = block.TextLayout!.HitTestTextRange(0, 1).First();
+            var point = block.TranslatePoint(glyph.Center, Window)!.Value;
+            var content = (Grid)Viewer.Content!;
+            var pointer = new Pointer(Pointer.GetNextFreeId(), PointerType.Mouse, true);
+            content.RaiseEvent(new PointerPressedEventArgs(content, pointer, Window, point, 1,
+                new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed), KeyModifiers.None));
+            content.RaiseEvent(new PointerReleasedEventArgs(content, pointer, Window, point, 2,
+                new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased), KeyModifiers.None, MouseButton.Left));
+            Dispatcher.UIThread.RunJobs();
+        }
+
         public void Dispose() => Window.Close();
     }
 
@@ -352,6 +367,121 @@ public class LinkFocusTests
         f.Targets.Single().Activate();
 
         Assert.False(raised);
+    }
+
+    private const string Jump = """
+        [Jump](#target) [first](https://example.com/1)
+
+        [above](https://example.com/a)
+
+        # Target
+
+        [below](https://example.com/b)
+        """;
+
+    [AvaloniaFact]
+    public void Enter_on_an_anchor_link_hands_the_focus_to_the_viewer_and_Tab_goes_on_from_the_anchor()
+    {
+        using var f = Show(Jump);
+        f.Viewer.Focus();
+        f.Tab();
+        Assert.Equal("Jump", f.FocusedLink);
+
+        f.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Same(f.Viewer, f.Focused);
+
+        f.Tab();
+        Assert.Equal("below", f.FocusedLink);
+        // Used once: from the viewer again, Tab starts from the top.
+        f.Viewer.Focus();
+        f.Tab();
+        Assert.Equal("Jump", f.FocusedLink);
+    }
+
+    [AvaloniaFact]
+    public void Shift_Tab_after_a_jump_goes_to_the_last_stop_above_the_anchor()
+    {
+        using var f = Show(Jump);
+        f.Viewer.Focus();
+        f.Viewer.ScrollToAnchor("target");
+
+        f.Tab(shift: true);
+
+        Assert.Equal("above", f.FocusedLink);
+    }
+
+    [AvaloniaFact]
+    public void Tab_after_a_jump_past_the_last_stop_leaves_the_viewer()
+    {
+        using var f = Show("[first](https://example.com/1)\n\n# Target\n\nNo link here.");
+        f.Viewer.Focus();
+        f.Viewer.ScrollToAnchor("target");
+
+        f.Tab();
+        Assert.Same(f.After, f.Focused);
+    }
+
+    [AvaloniaFact]
+    public void Shift_Tab_after_a_jump_above_every_stop_leaves_the_viewer()
+    {
+        using var f = Show("# Target\n\n[below](https://example.com/b)");
+        f.Viewer.Focus();
+        f.Viewer.ScrollToAnchor("target");
+
+        f.Tab(shift: true);
+        Assert.Same(f.Before, f.Focused);
+    }
+
+    [AvaloniaFact]
+    public void Leaving_the_viewer_drops_the_starting_point_of_a_jump()
+    {
+        using var f = Show(Jump);
+        f.Viewer.Focus();
+        f.Viewer.ScrollToAnchor("target");
+        f.Before.Focus();
+
+        f.Tab();
+        f.Tab();
+
+        Assert.Equal("Jump", f.FocusedLink);
+    }
+
+    [AvaloniaFact]
+    public void A_link_to_a_missing_anchor_keeps_the_focus_and_drops_an_earlier_jump()
+    {
+        using var f = Show("[Missing](#nowhere)\n\n[above](https://example.com/a)\n\n# Target\n\n[below](https://example.com/b)");
+        f.Viewer.Focus();
+        f.Viewer.ScrollToAnchor("target");
+        f.Tab();
+        Assert.Equal("below", f.FocusedLink);
+        f.Viewer.ScrollToAnchor("target");
+        var missing = f.Targets.First();
+        missing.Focus(NavigationMethod.Tab);
+
+        missing.Activate();
+        Assert.Same(missing, f.Focused);
+        f.Viewer.Focus();
+        f.Tab();
+
+        Assert.Equal("Missing", f.FocusedLink);
+    }
+
+    [AvaloniaFact]
+    public void Clicking_an_anchor_link_makes_Tab_go_on_from_the_anchor_and_another_click_drops_it()
+    {
+        using var f = Show(Jump);
+        f.Before.Focus();
+
+        f.Click(0); // the "Jump" link
+        Assert.Same(f.Viewer, f.Focused);
+        f.Tab();
+        Assert.Equal("below", f.FocusedLink);
+
+        f.Click(0);
+        f.Click(2); // the heading
+        f.Tab();
+        Assert.Equal("Jump", f.FocusedLink);
     }
 
     [AvaloniaFact]

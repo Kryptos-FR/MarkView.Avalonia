@@ -926,6 +926,7 @@ public partial class MarkdownViewer : ContentControl
 
     private void OnContentPointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        _tabStart = null;
         if (!e.Properties.IsLeftButtonPressed || _selectionLayer is null) return;
         Focus();
         _isDragging = false;
@@ -1169,6 +1170,10 @@ public partial class MarkdownViewer : ContentControl
         if (e.Url.StartsWith('#'))
         {
             ScrollToAnchor(e.Url[1..]);
+            // A link activated from the keyboard hands the focus to the viewer, so that Tab goes on
+            // from the anchor rather than from the link.
+            if (_tabStart is not null && IsKeyboardFocusWithin)
+                Focus();
             e.Handled = true;
             return;
         }
@@ -1238,10 +1243,17 @@ public partial class MarkdownViewer : ContentControl
     /// <summary>The ids of the rendered document's anchors, for tests.</summary>
     internal IEnumerable<string> AnchorIds => _anchors.Keys;
 
+    /// <summary>
+    /// Scrolls to the anchor (e.g. a heading's slug) named <paramref name="anchorId"/>, if the document
+    /// has one. While the viewer itself has the focus, Tab then goes on from that anchor, as in a browser.
+    /// </summary>
     public void ScrollToAnchor(string anchorId)
     {
+        _tabStart = null;
         if (!_anchors.TryGetValue(anchorId, out var control))
             return;
+        // While the viewer itself has the focus, Tab goes on from here.
+        _tabStart = control;
 
         // A heading inside a collapsed alert or details element has no position until it is expanded and laid out.
         if (CollapsibleAlert.ExpandAncestors(control))

@@ -31,6 +31,11 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
     private IPlatformSettings? _platformSettings;
     private bool _platformHighContrast;
 
+    // Where Tab goes on from while the viewer itself has the focus: the anchor the viewer last
+    // jumped to, as a browser moves its starting point to a fragment's target. Cleared by a click
+    // in the document, by Tab or Shift+Tab from the viewer, and when the focus leaves the viewer.
+    private Control? _tabStart;
+
     /// <summary>
     /// Gets or sets when the viewer uses its high-contrast palette. Defaults to
     /// <see cref="HighContrastMode.System"/>, which follows the operating system's setting.
@@ -60,6 +65,8 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         base.OnPropertyChanged(change);
         if (change.Property == HighContrastModeProperty)
             UpdateHighContrast();
+        else if (change.Property == IsKeyboardFocusWithinProperty && !change.GetNewValue<bool>())
+            _tabStart = null;
     }
 
     /// <inheritdoc />
@@ -99,7 +106,8 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
     /// <summary>
     /// Tab order through the document: the viewer itself, then its links and focusable controls in
     /// reading order, then whatever follows the viewer. Shift+Tab walks the same stops backwards,
-    /// and entering the document backwards lands on its last stop.
+    /// and entering the document backwards lands on its last stop. After a jump to an anchor, Tab
+    /// from the viewer goes on from that anchor instead of from the top of the document.
     /// </summary>
     (bool handled, IInputElement? next) ICustomKeyboardNavigation.GetNext(IInputElement element, NavigationDirection direction)
     {
@@ -114,7 +122,18 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         var stops = _linkFocusLayer.GetActiveStops();
         var forward = direction == NavigationDirection.Next;
         if (element == this)
-            return forward && stops.Count > 0 ? (true, stops[0]) : (false, null);
+        {
+            var start = _tabStart;
+            _tabStart = null;
+            if (start?.TranslatePoint(default, this) is not { } origin)
+                return forward && stops.Count > 0 ? (true, stops[0]) : (false, null);
+            // The first stop at or below the anchor; stops are in reading order.
+            var next = stops.FindIndex(stop => ((Visual)stop).TranslatePoint(default, this)?.Y >= origin.Y);
+            if (next < 0) next = stops.Count;
+            if (forward)
+                return (true, next < stops.Count ? stops[next] : null);
+            return next > 0 ? (true, stops[next - 1]) : (false, null);
+        }
 
         var index = stops.IndexOf(element);
         if (index < 0)
