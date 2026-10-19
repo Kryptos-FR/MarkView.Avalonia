@@ -15,6 +15,8 @@ namespace MarkView.Avalonia.SyntaxHighlighting;
 /// the light theme over one shared set of grammars, and is exposed as an
 /// <see cref="IDualThemeCodeHighlighter"/> so code block renderers can update token colours
 /// in-place when the theme changes without rebuilding the entire document.
+/// Every extension with the same pair of themes shares one highlighter while any of them is alive,
+/// so a viewer per message (a chat) loads the themes and grammars once, not once per viewer.
 /// </summary>
 public sealed class TextMateExtension : IMarkViewExtension
 {
@@ -34,6 +36,21 @@ public sealed class TextMateExtension : IMarkViewExtension
         renderer.ReplaceOrAdd<CodeBlockRenderer>(new TextMateCodeBlockRenderer());
     }
 
-    // Stryker disable once assignment : lazily caches the highlighter; without the cache every Register() builds its own instance whose highlighting output is identical, only instance reuse differs
-    private DualThemeTextMateHighlighter GetHighlighter() => _highlighter ??= new DualThemeTextMateHighlighter(_darkTheme, _lightTheme);
+    // Weak, so the themes and grammars are released once no extension uses them.
+    private static readonly Dictionary<(ThemeName Dark, ThemeName Light), WeakReference<DualThemeTextMateHighlighter>> SharedHighlighters = [];
+
+    // Stryker disable once assignment : lazily caches the highlighter; without the cache every Register() gets the shared instance again, only the lookup is repeated
+    private DualThemeTextMateHighlighter GetHighlighter() => _highlighter ??= GetSharedHighlighter(_darkTheme, _lightTheme);
+
+    internal static DualThemeTextMateHighlighter GetSharedHighlighter(ThemeName darkTheme, ThemeName lightTheme)
+    {
+        lock (SharedHighlighters)
+        {
+            if (SharedHighlighters.TryGetValue((darkTheme, lightTheme), out var reference) && reference.TryGetTarget(out var shared))
+                return shared;
+            var highlighter = new DualThemeTextMateHighlighter(darkTheme, lightTheme);
+            SharedHighlighters[(darkTheme, lightTheme)] = new WeakReference<DualThemeTextMateHighlighter>(highlighter);
+            return highlighter;
+        }
+    }
 }

@@ -66,6 +66,8 @@ Available themes (from `TextMateSharp.Grammars.ThemeName`):
 
 At render time, each line is tokenised via `IGrammar.TokenizeLine` and emitted as coloured `Run` elements inside a `TextBlock`. Grammars are cached per language per highlighter instance.
 
+Every viewer that uses the same pair of themes shares one highlighter, so its themes and grammars are loaded once, however many viewers call `UseTextMateHighlighting()` (a chat with a viewer per message, for instance). It is released once no viewer uses it.
+
 When the user switches between light and dark themes, only `TextBlock.Inlines` is rebuilt — the surrounding `Border` and the rest of the document are untouched. Images stay loaded, scroll position is preserved, and Mermaid diagrams are not retriggered.
 
 Languages not supported by the grammar registry fall back to the default monochrome rendering automatically.
