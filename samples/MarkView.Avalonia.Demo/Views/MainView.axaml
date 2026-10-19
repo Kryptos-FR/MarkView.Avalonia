@@ -147,6 +147,7 @@
           <ComboBoxItem Content="Default" />
           <ComboBoxItem Content="GitHub" />
           <ComboBoxItem Content="Chat" />
+          <ComboBoxItem Content="Docs" />
         </ComboBox>
         <!-- Viewer options that change how the document is drawn -->
         <DropDownButton VerticalAlignment="Center" Height="32"

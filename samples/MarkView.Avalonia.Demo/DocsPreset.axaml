@@ -1,0 +1,8 @@
+<!-- The Docs theme preset, which the demo adds and removes at runtime. Declared in XAML so the
+     StyleInclude is resolved at compile time and stays safe for trimming and AOT; a StyleInclude
+     built in code loads the theme by reflection. -->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MarkView.Avalonia.Demo.DocsPreset">
+  <StyleInclude Source="avares://MarkView.Avalonia/Themes/DocsTheme.axaml" />
+</Styles>

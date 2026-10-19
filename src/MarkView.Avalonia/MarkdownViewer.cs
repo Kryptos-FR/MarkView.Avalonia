@@ -643,7 +643,8 @@ public partial class MarkdownViewer : ContentControl
     private void InstallDocument(AvaloniaRenderer renderer, DocumentSelectionLayer layer, LinkFocusLayer linkLayer, bool focusWasInDocument)
     {
         // Stack panel + transparent selection and link focus layers in a single-cell Grid
-        var contentGrid = new Grid();
+        // markdown-document lets a theme size the whole document, e.g. cap its width
+        var contentGrid = new Grid { Classes = { "markdown-document" } };
         contentGrid.Children.Add(renderer.RootPanel);
         contentGrid.Children.Add(layer);
         contentGrid.Children.Add(linkLayer);
