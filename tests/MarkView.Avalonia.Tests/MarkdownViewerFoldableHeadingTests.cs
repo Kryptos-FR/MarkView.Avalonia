@@ -211,6 +211,15 @@ public class MarkdownViewerFoldableHeadingTests
         // The right click opened the viewer's context menu, which would take the next click to close.
         f.Viewer.ContextFlyout!.Hide();
 
+        f.Window.MouseDown(point, MouseButton.Middle);
+        f.Window.MouseUp(point, MouseButton.Middle);
+        Assert.False(toggle.IsExpanded);
+
+        // A press on the button released away from it is not a click.
+        f.Window.MouseDown(point, MouseButton.Left);
+        f.Window.MouseUp(point + new Vector(0, toggle.Bounds.Height * 3), MouseButton.Left);
+        Assert.False(toggle.IsExpanded);
+
         f.Window.MouseDown(point, MouseButton.Left);
         f.Window.MouseUp(point, MouseButton.Left);
         Assert.True(toggle.IsExpanded);
