@@ -9,7 +9,7 @@ namespace MarkView.Avalonia;
 /// Event args for <see cref="MarkdownViewer.CopyingToClipboard"/>, raised before anything is written to
 /// the clipboard. A handler can change what is written, or cancel the copy.
 /// </summary>
-public sealed class CopyingToClipboardEventArgs(MarkdownCopyOrigin origin, string text) : RoutedEventArgs
+public sealed class CopyingToClipboardEventArgs(MarkdownCopyOrigin origin, string text, string? html = null) : RoutedEventArgs
 {
     /// <summary>What is being copied.</summary>
     public MarkdownCopyOrigin Origin { get; } = origin;
@@ -24,6 +24,15 @@ public sealed class CopyingToClipboardEventArgs(MarkdownCopyOrigin origin, strin
         get;
         set => field = value ?? string.Empty;
     } = text;
+
+    /// <summary>
+    /// The HTML written next to <see cref="Text"/>, so that pasting into a word processor, a chat or a web editor
+    /// keeps the formatting; <c>null</c> to write none. Set for <see cref="MarkdownCopyOrigin.Selection"/> while
+    /// <see cref="MarkdownViewer.IsHtmlCopyEnabled"/> is <c>true</c> on a platform with an HTML clipboard format
+    /// (Windows, macOS and Linux), <c>null</c> otherwise. Setting it where the platform has no HTML format writes
+    /// the text alone.
+    /// </summary>
+    public string? Html { get; set; } = html;
 
     /// <summary>
     /// Set to <c>true</c> to write nothing, for instance when the handler writes the clipboard itself.

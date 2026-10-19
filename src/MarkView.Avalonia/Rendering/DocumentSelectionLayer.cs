@@ -139,7 +139,7 @@ internal sealed class DocumentSelectionLayer : Control
     public bool IsSelecting { get; private set; }
 
     /// <summary>The selected range in reading order, <c>null</c> when it is empty.</summary>
-    private (int Start, int End)? SelectedRange =>
+    public (int Start, int End)? SelectedRange =>
         _anchor is { } anchor && _focus is { } focus && anchor != focus
             ? (Math.Min(anchor, focus), Math.Max(anchor, focus))
             : null;
@@ -184,6 +184,9 @@ internal sealed class DocumentSelectionLayer : Control
 
     /// <summary>The number of registered entries.</summary>
     public int EntryCount => _entries.Count;
+
+    /// <summary>The registered entries, in document order.</summary>
+    public IReadOnlyList<IndexEntry> Entries => _entries;
 
     /// <summary>
     /// Removes every entry after the first <paramref name="entryCount"/>, so later registrations continue
@@ -629,7 +632,7 @@ internal sealed class DocumentSelectionLayer : Control
     /// hit-tested, highlighted nor copied. Ancestors above the document (the viewer itself, e.g. on an
     /// inactive tab) are not considered, so a hidden viewer can still copy its selection.
     /// </summary>
-    private bool IsHidden(IndexEntry entry)
+    public bool IsHidden(IndexEntry entry)
     {
         var documentRoot = this.GetVisualParent();
         for (Visual? visual = entry.Element; visual is not null && visual != documentRoot; visual = visual.GetVisualParent())

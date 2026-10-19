@@ -221,6 +221,11 @@ renderer.WriteBlock(border);
   highlighted and copied as a whole; dragging past its vertical middle includes it in the selection.
 - A control written with `WriteInline(Control)` is always highlighted with the surrounding text,
   and copied as its copy text, or as nothing when it has none.
+- [Copied as Markdown](text-selection.md#copying-as-markdown), a block your renderer wrote is
+  its source text when the selection covers it whole. When the selection only covers part of it,
+  a block control is its copy text as is, so give it the block's Markdown source (as the fence
+  renderers, formulas and diagrams do), and the text of your other controls is copied as escaped
+  text.
 
 As with theme tracking, set it on the element that stays in the document (the `Border`), so an
 error fallback that replaces the border's content is still copied.

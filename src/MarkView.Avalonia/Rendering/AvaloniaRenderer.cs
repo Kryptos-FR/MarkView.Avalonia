@@ -228,7 +228,33 @@ public class AvaloniaRenderer : RendererBase
             ApplyAttributeClasses ? Markdig.Renderers.Html.HtmlAttributesExtensions.TryGetAttributes(obj)?.Classes : null,
             obj is Markdig.Syntax.Inlines.Inline));
         ObjectWriteAfter += (_, _) => _writing.Pop();
+        ObjectWriteBefore += (_, obj) =>
+        {
+            if (obj is Block { Parent: MarkdownDocument })
+                _topLevelChildStart = RootPanel.Children.Count;
+        };
+        ObjectWriteAfter += (_, obj) =>
+        {
+            if (obj is Block { Parent: MarkdownDocument } block)
+            {
+                for (var i = _topLevelChildStart; i < RootPanel.Children.Count; i++)
+                    TopLevelBlocks.AddOrUpdate(RootPanel.Children[i], block);
+            }
+        };
     }
+
+    // The top-level block each control of a root panel was rendered for.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Control, Block> TopLevelBlocks = new();
+
+    // How many controls the root panel held when the top-level block being written started.
+    private int _topLevelChildStart;
+
+    /// <summary>
+    /// The top-level block <paramref name="control"/>, a child of a renderer's <see cref="RootPanel"/>, was
+    /// rendered for; <c>null</c> for any other control.
+    /// </summary>
+    internal static Block? GetTopLevelBlock(Control control) =>
+        TopLevelBlocks.TryGetValue(control, out var block) ? block : null;
 
     /// <summary>
     /// When <c>true</c>, the classes Markdig attaches to an element (<c>{.name}</c> with Markdig's
