@@ -361,6 +361,8 @@ Override any style class in your own `Styles` to customise appearance:
 | Style class | Applied to | Controls |
 |-------------|------------|----------|
 | `markdown-h1` … `markdown-h6` | Headings | `TextBlock` |
+| `markdown-heading-foldable` | Heading with a fold button (`AreHeadingsFoldable`; `:expanded` while open) | `TextBlock` |
+| `markdown-heading-fold` | Fold button of a heading | `Control` |
 | `markdown-paragraph` | Paragraphs | `TextBlock` |
 | `markdown-code-block` | Code blocks | `Border` |
 | `markdown-code-container` | Code block with its toolbar | `StackPanel` |
@@ -452,7 +454,7 @@ A selection that spans an image copies the image's alt text in its place; math f
 ## Find in Document
 
 `MarkdownViewer` finds text in the rendered document, highlights every match, and scrolls from one
-match to the next, expanding collapsed alerts and details blocks on the way. It has no find bar of
+match to the next, expanding collapsed alerts, details blocks and heading sections on the way. It has no find bar of
 its own; bind yours to the API:
 
 ```csharp

@@ -109,7 +109,8 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         renderer.Pop();
 
         if (chevron is not null)
-            CollapsibleAlert.Attach(border, header, chevron, contentPanel, fold == AlertFold.Expanded);
+            CollapsibleAlert.Attach(border, header, chevron, contentPanel,
+                renderer.GetFoldState(obj, defaultValue: fold == AlertFold.Expanded), renderer.FoldStateRecorder(obj));
 
         renderer.WriteBlock(border);
     }

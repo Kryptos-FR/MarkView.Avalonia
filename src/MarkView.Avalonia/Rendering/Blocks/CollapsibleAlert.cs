@@ -24,13 +24,15 @@ internal sealed class CollapsibleAlert
     private readonly Border _border;
     private readonly Control _body;
     private readonly AlertChevron _chevron;
+    private readonly Action<bool>? _expandedChanged;
 
-    private CollapsibleAlert(Border border, TextBlock header, AlertChevron chevron, Control body, bool isExpanded)
+    private CollapsibleAlert(Border border, TextBlock header, AlertChevron chevron, Control body, bool isExpanded, Action<bool>? expandedChanged)
     {
         _border = border;
         _body = body;
         _chevron = chevron;
-        IsExpanded = isExpanded;
+        SetState(isExpanded);
+        _expandedChanged = expandedChanged;
 
         header.Focusable = true;
         // A click, like a link's in MarkdownViewer: the press implicitly captures the pointer to the header,
@@ -54,16 +56,25 @@ internal sealed class CollapsibleAlert
         border.SetValue(StateProperty, this);
     }
 
-    /// <summary>Whether the body is shown.</summary>
+    /// <summary>
+    /// Whether the body is shown. Changing it reports the new state to the callback given to <see cref="Attach"/>.
+    /// </summary>
     public bool IsExpanded
     {
         get => _body.IsVisible;
         set
         {
-            _body.IsVisible = value;
-            _chevron.IsExpanded = value;
-            ((IPseudoClasses)_border.Classes).Set(":expanded", value);
+            if (value == IsExpanded) return;
+            SetState(value);
+            _expandedChanged?.Invoke(value);
         }
+    }
+
+    private void SetState(bool isExpanded)
+    {
+        _body.IsVisible = isExpanded;
+        _chevron.IsExpanded = isExpanded;
+        ((IPseudoClasses)_border.Classes).Set(":expanded", isExpanded);
     }
 
     /// <summary>Shows the body if hidden, hides it otherwise.</summary>
@@ -72,9 +83,11 @@ internal sealed class CollapsibleAlert
     /// <summary>
     /// Makes <paramref name="border"/> a foldable alert whose <paramref name="header"/> toggles
     /// <paramref name="body"/>, with <paramref name="chevron"/> (inline in the header) showing the state.
+    /// <paramref name="expandedChanged"/>, when given, is called with the new state each time the body is shown or hidden.
     /// </summary>
-    public static CollapsibleAlert Attach(Border border, TextBlock header, AlertChevron chevron, Control body, bool isExpanded) =>
-        new(border, header, chevron, body, isExpanded);
+    public static CollapsibleAlert Attach(Border border, TextBlock header, AlertChevron chevron, Control body, bool isExpanded,
+        Action<bool>? expandedChanged = null) =>
+        new(border, header, chevron, body, isExpanded, expandedChanged);
 
     /// <summary>Returns the fold state of an alert border, or <c>null</c> when it is not foldable.</summary>
     public static CollapsibleAlert? Get(Border border) => border.GetValue(StateProperty);

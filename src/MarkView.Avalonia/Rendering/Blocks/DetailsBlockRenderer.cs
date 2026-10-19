@@ -62,7 +62,8 @@ internal sealed class DetailsBlockRenderer : AvaloniaObjectRenderer<DetailsBlock
         renderer.WriteChildren(obj);
         renderer.Pop();
 
-        CollapsibleAlert.Attach(border, summary, chevron, content, obj.StartsExpanded);
+        CollapsibleAlert.Attach(border, summary, chevron, content,
+            renderer.GetFoldState(obj, defaultValue: obj.StartsExpanded), renderer.FoldStateRecorder(obj));
         renderer.WriteBlock(border);
     }
 }

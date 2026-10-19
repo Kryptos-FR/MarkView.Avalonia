@@ -188,6 +188,17 @@
     <Setter Property="Margin" Value="0,4,0,2" />
   </Style>
 
+  <!-- Foldable headings (MarkdownViewer.AreHeadingsFoldable): the fold button before the heading's text;
+       the heading gets :expanded while its section is shown -->
+  <Style Selector=":is(Control).markdown-heading-fold">
+    <Setter Property="Margin" Value="0,0,6,0" />
+    <!-- Discreet beside the heading; still 3:1 or more on the page for the default and GitHub headings -->
+    <Setter Property="Opacity" Value="0.7" />
+  </Style>
+  <Style Selector=":is(Control).markdown-heading-fold:pointerover, :is(Control).markdown-heading-fold:focus-visible">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
   <!-- Paragraphs -->
   <Style Selector=":is(TextBlock).markdown-paragraph">
     <Setter Property="Margin" Value="0,2" />
@@ -702,6 +713,9 @@
   </Style>
   <Style Selector=":is(mv|MarkdownViewer):high-contrast TextBlock.markdown-alert-header">
     <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(Control).markdown-heading-fold">
+    <Setter Property="Opacity" Value="1" />
   </Style>
 
 </Styles>

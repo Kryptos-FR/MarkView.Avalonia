@@ -82,8 +82,8 @@ paragraphs, headings, code blocks, blockquotes, list items, table cells and foot
   alert and the summary of a details block (neither is selectable), and a code block's toolbar and
   line numbers.
 - **Collapsed content is searched.** Matches in the body of a collapsed
-  [foldable alert](configuration.md#alert-blocks) or [details block](configuration.md#html-details-blocks)
-  count in `FindMatchCount` but are not highlighted while hidden. Moving to such a match expands
+  [foldable alert](configuration.md#alert-blocks), [details block](configuration.md#html-details-blocks)
+  or [heading section](configuration.md#foldable-headings) count in `FindMatchCount` but are not highlighted while hidden. Moving to such a match expands
   every collapsed block around it before scrolling to it, as browsers open `<details>` on find.
 
 ## Scrolling

@@ -80,6 +80,51 @@ public class AvaloniaRenderer : RendererBase
     public bool AreTaskListsInteractive { get; set; }
 
     /// <summary>
+    /// When <c>true</c>, each heading starts with a fold button that hides or shows its section: the blocks
+    /// that follow it up to the next heading of the same or a higher level. Sections start expanded.
+    /// Defaults to <c>false</c>.
+    /// </summary>
+    public bool AreHeadingsFoldable { get; set; }
+
+    // The fold states the user chose for the document's foldable blocks (alerts, details elements,
+    // headings), by block type and start in the source. A streaming session renders the block that is
+    // still growing again on every update; the new controls take the state over from these.
+    private readonly Dictionary<(Type BlockType, int Start), bool> _foldStates = [];
+
+    /// <summary>
+    /// Whether the foldable <paramref name="block"/> starts expanded: as the user last left it in this
+    /// document when it was rendered before (see <see cref="FoldStateRecorder"/>), else
+    /// <paramref name="defaultValue"/>.
+    /// </summary>
+    internal bool GetFoldState(Block block, bool defaultValue) =>
+        _foldStates.TryGetValue((block.GetType(), block.Span.Start), out var expanded) ? expanded : defaultValue;
+
+    /// <summary>A callback that records the fold state of <paramref name="block"/> for <see cref="GetFoldState"/>.</summary>
+    internal Action<bool> FoldStateRecorder(Block block)
+    {
+        var key = (block.GetType(), block.Span.Start);
+        return expanded => _foldStates[key] = expanded;
+    }
+
+    // Panels holding a heading rendered collapsed, whose section must be hidden once the panel is complete.
+    private readonly List<Panel> _pendingHeadingFolds = [];
+
+    /// <summary>Asks <see cref="ApplyHeadingFolds"/> to hide the section of the collapsed heading in <paramref name="panel"/>.</summary>
+    internal void QueueHeadingFold(Panel panel)
+    {
+        if (!_pendingHeadingFolds.Contains(panel))
+            _pendingHeadingFolds.Add(panel);
+    }
+
+    /// <summary>Hides the sections of the headings rendered collapsed since the last call.</summary>
+    internal void ApplyHeadingFolds()
+    {
+        foreach (var panel in _pendingHeadingFolds)
+            HeadingFold.Apply(panel);
+        _pendingHeadingFolds.Clear();
+    }
+
+    /// <summary>
     /// When <c>true</c>, clicking a loaded image that is not inside a link (or pressing Enter or Space
     /// while it has focus) raises <see cref="ImageZoomRequested"/>, and the image shows the zoom-in
     /// cursor. <see cref="MarkdownViewer"/> turns this on from its <see cref="MarkdownViewer.IsImageZoomEnabled"/>
@@ -292,11 +337,12 @@ public class AvaloniaRenderer : RendererBase
     {
         BeginDocument();
         Write(markdownObject);
+        ApplyHeadingFolds();
         return RootPanel;
     }
 
     /// <summary>
-    /// What <see cref="Render"/> does before writing: resets the anchors, headings and slugs, and places
+    /// What <see cref="Render"/> does before writing: resets the anchors, headings, slugs and fold states, and places
     /// the custom fence renderer (once, however many times a document begins).
     /// </summary>
     internal void BeginDocument()
@@ -304,6 +350,8 @@ public class AvaloniaRenderer : RendererBase
         _anchors.Clear();
         _anchorOrder.Clear();
         _headingEntries.Clear();
+        _foldStates.Clear();
+        _pendingHeadingFolds.Clear();
         SlugGenerator.Reset();
         PlaceCustomFenceRenderer();
     }

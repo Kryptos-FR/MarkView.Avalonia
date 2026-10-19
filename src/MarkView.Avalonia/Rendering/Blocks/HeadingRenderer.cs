@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Automation;
+using Avalonia.Controls;
 using Avalonia.Media;
 
 using Markdig.Syntax;
@@ -11,7 +12,9 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 
 /// <summary>
 /// Renders a Markdig <see cref="HeadingBlock"/> as a <see cref="MarkdownSelectableTextBlock"/>
-/// and registers it as an anchor target for in-document navigation.
+/// and registers it as an anchor target for in-document navigation. With
+/// <see cref="AvaloniaRenderer.AreHeadingsFoldable"/>, the heading starts with a fold button
+/// (<c>markdown-heading-fold</c>) that hides or shows its section (see <see cref="HeadingFold"/>).
 /// </summary>
 public sealed class HeadingRenderer : AvaloniaObjectRenderer<HeadingBlock>
 {
@@ -25,6 +28,14 @@ public sealed class HeadingRenderer : AvaloniaObjectRenderer<HeadingBlock>
         textBlock.Classes.Add("markdown-heading");
         textBlock.Classes.Add($"markdown-h{obj.Level}");
         AutomationProperties.SetHeadingLevel(textBlock, obj.Level);
+
+        HeadingFoldToggle? toggle = null;
+        if (renderer.AreHeadingsFoldable)
+        {
+            toggle = new HeadingFoldToggle();
+            toggle.Classes.Add("markdown-heading-fold");
+            textBlock.Inlines!.Add(new global::Avalonia.Controls.Documents.InlineUIContainer(toggle));
+        }
 
         renderer.Push(textBlock.Inlines!);
         renderer.WriteLeafInline(obj);
@@ -40,6 +51,15 @@ public sealed class HeadingRenderer : AvaloniaObjectRenderer<HeadingBlock>
         renderer.RegisterHeading(obj.Level, text, slug);
 
         renderer.WriteBlock(textBlock);
+
+        if (toggle is not null)
+        {
+            toggle.AccessibleName = text;
+            var expanded = renderer.GetFoldState(obj, defaultValue: true);
+            HeadingFold.Attach(textBlock, toggle, obj.Level, expanded, renderer.FoldStateRecorder(obj));
+            if (!expanded && textBlock.Parent is Panel panel)
+                renderer.QueueHeadingFold(panel);
+        }
     }
 
     /// <summary>

@@ -140,6 +140,12 @@ public partial class MarkdownViewer : ContentControl
         AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(AreTaskListsInteractive));
 
     /// <summary>
+    /// Defines the <see cref="AreHeadingsFoldable"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> AreHeadingsFoldableProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(AreHeadingsFoldable));
+
+    /// <summary>
     /// Defines the <see cref="IsImageZoomEnabled"/> property.
     /// </summary>
     public static readonly StyledProperty<bool> IsImageZoomEnabledProperty =
@@ -307,6 +313,20 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets whether each heading starts with a fold button that hides or shows its section: the
+    /// blocks that follow it, up to the next heading of the same or a higher level. Sections start
+    /// expanded; the button also answers Enter and Space, and is a Tab stop. Navigating to a heading
+    /// (<see cref="ScrollToAnchor"/>) or a find match in a collapsed section expands it, and hidden
+    /// sections are left out of selection and copying. Defaults to <c>false</c>. Can be set from a style,
+    /// e.g. for every viewer of an application.
+    /// </summary>
+    public bool AreHeadingsFoldable
+    {
+        get => GetValue(AreHeadingsFoldableProperty);
+        set => SetValue(AreHeadingsFoldableProperty, value);
+    }
+
+    /// <summary>
     /// Gets or sets whether clicking an image opens it in a lightbox over the viewer: the image as large
     /// as fits, never enlarged past its natural size, on a dimmed backdrop. Clicking anywhere, the close
     /// button or Escape closes it, and focus returns to where it was. A zoomable image shows the zoom-in
@@ -422,6 +442,7 @@ public partial class MarkdownViewer : ContentControl
         WrapCodeBlockLinesProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         CodeBlockMaxHeightProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         AreTaskListsInteractiveProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        AreHeadingsFoldableProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         IsImageZoomEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
@@ -600,6 +621,7 @@ public partial class MarkdownViewer : ContentControl
             WrapCodeBlockLines = WrapCodeBlockLines,
             CodeBlockMaxHeight = CodeBlockMaxHeight,
             AreTaskListsInteractive = AreTaskListsInteractive,
+            AreHeadingsFoldable = AreHeadingsFoldable,
             IsImageZoomEnabled = IsImageZoomEnabled,
         };
         renderer.LinkClicked += OnLinkClicked;
@@ -1064,14 +1086,14 @@ public partial class MarkdownViewer : ContentControl
 
     /// <summary>
     /// Makes the next match of the active search current, wrapping around from the last match to the first,
-    /// and scrolls it into view, expanding any collapsed alert or details block it is in. Returns <c>false</c>
+    /// and scrolls it into view, expanding any collapsed alert, details block or heading section it is in. Returns <c>false</c>
     /// when there is no match.
     /// </summary>
     public bool FindNext() => MoveToFindMatch(1);
 
     /// <summary>
     /// Makes the previous match of the active search current, wrapping around from the first match to the
-    /// last, and scrolls it into view, expanding any collapsed alert or details block it is in. Returns
+    /// last, and scrolls it into view, expanding any collapsed alert, details block or heading section it is in. Returns
     /// <c>false</c> when there is no match.
     /// </summary>
     public bool FindPrevious() => MoveToFindMatch(-1);
@@ -1120,7 +1142,7 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
-    /// Shows <paramref name="match"/>: expands the collapsed alerts and details blocks it is in, then
+    /// Shows <paramref name="match"/>: expands the collapsed alerts, details blocks and heading sections it is in, then
     /// scrolls it into view, with a margin above and below it.
     /// </summary>
     private void BringFindMatchIntoView(FindMatch match)
@@ -1129,7 +1151,7 @@ public partial class MarkdownViewer : ContentControl
         var textBlock = match.Entry.TextBlock!;
 
         // A match inside a collapsed block has no position until the block is expanded and laid out.
-        if (CollapsibleAlert.ExpandAncestors(textBlock))
+        if (RevealFolded(textBlock))
             textBlock.UpdateLayout();
 
         // A viewer that is not shown has laid nothing out, so there is nothing to scroll.
@@ -1240,6 +1262,13 @@ public partial class MarkdownViewer : ContentControl
             Focus();
     }
 
+    /// <summary>
+    /// Expands the collapsed alerts, details elements and heading sections that hide <paramref name="control"/>.
+    /// Returns <c>true</c> when one was expanded.
+    /// </summary>
+    private static bool RevealFolded(Control control) =>
+        CollapsibleAlert.ExpandAncestors(control) | HeadingFold.Reveal(control);
+
     /// <summary>The ids of the rendered document's anchors, for tests.</summary>
     internal IEnumerable<string> AnchorIds => _anchors.Keys;
 
@@ -1255,8 +1284,8 @@ public partial class MarkdownViewer : ContentControl
         // While the viewer itself has the focus, Tab goes on from here.
         _tabStart = control;
 
-        // A heading inside a collapsed alert or details element has no position until it is expanded and laid out.
-        if (CollapsibleAlert.ExpandAncestors(control))
+        // A heading inside a collapsed alert, details element or section has no position until it is expanded and laid out.
+        if (RevealFolded(control))
             control.UpdateLayout();
 
         if (_scrollViewer is null)
