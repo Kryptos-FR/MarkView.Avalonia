@@ -20,6 +20,7 @@ Avalonia forwards automation peers to each platform's accessibility API: UI Auto
 | Alert (`> [!NOTE]`) | `Group`, named by its title ("NOTE", "TIP", …), so the alert kind is announced as text and not only shown by colour |
 | `<details>` (`UseHtmlDetails()`) | `Group`, named by its summary |
 | Thinking block (`UseThinkingBlocks()`) | `Group`, named by its header ("Thinking…", "Thought for 12 seconds") |
+| Header of a foldable alert, a `<details>` element or a thinking block | `Button`, named by the block's title, that expands and collapses (whether the block is expanded is reported), like a heading's fold button |
 | Code block line numbers | Hidden, so only the code is read |
 | Thematic break | `Separator` |
 | Image | `Image`, named by its alt text. An image with empty alt text (`![](…)`) is decorative and hidden, as browsers do with `alt=""`, unless it can be zoomed. |

@@ -34,7 +34,7 @@ public class HtmlDetailsTests : RenderTestBase
         var border = Assert.IsType<Border>(control);
         var outer = Assert.IsType<StackPanel>(border.Child);
         Assert.Equal(2, outer.Children.Count);
-        var summary = Assert.IsType<TextBlock>(outer.Children[0]);
+        var summary = Assert.IsType<FoldHeader>(outer.Children[0]);
         var content = Assert.IsType<StackPanel>(outer.Children[1]);
         return new RenderedDetails(border, summary, content);
     }
