@@ -203,6 +203,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Images | CommonMark, remote URLs loaded async and cached in memory ([image cache](docs/configuration.md#image-cache)) |
 | Image sizing | `![alt](url =WxH)` — inline pixel dimensions, e.g. `=80x80` |
 | Image zoom | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, with zoom and pan (`IsImageZoomEnabled`, on by default) |
+| Save images | Images and Mermaid diagrams can be saved as PNG, or SVG for diagrams and SVG images, from the lightbox or the context menu ([saving](docs/configuration.md#saving-images-and-diagrams)) |
 | Broken images | An image that fails to load shows a placeholder with its alt text |
 | Thematic breaks | CommonMark |
 | Hard line breaks | CommonMark (`\` or two spaces) |

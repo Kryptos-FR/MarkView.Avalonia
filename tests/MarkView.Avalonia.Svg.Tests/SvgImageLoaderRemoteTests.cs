@@ -7,6 +7,7 @@ using System.Text;
 using Avalonia.Headless.XUnit;
 using Avalonia.Svg.Skia;
 
+using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Tests.Shared;
 
 using Xunit;
@@ -45,6 +46,8 @@ public sealed class SvgImageLoaderRemoteTests : IDisposable
 
         var svg = Assert.IsType<SvgImage>(image);
         Assert.NotNull(svg.Source);
+        // Saved as its own file.
+        Assert.Equal(SvgBytes, ImageExport.GetSvg(svg));
     }
 
     [AvaloniaTheory]

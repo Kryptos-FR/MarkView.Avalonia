@@ -302,4 +302,40 @@ public class MermaidSvgThemeTests
             Assert.DoesNotContain("color-mix(", drawing);
         }
     }
+
+    [Fact]
+    public void AddBackground_paints_the_view_box_first()
+    {
+        const string svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"-1.5 2 10.25 20\" style=\"background:#FFF\"><style>rect { fill: red; }</style><rect/></svg>";
+
+        var result = MermaidSvgTheme.AddBackground(svg, "#18181B");
+
+        Assert.Equal(
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"-1.5 2 10.25 20\" style=\"background:#FFF\">"
+            + "\n<rect x=\"-1.5\" y=\"2\" width=\"10.25\" height=\"20\" style=\"fill:#18181B;stroke:none\" />"
+            + "<style>rect { fill: red; }</style><rect/></svg>",
+            result);
+    }
+
+    [Fact]
+    public void AddBackground_accepts_a_view_box_separated_by_commas()
+    {
+        var result = MermaidSvgTheme.AddBackground("<svg viewBox=\"0,0,4,5\"></svg>", "#FFFFFF");
+
+        Assert.Contains("<rect x=\"0\" y=\"0\" width=\"4\" height=\"5\"", result);
+    }
+
+    [Fact]
+    public void AddBackground_without_a_view_box_covers_the_whole_picture()
+    {
+        var result = MermaidSvgTheme.AddBackground("<svg width=\"4\" height=\"5\"><g/></svg>", "#FFFFFF");
+
+        Assert.Equal("<svg width=\"4\" height=\"5\">\n<rect width=\"100%\" height=\"100%\" style=\"fill:#FFFFFF;stroke:none\" /><g/></svg>", result);
+    }
+
+    [Fact]
+    public void AddBackground_leaves_text_without_an_svg_element_alone()
+    {
+        Assert.Equal("<svgx/>", MermaidSvgTheme.AddBackground("<svgx/>", "#FFFFFF"));
+    }
 }

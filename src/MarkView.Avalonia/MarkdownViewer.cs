@@ -1266,6 +1266,7 @@ public partial class MarkdownViewer : ContentControl
         if (_lightbox is not null || image.Source is null) return;
         var lightbox = new ImageLightbox(image, TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement());
         lightbox.CloseRequested += CloseLightbox;
+        SetUpLightboxSave(lightbox);
         _lightbox = lightbox;
         LogicalChildren.Add(lightbox);
         VisualChildren.Add(lightbox);
