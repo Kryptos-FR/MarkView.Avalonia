@@ -38,6 +38,14 @@ public static class MarkdownViewerDefaults
     public static IList<IMarkViewExtension> Extensions { get; } = [];
 
     /// <summary>
+    /// What opens documents and images for every <see cref="MarkdownViewer"/> that does not set its own
+    /// <see cref="MarkdownViewer.ResourceResolver"/>, before the viewer's own loading of <c>avares://</c>,
+    /// <c>file://</c> and <c>http(s)://</c> URLs. <see langword="null"/> (the default) uses only the viewer's
+    /// own loading. Read at each render and each load of <see cref="MarkdownViewer.Source"/>.
+    /// </summary>
+    public static IResourceResolver? ResourceResolver { get; set; }
+
+    /// <summary>
     /// The maximum number of loaded images kept in memory and shared by every
     /// <see cref="MarkdownViewer"/>, so that rendering an image again (a document edited and
     /// re-rendered, a viewer recreated) neither downloads nor decodes it again. Images are keyed by

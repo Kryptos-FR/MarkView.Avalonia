@@ -3,14 +3,13 @@
 
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 
 namespace MarkView.Avalonia.Extensions;
 
 /// <summary>
 /// Default image loader for bitmap formats (PNG, JPEG, GIF, BMP, WebP, …).
-/// Handles <c>avares://</c> embedded resources, <c>http/https</c> URLs, and
-/// <c>data:image/…;base64,…</c> data URIs.
+/// Handles <c>data:image/…;base64,…</c> data URIs, and any absolute URL whose content the
+/// <see cref="IResourceResolver"/> can open (<c>avares://</c>, <c>file://</c> and <c>http/https</c> by default).
 /// Registered last in <see cref="Rendering.AvaloniaRenderer.ImageLoaders"/> so that
 /// specialised loaders (e.g. SVG) take priority.
 /// </summary>
@@ -21,17 +20,17 @@ internal sealed class BitmapImageLoader : IImageLoader
     {
         if (string.IsNullOrEmpty(url)) return false;
 
-        if (url.StartsWith("avares://", StringComparison.OrdinalIgnoreCase)) return true;
+        if (url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+            return url.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase);
 
-        if (url.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase)) return true;
-
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            return uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps;
-
-        return false;
+        // Whatever the scheme, the resource resolver may open it.
+        return Uri.TryCreate(url, UriKind.Absolute, out _);
     }
 
-    public async Task<IImage?> LoadAsync(string url, CancellationToken cancellationToken = default)
+    public Task<IImage?> LoadAsync(string url, CancellationToken cancellationToken = default) =>
+        LoadAsync(url, DefaultResourceResolver.Instance, cancellationToken);
+
+    public async Task<IImage?> LoadAsync(string url, IResourceResolver resources, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -45,15 +44,14 @@ internal sealed class BitmapImageLoader : IImageLoader
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 return null;
 
-            if (uri.Scheme == "avares")
-            {
-                using var stream = AssetLoader.Open(uri);
+            using var stream = await resources.OpenAsync(uri, cancellationToken);
+            if (stream is null)
+                return null;
+            if (stream.CanSeek)
                 return new Bitmap(stream);
-            }
 
-            using var responseStream = await SharedHttpClient.Instance.GetStreamAsync(uri, cancellationToken);
             using var buffer = new MemoryStream();
-            await responseStream.CopyToAsync(buffer, cancellationToken);
+            await stream.CopyToAsync(buffer, cancellationToken);
             buffer.Position = 0;
             return new Bitmap(buffer);
         }

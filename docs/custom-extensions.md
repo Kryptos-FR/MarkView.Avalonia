@@ -251,6 +251,29 @@ public class MyImageLoader : IImageLoader
 }
 ```
 
+A loader that reads its image's content from a URL should do it through the viewer's
+[resource resolver](configuration.md#resource-resolver), so that the application's own sources (a
+zip archive, an authenticated server) work with it as well. Implement the `LoadAsync` overload that
+takes one: it is the one the viewer calls, and its default implementation calls the one above. The
+resolver it gets falls back to the viewer's own loading of `avares://`, `file://` and `http(s)://`.
+
+```csharp
+public class WebPImageLoader : IImageLoader
+{
+    public bool CanLoad(string url) => url.EndsWith(".webp", StringComparison.OrdinalIgnoreCase);
+
+    public Task<IImage?> LoadAsync(string url, CancellationToken ct = default) =>
+        Task.FromResult<IImage?>(null); // the viewer calls the overload below
+
+    public async Task<IImage?> LoadAsync(string url, IResourceResolver resources, CancellationToken ct = default)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return null;
+        using var stream = await resources.OpenAsync(uri, ct);
+        return stream is null ? null : MyWebPDecoder.Decode(stream);
+    }
+}
+```
+
 Register it in a `IMarkViewExtension`:
 
 ```csharp

@@ -91,6 +91,12 @@ public partial class MarkdownViewer : ContentControl
         AvaloniaProperty.Register<MarkdownViewer, Uri?>(nameof(Source));
 
     /// <summary>
+    /// Defines the <see cref="ResourceResolver"/> property.
+    /// </summary>
+    public static readonly StyledProperty<IResourceResolver?> ResourceResolverProperty =
+        AvaloniaProperty.Register<MarkdownViewer, IResourceResolver?>(nameof(ResourceResolver));
+
+    /// <summary>
     /// Defines the <see cref="ImageResizeMode"/> property.
     /// </summary>
     public static readonly StyledProperty<ImageResizeMode> ImageResizeModeProperty =
@@ -193,7 +199,8 @@ public partial class MarkdownViewer : ContentControl
 
     /// <summary>
     /// Gets or sets a URI that points to a Markdown document to load and render.
-    /// Supports <c>avares://</c> embedded resources, <c>file://</c>, and <c>http/https</c> schemes.
+    /// Supports <c>avares://</c> embedded resources, <c>file://</c>, and <c>http/https</c> schemes,
+    /// plus whatever <see cref="ResourceResolver"/> opens.
     /// A <c>#fragment</c> scrolls to the matching anchor once the document has rendered; for
     /// <c>avares://</c> the fragment starts at the first <c>#</c>, so asset paths containing
     /// <c>#</c> are not supported.
@@ -205,6 +212,25 @@ public partial class MarkdownViewer : ContentControl
         get => GetValue(SourceProperty);
         set => SetValue(SourceProperty, value);
     }
+
+    /// <summary>
+    /// Gets or sets what opens the document of <see cref="Source"/> and the images of the document, before
+    /// the viewer's own loading of <c>avares://</c>, <c>file://</c> and <c>http(s)://</c> URLs, which it
+    /// falls back to when the resolver returns <c>null</c>: e.g. to read them from a zip archive or from a
+    /// server that needs credentials. <c>null</c> (the default) falls back to
+    /// <see cref="MarkdownViewerDefaults.ResourceResolver"/>. Setting it loads <see cref="Source"/> again and
+    /// re-renders the document. Image loaders read through it when they implement
+    /// <see cref="IImageLoader.LoadAsync(string, IResourceResolver, CancellationToken)"/>, as the built-in
+    /// and SVG ones do.
+    /// </summary>
+    public IResourceResolver? ResourceResolver
+    {
+        get => GetValue(ResourceResolverProperty);
+        set => SetValue(ResourceResolverProperty, value);
+    }
+
+    /// <summary>The resolver in use: <see cref="ResourceResolver"/>, else <see cref="MarkdownViewerDefaults.ResourceResolver"/>.</summary>
+    private IResourceResolver? CustomResourceResolver => ResourceResolver ?? MarkdownViewerDefaults.ResourceResolver;
 
     /// <summary>
     /// Gets or sets how images without an explicit "=WxH" size hint are scaled
@@ -392,6 +418,11 @@ public partial class MarkdownViewer : ContentControl
         PipelineProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         SourceProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnSourceChanged());
+        ResourceResolverProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) =>
+        {
+            if (x.Source is null) x.RenderMarkdown();
+            else x.OnSourceChanged();
+        });
         ImageResizeModeProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ShowCodeBlockLanguageProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ShowCodeBlockCopyButtonProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
@@ -421,57 +452,61 @@ public partial class MarkdownViewer : ContentControl
             return;
         }
 
+        // A relative URI has nothing to be resolved against.
+        if (!source.IsAbsoluteUri)
+            return;
+
         var fragment = source.Fragment.TrimStart('#');
-
-        switch (source.Scheme)
+        if (source.Scheme == "avares")
         {
-            // avares:// is a ManifestResourceStream — memory-mapped into the loaded assembly,
-            // effectively zero I/O cost. No async API exists; synchronous read is appropriate.
-            case "avares":
+            // Avalonia parses avares:// with GenericUriParserOptions.NoFragment, which keeps
+            // "#fragment" in the resource path; split it off the original string instead.
+            var hashIndex = source.OriginalString.IndexOf('#');
+            if (hashIndex >= 0)
             {
-                // Avalonia parses avares:// with GenericUriParserOptions.NoFragment, which keeps
-                // "#fragment" in the resource path; split it off the original string instead.
-                var hashIndex = source.OriginalString.IndexOf('#');
-                if (hashIndex >= 0)
-                {
-                    fragment = source.OriginalString[(hashIndex + 1)..];
-                    source = new Uri(source.OriginalString[..hashIndex]);
-                }
-
-                using var stream = AssetLoader.Open(source);
-                using var reader = new StreamReader(stream);
-                _sourceMarkdown = reader.ReadToEnd();
-                RenderMarkdown();
-                ScrollToAnchorAfterRender(fragment);
-                break;
+                fragment = source.OriginalString[(hashIndex + 1)..];
+                source = new Uri(source.OriginalString[..hashIndex]);
             }
-            case "file":
-            case "http":
-            case "https":
-                _ = LoadFromUriAsync(source, fragment);
-                break;
         }
-    }
+        else if (fragment.Length > 0)
+        {
+            source = new Uri(source.GetLeftPart(UriPartial.Query));
+        }
 
-    private async Task LoadFromUriAsync(Uri uri, string fragment)
-    {
         var cts = new CancellationTokenSource();
         _sourceLoadCts = cts;
+        var custom = CustomResourceResolver;
+        IResourceResolver resolver = custom is null ? DefaultResourceResolver.Instance : new FallbackResourceResolver(custom);
+        // Neither throws: the default resolver fails its task, and the fallback wrapper, an async method,
+        // turns whatever the application's resolver throws into a failed task.
+        var opening = resolver.OpenAsync(source, cts.Token);
+
+        // Completed already (avares://, or a resolver reading from memory): render before the setter returns.
+        if (opening.IsCompleted)
+        {
+            if (!opening.IsCompletedSuccessfully)
+                return;
+            using var stream = opening.Result;
+            if (stream is null)
+                return;
+            using (var reader = new StreamReader(stream))
+                _sourceMarkdown = reader.ReadToEnd();
+            RenderMarkdown();
+            ScrollToAnchorAfterRender(fragment);
+            return;
+        }
+        _ = LoadFromUriAsync(opening, fragment, cts);
+    }
+
+    private async Task LoadFromUriAsync(Task<Stream?> opening, string fragment, CancellationTokenSource cts)
+    {
         try
         {
-            string text;
-            if (uri.Scheme == "file")
-            {
-                using var stream = File.OpenRead(uri.LocalPath);
-                using var reader = new StreamReader(stream);
-                text = await reader.ReadToEndAsync(cts.Token);
-            }
-            else
-            {
-                using var stream = await SharedHttpClient.Instance.GetStreamAsync(uri, cts.Token);
-                using var reader = new StreamReader(stream);
-                text = await reader.ReadToEndAsync(cts.Token);
-            }
+            using var stream = await opening;
+            if (stream is null)
+                return;
+            using var reader = new StreamReader(stream);
+            var text = await reader.ReadToEndAsync(cts.Token);
 
             if (!cts.IsCancellationRequested)
             {
@@ -480,9 +515,11 @@ public partial class MarkdownViewer : ContentControl
                 ScrollToAnchorAfterRender(fragment);
             }
         }
-        catch (OperationCanceledException) { }
-        catch (HttpRequestException) { }
-        catch (IOException) { }
+        // Whatever the resolver throws is a failed load, which keeps the current document: this task is
+        // never awaited, so nothing else would observe it.
+        catch (Exception)
+        {
+        }
     }
 
     // Anchor targets are only positioned after the next layout pass, so scrolling
@@ -570,6 +607,7 @@ public partial class MarkdownViewer : ContentControl
         var renderer = new AvaloniaRenderer
         {
             BaseUri = BaseUri ?? InferBaseUri(Source),
+            ResourceResolver = CustomResourceResolver,
             ImageResizeMode = ImageResizeMode,
             ShowCodeBlockLanguage = ShowCodeBlockLanguage,
             ShowCodeBlockCopyButton = ShowCodeBlockCopyButton,
