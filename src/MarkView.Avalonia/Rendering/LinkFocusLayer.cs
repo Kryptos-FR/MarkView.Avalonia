@@ -6,6 +6,7 @@ using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 
 using MarkView.Avalonia.Rendering.Inlines;
 
@@ -77,7 +78,8 @@ internal sealed class LinkFocusLayer : Panel
 
     /// <summary>
     /// The keyboard stops a user can reach now, in reading order. Stops inside hidden content
-    /// (e.g. a collapsed block) are skipped.
+    /// (e.g. a collapsed block) are skipped, and so are controls that left the document (e.g. an
+    /// image replaced by its failure placeholder): they can't take the focus, so Tab would stay put.
     /// </summary>
     public List<IInputElement> GetActiveStops()
     {
@@ -86,7 +88,7 @@ internal sealed class LinkFocusLayer : Panel
         {
             var visible = stop is LinkFocusTarget target
                 ? target.TextBlock.IsEffectivelyVisible
-                : stop.IsEffectivelyVisible && stop.IsEffectivelyEnabled;
+                : stop.IsEffectivelyVisible && stop.IsEffectivelyEnabled && ((Visual)stop).IsAttachedToVisualTree();
             if (visible) stops.Add(stop);
         }
         return stops;
