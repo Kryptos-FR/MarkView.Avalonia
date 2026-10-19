@@ -558,14 +558,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// Empties the page so the viewer can stream its text back in. <c>BeginStreaming</c> refuses a
     /// viewer whose <c>Source</c> is set, so the page is unbound from <see cref="Source"/> first and
     /// the viewer cleared; the page's folder stays its <see cref="BaseUri"/>, so the relative links and
-    /// images of the streamed text still resolve. The history is left alone: the entry pushed when the
-    /// page loaded is still what Back and Forward restore.
+    /// images of the streamed text still resolve. A page replayed before is already unbound, so it
+    /// keeps the base its first replay set. The history is left alone: the entry pushed when the page
+    /// loaded is still what Back and Forward restore.
     /// </summary>
     public void BeginReplay()
     {
-        var source = Source;
+        // BaseUri is only set while the page shown is one a replay unbound: changing the page resets it.
+        var baseUri = FolderOf(Source) ?? BaseUri;
         Source = null;
-        BaseUri = FolderOf(source);
+        BaseUri = baseUri;
         Markdown = "";
         _isReplaying = true;
     }
