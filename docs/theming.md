@@ -322,7 +322,7 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 
 | Class | Control | Element |
 |-------|---------|---------|
-| `markdown-document` | `Grid` | The whole rendered document (`MarkdownViewer.Content`): its root panel with the selection and link focus layers. A theme can size it, as the [Docs preset](#docs) caps its width |
+| `markdown-document` | `Grid` | The whole rendered document (`MarkdownViewer.Content`): its root panel with the selection and link focus layers. Style it for changes to the whole document, such as its margins or reading width (see [The whole document](#the-whole-document)) |
 | `markdown-h1` … `markdown-h6` | `TextBlock` | Headings |
 | `markdown-paragraph` | `TextBlock` | Paragraphs |
 | `markdown-code-block` | `Border` | Fenced code block container |
@@ -558,6 +558,19 @@ Diagram colours are baked into the generated SVG at render time, so they aren't 
 | `MarkdownMermaidAccent` | `#60A5FA` | `#3B82F6` |
 
 ## Example customisations
+
+### The whole document
+
+The rendered document is a `Grid` with the `markdown-document` class, so a style on it changes the whole document at once. This one adds a margin around it and centres it in a column at most 720px wide (the [Docs preset](#docs) caps its width the same way):
+
+```xml
+<Style Selector="Grid.markdown-document">
+  <Setter Property="Margin" Value="24,16" />
+  <Setter Property="MaxWidth" Value="720" />
+</Style>
+```
+
+Prefer it to a `/template/` style on the viewer's `PART_ContentPresenter`: Avalonia keeps a value such a style set on a template part after the style is removed at run time.
 
 ### Larger headings
 
