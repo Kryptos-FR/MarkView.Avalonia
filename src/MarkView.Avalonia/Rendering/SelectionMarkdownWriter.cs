@@ -212,8 +212,8 @@ internal sealed partial class SelectionMarkdownWriter
         {
             switch (inline)
             {
-                case DirectionMark mark:
-                    position += mark.Text!.Length;
+                case DirectionIsolate isolate:
+                    position += isolate.Text!.Length;
                     break;
                 case Run run:
                 {

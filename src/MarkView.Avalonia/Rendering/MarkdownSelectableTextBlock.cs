@@ -299,10 +299,10 @@ public class MarkdownSelectableTextBlock : TextBlock
         {
             switch (inline)
             {
-                case DirectionMark mark:
-                    // A mark the renderer added: laid out, but not copied.
+                case DirectionIsolate isolate:
+                    // An isolate character the renderer added: laid out, but not copied.
                     (embeddedText ??= [])[sb.Length] = string.Empty;
-                    sb.Append(mark.Text);
+                    sb.Append(isolate.Text);
                     break;
                 case Run r: sb.Append(r.Text); break;
                 case LineBreak: sb.Append(Environment.NewLine); break;

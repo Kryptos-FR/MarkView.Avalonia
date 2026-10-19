@@ -30,7 +30,10 @@ around it reads, so a Hebrew paragraph that opens with `` `npm install` `` stays
 
 Code blocks, math blocks, Mermaid diagrams and front matter are always left to right, wherever they
 are. Inline code inside right-to-left text keeps its own order too: `foo()` shows as `foo()`, not
-`()foo`. Copying leaves out the invisible left-to-right marks the viewer adds around it.
+`()foo`. The viewer wraps it in a Unicode left-to-right isolate (U+2066…U+2069), the way HTML isolates
+an element that has its own direction, so the sentence around it keeps its order: in
+`` הריצו `foo()` 3 פעמים ``, the `3` stays after the code in reading order. Copying leaves the isolate
+characters out.
 
 ## The HTML `dir` attribute
 
@@ -96,6 +99,3 @@ AppBuilder.Configure<App>()
 
 - The direction is chosen per block, not per line or per sentence: a right-to-left phrase inside a
   left-to-right paragraph is ordered by the bidirectional algorithm within that paragraph.
-- Avalonia 12.1 does not honour the Unicode directional isolates (U+2066…U+2069), so they cannot be
-  used to keep a phrase's order inside text of the other direction; left-to-right marks (U+200E)
-  around it work.

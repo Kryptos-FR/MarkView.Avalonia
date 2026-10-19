@@ -276,54 +276,69 @@ public class TextDirectionRenderingTests
         [.. Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(root.Children)).Inlines!];
 
     [AvaloniaFact]
-    public void Inline_code_in_right_to_left_text_is_marked()
+    public void Inline_code_in_right_to_left_text_is_isolated()
     {
         var inlines = Inlines(Render("השתמשו ב-`foo()` כאן"));
 
         Assert.Equal(5, inlines.Length);
-        Assert.Equal("\u200E", Assert.IsType<DirectionMark>(inlines[1]).Text);
+        Assert.Equal("\u2066", Assert.IsType<DirectionIsolate>(inlines[1]).Text);
         var code = Assert.IsType<Run>(inlines[2]);
         Assert.Equal("foo()", code.Text);
         Assert.Contains("markdown-code-inline", code.Classes);
-        Assert.Equal("\u200E", Assert.IsType<DirectionMark>(inlines[3]).Text);
+        Assert.Equal("\u2069", Assert.IsType<DirectionIsolate>(inlines[3]).Text);
     }
 
     [AvaloniaFact]
-    public void Inline_code_in_a_neutral_paragraph_of_a_right_to_left_list_is_marked()
+    public void Inline_code_in_right_to_left_text_reads_left_to_right_and_keeps_the_sentence_order()
+    {
+        // "Run foo() 3 times": the code reads left to right, and the 3 after it stays on its left (after it, in
+        // right-to-left reading order) instead of joining it in one left-to-right run.
+        var paragraph = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(Render("הריצו `foo()` 3 פעמים").Children));
+        paragraph.Measure(new Size(400, double.PositiveInfinity));
+        var layout = paragraph.TextLayout;
+        var text = paragraph.Inlines!.Text!;
+        Rect Character(char c) => Assert.Single(layout.HitTestTextRange(text.IndexOf(c), 1));
+
+        Assert.True(Character('f').Left < Character('(').Left);
+        Assert.True(Character('3').Right <= Character('f').Left);
+    }
+
+    [AvaloniaFact]
+    public void Inline_code_in_a_neutral_paragraph_of_a_right_to_left_list_is_isolated()
     {
         var list = Assert.IsType<StackPanel>(Assert.Single(Render("- `foo()`\n- שלום").Children));
         var paragraph = (MarkdownSelectableTextBlock)((StackPanel)((Grid)list.Children[0]).Children[1]).Children[0];
 
         Assert.Equal(3, paragraph.Inlines!.Count);
-        Assert.IsType<DirectionMark>(paragraph.Inlines[0]);
+        Assert.IsType<DirectionIsolate>(paragraph.Inlines[0]);
     }
 
     [AvaloniaTheory]
     [InlineData("Use `foo()` here")]
     [InlineData("`foo()`")]
-    public void Inline_code_in_left_to_right_or_neutral_text_is_not_marked(string markdown) =>
-        Assert.DoesNotContain(Inlines(Render(markdown)), inline => inline is DirectionMark);
+    public void Inline_code_in_left_to_right_or_neutral_text_is_not_isolated(string markdown) =>
+        Assert.DoesNotContain(Inlines(Render(markdown)), inline => inline is DirectionIsolate);
 
     [AvaloniaFact]
-    public void Inline_code_is_not_marked_without_detection() =>
-        Assert.DoesNotContain(Inlines(Render("השתמשו ב-`foo()` כאן", detect: false)), inline => inline is DirectionMark);
+    public void Inline_code_is_not_isolated_without_detection() =>
+        Assert.DoesNotContain(Inlines(Render("השתמשו ב-`foo()` כאן", detect: false)), inline => inline is DirectionIsolate);
 
     [AvaloniaFact]
-    public void Inline_code_in_a_paragraph_with_dir_rtl_is_marked_without_detection() =>
-        Assert.Contains(Inlines(Render("<p dir=\"rtl\">Use <code>foo()</code></p>", detect: false)), inline => inline is DirectionMark);
+    public void Inline_code_in_a_paragraph_with_dir_rtl_is_isolated_without_detection() =>
+        Assert.Contains(Inlines(Render("<p dir=\"rtl\">Use <code>foo()</code></p>", detect: false)), inline => inline is DirectionIsolate);
 
     [AvaloniaFact]
-    public void The_direction_marks_are_left_out_of_the_copied_text()
+    public void The_isolate_characters_are_left_out_of_the_copied_text()
     {
         var text = MarkdownSelectableTextBlock.ExtractPlainText(new InlineCollection
         {
             new Run("א "),
-            DirectionMark.LeftToRight(),
+            DirectionIsolate.LeftToRight(),
             new Run("foo()"),
-            DirectionMark.LeftToRight(),
+            DirectionIsolate.Pop(),
         }, out var embedded);
 
-        Assert.Equal("א \u200Efoo()\u200E", text);
+        Assert.Equal("א \u2066foo()\u2069", text);
         Assert.Equal(new Dictionary<int, string> { [2] = "", [8] = "" }, embedded);
     }
 

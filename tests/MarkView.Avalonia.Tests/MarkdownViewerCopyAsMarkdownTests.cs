@@ -186,7 +186,7 @@ public class MarkdownViewerCopyAsMarkdownTests
     }
 
     [AvaloniaFact]
-    public void Part_of_right_to_left_text_leaves_out_the_marks_around_its_code()
+    public void Part_of_right_to_left_text_leaves_out_the_isolate_around_its_code()
     {
         using var f = Show("הפקודה `foo()` נשארת שלמה");
 
