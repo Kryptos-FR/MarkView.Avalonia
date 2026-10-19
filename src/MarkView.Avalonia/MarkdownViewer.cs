@@ -622,6 +622,7 @@ public partial class MarkdownViewer : ContentControl
             CodeBlockMaxHeight = CodeBlockMaxHeight,
             AreTaskListsInteractive = AreTaskListsInteractive,
             AreHeadingsFoldable = AreHeadingsFoldable,
+            TimeProvider = TimeProvider,
             IsImageZoomEnabled = IsImageZoomEnabled,
         };
         renderer.LinkClicked += OnLinkClicked;
@@ -1268,6 +1269,9 @@ public partial class MarkdownViewer : ContentControl
     /// </summary>
     private static bool RevealFolded(Control control) =>
         CollapsibleAlert.ExpandAncestors(control) | HeadingFold.Reveal(control);
+
+    /// <summary>The clock the renderer times a language model's reasoning with. Tests replace it.</summary>
+    internal TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>The ids of the rendered document's anchors, for tests.</summary>
     internal IEnumerable<string> AnchorIds => _anchors.Keys;

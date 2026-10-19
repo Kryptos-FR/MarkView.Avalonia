@@ -468,6 +468,29 @@ a right margin. For example, to dim collapsed headings and show their button mor
 </Style>
 ```
 
+### Thinking blocks
+
+A language model's reasoning (see [Thinking blocks](configuration.md#thinking-blocks)).
+
+| Class | Control | Element |
+|-------|---------|---------|
+| `markdown-thinking` | `Border` | The whole block; has the `:expanded` pseudo-class while the reasoning is shown, and `:thinking` while a streaming session is still receiving it |
+| `markdown-thinking-header` | `TextBlock` | The header ("Thinking…", "Thought for 12 seconds"), which toggles the reasoning |
+| `markdown-thinking-chevron` | `Control` | Fold indicator at the start of the header, like `markdown-alert-chevron` |
+| `markdown-thinking-content` | `Border` | The reasoning, around a `StackPanel` of its blocks |
+
+The header is focusable and toggles the reasoning on click, Enter or Space; the reasoning's visibility is set by
+the control, not by a style. The default theme dims the header and the reasoning (both stay at 4.5:1 or more on
+the page), draws a rule left of the reasoning, and gives the header a transparent background (so the whole row
+is clickable), a hand cursor and an underline when focused from the keyboard. In high contrast, nothing is
+dimmed. For example, to make the header italic while the model is thinking:
+
+```xml
+<Style Selector="Border.markdown-thinking:thinking TextBlock.markdown-thinking-header">
+  <Setter Property="FontStyle" Value="Italic" />
+</Style>
+```
+
 ### HTML subset
 
 The HTML elements of the [HTML subset](configuration.md#html-subset). The others render with the controls and classes of their markdown counterparts: `<b>`, `<i>`, `<ins>`, `<del>` as `Bold`, `Italic`, `Underline` and a struck-through `Span`; `<mark>` as `Span.markdown-marked`; `<sub>` and `<sup>` as `markdown-subscript` and `markdown-superscript`; `<code>` as `markdown-code-inline`; `<a>` as `markdown-link`; `<img>` as `markdown-image`; `<p>` and headings as `markdown-paragraph` and `markdown-h1`…`markdown-h6`; `<hr>` as `markdown-thematic-break`.

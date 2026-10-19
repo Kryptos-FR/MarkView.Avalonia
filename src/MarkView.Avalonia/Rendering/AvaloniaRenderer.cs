@@ -106,6 +106,36 @@ public class AvaloniaRenderer : RendererBase
         return expanded => _foldStates[key] = expanded;
     }
 
+    // When a streaming session first rendered each thinking block still in progress, and how long each one
+    // it saw complete took, by the block's start in the source.
+    private readonly Dictionary<int, long> _thinkingStarts = [];
+    private readonly Dictionary<int, TimeSpan> _thinkingDurations = [];
+
+    /// <summary>The clock thinking blocks are timed with. Tests replace it.</summary>
+    internal TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+
+    /// <summary>
+    /// Times a language model's reasoning: notes when <paramref name="block"/> is first rendered while
+    /// <paramref name="isThinking"/>, and returns how long it took once it is rendered complete after that, or
+    /// <c>null</c> when this document never saw it in progress.
+    /// </summary>
+    internal TimeSpan? MeasureThinking(Block block, bool isThinking)
+    {
+        var start = block.Span.Start;
+        if (_thinkingDurations.TryGetValue(start, out var duration))
+            return duration;
+        if (isThinking)
+        {
+            _thinkingStarts.TryAdd(start, TimeProvider.GetTimestamp());
+            return null;
+        }
+        if (!_thinkingStarts.Remove(start, out var started))
+            return null;
+        duration = TimeProvider.GetElapsedTime(started);
+        _thinkingDurations[start] = duration;
+        return duration;
+    }
+
     // Panels holding a heading rendered collapsed, whose section must be hidden once the panel is complete.
     private readonly List<Panel> _pendingHeadingFolds = [];
 
@@ -342,7 +372,7 @@ public class AvaloniaRenderer : RendererBase
     }
 
     /// <summary>
-    /// What <see cref="Render"/> does before writing: resets the anchors, headings, slugs and fold states, and places
+    /// What <see cref="Render"/> does before writing: resets the anchors, headings, slugs, fold states and thinking times, and places
     /// the custom fence renderer (once, however many times a document begins).
     /// </summary>
     internal void BeginDocument()
@@ -352,6 +382,8 @@ public class AvaloniaRenderer : RendererBase
         _headingEntries.Clear();
         _foldStates.Clear();
         _pendingHeadingFolds.Clear();
+        _thinkingStarts.Clear();
+        _thinkingDurations.Clear();
         SlugGenerator.Reset();
         PlaceCustomFenceRenderer();
     }
@@ -456,6 +488,7 @@ public class AvaloniaRenderer : RendererBase
         ObjectRenderers.Add(new FigureRenderer());
         ObjectRenderers.Add(new DefinitionListRenderer());
         ObjectRenderers.Add(new CustomContainerRenderer());
+        ObjectRenderers.Add(new ThinkingBlockRenderer());
         ObjectRenderers.Add(new FooterBlockRenderer());
 
         // Inline renderers

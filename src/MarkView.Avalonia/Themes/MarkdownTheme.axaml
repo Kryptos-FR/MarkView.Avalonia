@@ -564,6 +564,29 @@
     <Setter Property="TextDecorations" Value="Underline" />
   </Style>
 
+  <!-- Thinking blocks (UseThinkingBlocks): a language model's reasoning, folded under a header; the border has
+       :expanded while the reasoning is shown, and :thinking while a streaming session is still receiving it.
+       The reasoning is dimmed, and still 4.5:1 or more on the page. -->
+  <Style Selector="Border.markdown-thinking">
+    <Setter Property="Margin" Value="0,4" />
+  </Style>
+  <Style Selector="TextBlock.markdown-thinking-header">
+    <!-- A background makes the whole header row clickable, not just its glyphs -->
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Opacity" Value="0.75" />
+  </Style>
+  <Style Selector="TextBlock.markdown-thinking-header:focus-visible">
+    <Setter Property="TextDecorations" Value="Underline" />
+  </Style>
+  <Style Selector="Border.markdown-thinking-content">
+    <Setter Property="BorderBrush" Value="#40808080" />
+    <Setter Property="BorderThickness" Value="2,0,0,0" />
+    <Setter Property="Padding" Value="12,0,0,0" />
+    <Setter Property="Margin" Value="4,0,0,0" />
+    <Setter Property="Opacity" Value="0.8" />
+  </Style>
+
   <!-- Abbreviations -->
   <Style Selector="TextBlock.markdown-abbr">
     <Setter Property="TextDecorations" Value="Underline" />
@@ -715,6 +738,13 @@
     <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
   </Style>
   <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(Control).markdown-heading-fold">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast TextBlock.markdown-thinking-header">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-thinking-content">
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
     <Setter Property="Opacity" Value="1" />
   </Style>
 

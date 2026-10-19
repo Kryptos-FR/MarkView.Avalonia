@@ -19,6 +19,7 @@ Avalonia forwards automation peers to each platform's accessibility API: UI Auto
 | Blockquote, figure | `Group`. A figure is named by its caption. |
 | Alert (`> [!NOTE]`) | `Group`, named by its title ("NOTE", "TIP", …), so the alert kind is announced as text and not only shown by colour |
 | `<details>` (`UseHtmlDetails()`) | `Group`, named by its summary |
+| Thinking block (`UseThinkingBlocks()`) | `Group`, named by its header ("Thinking…", "Thought for 12 seconds") |
 | Code block line numbers | Hidden, so only the code is read |
 | Thematic break | `Separator` |
 | Image | `Image`, named by its alt text. An image with empty alt text (`![](…)`) is decorative and hidden, as browsers do with `alt=""`, unless it can be zoomed. |
@@ -50,7 +51,7 @@ Avalonia 12.1.3 has the following gaps:
 
 ## Keyboard
 
-The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a foldable heading's fold button, a code block's or a display formula's copy button, an interactive task's check box, a zoomable image or Mermaid diagram, a video embed. `Enter` or `Space` folds or unfolds a focused alert, `<details>` block or heading section and ticks a focused task; `Enter` or `Space` on a copy button copies the code or the formula's TeX source, and on an image opens it in the lightbox. In the lightbox, `Tab` moves between the lightbox, its close button and its zoom buttons only; `+` and `-` zoom, `0` fits the picture again, the arrow keys pan it, and `Escape` closes the lightbox and gives the focus back to the image.
+The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a thinking block's header, a foldable heading's fold button, a code block's or a display formula's copy button, an interactive task's check box, a zoomable image or Mermaid diagram, a video embed. `Enter` or `Space` folds or unfolds a focused alert, `<details>` block, thinking block or heading section and ticks a focused task; `Enter` or `Space` on a copy button copies the code or the formula's TeX source, and on an image opens it in the lightbox. In the lightbox, `Tab` moves between the lightbox, its close button and its zoom buttons only; `+` and `-` zoom, `0` fits the picture again, the arrow keys pan it, and `Escape` closes the lightbox and gives the focus back to the image.
 
 | Key | Action |
 |---|---|
