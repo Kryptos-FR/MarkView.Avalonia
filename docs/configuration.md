@@ -18,6 +18,8 @@
 | `WrapCodeBlockLines` | `bool` | `false` | Wraps code lines longer than the block's width instead of letting them run past it. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `CodeBlockMaxHeight` | `double` | `PositiveInfinity` | Maximum height of a code block (toolbar excluded); a taller block scrolls vertically inside itself. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `AreTaskListsInteractive` | `bool` | `false` | Renders task-list items as checkboxes the user can toggle, raising `TaskToggled`. Setting it re-renders the document. See [Interactive task lists](#interactive-task-lists). |
+| `IsNavigationEnabled` | `bool` | `true` | Opens a clicked link to another Markdown document of the same origin in the viewer, and lets the mouse's back/forward buttons and `Alt+Left`/`Alt+Right` go back and forward. See [Navigating between documents](#navigating-between-documents). |
+| `CanGoBack` / `CanGoForward` | `bool` | `false` | Get-only. Whether `GoBack()` / `GoForward()` have somewhere to go. See [Navigating between documents](#navigating-between-documents). |
 | `IsImageZoomEnabled` | `bool` | `true` | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, where it can be zoomed and panned. See [Image zoom](#image-zoom). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
@@ -423,22 +425,23 @@ viewer.Markdown = File.ReadAllText("README.md");
 
 ## LinkClicked event
 
-By default, clicking an external link opens it with the platform's `ILauncher`
-(the OS default browser/app on desktop, an intent on mobile, a new tab on
-WebAssembly) — no application code required. Only `http`, `https` and `mailto` links are opened
-this way; see [Links the viewer opens](#links-the-viewer-opens).
+By default, clicking a link to another Markdown document next to the current one opens it in the
+viewer (see [Navigating between documents](#navigating-between-documents)), and clicking an external
+link opens it with the platform's `ILauncher` (the OS default browser/app on desktop, an intent on
+mobile, a new tab on WebAssembly) — no application code required. Only `http`, `https` and `mailto`
+links are launched this way; see [Links the viewer opens](#links-the-viewer-opens).
 
 `LinkClicked` is an Avalonia **routed event** that bubbles up the visual tree, raised
-before that default launch happens. Subscribe to override the behavior for specific
-links — set `e.Handled = true` to suppress the default launch:
+before either happens. Subscribe to override the behavior for specific
+links — set `e.Handled = true` to suppress the default:
 
 ```csharp
 viewer.LinkClicked += (_, e) =>
 {
-    if (e.Url.EndsWith(".md"))
+    if (e.Url.StartsWith("https://github.com/"))
     {
-        // Render the linked document in-place instead of opening it externally.
-        viewer.Source = new Uri(e.Url);
+        // Open GitHub links in the app's own browser tab instead.
+        BrowserTab.Open(e.Url);
         e.Handled = true;
     }
 };
@@ -456,6 +459,55 @@ MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>((sender, e) =>
 ```
 
 The event is raised for all hyperlinks, including anchor links (`#heading`). In-document anchor links are handled automatically by the viewer before raising the event — navigation happens regardless of whether you subscribe, and the default external-link launch never runs for them.
+
+### Navigating between documents
+
+A clicked link to another Markdown document opens in the viewer, as a new `Source`, when
+`IsNavigationEnabled` is `true` (the default) and:
+
+- its path ends in `.md` or `.markdown`;
+- it has the same origin (scheme and host) as the current document: that of `BaseUri`, or of the
+  folder of `Source`. A link from `file:///docs/guide.md` to `install.md` opens in the viewer; one
+  to `https://github.com/…/README.md`, an HTML page about the file, goes to the launcher;
+- no `LinkClicked` handler handled the click.
+
+A `#fragment` scrolls the document to that heading, and a link to a heading of the current document
+(`#install`, or `guide.md#install` from `guide.md`) scrolls without loading it again. Documents of a
+custom scheme open through the [resource resolver](#resource-resolver) like any other `Source`.
+
+The viewer keeps a history, as a browser does:
+
+```csharp
+viewer.GoBack();    // the previous document, scrolled where the reader left it
+viewer.GoForward(); // and back again
+```
+
+```xml
+<Button Content="Back" Click="OnBackClicked" IsEnabled="{Binding #Viewer.CanGoBack}" />
+<Button Content="Forward" Click="OnForwardClicked" IsEnabled="{Binding #Viewer.CanGoForward}" />
+<mv:MarkdownViewer x:Name="Viewer" Source="avares://MyApp/Docs/index.md" />
+```
+
+```csharp
+private void OnBackClicked(object? sender, RoutedEventArgs e) => Viewer.GoBack();
+private void OnForwardClicked(object? sender, RoutedEventArgs e) => Viewer.GoForward();
+```
+
+- Every `Source` that loads is recorded, whether a link or the application set it; a document that
+  fails to load is not. Following a link to a heading is recorded too, so Back returns to where the
+  reader jumped from.
+- Each entry keeps where the document was scrolled when the reader left it, and Back or Forward
+  scrolls back there.
+- Going somewhere new after Back drops the entries Forward would have gone to.
+- Setting `Source` to `null`, or showing another `Markdown` text without a `Source`, starts the
+  history again. The `Markdown` text shown before the first `Source` is the first entry, so Back
+  returns to it.
+- With `IsNavigationEnabled` on, the mouse's back and forward buttons, `Alt+Left`/`Alt+Right`
+  (`Cmd+[`/`Cmd+]` on macOS) and the keyboard's browser keys go back and forward while the pointer
+  is over the viewer or it has keyboard focus. `CanGoBack` and `CanGoForward` notify their changes,
+  for toolbar buttons.
+- With `IsNavigationEnabled` off, links to documents go to `LinkClicked` and the launcher as any
+  other link, and only `GoBack()` and `GoForward()` move in the history.
 
 ### Links the viewer opens
 
