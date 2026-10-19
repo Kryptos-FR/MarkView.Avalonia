@@ -570,7 +570,7 @@ The rendered document is a `Grid` with the `markdown-document` class, so a style
 </Style>
 ```
 
-Prefer it to a `/template/` style on the viewer's `PART_ContentPresenter`: Avalonia keeps a value such a style set on a template part after the style is removed at run time.
+Use this class rather than a `/template/` style on the viewer's `PART_ContentPresenter`. If you remove a `/template/` style while the app is running (for example to switch themes), Avalonia does not undo what it changed, so the document keeps the old margin or width.
 
 ### Larger headings
 
