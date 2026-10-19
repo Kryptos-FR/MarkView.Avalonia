@@ -15,7 +15,17 @@ public class MarkdownViewerDefaultsExtensionsTests
 
         MarkdownViewerDefaults.Extensions.AddMermaid();
 
-        Assert.Single(MarkdownViewerDefaults.Extensions.OfType<MermaidExtension>());
+        Assert.Equal(MermaidStyle.Quiet, Assert.Single(MarkdownViewerDefaults.Extensions.OfType<MermaidExtension>()).Style);
+    }
+
+    [AvaloniaFact]
+    public void AddMermaid_passes_its_style_to_the_extension()
+    {
+        using var _ = new MarkdownViewerDefaultsMermaidScope();
+
+        MarkdownViewerDefaults.Extensions.AddMermaid(MermaidStyle.Tonal);
+
+        Assert.Equal(MermaidStyle.Tonal, Assert.Single(MarkdownViewerDefaults.Extensions.OfType<MermaidExtension>()).Style);
     }
 }
 

@@ -17,8 +17,12 @@ namespace MarkView.Avalonia.Mermaid;
 /// <c>MathBlock</c> subtype) registered before or after this one is never displaced from the
 /// front of the list, regardless of registration order.
 /// </summary>
-public sealed class MermaidExtension : IMarkViewExtension
+/// <param name="style">The visual style diagrams are painted in.</param>
+public sealed class MermaidExtension(MermaidStyle style = MermaidStyle.Quiet) : IMarkViewExtension
 {
+    /// <summary>The visual style diagrams are painted in.</summary>
+    public MermaidStyle Style { get; } = style;
+
     public void Register(AvaloniaRenderer renderer)
     {
         var insertAt = renderer.ObjectRenderers.Count;
@@ -30,6 +34,6 @@ public sealed class MermaidExtension : IMarkViewExtension
                 break;
             }
         }
-        renderer.ObjectRenderers.Insert(insertAt, new MermaidBlockRenderer());
+        renderer.ObjectRenderers.Insert(insertAt, new MermaidBlockRenderer(Style));
     }
 }

@@ -9,6 +9,8 @@ using Avalonia;
 using Avalonia.Media;
 using Avalonia.Styling;
 
+using Mermaider.Models;
+
 using MermaidRenderOptions = Mermaider.Models.RenderOptions;
 
 namespace MarkView.Avalonia.Mermaid;
@@ -20,11 +22,11 @@ namespace MarkView.Avalonia.Mermaid;
 internal static partial class MermaidSvgTheme
 {
     /// <summary>
-    /// Builds render options matching the current Avalonia theme variant. Colours come from
-    /// MermaidTheme.axaml's <c>MarkdownMermaid*</c> brush resources so users can override them;
-    /// the literals here are only a fallback for apps that don't include that theme.
+    /// Builds render options in <paramref name="style"/> matching the current Avalonia theme variant.
+    /// Colours come from MermaidTheme.axaml's <c>MarkdownMermaid*</c> brush resources so users can
+    /// override them; the literals here are only a fallback for apps that don't include that theme.
     /// </summary>
-    internal static MermaidRenderOptions GetRenderOptions()
+    internal static MermaidRenderOptions GetRenderOptions(MermaidStyle style = MermaidStyle.Quiet)
     {
         var app = Application.Current;
         var isDark = app?.ActualThemeVariant == ThemeVariant.Dark;
@@ -36,6 +38,12 @@ internal static partial class MermaidSvgTheme
             Fg = ResolveHex(app, theme, "MarkdownMermaidForeground", isDark ? "#FAFAFA" : "#27272A"),
             Accent = ResolveHex(app, theme, "MarkdownMermaidAccent", isDark ? "#60A5FA" : "#3B82F6"),
             Transparent = false,
+            Style = style switch
+            {
+                MermaidStyle.Blueprint => DiagramStyle.Blueprint,
+                MermaidStyle.Tonal => DiagramStyle.Tonal,
+                _ => DiagramStyle.Quiet,
+            },
         };
     }
 
