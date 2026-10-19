@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MarkView.Avalonia.Demo.MermaidStyles.MermaidStylesDialog"
+             IsVisible="False" Focusable="True"
+             KeyboardNavigation.TabNavigation="Cycle"
+             AutomationProperties.Name="Diagram styles">
+
+  <Panel>
+    <!-- Dims the page; a click on it closes the dialog -->
+    <Border Background="#99000000" PointerPressed="OnBackdropPressed" />
+
+    <Border Margin="32" MaxWidth="1280" Padding="16"
+            Background="{DynamicResource MenuFlyoutPresenterBackground}"
+            BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
+            BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
+            CornerRadius="{DynamicResource OverlayCornerRadius}">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+          <Button x:Name="CloseButton" DockPanel.Dock="Right" Click="OnCloseClicked"
+                  Width="32" Height="32" Padding="0" Background="Transparent" BorderThickness="0"
+                  ToolTip.Tip="Close (Esc)" AutomationProperties.Name="Close">
+            <Path Data="M4,4 L12,12 M12,4 L4,12" Width="16" Height="16"
+                  StrokeThickness="1.5" StrokeLineCap="Round"
+                  Stroke="{Binding $parent[Button].Foreground}" />
+          </Button>
+          <TextBlock Text="Diagram styles" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+        </DockPanel>
+        <TextBlock DockPanel.Dock="Top" Margin="0,0,0,12" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TextControlPlaceholderForeground}"
+                   Text="The same diagram in each style, each tab drawn by its own viewer set up with UseMermaid(style). The pages of this demo use the default, Quiet. Click a diagram to zoom into it." />
+        <!-- One tab per style, filled by Show() -->
+        <TabControl x:Name="Tabs" />
+      </DockPanel>
+    </Border>
+  </Panel>
+
+</UserControl>

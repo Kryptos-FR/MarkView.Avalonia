@@ -49,6 +49,12 @@ The **View options** menu (the sliders icon) toggles the viewer settings that ch
 - **Heal incomplete syntax**: `BeginStreaming(healIncompleteSyntax:)`, on by default. Off, the text renders as Markdig parses it at each update, so an unmatched `` ` `` or `**` shows until its closer arrives. A change takes effect at once in a replay: the session is completed and a new one continues from the text streamed so far.
 - **Chunk size** and **Interval**: two sliders, 8 to 64 characters appended every 16 to 256 ms (40 every 20 ms by default). A small chunk every 200 ms or so is the pace of a language model, where the difference healing makes is easy to see. Both take effect at once in a replay.
 
+### Mermaid Diagram Styles
+
+Every Mermaid diagram has a palette button on its top-right corner (*Compare this diagram in each Mermaid style*). It opens a dialog over the page that shows the diagram in each `MermaidStyle` (Quiet, Blueprint, Tonal), one tab per style, each in its own `MarkdownViewer` set up with `UseMermaid(style)`. Escape, the close button or a click outside the dialog closes it. The dialog fills the page, follows the Light/Dark switch and keeps the last style looked at selected; clicking a diagram in it opens the lightbox as on the page.
+
+The button is not a library feature: the demo adds it with `MermaidStylesExtension`, an `IMarkViewExtension` registered after `AddMermaid()` that wraps the `MermaidBlockRenderer` (see `MermaidStyles/`). The same approach adds controls around any block another renderer draws.
+
 ## How the Demo Is Configured
 
 Most configuration is done once in `App.axaml.cs` and applies globally to every `MarkdownViewer` instance. The **Color Extension** page is the exception: its dedicated control sets `Pipeline` and `Extensions` on its own `MarkdownViewer` instance instead, bypassing these app-wide defaults for parsing (see [docs/configuration.md](../../docs/configuration.md#markdig-pipeline) for the precedence rules, and [docs/custom-extensions.md](../../docs/custom-extensions.md) for the extension itself).
@@ -95,6 +101,11 @@ MarkView.Avalonia.Demo/
 │   ├── ColorSpanRenderer.cs      — MarkView.Avalonia renderer
 │   ├── ColorSpanExtension.cs     — MarkView.Avalonia IMarkViewExtension
 │   └── ColorExtensionView.axaml(.cs) — Dedicated control with its own Pipeline/Extensions
+├── MermaidStyles/
+│   ├── MermaidStylesExtension.cs        — Wraps the Mermaid renderer to add a styles button
+│   ├── MermaidStylesButtonRenderer.cs   — Draws the diagram, then the button over its corner
+│   ├── MermaidStylesRequestedEventArgs.cs — Routed event raised by the button
+│   └── MermaidStylesDialog.axaml(.cs)   — The diagram in each MermaidStyle, one viewer per style
 └── Assets/
     ├── avalonia-logo.png
     ├── showcase.md
