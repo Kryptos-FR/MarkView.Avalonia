@@ -13,7 +13,7 @@ using MarkView.Avalonia.Automation;
 
 namespace MarkView.Avalonia;
 
-[PseudoClasses(":high-contrast")]
+[PseudoClasses(":high-contrast", ":copy-on-hover")]
 public partial class MarkdownViewer : ICustomKeyboardNavigation
 {
     /// <summary>

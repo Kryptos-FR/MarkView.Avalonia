@@ -29,7 +29,7 @@ public class MathExtensionTests
         pipeline.Setup(renderer);
         renderer.Render(document);
 
-        var border = Assert.IsType<Border>(Assert.Single(renderer.RootPanel.Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(renderer.RootPanel.Children));
         Assert.Contains("markdown-math-block", border.Classes);
     }
 
@@ -47,7 +47,7 @@ public class MathExtensionTests
         pipeline.Setup(renderer);
         renderer.Render(document);
 
-        var border = Assert.IsType<Border>(Assert.Single(renderer.RootPanel.Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(renderer.RootPanel.Children));
         Assert.Contains("markdown-math-block", border.Classes);
     }
 
@@ -64,7 +64,7 @@ public class MathExtensionTests
         pipeline.Setup(renderer);
         renderer.Render(document);
 
-        var border = Assert.IsType<Border>(Assert.Single(renderer.RootPanel.Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(renderer.RootPanel.Children));
         Assert.Contains("markdown-math-block", border.Classes);
     }
 
@@ -100,7 +100,7 @@ public class MathExtensionTests
 
         var contentGrid = Assert.IsType<Grid>(viewer.Content);
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
-        var border = Assert.IsType<Border>(Assert.Single(panel.Children));
+        var border = MathBlockAssert.MathBorder(Assert.Single(panel.Children));
         Assert.Contains("markdown-math-block", border.Classes);
         var image = Assert.IsType<Image>(border.Child);
         Assert.NotNull(image.Source);
@@ -129,7 +129,7 @@ public class MathExtensionTests
         var panel = Assert.IsType<StackPanel>(contentGrid.Children[0]);
         Assert.Equal(2, panel.Children.Count);
 
-        var mathBorder = Assert.IsType<Border>(panel.Children[0]);
+        var mathBorder = MathBlockAssert.MathBorder(panel.Children[0]);
         Assert.Contains("markdown-math-block", mathBorder.Classes);
         var mathImage = Assert.IsType<Image>(mathBorder.Child);
         Assert.NotNull(mathImage.Source);
@@ -206,7 +206,7 @@ public class MathExtensionTests
         var panel = RenderedPanel(viewer);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(panel.Children[0]);
         Assert.IsType<Image>(textBlock.Inlines!.OfType<InlineUIContainer>().Single().Child);
-        var border = Assert.IsType<Border>(panel.Children[1]);
+        var border = MathBlockAssert.MathBorder(panel.Children[1]);
         Assert.Contains("markdown-math-block", border.Classes);
     }
 

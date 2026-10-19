@@ -56,7 +56,7 @@ internal static class CodeBlockToolbar
         }
         if (showCopyButton)
         {
-            var button = CreateCopyButton(GetCode(block));
+            var button = CreateCopyButton(GetCode(block), MarkdownCopyOrigin.CodeBlock);
             Grid.SetColumn(button, 1);
             toolbar.Children.Add(button);
         }
@@ -177,7 +177,12 @@ internal static class CodeBlockToolbar
         _ => null,
     };
 
-    private static Button CreateCopyButton(string code)
+    /// <summary>
+    /// Creates a <c>markdown-code-copy</c> button that copies <paramref name="text"/>, reported to the
+    /// viewer's <see cref="MarkdownViewer.CopyingToClipboard"/> handlers as coming from
+    /// <paramref name="origin"/>, and takes the <c>copied</c> class for a moment once it did.
+    /// </summary>
+    internal static Button CreateCopyButton(string text, MarkdownCopyOrigin origin)
     {
         // The icon's geometry, the tooltip and the accessible name come from the theme, so they
         // can be restyled or translated, and can change with the "copied" class.
@@ -191,7 +196,7 @@ internal static class CodeBlockToolbar
             try
             {
                 // In a viewer, the copy goes through its CopyingToClipboard event.
-                if (!await CopyAsync(button, code))
+                if (!await CopyAsync(button, origin, text))
                     return;
             }
             catch (Exception)
@@ -209,18 +214,18 @@ internal static class CodeBlockToolbar
     }
 
     /// <summary>
-    /// Copies <paramref name="code"/> through the viewer <paramref name="button"/> is in, or straight to the
+    /// Copies <paramref name="text"/> through the viewer <paramref name="button"/> is in, or straight to the
     /// clipboard when it is in none. Returns whether anything was written.
     /// </summary>
-    private static async Task<bool> CopyAsync(Button button, string code)
+    private static async Task<bool> CopyAsync(Button button, MarkdownCopyOrigin origin, string text)
     {
         if (button.FindAncestorOfType<MarkdownViewer>() is { } viewer)
-            return await viewer.CopyAsync(MarkdownCopyOrigin.CodeBlock, code);
+            return await viewer.CopyAsync(origin, text);
 
         if (TopLevel.GetTopLevel(button)?.Clipboard is not { } clipboard)
             return false;
-        // Like a copied selection, the code gets the platform's line endings.
-        await clipboard.SetTextAsync(code.ReplaceLineEndings());
+        // Like a copied selection, the text gets the platform's line endings.
+        await clipboard.SetTextAsync(text.ReplaceLineEndings());
         return true;
     }
 

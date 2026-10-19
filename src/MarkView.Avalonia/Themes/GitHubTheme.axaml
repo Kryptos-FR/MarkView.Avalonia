@@ -234,6 +234,13 @@
   <Style Selector="Button.markdown-code-copy:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="BorderBrush" Value="{DynamicResource MarkdownCodeCopyButtonBorder}" />
   </Style>
+  <!-- The copy button is wider here; keep the formula clear of it, and the button lined up with a code block's -->
+  <Style Selector="Grid.markdown-math-container > Border">
+    <Setter Property="Margin" Value="38,0" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy.markdown-math-copy">
+    <Setter Property="Margin" Value="0,0,6,0" />
+  </Style>
 
   <!-- Inline code: monospace at 85% of the paragraph's size (but full size in a heading) -->
   <Style Selector="Run.markdown-code-inline">
