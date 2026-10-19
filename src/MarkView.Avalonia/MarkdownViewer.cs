@@ -388,6 +388,8 @@ public partial class MarkdownViewer : ContentControl
 
     static MarkdownViewer()
     {
+        // Font sizes only scale on values set after the coercion is registered, so before any document exists.
+        TextScaling.Register();
         MarkdownProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnMarkdownChanged());
         PipelineProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         BaseUriProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
@@ -639,6 +641,7 @@ public partial class MarkdownViewer : ContentControl
         contentGrid.AddHandler(InputElement.ContextRequestedEvent, OnContentContextRequested);
 
         Content = contentGrid;
+        UpdateTextScale();
         // The image it shows may not be part of the new document. Closed once the old document is gone,
         // so that focus does not return to one of its controls.
         CloseLightbox();

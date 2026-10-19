@@ -46,6 +46,7 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
         MarkdownSelection.SetCopyText(border, obj is BracketMathBlock ? $"\\[\n{source}\n\\]" : $"$$\n{source}\n$$");
 
         ThemeTracking.ReapplyOnThemeChange(border, ApplyTheme);
+        MathFormulaRenderer.RerenderOnTextScaleChange(border, ApplyTheme);
 
         ApplyTheme();
         renderer.WriteBlock(border);
@@ -54,7 +55,7 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
         {
             try
             {
-                image.Source = MathFormulaRenderer.Render(source, MathFormulaRenderer.GetThemeTextColor());
+                image.Source = MathFormulaRenderer.Render(source, MathFormulaRenderer.GetThemeTextColor(), MathFormulaRenderer.FontSizeIn(border));
             }
             catch (Exception ex)
             {

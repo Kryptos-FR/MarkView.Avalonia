@@ -10,6 +10,7 @@ using Avalonia.Platform;
 using Avalonia.VisualTree;
 
 using MarkView.Avalonia.Automation;
+using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia;
 
@@ -28,8 +29,28 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
     public static readonly DirectProperty<MarkdownViewer, bool> IsHighContrastProperty =
         AvaloniaProperty.RegisterDirect<MarkdownViewer, bool>(nameof(IsHighContrast), o => o.IsHighContrast);
 
+    /// <summary>
+    /// Defines the <see cref="TextScale"/> property.
+    /// </summary>
+    public static readonly StyledProperty<double> TextScaleProperty =
+        AvaloniaProperty.Register<MarkdownViewer, double>(nameof(TextScale), 1.0,
+            validate: scale => scale > 0 && double.IsFinite(scale));
+
+    /// <summary>
+    /// Defines the <see cref="FollowSystemTextScale"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> FollowSystemTextScaleProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(FollowSystemTextScale), true);
+
+    /// <summary>
+    /// Defines the <see cref="EffectiveTextScale"/> property.
+    /// </summary>
+    public static readonly DirectProperty<MarkdownViewer, double> EffectiveTextScaleProperty =
+        AvaloniaProperty.RegisterDirect<MarkdownViewer, double>(nameof(EffectiveTextScale), o => o.EffectiveTextScale);
+
     private IPlatformSettings? _platformSettings;
     private bool _platformHighContrast;
+    private Window? _activationWindow;
 
     /// <summary>
     /// Gets or sets when the viewer uses its high-contrast palette. Defaults to
@@ -51,6 +72,37 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         private set => SetAndRaise(IsHighContrastProperty, ref field, value);
     }
 
+    /// <summary>
+    /// Gets or sets the factor applied to every font size of the document, on top of the system text scale
+    /// (<see cref="FollowSystemTextScale"/>): 1.5 shows the text 50% larger. Headings, code, alerts and the sizes set
+    /// by theme presets or custom styles all scale; images, diagrams and spacing don't. Defaults to 1.
+    /// </summary>
+    public double TextScale
+    {
+        get => GetValue(TextScaleProperty);
+        set => SetValue(TextScaleProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether the document's font sizes follow the text size the user chose in the operating
+    /// system (<see cref="SystemTextScale.Factor"/>). Defaults to <c>true</c>.
+    /// </summary>
+    public bool FollowSystemTextScale
+    {
+        get => GetValue(FollowSystemTextScaleProperty);
+        set => SetValue(FollowSystemTextScaleProperty, value);
+    }
+
+    /// <summary>
+    /// Gets the factor applied to the document's font sizes: <see cref="TextScale"/>, times the system text scale
+    /// while <see cref="FollowSystemTextScale"/> is <c>true</c>.
+    /// </summary>
+    public double EffectiveTextScale
+    {
+        get;
+        private set => SetAndRaise(EffectiveTextScaleProperty, ref field, value);
+    } = 1;
+
     /// <summary>The text of the document's first heading, if it has one.</summary>
     internal string? FirstHeadingText => _headingEntries.Count > 0 ? _headingEntries[0].Text : null;
 
@@ -60,6 +112,9 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         base.OnPropertyChanged(change);
         if (change.Property == HighContrastModeProperty)
             UpdateHighContrast();
+        else if (change.Property == TextScaleProperty || change.Property == FollowSystemTextScaleProperty
+                 || change.Property == FontSizeProperty)
+            UpdateTextScale();
     }
 
     /// <inheritdoc />
@@ -80,6 +135,14 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         }
         // Stryker disable once Statement : see above
         UpdateHighContrast();
+
+        SystemTextScale.Changed += OnSystemTextScaleChanged;
+        // Avalonia raises no event when the user changes the text size, so it is read again when they come back
+        // to the application, e.g. from the system settings.
+        _activationWindow = TopLevel.GetTopLevel(this) as Window;
+        if (_activationWindow is not null)
+            _activationWindow.Activated += OnWindowActivated;
+        UpdateTextScale();
     }
 
     /// <inheritdoc />
@@ -90,6 +153,10 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
             _platformSettings.ColorValuesChanged -= OnPlatformColorValuesChanged;
         _platformSettings = null;
         // Stryker restore all
+        SystemTextScale.Changed -= OnSystemTextScaleChanged;
+        if (_activationWindow is not null)
+            _activationWindow.Activated -= OnWindowActivated;
+        _activationWindow = null;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -134,6 +201,18 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
     {
         _platformHighContrast = e.ContrastPreference == ColorContrastPreference.High;
         UpdateHighContrast();
+    }
+
+    private static void OnWindowActivated(object? sender, EventArgs e) => SystemTextScale.Refresh();
+
+    private void OnSystemTextScaleChanged(object? sender, EventArgs e) => UpdateTextScale();
+
+    /// <summary>Applies the effective text scale to the rendered document.</summary>
+    private void UpdateTextScale()
+    {
+        EffectiveTextScale = TextScale * (FollowSystemTextScale ? SystemTextScale.Factor : 1);
+        if (Content is Grid document)
+            TextScaling.Apply(document, EffectiveTextScale, FontSize);
     }
 
     private void UpdateHighContrast()

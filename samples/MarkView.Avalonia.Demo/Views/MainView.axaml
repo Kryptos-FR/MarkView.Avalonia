@@ -157,6 +157,17 @@
               <MenuItem Header="Clickable tasks" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.AreTaskListsInteractive, Mode=TwoWay}"
                         ToolTip.Tip="Render task-list items as checkboxes you can toggle" />
+              <MenuItem StaysOpenOnClick="True"
+                        ToolTip.Tip="Scales every font size of the document, on top of the text size chosen in the system settings.">
+                <MenuItem.Header>
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding #MarkdownView.EffectiveTextScale, StringFormat='Text size: {0:P0}'}" />
+                    <Slider Minimum="0.5" Maximum="2" TickFrequency="0.1" IsSnapToTickEnabled="True" Width="240"
+                            Value="{Binding #MarkdownView.TextScale, Mode=TwoWay}"
+                            AutomationProperties.Name="Text size" />
+                  </StackPanel>
+                </MenuItem.Header>
+              </MenuItem>
               <Separator />
               <MenuItem Header="Code line numbers" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers, Mode=TwoWay}"

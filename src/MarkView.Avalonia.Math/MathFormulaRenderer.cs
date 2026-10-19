@@ -7,6 +7,8 @@ using Avalonia.Styling;
 
 using CSharpMath.SkiaSharp;
 
+using MarkView.Avalonia.Rendering;
+
 using SkiaSharp;
 
 namespace MarkView.Avalonia.Math;
@@ -20,7 +22,24 @@ internal static class MathFormulaRenderer
     private const int MaxLatexLength = 10_000;
     private const int MaxBraceNestingDepth = 50;
 
-    public static Bitmap Render(string latex, SKColor textColor, float fontSize = 16f)
+    /// <summary>The font size formulas are drawn at, before the document's text scale.</summary>
+    internal const float BaseFontSize = 16f;
+
+    /// <summary>The font size of a formula shown in <paramref name="host"/>: <see cref="BaseFontSize"/> times the document's text scale.</summary>
+    internal static float FontSizeIn(AvaloniaObject host) => BaseFontSize * (float)host.GetValue(TextScaling.ScaleProperty);
+
+    /// <summary>
+    /// Calls <paramref name="rerender"/> each time the text scale of the document showing <paramref name="host"/>
+    /// changes, so the formula is drawn again at its new size rather than stretched.
+    /// </summary>
+    internal static void RerenderOnTextScaleChange(AvaloniaObject host, Action rerender) =>
+        host.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == TextScaling.ScaleProperty)
+                rerender();
+        };
+
+    public static Bitmap Render(string latex, SKColor textColor, float fontSize = BaseFontSize)
     {
         EnsureSafeToRender(latex);
 
