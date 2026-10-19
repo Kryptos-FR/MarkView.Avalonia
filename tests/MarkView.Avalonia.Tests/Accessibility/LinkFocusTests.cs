@@ -225,6 +225,23 @@ public class LinkFocusTests
         Assert.Equal("after", f.FocusedLink);
     }
 
+    [AvaloniaFact]
+    public async Task Tab_moves_past_a_zoomable_image_that_could_not_be_loaded()
+    {
+        // A zoomable image is a stop; the placeholder that replaces it when it fails to load is not.
+        using var f = Show("[before](https://example.com/b) ![Broken](unknown://broken.png) [after](https://example.com/a)");
+        await AsyncTestHelpers.WaitUntilAsync(() =>
+            f.Viewer.GetVisualDescendants().OfType<Border>().Any(b => b.Classes.Contains("markdown-image-failed")));
+        f.Viewer.Focus();
+
+        f.Tab();
+        Assert.Equal("before", f.FocusedLink);
+        f.Tab();
+        Assert.Equal("after", f.FocusedLink);
+        f.Tab(shift: true);
+        Assert.Equal("before", f.FocusedLink);
+    }
+
     private const string Controls = """
         [first](https://example.com/1)
 
