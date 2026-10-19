@@ -83,7 +83,8 @@ public class MarkdownViewerContextMenuTests
         using var f = Show("Alpha");
 
         Assert.Equal(
-            ["markdown-context-copy", "markdown-context-copy-markdown", "markdown-context-copy-link", "markdown-context-select-all"],
+            ["markdown-context-copy", "markdown-context-copy-markdown", "markdown-context-copy-link",
+                "markdown-context-copy-table", "markdown-context-copy-table-markdown", "markdown-context-select-all"],
             f.Flyout.Items.OfType<MenuItem>().Select(i => i.Classes.Single(c => c.StartsWith("markdown-context-"))));
     }
 
@@ -149,11 +150,13 @@ public class MarkdownViewerContextMenuTests
         RightClick(f.Window, At(f.Window, f.Blocks[0], 2));
 
         Assert.True(f.Flyout.IsOpen);
-        Assert.Equal(["Copy", "Copy as Markdown", "Copy link", "Select all"],
+        Assert.Equal(["Copy", "Copy as Markdown", "Copy link", "Copy table", "Copy table as Markdown", "Select all"],
             f.Flyout.Items.OfType<MenuItem>().Select(i => i.Header as string));
         Assert.False(f.Item("copy").IsEnabled);
         Assert.False(f.Item("copy-markdown").IsEnabled);
         Assert.False(f.Item("copy-link").IsVisible);
+        Assert.False(f.Item("copy-table").IsVisible);
+        Assert.False(f.Item("copy-table-markdown").IsVisible);
         Assert.True(f.Item("select-all").IsEnabled);
     }
 
@@ -164,11 +167,14 @@ public class MarkdownViewerContextMenuTests
         f.Window.Resources["StringTextFlyoutCopyText"] = "Copier";
         f.Window.Resources["MarkdownStringCopyAsMarkdown"] = "Copier en Markdown";
         f.Window.Resources["MarkdownStringCopyLink"] = "Copier le lien";
+        f.Window.Resources["MarkdownStringCopyTable"] = "Copier le tableau";
+        f.Window.Resources["MarkdownStringCopyTableAsMarkdown"] = "Copier le tableau en Markdown";
         f.Window.Resources["MarkdownStringSelectAll"] = "Tout sélectionner";
 
         RightClick(f.Window, At(f.Window, f.Blocks[0], 2));
 
-        Assert.Equal(["Copier", "Copier en Markdown", "Copier le lien", "Tout sélectionner"],
+        Assert.Equal(["Copier", "Copier en Markdown", "Copier le lien", "Copier le tableau", "Copier le tableau en Markdown",
+                "Tout sélectionner"],
             f.Flyout.Items.OfType<MenuItem>().Select(i => i.Header as string));
     }
 

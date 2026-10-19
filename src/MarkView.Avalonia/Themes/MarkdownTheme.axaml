@@ -122,6 +122,8 @@
       <!-- Labels of the viewer's context menu; Copy uses StringTextFlyoutCopyText, as a TextBox does -->
       <x:String x:Key="MarkdownStringCopyAsMarkdown">Copy as Markdown</x:String>
       <x:String x:Key="MarkdownStringCopyLink">Copy link</x:String>
+      <x:String x:Key="MarkdownStringCopyTable">Copy table</x:String>
+      <x:String x:Key="MarkdownStringCopyTableAsMarkdown">Copy table as Markdown</x:String>
       <x:String x:Key="MarkdownStringSelectAll">Select all</x:String>
     </ResourceDictionary>
   </Styles.Resources>

@@ -60,6 +60,8 @@ The viewer has a context menu, opened by a right-click or, when the viewer or a 
 | Copy | Copies the selection, as `Ctrl+C` does. Disabled when nothing is selected. |
 | Copy as Markdown | Copies the selection [as Markdown](#copying-as-markdown). Disabled when nothing is selected. |
 | Copy link | Copies the address of the link the menu was opened on, as written in the document. Shown only on a link, under the pointer or focused with `Tab`. |
+| Copy table | Copies the whole table the menu was opened on, whatever is selected, as [tab-separated values](#copying-a-table) and an HTML table. Shown only on a table, under the pointer or holding the focused link. |
+| Copy table as Markdown | Copies that table as [Markdown](#copying-a-table). Shown with Copy table. |
 | Select all | Selects the whole document, as `Ctrl+A` does. |
 
 A right-click on text outside the selection clears it first, as in a text editor; a right-click inside it keeps it, so it can be copied.
@@ -77,6 +79,8 @@ The labels are resources, read each time the menu opens, so they can be translat
 | `StringTextFlyoutCopyText` | `Copy` (the key a `TextBox`'s own menu uses, so a translation of it applies to both) |
 | `MarkdownStringCopyAsMarkdown` | `Copy as Markdown` |
 | `MarkdownStringCopyLink` | `Copy link` |
+| `MarkdownStringCopyTable` | `Copy table` |
+| `MarkdownStringCopyTableAsMarkdown` | `Copy table as Markdown` |
 | `MarkdownStringSelectAll` | `Select all` |
 
 ```xml
@@ -84,17 +88,27 @@ The labels are resources, read each time the menu opens, so they can be translat
   <x:String x:Key="StringTextFlyoutCopyText">Copier</x:String>
   <x:String x:Key="MarkdownStringCopyAsMarkdown">Copier en Markdown</x:String>
   <x:String x:Key="MarkdownStringCopyLink">Copier le lien</x:String>
+  <x:String x:Key="MarkdownStringCopyTable">Copier le tableau</x:String>
+  <x:String x:Key="MarkdownStringCopyTableAsMarkdown">Copier le tableau en Markdown</x:String>
   <x:String x:Key="MarkdownStringSelectAll">Tout sélectionner</x:String>
 </Application.Resources>
 ```
 
-Each item has a style class (`markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-select-all`), for instance to give it an icon or hide it:
+Each item has a style class (`markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-copy-table`, `markdown-context-copy-table-markdown`, `markdown-context-select-all`), for instance to give it an icon or hide it:
 
 ```xml
 <Style Selector="MenuItem.markdown-context-copy-markdown">
   <Setter Property="IsVisible" Value="False" />
 </Style>
 ```
+
+### Copying a table
+
+Copy table writes the table as tab-separated values, one line per row, which a spreadsheet such as Excel, LibreOffice Calc or Google Sheets pastes as cells. Each cell's text is the one selecting it would copy (an image gives its alt text); a tab or line break in a cell becomes a space, and a cell spanning several columns is followed by empty ones. While `IsHtmlCopyEnabled` is on, an HTML `<table>` is written next to it, with the cells' emphasis, code and links, for word processors and web editors (see [HTML on the clipboard](#html-on-the-clipboard)).
+
+Copy table as Markdown writes the table's source text when it is a top-level block of the document, exactly as written. A table inside a list, a quote or an alert is rebuilt from its cells as a normalised Markdown table, without the list or quote around it.
+
+Both copy the whole table, whatever is selected, and leave the selection as it is.
 
 ## Selection changes
 
@@ -125,13 +139,13 @@ The event args carry no text, so raising the event allocates no string. `Selecte
 
 ## Changing what is copied
 
-`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C`, `CopyToClipboardAsync()` or `CopyAsMarkdownAsync()`), when the [copy button](configuration.md#code-block-toolbar) of a code block or a [display formula](configuration.md#copying-a-formula) is clicked, and when the [context menu](#context-menu) copies a link. It is not raised when there is nothing to copy.
+`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C`, `CopyToClipboardAsync()` or `CopyAsMarkdownAsync()`), when the [copy button](configuration.md#code-block-toolbar) of a code block or a [display formula](configuration.md#copying-a-formula) is clicked, and when the [context menu](#context-menu) copies a link or a table. It is not raised when there is nothing to copy.
 
 | Property | Meaning |
 |----------|---------|
-| `Origin` | What is copied: `MarkdownCopyOrigin.Selection`, `MarkdownCopyOrigin.SelectionAsMarkdown`, `MarkdownCopyOrigin.CodeBlock`, `MarkdownCopyOrigin.MathBlock` (a display formula's TeX source) or `MarkdownCopyOrigin.Link` |
+| `Origin` | What is copied: `MarkdownCopyOrigin.Selection`, `MarkdownCopyOrigin.SelectionAsMarkdown`, `MarkdownCopyOrigin.CodeBlock`, `MarkdownCopyOrigin.MathBlock` (a display formula's TeX source), `MarkdownCopyOrigin.Link`, `MarkdownCopyOrigin.Table` (tab-separated values) or `MarkdownCopyOrigin.TableAsMarkdown` |
 | `Text` | The text to write, lines separated by `\n`. Set it to change what is written; it is written with the platform's line endings. Set to `null` or `""`, nothing is written. |
-| `Html` | The [HTML](#html-on-the-clipboard) written next to the text, for `Selection` only; `null` otherwise, and when `IsHtmlCopyEnabled` is off or the platform has no HTML format. Set it to change or drop the HTML. |
+| `Html` | The [HTML](#html-on-the-clipboard) written next to the text, for `Selection` and `Table` only; `null` otherwise, and when `IsHtmlCopyEnabled` is off or the platform has no HTML format. Set it to change or drop the HTML. |
 | `Cancel` | Set to `true` to write nothing, for instance when the application writes the clipboard itself. A copy button then shows no confirmation. |
 
 ```csharp
