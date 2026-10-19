@@ -13,12 +13,15 @@ namespace MarkView.Avalonia.Parsing;
 /// </summary>
 /// <remarks>
 /// With <see cref="HtmlDetailsExtension"/> in the same pipeline, in either order, the details elements are grouped
-/// first, keeping the HTML text inside them (and their summary) as HTML for this extension to build.
+/// first, keeping the HTML text inside them (and their summary) as HTML for this extension to build. Neither
+/// builds anything in another <see cref="HtmlMode"/> than <see cref="HtmlMode.SafeSubset"/>.
 /// </remarks>
 internal sealed class HtmlSubsetExtension : IMarkdownExtension
 {
     public void Setup(MarkdownPipelineBuilder pipeline)
     {
+        if (!HtmlModeExtension.BuildsHtml(pipeline))
+            return;
         if (pipeline.Extensions.Contains<HtmlDetailsExtension>())
             pipeline.DocumentProcessed += document => HtmlDetailsGrouper.Process(document, keepHtml: true);
         pipeline.DocumentProcessed += HtmlSubsetGrouper.Process;

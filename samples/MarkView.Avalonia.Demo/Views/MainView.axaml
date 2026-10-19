@@ -168,6 +168,16 @@
                         IsChecked="{Binding IsCodeHeightLimited, Mode=TwoWay}"
                         ToolTip.Tip="Cap code blocks at 160 pixels; taller blocks scroll inside themselves" />
               <Separator />
+              <MenuItem Header="HTML subset" ToggleType="Radio" GroupName="HtmlMode"
+                        IsChecked="{Binding IsHtmlSafeSubset, Mode=TwoWay}"
+                        ToolTip.Tip="Render the HTML READMEs use (centered headers, badges, kbd, details) with native controls; other tags are dropped (HtmlMode.SafeSubset)" />
+              <MenuItem Header="HTML as text" ToggleType="Radio" GroupName="HtmlMode"
+                        IsChecked="{Binding IsHtmlEscaped, Mode=TwoWay}"
+                        ToolTip.Tip="Show HTML tags as the text they were typed as, as for chat messages (HtmlMode.Escape)" />
+              <MenuItem Header="No HTML" ToggleType="Radio" GroupName="HtmlMode"
+                        IsChecked="{Binding IsHtmlIgnored, Mode=TwoWay}"
+                        ToolTip.Tip="Render no HTML: tags are dropped and HTML blocks hidden (HtmlMode.Ignore)" />
+              <Separator />
               <MenuItem Header="Stream the document" Click="OnStreamClicked"
                         IsEnabled="{Binding !IsColorExtensionSelected}"
                         ToolTip.Tip="Replay the page through a streaming session, with the chunk size and interval below, following the end. Changing the page, opening a file or changing a view option above stops the replay." />
@@ -206,6 +216,7 @@
     <Grid>
       <mv:MarkdownViewer x:Name="MarkdownView"
                          Source="{Binding Source}" Markdown="{Binding Markdown}" BaseUri="{Binding BaseUri}"
+                         Pipeline="{Binding Pipeline}"
                          AutoScrollToEnd="True"
                          Classes.custom-styled="{Binding IsCustomStyled}"
                          CodeBlockMaxHeight="{Binding CodeBlockMaxHeight}"

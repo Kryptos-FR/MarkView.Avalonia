@@ -100,13 +100,42 @@ public static class MarkdownExtensions
     /// </list>
     /// Only the <c>href</c>, <c>src</c>, <c>alt</c>, <c>title</c>, <c>width</c>, <c>height</c> and <c>align</c>
     /// attributes are read. Any other tag, and a tag without its match, is dropped, and the text around it
-    /// shows; the content of <c>&lt;script&gt;</c> and <c>&lt;style&gt;</c> is dropped too. Part of
-    /// <see cref="UseGitHubExtensions"/> and <see cref="UseSupportedExtensions"/>.
+    /// shows; the content of <c>&lt;script&gt;</c> and <c>&lt;style&gt;</c> is dropped too. So is the content of
+    /// <c>&lt;svg&gt;</c>, but a tag that names no HTML element, such as the <c>&lt;string&gt;</c> of
+    /// <c>List&lt;string&gt;</c>, shows as text. Part of <see cref="UseGitHubExtensions"/> and
+    /// <see cref="UseSupportedExtensions"/>; <see cref="UseHtmlMode"/> turns it off.
     /// </summary>
     public static MarkdownPipelineBuilder UseHtmlSubset(this MarkdownPipelineBuilder builder)
     {
         builder.Extensions.AddIfNotAlready<Parsing.HtmlSubsetExtension>();
         return builder;
+    }
+
+    /// <summary>
+    /// Sets how the pipeline treats HTML, whichever extensions are added before or after it; the last call wins.
+    /// <see cref="HtmlMode.SafeSubset"/> renders the HTML subset and details blocks (see
+    /// <see cref="UseHtmlSubset"/> and <see cref="UseHtmlDetails"/>), and adds them if needed;
+    /// <see cref="HtmlMode.Escape"/> shows HTML as literal text, and <see cref="HtmlMode.Ignore"/> renders none.
+    /// Without it, a pipeline renders the HTML of the extensions it has: <see cref="UseGitHubExtensions"/> and
+    /// <see cref="UseSupportedExtensions"/> render the subset.
+    /// </summary>
+    /// <example>
+    /// For the messages of a chat, whose <c>&lt;tags&gt;</c> are text:
+    /// <code>
+    /// MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
+    ///     .UseGitHubExtensions()
+    ///     .UseHtmlMode(HtmlMode.Escape)
+    ///     .Build();
+    /// </code>
+    /// </example>
+    public static MarkdownPipelineBuilder UseHtmlMode(this MarkdownPipelineBuilder builder, HtmlMode mode)
+    {
+        if (builder.Extensions.Find<Parsing.HtmlModeExtension>() is { } extension)
+            extension.Mode = mode;
+        else
+            builder.Extensions.Add(new Parsing.HtmlModeExtension(mode));
+
+        return mode == HtmlMode.SafeSubset ? builder.UseHtmlDetails().UseHtmlSubset() : builder;
     }
 
     /// <summary>

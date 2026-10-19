@@ -11,13 +11,13 @@ namespace MarkView.Avalonia.Parsing;
 /// Markdig has parsed a document (see <see cref="HtmlDetailsGrouper"/>). Added by
 /// <see cref="MarkdownExtensions.UseHtmlDetails"/> and <see cref="MarkdownExtensions.UseGitHubExtensions"/>.
 /// With <see cref="HtmlSubsetExtension"/> in the same pipeline, that extension groups them instead, before it builds
-/// the rest of the HTML.
+/// the rest of the HTML. Nothing is grouped in another <see cref="HtmlMode"/> than <see cref="HtmlMode.SafeSubset"/>.
 /// </summary>
 internal sealed class HtmlDetailsExtension : IMarkdownExtension
 {
     public void Setup(MarkdownPipelineBuilder pipeline)
     {
-        if (!pipeline.Extensions.Contains<HtmlSubsetExtension>())
+        if (HtmlModeExtension.BuildsHtml(pipeline) && !pipeline.Extensions.Contains<HtmlSubsetExtension>())
             pipeline.DocumentProcessed += HtmlDetailsGrouper.Process;
     }
 

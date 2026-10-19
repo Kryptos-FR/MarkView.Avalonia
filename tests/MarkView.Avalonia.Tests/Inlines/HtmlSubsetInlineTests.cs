@@ -312,6 +312,15 @@ public class HtmlSubsetInlineTests : RenderTestBase
     }
 
     [AvaloniaFact]
+    public void Tags_that_name_no_element_render_as_text()
+    {
+        var text = MarkdownSelectableTextBlock.ExtractPlainText(
+            Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(Render("Returns List<string> or <T>.", Pipeline).Children)).Inlines!);
+
+        Assert.Equal("Returns List<string> or <T>.", text);
+    }
+
+    [AvaloniaFact]
     public void Without_the_subset_inline_tags_are_dropped()
     {
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(Render("a<b>b</b>c").Children));

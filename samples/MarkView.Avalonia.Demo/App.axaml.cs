@@ -20,10 +20,9 @@ public class App : Application
         AvaloniaXamlLoader.Load(this);
     }
 
-    public override void OnFrameworkInitializationCompleted()
-    {
-        // Global pipeline — applies to every MarkdownViewer in the app
-        MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
+    /// <summary>The pipeline of the demo's documents, with HTML treated as <paramref name="htmlMode"/> says.</summary>
+    internal static MarkdownPipeline CreatePipeline(HtmlMode htmlMode) =>
+        new MarkdownPipelineBuilder()
             .UseSupportedExtensions(new MarkdownExtensionsOptions { PipeTable = new PipeTableOptions { InferColumnWidthsFromSeparator = true } })
             .UseAbbreviations()
             .UseExtendedAlertBlocks()
@@ -40,9 +39,15 @@ public class App : Application
             .UseFooters()
             .UseSmartyPants()
             .UseListExtras()
+            .UseHtmlMode(htmlMode)
             // Markdig only parses attributes for the extensions set up before it: keep it last.
             .UseGenericAttributes()
             .Build();
+
+    public override void OnFrameworkInitializationCompleted()
+    {
+        // Global pipeline — applies to every MarkdownViewer in the app
+        MarkdownViewerDefaults.Pipeline = CreatePipeline(HtmlMode.SafeSubset);
 
         // Global extensions — applies to every MarkdownViewer in the app
         MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
