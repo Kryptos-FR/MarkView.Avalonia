@@ -82,6 +82,13 @@ public static class Probe
         secondTime.Stop();
         var retained = Collect() - before;
         var visuals = viewer2.GetVisualDescendants().Count();
+        // BENCH_HOLD=seconds keeps the document shown so that a heap snapshot can be taken
+        // (dotnet-gcdump collect -p <pid>); the process id goes to standard error.
+        if (int.TryParse(Environment.GetEnvironmentVariable("BENCH_HOLD"), out var hold))
+        {
+            Console.Error.WriteLine($"pid {Environment.ProcessId}: holding for {hold} s");
+            Thread.Sleep(TimeSpan.FromSeconds(hold));
+        }
         GC.KeepAlive(viewer2);
 
         Console.WriteLine(string.Join('\t',

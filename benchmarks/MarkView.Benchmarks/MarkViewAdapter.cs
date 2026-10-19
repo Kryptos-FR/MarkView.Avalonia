@@ -22,14 +22,19 @@ public sealed class MarkViewAdapter : IViewerAdapter
     private static readonly MarkdownPipeline SupportedPipeline = new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
     private static readonly MarkdownPipeline GitHubPipeline = new MarkdownPipelineBuilder().UseGitHubExtensions().Build();
 
+    // One extension instance for every viewer, as MarkdownViewerDefaults.Extensions.AddTextMateHighlighting() does:
+    // its highlighter (themes and grammars) is then built once per application instead of once per viewer.
+    private static readonly TextMateExtension SharedTextMate = new();
+
     public string Library => LibraryVersion.Of(typeof(MarkdownViewer), "MarkView.Avalonia");
 
     /// <summary>
     /// The three Markdig presets on the core package, then each extension package on top of the default
-    /// (GitHub) preset, then all of them.
+    /// (GitHub) preset, then all of them. TextMate comes twice: set up per viewer (<c>viewer.UseTextMateHighlighting()</c>)
+    /// and shared by all viewers.
     /// </summary>
     public IReadOnlyList<string> Configurations { get; } =
-        ["Plain", "Supported", "GitHub", "GitHub+TextMate", "GitHub+Mermaid", "GitHub+Math", "GitHub+Svg", "GitHub+All"];
+        ["Plain", "Supported", "GitHub", "GitHub+TextMate", "GitHub+SharedTextMate", "GitHub+Mermaid", "GitHub+Math", "GitHub+Svg", "GitHub+All"];
 
     public void AddStyles(Styles styles)
     {
@@ -47,6 +52,7 @@ public sealed class MarkViewAdapter : IViewerAdapter
             case "Supported": viewer.Pipeline = SupportedPipeline; break;
             case "GitHub": viewer.Pipeline = GitHubPipeline; break;
             case "GitHub+TextMate": viewer.Pipeline = GitHubPipeline; viewer.UseTextMateHighlighting(); break;
+            case "GitHub+SharedTextMate": viewer.Pipeline = GitHubPipeline; viewer.Extensions.Add(SharedTextMate); break;
             case "GitHub+Mermaid": viewer.Pipeline = GitHubPipeline; viewer.UseMermaid(); break;
             case "GitHub+Math": viewer.UseMath(); break;
             case "GitHub+Svg": viewer.Pipeline = GitHubPipeline; viewer.UseSvg(); break;
