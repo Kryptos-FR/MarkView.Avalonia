@@ -117,7 +117,7 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('</details>')
 [void]$sb.AppendLine()
 if ($Since) {
-    [void]$sb.AppendLine("> Incremental run (changes since ``$Since``): $overallDetectedPlusUndetected of $($totals.TotalMutants) mutants tested, those in the files this pull request changes and those its changed tests cover. Other files show N/A. Add the ``ci-full`` label for a full run.")
+    [void]$sb.AppendLine("> Incremental run (changes since ``$Since``): $overallDetectedPlusUndetected of $($totals.TotalMutants) mutants tested, those in the changed files and those the changed tests cover. Other files show N/A. For a full run, add the ``ci-full`` label to the pull request or run the CI workflow manually.")
     [void]$sb.AppendLine()
 }
 [void]$sb.AppendLine('## Mutation score')
