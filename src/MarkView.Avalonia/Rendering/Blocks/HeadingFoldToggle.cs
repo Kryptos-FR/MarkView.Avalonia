@@ -19,6 +19,13 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// </summary>
 internal sealed class HeadingFoldToggle : AlertChevron
 {
+    static HeadingFoldToggle()
+    {
+        // The focus ring comes and goes with the focus.
+        // Stryker disable once Statement : the headless platform draws no frames, so no test can see a missed repaint
+        AffectsRender<HeadingFoldToggle>(IsFocusedProperty);
+    }
+
     public HeadingFoldToggle()
     {
         Focusable = true;
@@ -58,19 +65,6 @@ internal sealed class HeadingFoldToggle : AlertChevron
         base.OnPropertyChanged(change);
         if (change.Property == IsExpandedProperty)
             (ControlAutomationPeer.FromElement(this) as HeadingFoldAutomationPeer)?.RaiseExpandCollapseStateChanged(change.GetOldValue<bool>(), change.GetNewValue<bool>());
-    }
-
-    // The focus ring depends on :focus-visible, which the base sets as focus arrives and clears as it leaves.
-    protected override void OnGotFocus(FocusChangedEventArgs e)
-    {
-        base.OnGotFocus(e);
-        InvalidateVisual();
-    }
-
-    protected override void OnLostFocus(FocusChangedEventArgs e)
-    {
-        base.OnLostFocus(e);
-        InvalidateVisual();
     }
 
     public override void Render(DrawingContext context)

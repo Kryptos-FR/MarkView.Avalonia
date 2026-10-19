@@ -11,6 +11,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
@@ -247,6 +248,73 @@ public class MarkdownViewerFoldableHeadingTests
     }
 
     [AvaloniaFact]
+    public void A_click_or_a_key_that_toggles_the_section_goes_no_further()
+    {
+        using var f = Show("# Title\n\nBody");
+        var toggle = Toggle(f.Viewer, "Title");
+        var point = toggle.TranslatePoint(new Point(toggle.Bounds.Width / 2, toggle.Bounds.Height / 2), f.Window)!.Value;
+        var releases = 0;
+        var keys = 0;
+        f.Window.AddHandler(InputElement.PointerReleasedEvent, (_, _) => releases++);
+        f.Window.AddHandler(InputElement.KeyDownEvent, (_, _) => keys++);
+
+        f.Window.MouseDown(point, MouseButton.Middle);
+        f.Window.MouseUp(point, MouseButton.Middle);
+        Assert.Equal(1, releases);
+        f.Window.MouseDown(point, MouseButton.Left);
+        f.Window.MouseUp(point, MouseButton.Left);
+        Assert.Equal(1, releases);
+
+        toggle.Focus(NavigationMethod.Tab);
+        f.Window.KeyPress(Key.A, RawInputModifiers.None, PhysicalKey.A, null);
+        Assert.Equal(1, keys);
+        f.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Assert.Equal(1, keys);
+    }
+
+    [AvaloniaFact]
+    public void The_fold_button_is_clickable_across_its_box_and_draws_a_focus_ring_only_when_focused_from_the_keyboard()
+    {
+        using var f = Show("# Title\n\nBody");
+        var toggle = Toggle(f.Viewer, "Title");
+        var foreground = toggle.GetValue(TextElement.ForegroundProperty);
+        Assert.NotNull(foreground);
+
+        var drawings = Draw(toggle);
+        Assert.Equal(2, drawings.Length);
+        Assert.Same(Brushes.Transparent, drawings[0].Brush);
+        Assert.Equal(new Rect(toggle.Bounds.Size), drawings[0].Geometry!.Bounds);
+        Assert.Same(foreground, drawings[1].Brush);
+        Assert.Equal(toggle.GetTriangle().Bounds, drawings[1].Geometry!.Bounds);
+
+        toggle.Focus(NavigationMethod.Pointer);
+        Assert.True(toggle.IsFocused);
+        Assert.Equal(2, Draw(toggle).Length);
+
+        f.Before.Focus();
+        f.Tab();
+        f.Tab();
+        Assert.True(toggle.IsFocused);
+        var focused = Draw(toggle);
+        Assert.Equal(3, focused.Length);
+        Assert.Null(focused[2].Brush);
+        Assert.Same(foreground, focused[2].Pen!.Brush);
+        Assert.Equal(new Rect(toggle.Bounds.Size).Deflate(0.5), focused[2].Geometry!.Bounds);
+
+        f.Before.Focus();
+        Assert.False(toggle.IsFocused);
+        Assert.Equal(2, Draw(toggle).Length);
+    }
+
+    private static GeometryDrawing[] Draw(Control control)
+    {
+        var group = new DrawingGroup();
+        using (var context = group.Open())
+            control.Render(context);
+        return group.Children.Cast<GeometryDrawing>().ToArray();
+    }
+
+    [AvaloniaFact]
     public void Navigating_to_a_heading_in_a_collapsed_section_expands_the_sections_around_it_but_not_its_own()
     {
         using var f = Show(Document);
@@ -323,6 +391,12 @@ public class MarkdownViewerFoldableHeadingTests
         Assert.Equal(
             [(ExpandCollapseState.Expanded, ExpandCollapseState.Collapsed), (ExpandCollapseState.Collapsed, ExpandCollapseState.Expanded)],
             changes);
+    }
+
+    [AvaloniaFact]
+    public void A_fold_button_outside_a_heading_has_no_name()
+    {
+        Assert.Equal(string.Empty, ControlAutomationPeer.CreatePeerForElement(new HeadingFoldToggle()).GetName());
     }
 
     [AvaloniaFact]
