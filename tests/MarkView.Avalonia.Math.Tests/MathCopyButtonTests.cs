@@ -11,6 +11,7 @@ using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
@@ -206,6 +207,9 @@ public class MathCopyButtonTests
 
         SetPointerOver(formula, false);
         Assert.Equal(0, button.Opacity);
+
+        // The whole row takes the pointer, also the empty space between the formula and the button.
+        Assert.Same(Brushes.Transparent, formula.FindAncestorOfType<Grid>()!.Background);
 
         static void SetPointerOver(Control block, bool value)
         {

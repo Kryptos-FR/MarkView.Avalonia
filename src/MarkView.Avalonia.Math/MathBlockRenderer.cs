@@ -83,7 +83,9 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
         // Its place in the corner comes from the theme, like the rest of its look.
         button.Classes.Add("markdown-math-copy");
 
-        var container = new Grid { Children = { border, button } };
+        // Transparent, not null, so the whole row is under the pointer, not only the formula and the
+        // button: copy buttons shown on hover then stay visible on the way from one to the other.
+        var container = new Grid { Background = Brushes.Transparent, Children = { border, button } };
         container.Classes.Add("markdown-math-container");
         return container;
     }
