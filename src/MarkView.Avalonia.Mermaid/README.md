@@ -59,6 +59,14 @@ The extension targets the diagram types supported by the version of Mermaider th
 
 See the [Mermaid documentation](https://mermaid.js.org/intro/) for syntax reference. If a diagram fails to render, the extension falls back to a plain-text block containing the original source. While a document is streaming, a `mermaid` fence at the end of the text is shown as a `mermaid` code block and becomes a diagram once a blank line or another block follows it.
 
+## Fullscreen, Zoom and Pan
+
+Clicking a diagram, or pressing Enter or Space when it has focus, opens it in the viewer's lightbox, as
+an image: fitted to the viewer (enlarged up to twice its natural size, since it is drawn as vectors),
+with zoom (mouse wheel, pinch, + and − keys, toolbar buttons) and pan (drag, arrow keys). It follows the
+viewer's `IsImageZoomEnabled` (on by default). See
+[Image zoom](../../docs/configuration.md#image-zoom).
+
 ## Diagram Style
 
 Diagrams are painted in one of Mermaider's three style presets, chosen when the extension is added (`MermaidStyle.Quiet` by default):

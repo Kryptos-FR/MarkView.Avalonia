@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Avalonia.Svg.Skia;
 using Avalonia.VisualTree;
@@ -28,6 +29,8 @@ namespace MarkView.Avalonia.Mermaid;
 /// While <see cref="AvaloniaRenderer.IsProvisional"/> holds for a block (it contains the end of the text
 /// being streamed), a Mermaid fence is rendered as a <c>mermaid</c> code block and no diagram render is
 /// scheduled; it renders as a diagram once a blank line or another block follows it.
+/// With <see cref="MarkdownViewer.IsImageZoomEnabled"/>, clicking a rendered diagram opens it in the viewer's
+/// lightbox, as an image, where it is fitted to the view and can be zoomed and panned.
 /// </summary>
 /// <param name="style">The visual style diagrams are painted in.</param>
 public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet) : AvaloniaObjectRenderer<FencedCodeBlock>
@@ -58,6 +61,11 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
         var border = new Border { Child = image };
         border.Classes.Add("markdown-mermaid");
         MarkdownSelection.SetCopyText(border, $"```mermaid\n{source}\n```");
+
+        // A rendered diagram opens in the viewer's lightbox, where it can be zoomed and panned. It is
+        // drawn as vectors, so the lightbox may enlarge it to fit.
+        if (renderer.IsImageZoomEnabled)
+            ImageZoom.MakeZoomable(renderer, image, enlargeToFit: true);
 
         CancellationTokenSource? cts = null;
         var started = false;
@@ -125,7 +133,7 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
             var colours = (opts.Bg, opts.Fg, opts.Accent);
             if (rendered.TryGetValue(colours, out var cached))
             {
-                image.Source = cached;
+                ShowDiagram(cached);
                 return;
             }
 
@@ -144,7 +152,7 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
                 }, token);
 
                 if (!token.IsCancellationRequested)
-                    image.Source = rendered[colours] = new SvgImage { Source = svgSource };
+                    ShowDiagram(rendered[colours] = new SvgImage { Source = svgSource });
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)
@@ -158,6 +166,14 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
                     border.Classes.Clear();
                     border.Classes.Add("markdown-mermaid-fallback");
                 }
+            }
+
+            // The diagram is transparent, so the lightbox paints it on its background colour, set
+            // before the source the lightbox follows.
+            void ShowDiagram(SvgImage diagram)
+            {
+                ImageZoom.SetBackground(image, new ImmutableSolidColorBrush(Color.Parse(opts.Bg!)));
+                image.Source = diagram;
             }
         }
     }

@@ -209,6 +209,9 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-image-lightbox` | `Panel` | Lightbox a clicked image opens in, over the viewer (see [Images](#images)) |
 | `markdown-image-lightbox-image` | `Image` | The image in the lightbox |
 | `markdown-image-lightbox-close` | `Button` | The lightbox's close button |
+| `markdown-image-lightbox-toolbar` | `Border` | The lightbox's zoom toolbar, at the bottom |
+| `markdown-image-lightbox-zoom` | `Button` | Each button of the zoom toolbar, along with `markdown-image-lightbox-zoom-out`, `-zoom-in` or `-zoom-fit` |
+| `markdown-image-lightbox-zoom-level` | `TextBlock` | The zoom level in the toolbar, as a percentage of the natural size |
 | `markdown-link` | `HyperlinkButton` | Hyperlink |
 | `markdown-table` | `Grid` | Table |
 | `markdown-table-cell` | `Border` | Table body cell |
@@ -491,14 +494,22 @@ two-column `Grid`: the broken-image glyph (drawn in the border's `TextElement.Fo
 its font size) and, when the image has alt text, a `TextBlock` with it. The lightbox of a clicked image
 (`IsImageZoomEnabled`) is a `Panel.markdown-image-lightbox` — select it with `:is(Panel)`, since it is
 a subclass — laid over the viewer, holding the `Image.markdown-image-lightbox-image` (48 pixels from the
-viewer's edges in the default theme) and the `Button.markdown-image-lightbox-close`, whose cross is
-drawn in its `Foreground` and sized by its `FontSize`. Its tooltip and accessible name come from the
-theme, so they can be translated:
+viewer's edges in the default theme, when fitted), the `Button.markdown-image-lightbox-close`, whose
+cross is drawn in its `Foreground` and sized by its `FontSize`, and the `Border.markdown-image-lightbox-toolbar`
+at the bottom. The toolbar holds the `Button.markdown-image-lightbox-zoom` buttons (with
+`markdown-image-lightbox-zoom-out`, `-zoom-in` or `-zoom-fit`), whose glyphs are drawn the same way, and
+the `TextBlock.markdown-image-lightbox-zoom-level`. The default theme paints the toolbar in the close
+button's colours. The buttons' tooltips and accessible names come from the theme, so they can be
+translated:
 
 ```xml
 <Style Selector="Button.markdown-image-lightbox-close">
   <Setter Property="ToolTip.Tip" Value="Fermer" />
   <Setter Property="AutomationProperties.Name" Value="Fermer" />
+</Style>
+<Style Selector="Button.markdown-image-lightbox-zoom-in">
+  <Setter Property="ToolTip.Tip" Value="Agrandir" />
+  <Setter Property="AutomationProperties.Name" Value="Agrandir" />
 </Style>
 <!-- A lighter backdrop, with more room around the image -->
 <Style Selector=":is(Panel).markdown-image-lightbox">

@@ -103,7 +103,12 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
     /// </summary>
     (bool handled, IInputElement? next) ICustomKeyboardNavigation.GetNext(IInputElement element, NavigationDirection direction)
     {
-        if (_linkFocusLayer is null || direction is not (NavigationDirection.Next or NavigationDirection.Previous))
+        if (direction is not (NavigationDirection.Next or NavigationDirection.Previous))
+            return (false, null);
+        // Tab stays in the open lightbox.
+        if (_lightbox is { } lightbox && element is Visual inner && (inner == lightbox || lightbox.IsVisualAncestorOf(inner)))
+            return (true, lightbox.GetNextTabStop(element, direction == NavigationDirection.Next));
+        if (_linkFocusLayer is null)
             return (false, null);
 
         var stops = _linkFocusLayer.GetActiveStops();

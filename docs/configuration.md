@@ -16,7 +16,7 @@
 | `WrapCodeBlockLines` | `bool` | `false` | Wraps code lines longer than the block's width instead of letting them run past it. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `CodeBlockMaxHeight` | `double` | `PositiveInfinity` | Maximum height of a code block (toolbar excluded); a taller block scrolls vertically inside itself. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `AreTaskListsInteractive` | `bool` | `false` | Renders task-list items as checkboxes the user can toggle, raising `TaskToggled`. Setting it re-renders the document. See [Interactive task lists](#interactive-task-lists). |
-| `IsImageZoomEnabled` | `bool` | `true` | Clicking an image opens it in a lightbox over the viewer. See [Image zoom](#image-zoom). |
+| `IsImageZoomEnabled` | `bool` | `true` | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, where it can be zoomed and panned. See [Image zoom](#image-zoom). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
 | `HighContrastMode` | `HighContrastMode` | `System` | When to use the high-contrast palette: follow the OS (`System`), `Enabled` or `Disabled`. See [Accessibility](accessibility.md#high-contrast). |
@@ -527,12 +527,29 @@ placeholder up to the size of a picture that isn't there would leave a large emp
 ## Image zoom
 
 Clicking an image opens it in a lightbox laid over the viewer: a dimmed backdrop with the image as
-large as fits. Images are never enlarged past their natural size, so a small image stays sharp at its
-own size rather than being blown up. Clicking anywhere, the close button in the top right corner or
-pressing Escape closes it.
+large as fits. Images are never enlarged past their natural size to fit, so a small image stays sharp at
+its own size rather than being blown up. Clicking anywhere but on the zoom toolbar, the close button in
+the top right corner or pressing Escape closes it.
 
-- Zoomable images show a zoom-in cursor. They are also focusable: Enter or Space opens the lightbox,
-  which takes focus (Tab stays inside it); when it closes, focus returns to where it was.
+[Mermaid diagrams](../src/MarkView.Avalonia.Mermaid/README.md) open the same way. They are drawn as
+vectors, so the lightbox enlarges a small diagram to fit, up to twice its natural size.
+
+In the lightbox, the picture can be zoomed and panned:
+
+- The mouse wheel, a pinch (touch screen or touchpad) or the + and − keys zoom, about the pointer, the
+  pinch or the centre. The toolbar at the bottom has zoom out and zoom in buttons, the zoom level, and a
+  button that fits the picture again (as does the 0 key).
+- Dragging or the arrow keys pan a picture larger than the lightbox, as far as its edges. A drag does not
+  close the lightbox.
+- The zoom goes from the fitted size (or the natural size, if smaller) to eight times the natural size
+  (or the fitted size, if larger). A fitted picture is fitted again when the viewer is resized; a zoomed
+  one keeps its zoom.
+- The lightbox shows the current source of the image it was opened from, so a diagram re-rendered for a
+  new theme shows in its new colours.
+
+- Zoomable images and diagrams show a zoom-in cursor. They are also focusable: Enter or Space opens the
+  lightbox, which takes focus (Tab moves between it and its buttons only); when it closes, focus returns
+  to where it was.
 - An image inside a link (`[![alt](image.png)](https://example.com)`) opens the link instead.
 - Ending a text selection drag on an image does not open it.
 - The lightbox covers the viewer (not the whole window) and is part of the viewer itself, so it works
@@ -546,7 +563,7 @@ Turn it off with `IsImageZoomEnabled`, per viewer or for every viewer of an appl
 </Style>
 ```
 
-The lightbox's colours and close button are themable, see [Theming](theming.md#images).
+The lightbox's colours, close button and toolbar are themable, see [Theming](theming.md#images).
 
 ## Code block toolbar
 

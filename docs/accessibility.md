@@ -22,7 +22,8 @@ Avalonia forwards automation peers to each platform's accessibility API: UI Auto
 | Thematic break | `Separator` |
 | Image | `Image`, named by its alt text. An image with empty alt text (`![](…)`) is decorative and hidden, as browsers do with `alt=""`, unless it can be zoomed. |
 | Zoomable image (`IsImageZoomEnabled`) | `Image`, named by its alt text, with the help text "Zoom". A Tab stop, so never hidden, even without alt text. |
-| Image lightbox | `Image`, named by the image's alt text, or "Image" without one |
+| Zoomable Mermaid diagram | As a zoomable image, named by its diagram source |
+| Image lightbox | `Image`, named by the image's alt text (a diagram's source), or "Image" without one. Its buttons are named "Close", "Zoom out", "Zoom in" and "Fit to view". |
 | Image that could not be loaded | `Image`, named by its alt text, with the help text "Image could not be loaded"; hidden without alt text |
 | `<kbd>` (`UseHtmlSubset()`) | `Text`, read as the key's text |
 | YouTube embed | `Hyperlink`, named by its alt text, or by its URL when there is none |
@@ -48,7 +49,7 @@ Avalonia 12.1.3 has the following gaps:
 
 ## Keyboard
 
-The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a code block's copy button, an interactive task's check box, a zoomable image, a video embed. `Enter` or `Space` folds or unfolds a focused alert or `<details>` block and ticks a focused task; `Enter` or `Space` on the copy button copies the code, and on an image opens it in the lightbox. In the lightbox, `Tab` moves between the lightbox and its close button only, and `Escape` closes it and gives the focus back to the image.
+The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a code block's copy button, an interactive task's check box, a zoomable image or Mermaid diagram, a video embed. `Enter` or `Space` folds or unfolds a focused alert or `<details>` block and ticks a focused task; `Enter` or `Space` on the copy button copies the code, and on an image opens it in the lightbox. In the lightbox, `Tab` moves between the lightbox, its close button and its zoom buttons only; `+` and `-` zoom, `0` fits the picture again, the arrow keys pan it, and `Escape` closes the lightbox and gives the focus back to the image.
 
 | Key | Action |
 |---|---|

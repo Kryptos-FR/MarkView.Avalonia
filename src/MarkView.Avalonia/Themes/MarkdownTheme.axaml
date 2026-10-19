@@ -345,6 +345,9 @@
   <Style Selector="Image.markdown-image-lightbox-image">
     <Setter Property="Margin" Value="48" />
   </Style>
+  <Style Selector="Border.markdown-image-lightbox-backing">
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
   <Style Selector="Button.markdown-image-lightbox-close">
     <Setter Property="Background" Value="{DynamicResource MarkdownImageLightboxCloseBackground}" />
     <Setter Property="Foreground" Value="{DynamicResource MarkdownImageLightboxCloseForeground}" />
@@ -359,6 +362,42 @@
   <Style Selector="Button.markdown-image-lightbox-close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource MarkdownImageLightboxCloseHoverBackground}" />
     <Setter Property="Foreground" Value="{DynamicResource MarkdownImageLightboxCloseForeground}" />
+  </Style>
+  <!-- Zoom toolbar at the bottom of the lightbox, in the close button's colours -->
+  <Style Selector="Border.markdown-image-lightbox-toolbar">
+    <Setter Property="Background" Value="{DynamicResource MarkdownImageLightboxCloseBackground}" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="8" />
+  </Style>
+  <Style Selector="Button.markdown-image-lightbox-zoom">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownImageLightboxCloseForeground}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Padding" Value="8" />
+    <Setter Property="FontSize" Value="16" />
+  </Style>
+  <Style Selector="Button.markdown-image-lightbox-zoom:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource MarkdownImageLightboxCloseHoverBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownImageLightboxCloseForeground}" />
+  </Style>
+  <Style Selector="Button.markdown-image-lightbox-zoom-out">
+    <Setter Property="ToolTip.Tip" Value="Zoom out" />
+    <Setter Property="AutomationProperties.Name" Value="Zoom out" />
+  </Style>
+  <Style Selector="Button.markdown-image-lightbox-zoom-in">
+    <Setter Property="ToolTip.Tip" Value="Zoom in" />
+    <Setter Property="AutomationProperties.Name" Value="Zoom in" />
+  </Style>
+  <Style Selector="Button.markdown-image-lightbox-zoom-fit">
+    <Setter Property="ToolTip.Tip" Value="Fit to view" />
+    <Setter Property="AutomationProperties.Name" Value="Fit to view" />
+  </Style>
+  <Style Selector="TextBlock.markdown-image-lightbox-zoom-level">
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownImageLightboxCloseForeground}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="MinWidth" Value="40" />
   </Style>
 
   <!-- Text selection highlight -->
