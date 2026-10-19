@@ -131,7 +131,8 @@ exception handling instead.
   such as a height-limited code block, does not pause following the end. Each new session starts
   following again. It has no effect outside a session, and it defaults to `false`.
 - **Selection.** A selection in text that was kept survives the update. A selection that reaches
-  into the re-rendered tail is clamped to the kept text; one inside the tail is cleared. See
+  into the re-rendered tail is clamped to the kept text; one inside the tail is cleared. Either
+  raises `SelectionChanged`. See
   [text selection](text-selection.md).
 - **Find.** An active [search](find-in-document.md) is run again after each update: the matches
   and highlights are refreshed, and the current match is kept.

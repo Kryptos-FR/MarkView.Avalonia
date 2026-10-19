@@ -145,7 +145,7 @@ public partial class MarkdownViewer
 
         if (install)
         {
-            _selectionLayer = live.SelectionLayer;
+            SetSelectionLayer(live.SelectionLayer);
             _linkFocusLayer = live.LinkLayer;
             InstallDocument(renderer, live.SelectionLayer, live.LinkLayer, focusWasInDocument);
         }

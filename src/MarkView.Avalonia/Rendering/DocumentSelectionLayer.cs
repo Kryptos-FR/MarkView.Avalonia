@@ -1,11 +1,11 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Buffers;
 using System.Text;
 
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input.Platform;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Media.TextFormatting;
@@ -48,6 +48,21 @@ internal sealed class DocumentSelectionLayer : Control
     // Anchor and focus as absolute char offsets.
     private int? _anchor;
     private int? _focus;
+
+    // The range last reported through SelectionChanged; null when it was empty.
+    private (int Start, int End)? _reportedRange;
+
+    // Whether SelectionChanged was raised since the drag in progress started.
+    private bool _changedWhileSelecting;
+
+    // The text GetSelectedText last built, the range it was built for and the indices of the entries in
+    // that range that were hidden then, in order.
+    private string? _selectedText;
+    private (int Start, int End) _selectedTextRange;
+    private int[] _selectedTextHidden = [];
+
+    // Line endings other than '\n', which the selected text is normalised from.
+    private static readonly SearchValues<char> OtherLineEndings = SearchValues.Create("\r\f\u0085\u2028\u2029");
 
     private readonly List<FindMatch> _findMatches = [];
 
@@ -107,6 +122,50 @@ internal sealed class DocumentSelectionLayer : Control
         // Stryker disable once Equality,Logical : drawing again without any match draws the same nothing
         if (_anchor is not null || _findMatches.Count > 0)
             InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Raised when the selected range changes: each drag step that moves its end, <see cref="SelectAll"/>,
+    /// <see cref="ClearSelection"/>, a press that clears it, a <see cref="TruncateTo"/> that shortens or
+    /// clears it. Not raised when the range stays the same, except once more when a drag that changed it
+    /// ends (<see cref="EndSelecting"/>), with <see cref="IsSelecting"/> then <c>false</c>.
+    /// </summary>
+    public event EventHandler? SelectionChanged;
+
+    /// <summary>Whether a non-empty range is selected.</summary>
+    public bool HasSelection => SelectedRange is not null;
+
+    /// <summary>Whether a drag is moving the end of the selection, from its first step to <see cref="EndSelecting"/>.</summary>
+    public bool IsSelecting { get; private set; }
+
+    /// <summary>The selected range in reading order, <c>null</c> when it is empty.</summary>
+    private (int Start, int End)? SelectedRange =>
+        _anchor is { } anchor && _focus is { } focus && anchor != focus
+            ? (Math.Min(anchor, focus), Math.Max(anchor, focus))
+            : null;
+
+    /// <summary>Raises <see cref="SelectionChanged"/> when the selected range differs from the one last reported.</summary>
+    private void ReportSelectionChange()
+    {
+        var range = SelectedRange;
+        if (range == _reportedRange) return;
+        _reportedRange = range;
+        _changedWhileSelecting |= IsSelecting;
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Ends the drag in progress, if any. When it changed the selection, <see cref="SelectionChanged"/> is
+    /// raised once more, now that <see cref="IsSelecting"/> is <c>false</c>, so that a handler can wait for
+    /// the final range.
+    /// </summary>
+    public void EndSelecting()
+    {
+        if (!IsSelecting) return;
+        IsSelecting = false;
+        if (!_changedWhileSelecting) return;
+        _changedWhileSelecting = false;
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // ── Registration ─────────────────────────────────────────────────────────
@@ -170,6 +229,7 @@ internal sealed class DocumentSelectionLayer : Control
             CurrentFindMatch = -1;
 
         InvalidateVisual();
+        ReportSelectionChange();
     }
 
     // ── Public selection API ──────────────────────────────────────────────────
@@ -181,6 +241,7 @@ internal sealed class DocumentSelectionLayer : Control
         _anchor = 0;
         _focus = _entries[^1].AbsEnd;   // up to (not including) trailing separator
         InvalidateVisual();
+        ReportSelectionChange();
     }
 
     /// <summary>Clears selection.</summary>
@@ -189,6 +250,7 @@ internal sealed class DocumentSelectionLayer : Control
         _anchor = null;
         _focus = null;
         InvalidateVisual();
+        ReportSelectionChange();
     }
 
     /// <summary>
@@ -197,57 +259,94 @@ internal sealed class DocumentSelectionLayer : Control
     /// </summary>
     public string GetSelectedText()
     {
-        if (_anchor is null || _focus is null) return string.Empty;
-        int selStart = Math.Min(_anchor.Value, _focus.Value);
-        int selEnd = Math.Max(_anchor.Value, _focus.Value);
-        if (selStart == selEnd) return string.Empty;
+        if (SelectedRange is not { } range) return string.Empty;
+        if (_selectedText is not null && _selectedTextRange == range && HiddenEntriesAre(range, _selectedTextHidden))
+            return _selectedText;
 
-        var sb = new System.Text.StringBuilder();
-        foreach (var entry in _entries)
+        var (selStart, selEnd) = range;
+        var sb = new StringBuilder();
+        var otherLineEndings = false;
+        List<int>? hidden = null;
+        for (int i = 0; i < _entries.Count; i++)
         {
+            var entry = _entries[i];
             if (entry.AbsEndWithSep <= selStart) continue;  // entirely before selection (including separator)
             if (entry.AbsStart >= selEnd) break;              // entirely after selection
-            if (IsHidden(entry)) continue;                    // e.g. the body of a collapsed alert
+            if (IsHidden(entry))                              // e.g. the body of a collapsed alert
+            {
+                (hidden ??= []).Add(i);
+                continue;
+            }
 
             int localStart = Math.Max(0, selStart - entry.AbsStart);
             int localEnd = Math.Min(entry.PlainText.Length, selEnd - entry.AbsStart);
             if (localEnd > localStart)
-                AppendText(sb, entry, localStart, localEnd);
+                AppendText(sb, entry, localStart, localEnd, ref otherLineEndings);
 
             // Append separator if selection extends into or past the separator gap
             if (selEnd > entry.AbsEnd && entry.Separator.Length > 0)
-                sb.Append(entry.Separator);
+                Append(sb, entry.Separator, ref otherLineEndings);
         }
-        // Code block lines are written with the platform's line ending (LineBreak inlines), and a
-        // copy text keeps whatever its renderer gave it.
-        return sb.ToString().ReplaceLineEndings("\n");
+
+        // Code block lines are written with the platform's line ending (LineBreak inlines), and a copy text
+        // keeps whatever its renderer gave it. Replaced in place, as string.ReplaceLineEndings would.
+        if (otherLineEndings)
+        {
+            sb.Replace("\r\n", "\n");
+            foreach (var c in "\r\f\u0085\u2028\u2029")
+                sb.Replace(c, '\n');
+        }
+
+        _selectedText = sb.ToString();
+        _selectedTextRange = range;
+        _selectedTextHidden = hidden?.ToArray() ?? [];
+        return _selectedText;
+    }
+
+    /// <summary>
+    /// Whether the entries in <paramref name="range"/> that are hidden now are the ones at
+    /// <paramref name="indices"/>, as when the text selected in that range was built. An alert folded or
+    /// unfolded since then changes the text without changing the range.
+    /// </summary>
+    private bool HiddenEntriesAre((int Start, int End) range, int[] indices)
+    {
+        var next = 0;
+        for (int i = 0; i < _entries.Count; i++)
+        {
+            var entry = _entries[i];
+            if (entry.AbsEndWithSep <= range.Start) continue;
+            if (entry.AbsStart >= range.End) break;
+            if (!IsHidden(entry)) continue;
+            if (next == indices.Length || indices[next] != i) return false;
+            next++;
+        }
+        return next == indices.Length;
     }
 
     /// <summary>
     /// Appends <paramref name="entry"/>'s text between the local offsets, substituting each
     /// embedded control with its copy text.
     /// </summary>
-    private static void AppendText(System.Text.StringBuilder sb, IndexEntry entry, int start, int end)
+    private static void AppendText(StringBuilder sb, IndexEntry entry, int start, int end, ref bool otherLineEndings)
     {
         if (entry.EmbeddedText is not { } embedded)
         {
-            sb.Append(entry.PlainText.AsSpan(start, end - start));
+            Append(sb, entry.PlainText.AsSpan(start, end - start), ref otherLineEndings);
             return;
         }
 
         for (int i = start; i < end; i++)
         {
-            if (embedded.TryGetValue(i, out var text)) sb.Append(text);
-            else sb.Append(entry.PlainText[i]);
+            if (embedded.TryGetValue(i, out var text)) Append(sb, text, ref otherLineEndings);
+            else Append(sb, entry.PlainText.AsSpan(i, 1), ref otherLineEndings);
         }
     }
 
-    /// <summary>Copies selected text to the clipboard, with the platform's line endings.</summary>
-    public async Task CopyToClipboardAsync(TopLevel topLevel)
+    /// <summary>Appends <paramref name="text"/>, noting whether it has line endings other than <c>'\n'</c>.</summary>
+    private static void Append(StringBuilder sb, ReadOnlySpan<char> text, ref bool otherLineEndings)
     {
-        var text = GetSelectedText();
-        if (!string.IsNullOrEmpty(text) && topLevel.Clipboard is { } clipboard)
-            await clipboard.SetTextAsync(text.ReplaceLineEndings());
+        otherLineEndings |= text.ContainsAny(OtherLineEndings);
+        sb.Append(text);
     }
 
     // ── Pointer event integration ─────────────────────────────────────────────
@@ -273,10 +372,12 @@ internal sealed class DocumentSelectionLayer : Control
     public void OnPointerMoved(Point posInLayer)
     {
         if (_anchor is null) return;
+        IsSelecting = true;
         var offset = HitTestOffset(posInLayer);
         if (offset is null) return;
         _focus = offset;
         InvalidateVisual();
+        ReportSelectionChange();
     }
 
     // ── Hit testing ───────────────────────────────────────────────────────────
@@ -514,6 +615,7 @@ internal sealed class DocumentSelectionLayer : Control
     {
         _anchor = start;
         _focus = end;
+        ReportSelectionChange();
     }
 
     /// <summary>The anchor and focus as absolute offsets, <c>null</c> when nothing is selected. For unit tests only.</summary>

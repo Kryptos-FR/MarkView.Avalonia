@@ -569,7 +569,9 @@ The lightbox's colours, close button and toolbar are themable, see [Theming](the
 
 Code blocks get a small toolbar above the code, with the block's language on the left and a
 copy button on the right. The button copies the code exactly as written in the markdown, and
-switches to a check mark for two seconds once the copy succeeded. Both parts can be turned off
+switches to a check mark for two seconds once the copy succeeded. In a `MarkdownViewer`, the copy
+raises [`CopyingToClipboard`](text-selection.md#changing-what-is-copied) first, so the
+application can change or cancel it. Both parts can be turned off
 independently:
 
 ```xml

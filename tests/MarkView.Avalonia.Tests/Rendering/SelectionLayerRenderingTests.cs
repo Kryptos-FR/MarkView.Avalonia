@@ -413,19 +413,4 @@ public class SelectionLayerRenderingTests
             [ExpectedHighlight(f.Layer, glyph, 0, 1), ExpectedHighlight(f.Layer, f.Blocks[0], 0, 4)],
             RecordHighlights(f.Layer));
     }
-
-    [AvaloniaFact]
-    public async Task CopyToClipboardAsync_copies_selection_and_skips_empty_selection()
-    {
-        using var f = Show();
-        var clipboard = f.Window.Clipboard!;
-        await clipboard.SetTextAsync("keep");
-
-        await f.Layer.CopyToClipboardAsync(f.Window);
-        Assert.Equal("keep", await clipboard.TryGetTextAsync());
-
-        f.Layer.SelectAll();
-        await f.Layer.CopyToClipboardAsync(f.Window);
-        Assert.Equal("Alpha\nBeta\nGamma".ReplaceLineEndings(), await clipboard.TryGetTextAsync());
-    }
 }

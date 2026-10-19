@@ -523,7 +523,7 @@ public partial class MarkdownViewer : ContentControl
             _anchors = new(StringComparer.OrdinalIgnoreCase);
             _headingEntries = [];
             RebuildTableOfContents();
-            _selectionLayer = null;
+            SetSelectionLayer(null);
             _linkFocusLayer = null;
             UpdateFind(CurrentFindMatchIndex);
             if (focusWasInDocument) Focus();
@@ -543,7 +543,7 @@ public partial class MarkdownViewer : ContentControl
         // Set up document-wide selection layer
         var layer = new DocumentSelectionLayer();
         RegisterBlocks(layer, renderer.RootPanel);
-        _selectionLayer = layer;
+        SetSelectionLayer(layer);
 
         // Keyboard stand-ins for the document's links
         _linkFocusLayer = LinkFocusLayer.Create(renderer.RootPanel, ActivateLink);
@@ -635,6 +635,7 @@ public partial class MarkdownViewer : ContentControl
             OnContentPointerMoved, RoutingStrategies.Tunnel);
         contentGrid.AddHandler(InputElement.PointerReleasedEvent,
             OnContentPointerReleased, RoutingStrategies.Tunnel);
+        contentGrid.PointerCaptureLost += OnContentPointerCaptureLost;
 
         Content = contentGrid;
         // The image it shows may not be part of the new document. Closed once the old document is gone,
@@ -931,14 +932,26 @@ public partial class MarkdownViewer : ContentControl
     {
         if (_isDragging)
         {
+            EndDrag();
             e.Pointer.Capture(null);
-            _isDragging = false;
             return;
         }
 
         // Click without drag — check for hyperlink
         if (_selectionLayer is not null)
             TryFireHyperlinkClick(e.GetPosition(_selectionLayer));
+    }
+
+    // The window lost the pointer in the middle of a drag (e.g. another window took it): the drag is over.
+    private void OnContentPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        if (_isDragging) EndDrag();
+    }
+
+    private void EndDrag()
+    {
+        _isDragging = false;
+        _selectionLayer?.EndSelecting();
     }
 
     private void UpdateHyperlinkCursor(Point posInLayer)
@@ -975,26 +988,6 @@ public partial class MarkdownViewer : ContentControl
     {
         if (hyperlink.NavigateUri is { } uri)
             OnLinkClicked(this, new LinkClickedEventArgs(uri.ToString()));
-    }
-
-    // ── Selection API ─────────────────────────────────────────────────────────
-
-    /// <summary>Selects all text in the rendered document.</summary>
-    public void SelectAll() => _selectionLayer?.SelectAll();
-
-    /// <summary>Clears the current selection.</summary>
-    public void ClearSelection() => _selectionLayer?.ClearSelection();
-
-    /// <summary>Returns the currently selected plain text, with lines separated by <c>'\n'</c>.</summary>
-    public string GetSelectedText() => _selectionLayer?.GetSelectedText() ?? string.Empty;
-
-    /// <summary>Copies selected text to the clipboard, with the platform's line endings.</summary>
-    public Task CopyToClipboardAsync()
-    {
-        var topLevel = TopLevel.GetTopLevel(this);
-        return topLevel is not null
-            ? _selectionLayer?.CopyToClipboardAsync(topLevel) ?? Task.CompletedTask
-            : Task.CompletedTask;
     }
 
     // ── Find API ──────────────────────────────────────────────────────────────
