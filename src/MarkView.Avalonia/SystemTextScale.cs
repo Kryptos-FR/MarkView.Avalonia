@@ -40,6 +40,7 @@ public static partial class SystemTextScale
         set
         {
             if (!(value > 0) || !double.IsFinite(value))
+                // Stryker disable once String : the message text is diagnostic output only
                 throw new ArgumentOutOfRangeException(nameof(value), value, "The text scale must be a positive finite number.");
             _isSetByApplication = true;
             Update(value);
@@ -93,6 +94,7 @@ public static partial class SystemTextScale
         return 1;
     }
 
+    // Stryker disable all : runs on Windows only
     [SupportedOSPlatform("windows")]
     private static double ReadWindowsTextScale()
     {
@@ -102,6 +104,7 @@ public static partial class SystemTextScale
         return key?.GetValue("TextScaleFactor") is int percent and >= 100 and <= 225 ? percent / 100.0 : 1;
     }
 
+    // Stryker disable all : runs in a browser only
     [SupportedOSPlatform("browser")]
     private static double ReadBrowserTextScale()
     {
