@@ -270,6 +270,27 @@ public class MarkdownViewerContextMenuTests
         Assert.Equal("https://example.com/docs", await f.Window.Clipboard!.TryGetTextAsync());
     }
 
+    [AvaloniaTheory]
+    [InlineData(MouseButton.Right)]
+    [InlineData(MouseButton.Middle)]
+    public void Only_a_left_click_opens_a_link(MouseButton button)
+    {
+        using var f = Show(LinkParagraph);
+        var clicked = new List<string>();
+        f.Viewer.LinkClicked += (_, e) => clicked.Add(e.Url);
+        var point = At(f.Window, f.Blocks[1], 7);
+
+        f.Window.MouseDown(point, button);
+        f.Window.MouseUp(point, button);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Empty(clicked);
+
+        f.Flyout.Hide();
+        f.Window.MouseDown(point, MouseButton.Left);
+        f.Window.MouseUp(point, MouseButton.Left);
+        Assert.Equal(["https://example.com/docs"], clicked);
+    }
+
     [AvaloniaFact]
     public void The_link_is_forgotten_once_the_menu_closes()
     {

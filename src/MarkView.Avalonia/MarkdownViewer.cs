@@ -947,8 +947,8 @@ public partial class MarkdownViewer : ContentControl
             return;
         }
 
-        // Click without drag — check for hyperlink
-        if (_selectionLayer is not null)
+        // Left click without drag — check for hyperlink. A right click opens the context menu instead.
+        if (e.InitialPressMouseButton == MouseButton.Left && _selectionLayer is not null)
             TryFireHyperlinkClick(e.GetPosition(_selectionLayer));
     }
 
