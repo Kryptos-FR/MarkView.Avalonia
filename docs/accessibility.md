@@ -58,6 +58,8 @@ The viewer is one Tab stop, followed by each link and each focusable control in 
 | `Enter` | Open the focused link, as a click does: `#anchor` links scroll to their target, and other links raise `LinkClicked`. |
 | Menu key | Open the viewer's [context menu](text-selection.md#context-menu); on a focused link, it offers to copy the link's address. |
 
+After a jump to an anchor (an `#anchor` link clicked or opened with `Enter`, or `ScrollToAnchor`), the viewer keeps the focus and `Tab` goes on from the anchor, as in a browser: to the first link at or below it, and `Shift+Tab` to the last link above it. A click elsewhere in the document drops that starting point.
+
 The focused link scrolls into view, and a 2px ring outlines each line of its text. The ring uses FluentTheme's `SystemControlFocusVisualPrimaryBrush`, or black/white without FluentTheme. Links in hidden content, such as a collapsed block, are skipped.
 
 Links stay inline text, so they wrap and select as before. An invisible stand-in over each link takes the focus instead.
