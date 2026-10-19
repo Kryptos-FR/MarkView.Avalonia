@@ -32,7 +32,7 @@ Each extension theme is independent — it does not import the core `MarkdownThe
 | `MarkdownCodeInlineBackground` | Inline code | `#1AFFFFFF` | `#0A000000` |
 | `MarkdownCodeInlineForeground` | Inline code text | `#F4B49A` | `#A31515` |
 | `MarkdownCodeHeaderBackground` | Code block toolbar | `#2D2D2D` | `#E4E4E4` |
-| `MarkdownCodeHeaderForeground` | Toolbar language label and copy icon | `#A0A0A0` | `#5F5F5F` |
+| `MarkdownCodeHeaderForeground` | Toolbar language label and copy icon; a display formula's copy icon | `#A0A0A0` | `#5F5F5F` |
 | `MarkdownCodeCopyButtonHoverBackground` | Copy button under the pointer | `#1AFFFFFF` | `#14000000` |
 | `MarkdownCodeLineNumberForeground` | Code block line numbers | `#8A8A8A` | `#6A6A6A` |
 | `MarkdownLinkForeground` | Links and footnote references | FluentTheme's `SystemAccentColorLight2` | FluentTheme's `SystemAccentColorDark2` |
@@ -329,7 +329,7 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-code-container` | `StackPanel` | Wraps a code block and its toolbar (only when the toolbar is shown) |
 | `markdown-code-header` | `Border` | Code block toolbar |
 | `markdown-code-language` | `TextBlock` | Language label in the toolbar |
-| `markdown-code-copy` | `Button` | Copy button in the toolbar; also has the `copied` class for two seconds after a copy |
+| `markdown-code-copy` | `Button` | Copy button in the toolbar, and in the corner of a display formula; also has the `copied` class for two seconds after a copy |
 | `markdown-code-line-numbers` | `TextBlock` | Line-number gutter of a code block, when `ShowCodeBlockLineNumbers` is set |
 | `markdown-code-scroll` | `ScrollViewer` | Scrolls the code of a block vertically, when `CodeBlockMaxHeight` is set |
 | `markdown-custom-fence` | `Border` | Wraps the control a [fence renderer](custom-extensions.md#rendering-a-fence-language-as-your-own-control) returned for a fenced block |
@@ -542,6 +542,22 @@ Read the docs first. {.note}
 </Style>
 ```
 
+### Math (`MarkView.Avalonia.Math`)
+
+| Class | Control | Element |
+|-------|---------|---------|
+| `markdown-math-block` | `Border` | Display formula (`$$…$$`, `\[…\]`) |
+| `markdown-math-fallback` | `Border` | Container shown when a display formula fails to render |
+| `markdown-math-container` | `Grid` | Wraps a display formula and its copy button (only when `ShowCodeBlockCopyButton` is on) |
+| `markdown-math-copy` | `Button` | The formula's copy button, also a `markdown-code-copy` |
+| `markdown-math-inline` | `Image` | Inline formula (`$…$`, `\(…\)`) |
+
+The package ships no theme file: formulas are drawn as bitmaps in the theme variant's text colour.
+The default theme puts the copy button in the formula's top right corner and gives the formula a
+32px margin on both sides (`Grid.markdown-math-container > Border`; 38px in the GitHub preset,
+whose button is wider), so it stays centred and clear of the button; restyle that margin if you
+change the button's size.
+
 ### Mermaid (`MarkView.Avalonia.Mermaid`)
 
 | Class | Control | Element |
@@ -621,19 +637,27 @@ they can be replaced or translated:
 <Style Selector="Button.markdown-code-copy.copied">
   <Setter Property="ToolTip.Tip" Value="Copié" />
 </Style>
-<!-- Show the copy button only while the pointer is over the code block -->
-<Style Selector="StackPanel.markdown-code-container Button.markdown-code-copy">
-  <Setter Property="Opacity" Value="0" />
+<!-- A display formula's button has the markdown-math-copy class too -->
+<Style Selector="Button.markdown-code-copy.markdown-math-copy">
+  <Setter Property="ToolTip.Tip" Value="Copier la formule" />
+  <Setter Property="AutomationProperties.Name" Value="Copier la formule" />
 </Style>
-<Style Selector="StackPanel.markdown-code-container:pointerover Button.markdown-code-copy">
-  <Setter Property="Opacity" Value="1" />
+<Style Selector="Button.markdown-code-copy.markdown-math-copy.copied">
+  <Setter Property="ToolTip.Tip" Value="Copié" />
 </Style>
 ```
+
+The formula's button is a `markdown-code-copy` too, so every style of the code block button
+applies to it; a style for `Button.markdown-code-copy` alone renames both. To show the copy
+buttons only while the pointer is over their block, set
+[`ShowCodeBlockCopyButtonOnHover`](configuration.md#showing-copy-buttons-on-hover) rather than
+writing the styles yourself: the theme's own keep a hidden button visible while it has keyboard
+focus.
 
 | Resource key | Dark | Light | Use |
 |---|---|---|---|
 | `MarkdownCodeHeaderBackground` | `#2D2D2D` | `#E4E4E4` | Toolbar background |
-| `MarkdownCodeHeaderForeground` | `#A0A0A0` | `#5F5F5F` | Language label and copy icon |
+| `MarkdownCodeHeaderForeground` | `#A0A0A0` | `#5F5F5F` | Language label and copy icon (also on the page, for a display formula) |
 | `MarkdownCodeCopyButtonHoverBackground` | `#1AFFFFFF` | `#14000000` | Copy button under the pointer |
 | `MarkdownCodeCopyIcon` | | | `StreamGeometry` of the copy icon |
 | `MarkdownCodeCopiedIcon` | | | `StreamGeometry` of the icon shown after a copy |

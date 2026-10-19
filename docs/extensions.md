@@ -164,6 +164,12 @@ as a paragraph, a blank line or a line that starts a list item or heading inside
 unclosed. See the [package README](../src/MarkView.Avalonia.Math/README.md#latex-bracket-delimiters)
 for details.
 
+### Copy button
+
+Each display formula gets a copy button for its TeX source in its top right corner, under the same
+switch as the code block copy button, `ShowCodeBlockCopyButton`. See
+[Copying a formula](configuration.md#copying-a-formula).
+
 ### Theme awareness
 
 Formulas re-render automatically on light/dark theme switch, matching Mermaid's exact two-hex

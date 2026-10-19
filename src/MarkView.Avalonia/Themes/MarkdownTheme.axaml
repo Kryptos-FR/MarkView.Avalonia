@@ -262,6 +262,37 @@
     <Setter Property="Data" Value="{StaticResource MarkdownCodeCopiedIcon}" />
   </Style>
 
+  <!-- Copy button of display formulas (MarkView.Avalonia.Math): a markdown-code-copy in the top
+       right corner of the formula -->
+  <Style Selector="Grid.markdown-math-container > Border">
+    <!-- Room for the button on both sides, so the formula stays centred and never runs under it -->
+    <Setter Property="Margin" Value="32,0" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy.markdown-math-copy">
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <!-- Lined up with the copy button of a code block, inside its toolbar's padding -->
+    <Setter Property="Margin" Value="0,0,4,0" />
+    <Setter Property="ToolTip.Tip" Value="Copy formula" />
+    <Setter Property="AutomationProperties.Name" Value="Copy formula" />
+  </Style>
+  <Style Selector="Button.markdown-code-copy.markdown-math-copy.copied">
+    <Setter Property="ToolTip.Tip" Value="Copied" />
+  </Style>
+
+  <!-- MarkdownViewer.ShowCodeBlockCopyButtonOnHover: copy buttons are transparent, but keep their
+       place and Tab stop, until the pointer is over their block, they have keyboard focus, or they
+       confirm a copy -->
+  <Style Selector=":is(mv|MarkdownViewer):copy-on-hover Button.markdown-code-copy">
+    <Setter Property="Opacity" Value="0" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):copy-on-hover StackPanel.markdown-code-container:pointerover Button.markdown-code-copy,
+                   :is(mv|MarkdownViewer):copy-on-hover Grid.markdown-math-container:pointerover Button.markdown-code-copy,
+                   :is(mv|MarkdownViewer):copy-on-hover Button.markdown-code-copy:focus-visible,
+                   :is(mv|MarkdownViewer):copy-on-hover Button.markdown-code-copy.copied">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
   <!-- Inline code -->
   <Style Selector="Run.markdown-code-inline">
     <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New, monospace"/>

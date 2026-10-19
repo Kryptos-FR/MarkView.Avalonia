@@ -109,6 +109,12 @@ public partial class MarkdownViewer : ContentControl
         AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(ShowCodeBlockCopyButton), true);
 
     /// <summary>
+    /// Defines the <see cref="ShowCodeBlockCopyButtonOnHover"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> ShowCodeBlockCopyButtonOnHoverProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(ShowCodeBlockCopyButtonOnHover));
+
+    /// <summary>
     /// Defines the <see cref="ShowCodeBlockLineNumbers"/> property.
     /// </summary>
     public static readonly StyledProperty<bool> ShowCodeBlockLineNumbersProperty =
@@ -229,13 +235,28 @@ public partial class MarkdownViewer : ContentControl
 
     /// <summary>
     /// Gets or sets whether code blocks show a button in a toolbar above the code that copies
-    /// the code to the clipboard. Defaults to <c>true</c>.
+    /// the code to the clipboard. Display formulas of the <c>MarkView.Avalonia.Math</c> package
+    /// get one in their top right corner, which copies their TeX source. Defaults to <c>true</c>.
     /// Can be set from a style, e.g. for every viewer of an application.
     /// </summary>
     public bool ShowCodeBlockCopyButton
     {
         get => GetValue(ShowCodeBlockCopyButtonProperty);
         set => SetValue(ShowCodeBlockCopyButtonProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether the copy buttons of <see cref="ShowCodeBlockCopyButton"/> only show while
+    /// the pointer is over their block, while they have keyboard focus, and while they confirm a copy.
+    /// Hidden, a button keeps its place, its Tab stop and its accessible name. Defaults to
+    /// <c>false</c>. Switching it restyles the buttons without re-rendering the document; the viewer
+    /// has the <c>:copy-on-hover</c> pseudo-class while it is on.
+    /// Can be set from a style, e.g. for every viewer of an application.
+    /// </summary>
+    public bool ShowCodeBlockCopyButtonOnHover
+    {
+        get => GetValue(ShowCodeBlockCopyButtonOnHoverProperty);
+        set => SetValue(ShowCodeBlockCopyButtonOnHoverProperty, value);
     }
 
     /// <summary>
@@ -395,6 +416,8 @@ public partial class MarkdownViewer : ContentControl
         ImageResizeModeProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ShowCodeBlockLanguageProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         ShowCodeBlockCopyButtonProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        ShowCodeBlockCopyButtonOnHoverProperty.Changed.AddClassHandler<MarkdownViewer>(
+            (x, e) => x.PseudoClasses.Set(":copy-on-hover", e.GetNewValue<bool>()));
         ShowCodeBlockLineNumbersProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         WrapCodeBlockLinesProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         CodeBlockMaxHeightProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());

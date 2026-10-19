@@ -90,6 +90,9 @@ public class ThemePresetContrastTests
         yield return ("MarkdownCodeLineNumberForeground", "MarkdownCodeBlockBackground", Text);
         // The copy icon under the pointer, drawn in the code's colour by the default theme
         yield return ("MarkdownCodeBlockForeground", "MarkdownCodeCopyButtonHoverBackground over MarkdownCodeHeaderBackground", NonText);
+        // The copy icon of a display formula (MarkView.Avalonia.Math), on the page, and its hover.
+        yield return ("MarkdownCodeHeaderForeground", "Page", NonText);
+        yield return ("MarkdownCodeBlockForeground", "MarkdownCodeCopyButtonHoverBackground over Page", NonText);
         yield return ("MarkdownBlockquoteBorder", "Page", NonText);
         yield return ("MarkdownTableBorder", "Page", NonText);
         yield return ("MarkdownTableBorder", "MarkdownTableRowAlternateBackground", NonText);
