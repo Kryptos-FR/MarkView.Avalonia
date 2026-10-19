@@ -14,7 +14,7 @@
     <PackageVersion Include="Markdig" Version="1.4.1" />
     <!-- Plugin dependencies -->
     <PackageVersion Include="CSharpMath.SkiaSharp" Version="0.5.1" />
-    <PackageVersion Include="Mermaider" Version="0.12.2" />
+    <PackageVersion Include="Mermaider" Version="0.15.1" />
     <PackageVersion Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="$(SkiaSharpVersion)" />
     <PackageVersion Include="SkiaSharp.NativeAssets.WebAssembly" Version="$(SkiaSharpVersion)" />
