@@ -109,7 +109,7 @@ public class MathCopyButtonTests
     {
         using var f = Show("$$\nx^2\n$$");
         var button = f.CopyButton;
-        var icon = Assert.IsType<PathIcon>(button.Content);
+        var icon = Assert.IsAssignableFrom<PathIcon>(button.Content);
         var copyIcon = icon.Data;
 
         Assert.Equal("Copy formula", AutomationProperties.GetName(button));

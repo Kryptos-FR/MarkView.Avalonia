@@ -59,7 +59,7 @@ internal static class CodeBlockToolbar
         }
         if (showCopyButton)
         {
-            var button = CreateCopyButton(GetCode(block), MarkdownCopyOrigin.CodeBlock);
+            var button = CreateCopyButton(() => GetCode(block), MarkdownCopyOrigin.CodeBlock);
             Grid.SetColumn(button, 1);
             toolbar.Children.Add(button);
         }
@@ -185,15 +185,16 @@ internal static class CodeBlockToolbar
     };
 
     /// <summary>
-    /// Creates a <c>markdown-code-copy</c> button that copies <paramref name="text"/>, reported to the
-    /// viewer's <see cref="MarkdownViewer.CopyingToClipboard"/> handlers as coming from
-    /// <paramref name="origin"/>, and takes the <c>copied</c> class for a moment once it did.
+    /// Creates a <c>markdown-code-copy</c> button that copies the text <paramref name="text"/> returns
+    /// when it is clicked, reported to the viewer's <see cref="MarkdownViewer.CopyingToClipboard"/>
+    /// handlers as coming from <paramref name="origin"/>, and takes the <c>copied</c> class for a moment
+    /// once it did.
     /// </summary>
-    internal static Button CreateCopyButton(string text, MarkdownCopyOrigin origin)
+    internal static Button CreateCopyButton(Func<string> text, MarkdownCopyOrigin origin)
     {
         // The icon's geometry, the tooltip and the accessible name come from the theme, so they
         // can be restyled or translated, and can change with the "copied" class.
-        var button = new Button { Content = new PathIcon() };
+        var button = new Button { Content = new CopyIcon() };
         button.Classes.Add("markdown-code-copy");
 
         IDisposable? resetTimer = null;
@@ -203,7 +204,7 @@ internal static class CodeBlockToolbar
             try
             {
                 // In a viewer, the copy goes through its CopyingToClipboard event.
-                if (!await CopyAsync(button, origin, text))
+                if (!await CopyAsync(button, origin, text()))
                     return;
             }
             catch (Exception)
