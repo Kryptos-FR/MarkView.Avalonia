@@ -8,14 +8,17 @@ namespace MarkView.Avalonia.Rendering;
 
 /// <summary>
 /// Animates a <see cref="ScrollViewer"/>'s vertical offset to a target, one step per rendered frame, easing out
-/// over <see cref="Duration"/>. The target is asked for again at each frame, so content that grows or shrinks
+/// over a <see cref="Duration"/> that grows with the distance. The target is asked for again at each frame, so content that grows or shrinks
 /// above it while the animation runs does not make it miss. The animation stops at the target, when the target
 /// is gone (<c>null</c>), or as soon as something else moves the offset, e.g. the user scrolling.
 /// </summary>
 internal sealed class SmoothScroll
 {
-    /// <summary>How long an animation takes, whatever the distance.</summary>
-    public static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(300);
+    /// <summary>How long an animation over a short distance takes.</summary>
+    public static readonly TimeSpan MinDuration = TimeSpan.FromMilliseconds(150);
+
+    /// <summary>How long an animation over a long distance takes, at most.</summary>
+    public static readonly TimeSpan MaxDuration = TimeSpan.FromMilliseconds(500);
 
     private readonly ScrollViewer _scrollViewer;
     private readonly Func<double?> _target;
@@ -34,6 +37,9 @@ internal sealed class SmoothScroll
         _target = target;
         _from = _lastOffset = scrollViewer.Offset.Y;
     }
+
+    /// <summary>How long the animation takes, set by its first step from the distance to the target.</summary>
+    public TimeSpan Duration { get; private set; }
 
     /// <summary>Whether the animation has not finished or been stopped yet.</summary>
     public bool IsRunning { get; private set; } = true;
@@ -75,7 +81,11 @@ internal sealed class SmoothScroll
             return false;
         }
 
-        _startTime ??= time;
+        if (_startTime is null)
+        {
+            _startTime = time;
+            Duration = DurationFor(Math.Abs(target - _from));
+        }
         var progress = Math.Clamp((time - _startTime.Value) / Duration, 0, 1);
         var y = _from + (target - _from) * Ease(progress);
         _scrollViewer.Offset = new Vector(_scrollViewer.Offset.X, Math.Max(0, y));
@@ -85,6 +95,17 @@ internal sealed class SmoothScroll
         if (progress >= 1)
             Stop();
         return IsRunning;
+    }
+
+    /// <summary>
+    /// How long an animation over <paramref name="distance"/> pixels takes: in proportion to its square root, as
+    /// browsers do, so a long jump is quicker per pixel than a short one, from <see cref="MinDuration"/> (up to
+    /// about 350 pixels) to <see cref="MaxDuration"/> (from about 3,900 pixels).
+    /// </summary>
+    internal static TimeSpan DurationFor(double distance)
+    {
+        var duration = TimeSpan.FromMilliseconds(8 * Math.Sqrt(distance));
+        return duration < MinDuration ? MinDuration : duration > MaxDuration ? MaxDuration : duration;
     }
 
     /// <summary>A cubic ease-out: fast at first, slowing down to the target.</summary>

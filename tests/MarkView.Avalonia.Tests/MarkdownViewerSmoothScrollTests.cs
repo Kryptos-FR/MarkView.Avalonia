@@ -89,10 +89,10 @@ public class MarkdownViewerSmoothScrollTests
         Assert.True(scroll.Step(start));
         Assert.Equal(0, scrollViewer.Offset.Y, 3);
 
-        Assert.True(scroll.Step(start + SmoothScroll.Duration / 2));
+        Assert.True(scroll.Step(start + scroll.Duration / 2));
         Assert.Equal(expected * SmoothScroll.Ease(0.5), scrollViewer.Offset.Y, 3);
 
-        Assert.False(scroll.Step(start + SmoothScroll.Duration));
+        Assert.False(scroll.Step(start + scroll.Duration));
         Assert.Equal(expected, scrollViewer.Offset.Y, 3);
         Assert.Null(viewer.ActiveSmoothScroll);
         window.Close();
@@ -127,11 +127,11 @@ public class MarkdownViewerSmoothScrollTests
         var scroll = viewer.ActiveSmoothScroll!;
         var start = TimeSpan.Zero;
         scroll.Step(start);
-        scroll.Step(start + SmoothScroll.Duration / 3);
+        scroll.Step(start + scroll.Duration / 3);
 
         scrollViewer.Offset = new Vector(0, 42);
 
-        Assert.False(scroll.Step(start + SmoothScroll.Duration / 2));
+        Assert.False(scroll.Step(start + scroll.Duration / 2));
         Assert.Equal(42, scrollViewer.Offset.Y);
         Assert.Null(viewer.ActiveSmoothScroll);
         window.Close();
@@ -144,14 +144,14 @@ public class MarkdownViewerSmoothScrollTests
         viewer.ScrollToAnchor("target-heading");
         var scroll = viewer.ActiveSmoothScroll!;
         scroll.Step(TimeSpan.Zero);
-        scroll.Step(SmoothScroll.Duration / 2);
+        scroll.Step(scroll.Duration / 2);
 
         var first = viewer.GetLogicalDescendants().OfType<MarkdownSelectableTextBlock>().First();
         first.Margin = new Thickness(0, 0, 0, 500);
         window.UpdateLayout();
         var expected = TargetOffset(viewer, scrollViewer, "Target Heading");
 
-        Assert.False(scroll.Step(SmoothScroll.Duration));
+        Assert.False(scroll.Step(scroll.Duration));
         Assert.Equal(expected, scrollViewer.Offset.Y, 3);
         window.Close();
     }
@@ -170,7 +170,7 @@ public class MarkdownViewerSmoothScrollTests
         Assert.NotNull(second);
         Assert.NotSame(first, second);
         Assert.False(first.IsRunning);
-        Assert.False(first.Step(SmoothScroll.Duration));
+        Assert.False(first.Step(SmoothScroll.MaxDuration));
         window.Close();
     }
 
@@ -184,7 +184,7 @@ public class MarkdownViewerSmoothScrollTests
 
         viewer.Markdown = "# Other\n\nShort.";
 
-        Assert.False(scroll.Step(SmoothScroll.Duration / 2));
+        Assert.False(scroll.Step(scroll.Duration / 2));
         Assert.False(scroll.IsRunning);
         Assert.Equal(0, scrollViewer.Offset.Y);
         window.Close();
@@ -203,7 +203,7 @@ public class MarkdownViewerSmoothScrollTests
         var scroll = viewer.ActiveSmoothScroll;
         Assert.NotNull(scroll);
         scroll.Step(TimeSpan.Zero);
-        scroll.Step(SmoothScroll.Duration);
+        scroll.Step(scroll.Duration);
         Assert.Equal(expected, scrollViewer.Offset.Y, 3);
         window.Close();
     }
@@ -238,6 +238,32 @@ public class MarkdownViewerSmoothScrollTests
         viewer.ScrollToAnchor("target-heading");
 
         Assert.Null(viewer.ActiveSmoothScroll);
+    }
+
+    [Theory]
+    [InlineData(0, 150)]
+    [InlineData(100, 150)]
+    [InlineData(400, 160)]
+    [InlineData(2500, 400)]
+    [InlineData(10000, 500)]
+    public void The_duration_grows_with_the_square_root_of_the_distance_between_a_minimum_and_a_maximum(double distance, double milliseconds)
+    {
+        Assert.Equal(TimeSpan.FromMilliseconds(milliseconds), SmoothScroll.DurationFor(distance));
+    }
+
+    [AvaloniaFact]
+    public void The_first_step_sets_the_duration_from_the_distance_to_the_anchor()
+    {
+        var (window, scrollViewer, viewer) = Show();
+        var expected = TargetOffset(viewer, scrollViewer, "Target Heading");
+        viewer.ScrollToAnchor("target-heading");
+        var scroll = viewer.ActiveSmoothScroll!;
+
+        scroll.Step(TimeSpan.Zero);
+
+        Assert.Equal(SmoothScroll.DurationFor(expected), scroll.Duration);
+        Assert.True(scroll.Duration > SmoothScroll.MinDuration);
+        window.Close();
     }
 
     [Theory]
