@@ -438,7 +438,7 @@ Extension packages may ship their own theme file with additional overridable col
 Example — increase heading size and add a bottom border:
 
 ```xml
-<Style Selector="TextBlock.markdown-h1">
+<Style Selector=":is(TextBlock).markdown-h1">
   <Setter Property="FontSize" Value="36" />
   <Setter Property="Foreground" Value="#1A1A2E" />
   <Setter Property="Margin" Value="0,12,0,6" />
