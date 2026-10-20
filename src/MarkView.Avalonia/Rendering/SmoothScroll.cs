@@ -118,6 +118,7 @@ internal sealed class SmoothScroll
     internal static TimeSpan DurationFor(double distance)
     {
         var duration = TimeSpan.FromMilliseconds(8 * Math.Sqrt(distance));
+        // Stryker disable once Equality : at either bound, both branches return the same duration
         return duration < MinDuration ? MinDuration : duration > MaxDuration ? MaxDuration : duration;
     }
 
