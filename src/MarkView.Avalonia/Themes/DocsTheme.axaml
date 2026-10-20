@@ -132,6 +132,9 @@
           <SolidColorBrush x:Key="MarkdownHighContrastBorder">#000000</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+      <!-- Alerts have no bar; in high contrast they get an outline instead -->
+      <Thickness x:Key="MarkdownAlertBorderThickness">0</Thickness>
+      <Thickness x:Key="MarkdownHighContrastAlertBorderThickness">1</Thickness>
     </ResourceDictionary>
   </Styles.Resources>
 
@@ -325,7 +328,7 @@
 
   <!-- Alerts: tinted boxes with 8px corners and no bar, 14px text, the title in the kind's colour -->
   <Style Selector="Border.markdown-alert">
-    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="BorderThickness" Value="{DynamicResource MarkdownAlertBorderThickness}" />
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="16,12" />
     <Setter Property="Margin" Value="0,8" />
@@ -346,50 +349,4 @@
     <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
     <Setter Property="TextElement.FontSize" Value="14" />
   </Style>
-
-  <!-- High contrast (MarkdownViewer:high-contrast, see MarkdownTheme.axaml). The styles above come after
-       the default theme's high-contrast ones and would win over them, so the colours this preset sets
-       go back to the MarkdownHighContrast* palette here: no muted text, soft headers or striped rows,
-       solid borders for the dividers and rules, and an outline around alerts, which have no bar. -->
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast">
-    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBackground}" />
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(TextBlock).markdown-h6">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(mr|MarkdownSelectableTextBlock).markdown-heading">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast mri|MarkdownHyperlink">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastLink}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Button.markdown-code-copy">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Button.markdown-code-copy:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-blockquote">
-    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Separator.markdown-thematic-break">
-    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-table-header">
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-table-header :is(TextBlock)">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-table-row-even">
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-alert">
-    <Setter Property="BorderThickness" Value="1" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast StackPanel.markdown-footnote-group">
-    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-
 </Styles>

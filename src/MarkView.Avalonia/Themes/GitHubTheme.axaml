@@ -345,48 +345,4 @@
   <Style Selector="StackPanel.markdown-definition">
     <Setter Property="Margin" Value="16,0,0,0" />
   </Style>
-
-  <!-- High contrast (MarkdownViewer:high-contrast, see MarkdownTheme.axaml). The styles above come after
-       the default theme's high-contrast ones and would win over them, so the colours this preset sets
-       go back to the MarkdownHighContrast* palette here: no muted text, no striped rows, and solid
-       borders for the rules, quotes and grids. -->
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast">
-    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBackground}" />
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(TextBlock).markdown-h6">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(mr|MarkdownSelectableTextBlock).markdown-heading">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast mri|MarkdownHyperlink">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastLink}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Button.markdown-code-copy">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Button.markdown-code-copy:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-blockquote">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(TextBlock).markdown-task-list">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Separator.markdown-thematic-break">
-    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-table-cell">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-table-row-even">
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast StackPanel.markdown-footnote-group">
-    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-
 </Styles>

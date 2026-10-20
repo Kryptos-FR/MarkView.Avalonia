@@ -52,7 +52,7 @@ Each extension theme is independent — it does not import the core `MarkdownThe
 | `MarkdownAlertCautionBackground` | `[!CAUTION]` background | `#1AEF4444` | `#FEF2F2` |
 | `MarkdownMarkedBackground` | Highlighted text (`==text==`) | `#5C4B00` | `#FFFF00` |
 
-Colours are `#AARRGGBB` when translucent. The theme also defines two `StreamGeometry` resources, the same in both variants: `MarkdownCodeCopyIcon` and `MarkdownCodeCopiedIcon`, the copy button's icons (see [Code block toolbar](#code-block-toolbar)). The default theme sets a few colours directly in its styles rather than through a key: the figure border (`#40808080`) and the table header background (`#20808080`); restyle those selectors to change them. The defaults meet WCAG 2.2 AA contrast; see [Accessibility](accessibility.md#colour-contrast). The `MarkdownHighContrast*` keys, the palette of the high-contrast mode, are listed under [High contrast](accessibility.md#high-contrast).
+Colours are `#AARRGGBB` when translucent. The theme also defines two `StreamGeometry` resources, the same in both variants: `MarkdownCodeCopyIcon` and `MarkdownCodeCopiedIcon`, the copy button's icons (see [Code block toolbar](#code-block-toolbar)). A few colours are the same in both variants and sit outside the `Light` and `Dark` dictionaries: `MarkdownTableHeaderBackground` (`#20808080`), `MarkdownFigureBorder` and `MarkdownThinkingBorder` (`#40808080`), and `MarkdownCodeBlockBorder`, the outline of code blocks and their toolbar (`Transparent`, drawn only in high contrast unless a preset gives it a width). The dimming and outline widths that high contrast changes are keys too: `MarkdownBlockquoteOpacity` and `MarkdownFootnoteOpacity` (0.85), `MarkdownFigureCaptionOpacity` and `MarkdownThinkingHeaderOpacity` (0.75), `MarkdownThinkingContentOpacity` (0.8), `MarkdownHeadingFoldOpacity` (0.7), `MarkdownCodeBlockBorderThickness` and `MarkdownCodeHeaderBorderThickness` (0). The defaults meet WCAG 2.2 AA contrast; see [Accessibility](accessibility.md#colour-contrast). The `MarkdownHighContrast*` keys, the palette of the high-contrast mode, are listed under [High contrast](accessibility.md#high-contrast).
 
 ## Theme presets
 
@@ -273,7 +273,7 @@ and redefines the default theme's keys as follows:
 | `MarkdownMarkedBackground` | `#5C4B00` | `#FFF3C4` |
 | `MarkdownFindCurrentMatchBackground` | `#652A00` | `#FFD3A3` |
 
-The current find match is a paler orange than the default theme's in the light variant, so inline code, drawn in the link colour, keeps 4.5:1 on it. The other find highlight, the image lightbox and the `MarkdownHighContrast*` palette keep the default theme's colours. In high contrast the preset gives up its own page colours, muted text, soft table headers and striped rows for that palette, the divider above h2 turns solid, and alerts, which have no bar, get a 1px outline.
+The current find match is a paler orange than the default theme's in the light variant, so inline code, drawn in the link colour, keeps 4.5:1 on it. The other find highlight, the image lightbox and the `MarkdownHighContrast*` palette keep the default theme's colours. In high contrast the preset gives up its own page colours, muted text, soft table headers and striped rows for that palette, the divider above h2 turns solid, and alerts, which have no bar, get a 1px outline (`MarkdownAlertBorderThickness`, which `MarkdownHighContrastPalette` takes from `MarkdownHighContrastAlertBorderThickness` in high contrast).
 
 ### Overriding a preset
 

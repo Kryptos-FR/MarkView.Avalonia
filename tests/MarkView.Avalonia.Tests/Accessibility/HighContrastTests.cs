@@ -191,6 +191,8 @@ public class HighContrastTests
 
                 Text with a [link](https://example.com) and ==marked== words.[^1]
 
+                ## Section
+
                 ###### Level 6
 
                 > A quote.
@@ -233,7 +235,8 @@ public class HighContrastTests
 
         // What the preset recolours: muted text, rules and grids
         AssertColor(foreground, Single<TextBlock>("markdown-h6").Foreground);
-        AssertColor(border, Single<MarkdownSelectableTextBlock>("markdown-h1").BorderBrush);
+        // The rule under h2, which both presets draw
+        AssertColor(border, Single<MarkdownSelectableTextBlock>("markdown-h2").BorderBrush);
         var quote = Single<Border>("markdown-blockquote");
         AssertColor(border, quote.BorderBrush);
         AssertColor(foreground, Paragraph("A quote.").Foreground);
@@ -308,5 +311,115 @@ public class HighContrastTests
         AssertColor(border, Single<Border>("markdown-code-header").BorderBrush);
         AssertColor(border, Single<Border>("markdown-code-block").BorderBrush);
         AssertColor(background, Single<Border>("markdown-code-block").Background);
+    }
+
+    private static readonly string[] Presets = ["MarkdownTheme", "GitHubTheme", "ChatTheme", "DocsTheme"];
+
+    private static StyleInclude ThemeInclude(string theme) => new((Uri?)null)
+    {
+        Source = new Uri($"avares://MarkView.Avalonia/Themes/{theme}.axaml"),
+    };
+
+    [AvaloniaFact]
+    public void Palette_is_only_merged_into_the_viewer_while_high_contrast_is_on()
+    {
+        var viewer = ShowViewer("> A quote.", withTheme: true);
+        var quote = viewer.GetVisualDescendants().OfType<Border>().Single(b => b.Classes.Contains("markdown-blockquote"));
+        Assert.Empty(viewer.Resources.MergedDictionaries);
+        Assert.Equal(0.85, quote.Opacity);
+
+        viewer.HighContrastMode = HighContrastMode.Enabled;
+        var palette = Assert.IsAssignableFrom<IResourceDictionary>(Assert.Single(viewer.Resources.MergedDictionaries));
+        Assert.Equal(1, quote.Opacity);
+        // A string entry takes the value of the key it names; one naming a key no theme defines is left out.
+        Assert.True(viewer.TryFindResource("MarkdownHighContrastBorder", viewer.ActualThemeVariant, out var border));
+        Assert.Same(border, palette["MarkdownBlockquoteBorder"]);
+        Assert.False(palette.ContainsKey("MarkdownAlertBorderThickness"));
+
+        viewer.HighContrastMode = HighContrastMode.Disabled;
+        Assert.Empty(viewer.Resources.MergedDictionaries);
+        Assert.Equal(0.85, quote.Opacity);
+    }
+
+    [AvaloniaFact]
+    public void Palette_follows_a_change_of_theme_variant()
+    {
+        using var _ = new ThemeScope(ThemeVariant.Light);
+        var viewer = ShowViewer("[link](https://example.com)", HighContrastMode.Enabled, withTheme: true);
+        Assert.Equal(Color.Parse("#00009F"), LinkColor(viewer));
+
+        var window = (Window)TopLevel.GetTopLevel(viewer)!;
+        window.RequestedThemeVariant = ThemeVariant.Dark;
+        Assert.Equal(Color.Parse("#FFFF00"), LinkColor(viewer));
+
+        window.RequestedThemeVariant = ThemeVariant.Light;
+        Assert.Equal(Color.Parse("#00009F"), LinkColor(viewer));
+    }
+
+    [AvaloniaFact]
+    public void Palette_follows_a_preset_added_or_removed_while_high_contrast_is_on()
+    {
+        using var _ = new ThemeScope(ThemeVariant.Dark);
+        var viewer = ShowViewer("[link](https://example.com)", HighContrastMode.Enabled, withTheme: true);
+        Assert.Equal(Color.Parse("#FFFF00"), LinkColor(viewer));
+
+        var preset = ThemeInclude("GitHubTheme");
+        viewer.Styles.Add(preset);
+        // Inlines get their restyled values back at the next measure (AvaloniaUI/Avalonia#22505)
+        viewer.UpdateLayout();
+        Assert.Equal(Color.Parse("#71B7FF"), LinkColor(viewer));
+        Assert.Equal(Color.Parse("#0A0C10"), ((ISolidColorBrush)viewer.Background!).Color);
+
+        viewer.Styles.Remove(preset);
+        viewer.UpdateLayout();
+        Assert.Equal(Color.Parse("#FFFF00"), LinkColor(viewer));
+        Assert.Single(viewer.Resources.MergedDictionaries);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false, "0,0,0,0")]
+    [InlineData(true, "1,1,1,1")]
+    public void Docs_preset_outlines_alerts_in_high_contrast(bool highContrast, string thickness)
+    {
+        var viewer = new MarkdownViewer
+        {
+            HighContrastMode = highContrast ? HighContrastMode.Enabled : HighContrastMode.Disabled,
+            Markdown = "> [!NOTE]\n> Body",
+        };
+        viewer.Styles.Add(MarkdownThemeInclude());
+        viewer.Styles.Add(ThemeInclude("DocsTheme"));
+        new Window { Width = 400, Height = 300, Content = viewer }.Show();
+
+        var alert = viewer.GetVisualDescendants().OfType<Border>().Single(b => b.Classes.Contains("markdown-alert"));
+        Assert.Equal(Thickness.Parse(thickness), alert.BorderThickness);
+    }
+
+    [AvaloniaTheory]
+    [MemberData(nameof(PresetNames))]
+    public void High_contrast_needs_no_style_of_its_own_in_a_preset(string theme)
+    {
+        // Each :high-contrast style is a style instance and an activator on every control it matches, whether or
+        // not high contrast is on; the palette swap costs nothing until it is. Only the default theme keeps a
+        // few, for the viewer itself and for elements a document has few of.
+        var path = Path.Combine(FindRepoRoot(), "src", "MarkView.Avalonia", "Themes", theme + ".axaml");
+        var selectors = System.Xml.Linq.XDocument.Load(path).Descendants()
+            .Select(e => (string?)e.Attribute("Selector"))
+            .Where(s => s?.Contains(":high-contrast", StringComparison.Ordinal) == true)
+            .ToList();
+
+        if (theme == "MarkdownTheme")
+            Assert.Equal(4, selectors.Count);
+        else
+            Assert.Empty(selectors);
+    }
+
+    public static TheoryData<string> PresetNames() => new(Presets);
+
+    private static string FindRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Directory.Packages.props")))
+            dir = dir.Parent;
+        return dir?.FullName ?? throw new InvalidOperationException("Repo root not found.");
     }
 }
