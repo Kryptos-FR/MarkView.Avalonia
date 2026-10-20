@@ -44,9 +44,9 @@ public class AvaloniaRenderer : RendererBase
 
     /// <summary>
     /// Whether code blocks show their language (the info string of a fenced code block) in a
-    /// toolbar above the code. Defaults to <c>true</c>.
+    /// toolbar above the code. Defaults to <c>false</c>.
     /// </summary>
-    public bool ShowCodeBlockLanguage { get; set; } = true;
+    public bool ShowCodeBlockLanguage { get; set; }
 
     /// <summary>
     /// Whether code blocks show a button in a toolbar above the code that copies the code to the

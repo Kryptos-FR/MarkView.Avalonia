@@ -10,7 +10,7 @@
 | `BaseUri` | `Uri?` | `null` | Base URI for resolving relative links and image paths. When `Source` is set and `BaseUri` is not, it is inferred automatically from the source location. |
 | `Extensions` | `IList<IMarkViewExtension>` | `[]` | Per-instance rendering extensions. Applied after global defaults. See also [Custom fenced blocks](#custom-fenced-blocks). |
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | Controls how images without an explicit `=WxH` size hint scale relative to their container. See [Image sizing](#image-sizing). |
-| `ShowCodeBlockLanguage` | `bool` | `true` | Shows the language of a fenced code block (e.g. `csharp`) in a toolbar above the code. See [Code block toolbar](#code-block-toolbar). |
+| `ShowCodeBlockLanguage` | `bool` | `false` | Shows the language of a fenced code block (e.g. `csharp`) in a toolbar above the code. See [Code block toolbar](#code-block-toolbar). |
 | `ShowCodeBlockCopyButton` | `bool` | `true` | Shows a button in a toolbar above each code block that copies the code to the clipboard, and one in the corner of each display formula that copies its TeX source. See [Code block toolbar](#code-block-toolbar). |
 | `ShowCodeBlockCopyButtonOnHover` | `bool` | `false` | Shows those copy buttons only while the pointer is over their block or they have keyboard focus. Restyles them without re-rendering. See [Showing copy buttons on hover](#showing-copy-buttons-on-hover). |
 | `ShowCodeBlockLineNumbers` | `bool` | `false` | Shows the number of each line in a gutter next to the code. Selection and copy never include the numbers. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
@@ -711,15 +711,15 @@ Turn it off with `IsImageSaveEnabled`, which hides the save button and the menu 
 
 ## Code block toolbar
 
-Code blocks get a small toolbar above the code, with the block's language on the left and a
-copy button on the right. The button copies the code exactly as written in the markdown, and
+Code blocks get a small toolbar above the code, with a copy button on the right and, when
+`ShowCodeBlockLanguage` is on, the block's language on the left (off by default, as on GitHub).
+The button copies the code exactly as written in the markdown, and
 switches to a check mark for two seconds once the copy succeeded. In a `MarkdownViewer`, the copy
 raises [`CopyingToClipboard`](text-selection.md#changing-what-is-copied) first, so the
-application can change or cancel it. Both parts can be turned off
-independently:
+application can change or cancel it. Each part is switched independently:
 
 ```xml
-<mv:MarkdownViewer ShowCodeBlockLanguage="False" ShowCodeBlockCopyButton="True" />
+<mv:MarkdownViewer ShowCodeBlockLanguage="True" ShowCodeBlockCopyButton="True" />
 ```
 
 ```csharp
@@ -730,14 +730,14 @@ Or for every viewer of the application, with a normal Avalonia style:
 
 ```xml
 <Style Selector="mv|MarkdownViewer">
-  <Setter Property="ShowCodeBlockLanguage" Value="False" />
+  <Setter Property="ShowCodeBlockLanguage" Value="True" />
   <Setter Property="ShowCodeBlockCopyButton" Value="False" />
 </Style>
 ```
 
-The toolbar is only added when it has something to show: a block without a language
-(an indented block, or a fence without an info string) with the copy button turned off is
-rendered exactly as before, with no toolbar. Changing either property re-renders the document.
+The toolbar is only added when it has something to show: with the copy button turned off, a
+block gets none unless `ShowCodeBlockLanguage` is on and it has a language (an indented block,
+or a fence without an info string, has none). Changing either property re-renders the document.
 
 The toolbar applies to the built-in code block renderer and to the code blocks of the
 `SyntaxHighlighting` and `Mermaid` (non-diagram fences) packages. Mermaid diagrams have no

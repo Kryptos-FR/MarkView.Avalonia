@@ -23,7 +23,7 @@ public class TextMateCodeBlockRendererTests
     {
         var pipeline = new MarkdownPipelineBuilder().Build();
         var document = Markdown.Parse(markdown, pipeline);
-        var renderer = new AvaloniaRenderer();
+        var renderer = new AvaloniaRenderer { ShowCodeBlockLanguage = true };
         var extension = new TextMateExtension(ThemeName.DarkPlus);
         extension.Register(renderer);
         pipeline.Setup(renderer);
