@@ -132,6 +132,21 @@ public class MarkdownViewerImageZoomTests
     }
 
     [AvaloniaFact]
+    public async Task The_lightbox_takes_its_themes_from_the_viewer()
+    {
+        var themes = new Rendering.ThemeKeyTests.TaggedThemes();
+        using var f = await ShowAsync($"![A diagram]({FakeUrl()})", configure: v => themes.AddTo(v.Resources,
+            "MarkdownImageLightboxBackingTheme", "MarkdownImageLightboxToolbarTheme", "MarkdownImageLightboxZoomLevelTheme"));
+
+        Click(f.Window, f.Center(f.Image));
+
+        var lightbox = Assert.IsType<ImageLightbox>(f.Lightbox);
+        Assert.Equal("MarkdownImageLightboxBackingTheme", themes.KeyOf(lightbox.Backing));
+        Assert.Equal("MarkdownImageLightboxToolbarTheme", themes.KeyOf(lightbox.Toolbar));
+        Assert.Equal("MarkdownImageLightboxZoomLevelTheme", themes.KeyOf(lightbox.ZoomLevel));
+    }
+
+    [AvaloniaFact]
     public async Task The_lightbox_never_enlarges_an_image_past_its_natural_size()
     {
         using var f = await ShowAsync($"![small]({FakeUrl()})", width: 40, height: 20);
