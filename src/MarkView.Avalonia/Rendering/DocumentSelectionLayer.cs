@@ -656,23 +656,21 @@ internal sealed class DocumentSelectionLayer : Control
 
     /// <summary>
     /// Fills <see cref="IndexEntry.CachedBounds"/> and <see cref="IndexEntry.CachedClip"/> when
-    /// they are not cached yet, so subsequent calls avoid a full visual-tree <c>TranslatePoint</c>
+    /// they are not cached yet, so subsequent calls avoid a full visual-tree transform
     /// walk. Returns <c>false</c> when the entry's element is not in the layer's visual tree.
     /// </summary>
     private bool EnsureBounds(IndexEntry entry)
     {
         if (entry.CachedBounds is not null) return true;
 
-        var origin = entry.Element.TranslatePoint(new Point(0, 0), this);
-        if (origin is null) return false;
-        var bounds = new Rect(origin.Value, entry.Element.Bounds.Size);
+        if (entry.Element.BoundsIn(this) is not { } bounds) return false;
 
         var clip = bounds;
         var documentRoot = this.GetVisualParent();
         for (var visual = entry.Element.GetVisualParent(); visual is not null && visual != documentRoot; visual = visual.GetVisualParent())
         {
-            if (visual.ClipToBounds && visual.TranslatePoint(new Point(0, 0), this) is { } visualOrigin)
-                clip = clip.Intersect(new Rect(visualOrigin, visual.Bounds.Size));
+            if (visual.ClipToBounds && visual.BoundsIn(this) is { } visualBounds)
+                clip = clip.Intersect(visualBounds);
         }
 
         entry.CachedBounds = bounds;

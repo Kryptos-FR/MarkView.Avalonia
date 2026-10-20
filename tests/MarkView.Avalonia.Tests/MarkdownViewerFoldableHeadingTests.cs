@@ -79,6 +79,18 @@ public class MarkdownViewerFoldableHeadingTests
         return new Fixture(window, before, viewer);
     }
 
+    [AvaloniaFact]
+    public void The_button_of_a_right_to_left_heading_is_on_its_right()
+    {
+        using var fixture = Show("# שלום\n\nטקסט");
+        var heading = Block(fixture.Viewer, "שלום");
+        var layout = heading.TextLayout;
+
+        Assert.Equal(FlowDirection.RightToLeft, heading.FlowDirection);
+        // The button is the first character of the heading's text: right to left, it comes first on the right.
+        Assert.True(Assert.Single(layout.HitTestTextRange(0, 1)).Left >= Assert.Single(layout.HitTestTextRange(1, 4)).Right);
+    }
+
     private static MarkdownViewer Render(string markdown) =>
         new() { AreHeadingsFoldable = true, Markdown = markdown };
 

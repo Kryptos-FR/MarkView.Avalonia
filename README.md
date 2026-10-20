@@ -116,6 +116,19 @@ are opt-in:
 
 See [Code block toolbar](docs/configuration.md#code-block-toolbar) for details.
 
+### Right-to-left text
+
+Each paragraph, heading, list, quote and table takes the direction of its own text, so Hebrew and
+Arabic read right to left and code stays left to right. Turn detection off to use the viewer's
+`FlowDirection` for the whole document:
+
+```xml
+<mv:MarkdownViewer DetectTextDirection="False" />
+```
+
+See [Right-to-left text](docs/right-to-left.md) for details, including the fonts a browser build
+needs.
+
 ### Custom fenced blocks
 
 Render the fenced code blocks of a language as your own control, without writing a Markdig
@@ -192,6 +205,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Thematic breaks | CommonMark |
 | Hard line breaks | CommonMark (`\` or two spaces) |
 | HTML `<br>` / `<br />` | Rendered as line break |
+| Right-to-left text | Each block takes the direction of its first letter that has one (Hebrew, Arabic…); code stays left to right ([right-to-left text](docs/right-to-left.md)) |
 
 ### Extensions (enabled by default, with `UseGitHubExtensions()`)
 

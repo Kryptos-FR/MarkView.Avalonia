@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 
 using Markdig.Renderers;
 using Markdig.Syntax;
@@ -162,6 +163,16 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     internal bool IsImageZoomEnabled { get; set; }
 
+    /// <summary>
+    /// When <c>true</c>, each block takes the <see cref="Visual.FlowDirection"/> of its own text, as HTML's
+    /// <c>dir="auto"</c> does: a paragraph, heading, list, quote or table whose first letter is Hebrew or Arabic
+    /// is laid out right to left, one whose first letter is Latin left to right. A block without a letter
+    /// (only digits or symbols) keeps the direction around it. Code blocks are always left to right, and an
+    /// HTML <c>dir</c> attribute (<c>&lt;div dir="rtl"&gt;</c>, <c>&lt;p dir="rtl"&gt;</c>) wins over the text.
+    /// When <c>false</c>, blocks keep the direction of the control that shows the document. Defaults to <c>true</c>.
+    /// </summary>
+    public bool DetectTextDirection { get; set; } = true;
+
     /// <summary>Raised with the clicked image when <see cref="IsImageZoomEnabled"/> is set.</summary>
     internal event Action<Image>? ImageZoomRequested;
 
@@ -316,6 +327,56 @@ public class AvaloniaRenderer : RendererBase
                     TopLevelBlocks.AddOrUpdate(RootPanel.Children[i], block);
             }
         };
+        ObjectWriteBefore += (_, obj) => _blockStarts.Push(
+            obj is Block and not MarkdownDocument && _stack.Peek() is BlockContainer container
+                ? (container.Panel, container.Panel.Children.Count)
+                : (null, 0));
+        ObjectWriteAfter += (_, obj) => ApplyFlowDirection(obj, _blockStarts.Pop());
+    }
+
+    // For each object being written, innermost last: the panel its block controls are added to and how
+    // many children that panel had before, or no panel for an inline or the document.
+    private readonly Stack<(Panel? Panel, int Count)> _blockStarts = new();
+
+    /// <summary>
+    /// Gives the controls <paramref name="obj"/> added to its panel the direction of the block (see
+    /// <see cref="DetectTextDirection"/>), unless its renderer chose one. The text of a paragraph that reads the
+    /// other way from the list item or table column it is in is aligned to the side of the item's marker or the
+    /// column's other cells.
+    /// </summary>
+    private void ApplyFlowDirection(MarkdownObject obj, (Panel? Panel, int Count) start)
+    {
+        if (start.Panel is not { } panel || panel.Children.Count == start.Count
+            || TextDirection.Of((Block)obj, DetectTextDirection) is not { } direction)
+            return;
+
+        var isAgainstLayout = obj is LeafBlock leaf && TextDirection.OfLayout(leaf, DetectTextDirection) is { } layout && layout != direction;
+        for (var i = start.Count; i < panel.Children.Count; i++)
+        {
+            var child = panel.Children[i];
+            if (!child.IsSet(Visual.FlowDirectionProperty))
+                child.FlowDirection = direction;
+            if (isAgainstLayout && child is TextBlock textBlock && !textBlock.IsSet(TextBlock.TextAlignmentProperty))
+                textBlock.TextAlignment = TextAlignment.End;
+        }
+    }
+
+    /// <summary>
+    /// The direction the text of <paramref name="block"/> is laid out in (see <see cref="DetectTextDirection"/>),
+    /// or <c>null</c> when the block takes the direction of the control that shows the document.
+    /// </summary>
+    internal FlowDirection? ResolveFlowDirection(Block block) => TextDirection.Resolve(block, DetectTextDirection);
+
+    /// <summary>
+    /// <c>true</c> when the text <paramref name="inline"/> belongs to is laid out right to left (see
+    /// <see cref="ResolveFlowDirection"/>).
+    /// </summary>
+    internal bool IsRightToLeft(Markdig.Syntax.Inlines.Inline inline)
+    {
+        var container = inline as Markdig.Syntax.Inlines.ContainerInline ?? inline.Parent;
+        while (container?.Parent is { } parent)
+            container = parent;
+        return container?.ParentBlock is { } leaf && ResolveFlowDirection(leaf) == FlowDirection.RightToLeft;
     }
 
     // The top-level block each control of a root panel was rendered for.

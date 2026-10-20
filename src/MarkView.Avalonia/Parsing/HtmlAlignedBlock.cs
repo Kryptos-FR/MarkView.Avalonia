@@ -15,11 +15,14 @@ internal enum HtmlAlignment
 }
 
 /// <summary>
-/// Blocks aligned by the <c>align</c> attribute of an HTML element: the blocks between a
-/// <c>&lt;div align="…"&gt;</c> and its matching <c>&lt;/div&gt;</c>, or the paragraph or heading of a
-/// <c>&lt;p align="…"&gt;</c> or <c>&lt;h1 align="…"&gt;</c>. Created by <see cref="HtmlSubsetGrouper"/>.
+/// Blocks aligned by the <c>align</c> attribute of an HTML element, or given a direction by its <c>dir</c>
+/// attribute: the blocks between a <c>&lt;div align="…"&gt;</c> or <c>&lt;div dir="…"&gt;</c> and its matching
+/// <c>&lt;/div&gt;</c>, or the paragraph or heading of a <c>&lt;p align="…"&gt;</c> or <c>&lt;h1 align="…"&gt;</c>.
+/// The direction is kept as the block's explicit direction (see <see cref="Rendering.TextDirection.Explicit"/>).
+/// Created by <see cref="HtmlSubsetGrouper"/>.
 /// </summary>
-internal sealed class HtmlAlignedBlock(HtmlAlignment alignment) : ContainerBlock(null)
+internal sealed class HtmlAlignedBlock(HtmlAlignment? alignment) : ContainerBlock(null)
 {
-    public HtmlAlignment Alignment { get; } = alignment;
+    /// <summary>The alignment of the <c>align</c> attribute, or <c>null</c> when the element has a direction only.</summary>
+    public HtmlAlignment? Alignment { get; } = alignment;
 }

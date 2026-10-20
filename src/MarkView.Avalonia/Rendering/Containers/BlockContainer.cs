@@ -10,5 +10,7 @@ namespace MarkView.Avalonia.Rendering.Containers;
 /// </summary>
 internal sealed class BlockContainer(Panel panel) : IContainer
 {
+    public Panel Panel => panel;
+
     public void Add(Control child) => panel.Children.Add(child);
 }

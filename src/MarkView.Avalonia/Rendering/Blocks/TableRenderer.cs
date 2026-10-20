@@ -4,6 +4,7 @@
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Media;
 
 using Markdig.Extensions.Tables;
 
@@ -29,6 +30,10 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
             var width = obj.ColumnDefinitions[i].Width;
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(width > 0 ? width : 1, GridUnitType.Star) });
         }
+
+        // A right-to-left table is mirrored, first column on the right; a column aligned left or right
+        // stays on that side, as text-align does in a browser.
+        var isMirrored = renderer.ResolveFlowDirection(obj) == FlowDirection.RightToLeft;
 
         int rowIndex = 0;
         int bodyRowCount = 0;
@@ -68,8 +73,8 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
                         cellPanel.HorizontalAlignment = alignment.Value switch
                         {
                             TableColumnAlign.Center => HorizontalAlignment.Center,
-                            TableColumnAlign.Right => HorizontalAlignment.Right,
-                            _ => HorizontalAlignment.Left,
+                            TableColumnAlign.Right => isMirrored ? HorizontalAlignment.Left : HorizontalAlignment.Right,
+                            _ => isMirrored ? HorizontalAlignment.Right : HorizontalAlignment.Left,
                         };
                     }
                 }

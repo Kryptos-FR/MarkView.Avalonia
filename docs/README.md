@@ -13,6 +13,7 @@ This folder contains developer-facing documentation for the MarkView.Avalonia li
 | [find-in-document.md](find-in-document.md) | Finding text in the document: API, options, and highlight colours |
 | [streaming.md](streaming.md) | Streaming sessions: appending text incrementally, batching, auto-scroll |
 | [theming.md](theming.md) | Colour resources, the GitHub theme preset, style classes, theme switching, and customisation |
+| [right-to-left.md](right-to-left.md) | Right-to-left text: direction detection, code, the HTML `dir` attribute, and fonts |
 | [accessibility.md](accessibility.md) | Screen reader roles, keyboard navigation of links and interactive elements, colour contrast, and high-contrast mode |
 | [custom-extensions.md](custom-extensions.md) | Writing your own `IMarkViewExtension`, image loaders, and renderers |
 

@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 using Avalonia;
@@ -83,6 +84,80 @@ public class MarkdownSelectableTextBlock : TextBlock
     }
 
     /// <inheritdoc />
+    protected override TextLayout CreateTextLayout(string? text)
+    {
+        // Avalonia ends a TextBlock's text with a TextEndOfParagraph run, and hit testing then places the
+        // characters of a right-to-left run that ends the paragraph one position off: a selection or a find
+        // match over them misses a character or has no width. A text source that ends without that run, as
+        // the one of a TextLayout built from a string does, measures them right. Remove once
+        // https://github.com/AvaloniaUI/Avalonia/issues/22530 is fixed.
+        if (_textRuns is not { } runs || !HasRightToLeftText(runs))
+            return base.CreateTextLayout(text);
+
+        if (!ReferenceEquals(runs, _cachedRuns))
+        {
+            // Avalonia rebuilds the runs whenever the text or its formatting changes, so the shaped runs
+            // cached for the previous ones are stale.
+            _textRunCache.Invalidate();
+            _cachedRuns = runs;
+        }
+
+        var defaultProperties = new GenericTextRunProperties(
+            new Typeface(FontFamily, FontStyle, FontWeight, FontStretch),
+            FontSize,
+            TextDecorations,
+            Foreground,
+            fontFeatures: FontFeatures);
+        var paragraphProperties = new GenericTextParagraphProperties(
+            FlowDirection, IsMeasureValid ? TextAlignment : TextAlignment.Left, true, false,
+            defaultProperties, TextWrapping, LineHeight, 0, LetterSpacing);
+        if (LineSpacing != 0)
+        {
+            try
+            {
+                SetLineSpacing(paragraphProperties, LineSpacing);
+            }
+            catch (MissingMethodException)
+            {
+                return base.CreateTextLayout(text);
+            }
+        }
+        var maxSize = GetMaxSizeFromConstraint();
+        return new TextLayout(
+            new ParagraphTextSource(new InlinesTextSource(runs)),
+            paragraphProperties,
+            TextTrimming,
+            maxSize.Width,
+            maxSize.Height,
+            MaxLines,
+            _textRunCache);
+    }
+
+    // TextParagraphProperties.LineSpacing has an internal setter, which TextBlock sets.
+    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "set_LineSpacing")]
+    private static extern void SetLineSpacing(TextParagraphProperties properties, double value);
+
+    private readonly TextRunCache _textRunCache = new();
+    private IReadOnlyList<TextRun>? _cachedRuns;
+
+    private static bool HasRightToLeftText(IReadOnlyList<TextRun> runs)
+    {
+        foreach (var run in runs)
+        {
+            if (run is TextCharacters && TextDirection.HasRightToLeft(run.Text.Span))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>The text of a <see cref="TextBlock"/>, ended by <c>null</c> rather than a <see cref="TextEndOfParagraph"/>.</summary>
+    private sealed class ParagraphTextSource(ITextSource source) : ITextSource
+    {
+        public TextRun? GetTextRun(int textSourceIndex) =>
+            source.GetTextRun(textSourceIndex) is var run and not TextEndOfParagraph ? run : null;
+    }
+
+    /// <inheritdoc />
     protected override void RenderTextLayout(DrawingContext context, Point origin)
     {
         // Over the background, which is already drawn, and under the text.
@@ -142,8 +217,10 @@ public class MarkdownSelectableTextBlock : TextBlock
 
     // TextHitTestResult.IsInside can't be used: TextLayout.HitTestPoint compares the layout-wide
     // Y against the hit line's own height, so every line below the first reads as outside and
-    // a link that wrapped onto a later line could never be clicked.
-    // Remove once https://github.com/AvaloniaUI/Avalonia/pull/22433 is released.
+    // a link that wrapped onto a later line could never be clicked. It also compares X against
+    // 0…Width rather than the line's own Start, so a link on a right-to-left, centred or
+    // right-aligned line could never be clicked either.
+    // Remove once https://github.com/AvaloniaUI/Avalonia/pull/22433 is released, if it fixes both.
     private static bool IsOnLineText(TextLayout layout, Point point)
     {
         if (point.Y < 0) return false;
@@ -223,6 +300,11 @@ public class MarkdownSelectableTextBlock : TextBlock
         {
             switch (inline)
             {
+                case DirectionIsolate isolate:
+                    // An isolate character the renderer added: laid out, but not copied.
+                    (embeddedText ??= [])[sb.Length] = string.Empty;
+                    sb.Append(isolate.Text);
+                    break;
                 case Run r: sb.Append(r.Text); break;
                 case LineBreak: sb.Append(Environment.NewLine); break;
                 case Span s: AppendInlines(sb, s.Inlines, ref embeddedText); break;

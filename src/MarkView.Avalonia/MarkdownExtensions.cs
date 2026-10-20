@@ -95,11 +95,11 @@ public static class MarkdownExtensions
     /// <c>&lt;sub&gt;</c>, <c>&lt;sup&gt;</c>, <c>&lt;kbd&gt;</c> and <c>&lt;code&gt;</c>; <c>&lt;a href&gt;</c> as a link
     /// and <c>&lt;img src alt width height&gt;</c> as an image, like their markdown counterparts; <c>&lt;br&gt;</c>;</item>
     /// <item>HTML blocks of <c>&lt;p&gt;</c>, <c>&lt;div&gt;</c> and <c>&lt;h1&gt;</c>…<c>&lt;h6&gt;</c> elements, with their
-    /// <c>align</c> attribute, holding inline HTML; <c>&lt;hr&gt;</c>; and a <c>&lt;div align="center"&gt;</c> around
-    /// markdown, separated from it by blank lines.</item>
+    /// <c>align</c> and <c>dir</c> attributes, holding inline HTML; <c>&lt;hr&gt;</c>; and a <c>&lt;div align="center"&gt;</c>
+    /// or <c>&lt;div dir="rtl"&gt;</c> around markdown, separated from it by blank lines.</item>
     /// </list>
-    /// Only the <c>href</c>, <c>src</c>, <c>alt</c>, <c>title</c>, <c>width</c>, <c>height</c> and <c>align</c>
-    /// attributes are read. Any other tag, and a tag without its match, is dropped, and the text around it
+    /// Only the <c>href</c>, <c>src</c>, <c>alt</c>, <c>title</c>, <c>width</c>, <c>height</c>, <c>align</c> and
+    /// <c>dir</c> attributes are read. Any other tag, and a tag without its match, is dropped, and the text around it
     /// shows; the content of <c>&lt;script&gt;</c> and <c>&lt;style&gt;</c> is dropped too. Part of
     /// <see cref="UseGitHubExtensions"/> and <see cref="UseSupportedExtensions"/>.
     /// </summary>

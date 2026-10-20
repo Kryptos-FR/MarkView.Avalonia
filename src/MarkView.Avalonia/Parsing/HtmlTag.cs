@@ -19,7 +19,7 @@ internal sealed partial class HtmlTag
     internal const string Pattern =
         @"<(?<end>/)?(?<name>[a-zA-Z][a-zA-Z0-9-]*)(?<attributes>(?:\s+[^\s""'>/=]+(?:\s*=\s*(?:""[^""]*""|'[^']*'|[^\s""'=<>`]+))?)*)\s*(?<self>/)?>";
 
-    private static readonly string[] AllowedAttributes = ["href", "src", "alt", "title", "width", "height", "align"];
+    private static readonly string[] AllowedAttributes = ["href", "src", "alt", "title", "width", "height", "align", "dir"];
 
     [GeneratedRegex("^" + Pattern + "$", RegexOptions.CultureInvariant)]
     private static partial Regex TagRegex();
