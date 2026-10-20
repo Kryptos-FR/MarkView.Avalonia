@@ -725,18 +725,25 @@ Turn it off with `IsImageSaveEnabled`, which hides the save button and the menu 
 Some content costs far more to build than text: decoding an image, typesetting a formula, laying out
 a Mermaid diagram, colouring the tokens of a code block. The viewer builds it only when its element
 first comes within one viewport height of the visible area, so a long document shows its first screen
-quickly and the parts nobody scrolls to cost nothing:
+quickly and the parts nobody scrolls to cost nothing. On the desktop, Mermaid diagrams are rendered on a
+background thread as soon as the viewer is shown instead, so scrolling never waits for one:
 
 | Content | Before it comes near | Once it comes near |
 |---|---|---|
 | Image, YouTube thumbnail | Not loaded; an image already loaded by an earlier render (it is in the [image cache](#image-cache)) shows at once | Starts loading |
 | Formula (`$…$`, `$$…$$`, `MarkView.Avalonia.Math`) | Empty | Typeset |
-| Mermaid diagram (`MarkView.Avalonia.Mermaid`) | Empty | Rendered |
-| Code block with syntax highlighting | Its text, uncoloured: it can already be selected, searched and copied | Coloured |
+| Mermaid diagram (`MarkView.Avalonia.Mermaid`), in the browser only | Empty | Rendered |
+| Code block with syntax highlighting | Its text, uncoloured | Coloured |
 
-Content within reach is built during the layout pass that brings it near, before that pass is drawn,
-so it never shows up half done: a code block in view is coloured the first time it appears. A theme
-switch only rebuilds the content already built, which also makes switching faster on a long document.
+The "before" column is never seen on screen. Content is built a screen before it scrolls into view,
+and content already in view is built during the layout pass that first lays it out, before that pass is
+drawn: a code block is coloured, and a formula typeset, the first time it appears. An uncoloured code
+block only shows through what works on the whole document: find, selection and copy already cover its
+text. Images are the exception, as they still have to load: they start a screen ahead, but a slow
+download can still arrive after the image has scrolled into view.
+
+A theme switch only rebuilds the content already built, which also makes switching faster on a long
+document.
 
 Content built as you scroll is often taller than the space it held (an image that loads, a formula that
 replaces an empty line), and so is a block a streaming session updates. When that happens above the
