@@ -14,8 +14,8 @@ part="${3:-all}"
 current="$here/MarkView.Benchmarks/bin/Release/net10.0/MarkView.Benchmarks"
 release="$here/MarkView123.Benchmarks/bin/Release/net10.0/MarkView123.Benchmarks"
 
-shared="Plain Supported Default Default+TextMate Default+Mermaid Default+Math Default+All"
-features="Default Default-Html Default-CodeToolbar Default-Rtl Default-ImageZoom Lean Default+ExtAlerts Default+FoldHeadings Default+Tasks Default+LineNumbers Default+Thinking Default+SmoothScroll"
+shared="Plain Supported Default Default+TextMate Default+Mermaid Default+All"
+features="Default Default-Html Default-CodeToolbar Default-Rtl Lean Default+ExtAlerts Default+FoldHeadings Default+Tasks Default+LineNumbers Default+Thinking Plain Plain-CodeToolbar Plain-Rtl Plain-ContextMenu Plain-Lean"
 
 echo -e "library\tscenario\tconfiguration\tsize\tsamples\tmedian_ms\tp95_ms\tmin_ms\tmedian_alloc_kb\textra\trepeat" > "$out"
 
@@ -39,22 +39,20 @@ for r in $(seq 1 "$repeats"); do
       both load "$c" medium 10 "$r"
       both load "$c" long 6 "$r"
       both replace "$c" medium 10 "$r"
-      both replace "$c" long 6 "$r"
-      both theme "$c" medium 10 "$r"
       both theme "$c" long 6 "$r"
-      both scroll "$c" long 2 "$r"
-      for s in tiny medium long; do both memory "$c" "$s" 1 "$r"; done
+      both memory "$c" tiny 1 "$r"
+      both memory "$c" long 1 "$r"
     done
+    for c in Default Default+All; do both scroll "$c" long 2 "$r"; done
     for c in Default Default+TextMate Default+All; do both stream "$c" medium 2 "$r"; done
   fi
   if [[ "$part" != release ]]; then
     for c in $features; do
-      run "$current" load "$c" medium 10 "$r"
+      run "$current" load "$c" tiny 20 "$r"
       run "$current" load "$c" long 6 "$r"
-      run "$current" theme "$c" long 6 "$r"
-      run "$current" scroll "$c" long 2 "$r"
       run "$current" memory "$c" long 1 "$r"
     done
+    for c in Default Lean Default+FoldHeadings; do run "$current" theme "$c" long 6 "$r"; done
   fi
   echo "repeat $r done" >&2
 done
