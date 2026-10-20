@@ -26,6 +26,8 @@ MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
 MarkdownViewerDefaults.Extensions.AddTextMateHighlighting(ThemeName.Monokai, ThemeName.QuietLight);
 ```
 
+Viewers with the same pair of themes share one highlighter either way, so the themes and grammars are loaded once however many viewers there are, such as one per chat message.
+
 ### Theme switching
 
 When the Avalonia theme variant changes (light ↔ dark), `TextMateCodeBlockRenderer` rebuilds only the `TextBlock.Inlines` for each code block. The document structure, scroll position, and all other content are untouched.
