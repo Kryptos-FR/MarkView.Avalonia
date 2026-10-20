@@ -331,7 +331,7 @@ Loaded images are kept in an in-memory cache shared by every viewer, so renderin
 twice in a document) neither downloads nor decodes it again:
 
 ```csharp
-MarkdownViewerDefaults.ImageCacheSize = 200; // images kept; 0 disables the cache. Default: 100
+MarkdownViewerDefaults.ImageCacheSize = 200L * 1024 * 1024; // bytes; 0 disables the cache. Default: 100 MB
 MarkdownViewerDefaults.ClearImageCache();    // e.g. after the images behind some URLs have changed
 ```
 
@@ -340,9 +340,13 @@ MarkdownViewerDefaults.ClearImageCache();    // e.g. after the images behind som
   chain (one with the SVG loader, say) can load the same URL differently. A custom loader whose result
   depends on more than the URL and its type (e.g. settings passed to its constructor) should use URLs
   that tell those results apart, or the cache should be cleared when the settings change.
-- Once it holds `ImageCacheSize` images, the least recently used one is evicted first. Evicted images
-  are never disposed, since a viewer may still show them; they are collected once nothing does.
-  Lowering `ImageCacheSize` evicts the images beyond the new size at once.
+- The cache is weighed in bytes: a bitmap counts 4 bytes per pixel (a 1920×1080 photo is about 8 MB),
+  and any other image, such as an SVG drawing, as much as a bitmap of its size.
+- Once the images take more than `ImageCacheSize`, the least recently used ones are evicted first.
+  Evicted images are never disposed, since a viewer may still show them; they are collected once
+  nothing does. Lowering `ImageCacheSize` evicts the images beyond the new size at once.
+- An image heavier than a tenth of `ImageCacheSize` (10 MB by default) is shown but not cached, so the
+  cache always has room for ten images and one very large picture never pushes out the others.
 - A failed load is never cached: the next render tries again.
 - Loads of the same image that run at the same time (two viewers, or two copies of the image) share
   one download. It is cancelled only when every viewer waiting for it has dropped the image.
