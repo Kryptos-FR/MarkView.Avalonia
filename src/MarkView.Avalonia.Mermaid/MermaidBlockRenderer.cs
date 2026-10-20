@@ -57,6 +57,8 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
         };
         // The diagram's source is its only text equivalent.
         AutomationProperties.SetName(image, source);
+        // Can be saved, as SVG or PNG.
+        ImageExport.SetFileName(image, "diagram");
 
         var border = new Border { Child = image };
         border.Classes.Add("markdown-mermaid");
@@ -143,16 +145,22 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
 
             try
             {
-                var svgSource = await Task.Run(() =>
+                var (svgSource, file) = await Task.Run(() =>
                 {
                     var svg = MermaidRenderer.RenderSvg(source, opts);
                     svg = MermaidSvgTheme.InlineCssVariables(svg, opts);
                     using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
-                    return SvgSource.LoadFromStream(stream);
+                    // A saved diagram is written on its background colour, which the image shown leaves
+                    // to the document.
+                    return (SvgSource.LoadFromStream(stream), Encoding.UTF8.GetBytes(MermaidSvgTheme.AddBackground(svg, opts.Bg!)));
                 }, token);
 
                 if (!token.IsCancellationRequested)
-                    ShowDiagram(rendered[colours] = new SvgImage { Source = svgSource });
+                {
+                    var diagram = new SvgImage { Source = svgSource };
+                    ImageExport.SetSvg(diagram, file);
+                    ShowDiagram(rendered[colours] = diagram);
+                }
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)

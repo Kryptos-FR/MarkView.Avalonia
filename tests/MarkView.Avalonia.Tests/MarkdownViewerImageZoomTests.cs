@@ -1070,13 +1070,13 @@ public class MarkdownViewerImageZoomTests
     }
 
     [AvaloniaFact]
-    public async Task Tab_moves_through_the_close_and_zoom_buttons()
+    public async Task Tab_moves_through_the_close_zoom_and_save_buttons()
     {
         using var f = await OpenAsync();
         var lightbox = f.Lightbox!;
 
         var order = new List<IInputElement?>();
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < 6; i++)
         {
             Press(f.Window, Key.Tab);
             order.Add(f.Window.FocusManager!.GetFocusedElement());
@@ -1088,7 +1088,7 @@ public class MarkdownViewerImageZoomTests
 
         // Round the lightbox and its buttons, never to the document behind.
         Assert.Equal<IInputElement?>(
-            [lightbox.CloseButton, lightbox.ZoomOutButton, lightbox.ZoomInButton, lightbox.FitButton, lightbox, lightbox.FitButton, lightbox.ZoomInButton],
+            [lightbox.CloseButton, lightbox.ZoomOutButton, lightbox.ZoomInButton, lightbox.FitButton, lightbox.SaveButton, lightbox, lightbox.SaveButton, lightbox.FitButton],
             order);
     }
 

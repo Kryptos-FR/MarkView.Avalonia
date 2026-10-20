@@ -124,6 +124,8 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         }
 
         image.Tag = url;
+        // Can be saved, under the name its address gives it.
+        ImageExport.SetFileName(image, ImageExport.FileNameFromUrl(url));
 
         // Start loading on first attach; cancel on detach.
         // Deferring to AttachedToVisualTree avoids spurious cancellations from

@@ -67,6 +67,15 @@ with zoom (mouse wheel, pinch, + and − keys, toolbar buttons) and pan (drag, a
 viewer's `IsImageZoomEnabled` (on by default). See
 [Image zoom](../../docs/configuration.md#image-zoom).
 
+## Saving a Diagram
+
+A rendered diagram can be saved as SVG or PNG, in the colours it is shown in and on its background
+colour: from the lightbox's save button, `Ctrl+S` in the lightbox, or **Save image as…** in the viewer's
+context menu. The SVG is self-contained (its CSS variables are resolved), so it shows the same in a
+browser or a vector editor; the PNG is rendered at twice the diagram's size. It follows the viewer's
+`IsImageSaveEnabled` (on by default). See
+[Saving images and diagrams](../../docs/configuration.md#saving-images-and-diagrams).
+
 ## Diagram Style
 
 Diagrams are painted in one of Mermaider's three style presets, chosen when the extension is added (`MermaidStyle.Quiet` by default):

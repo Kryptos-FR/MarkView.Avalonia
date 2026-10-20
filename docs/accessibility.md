@@ -26,7 +26,7 @@ Avalonia forwards automation peers to each platform's accessibility API: UI Auto
 | Image | `Image`, named by its alt text. An image with empty alt text (`![](…)`) is decorative and hidden, as browsers do with `alt=""`, unless it can be zoomed. |
 | Zoomable image (`IsImageZoomEnabled`) | `Image`, named by its alt text, with the help text "Zoom". A Tab stop, so never hidden, even without alt text. |
 | Zoomable Mermaid diagram | As a zoomable image, named by its diagram source |
-| Image lightbox | `Image`, named by the image's alt text (a diagram's source), or "Image" without one. Its buttons are named "Close", "Zoom out", "Zoom in" and "Fit to view". |
+| Image lightbox | `Image`, named by the image's alt text (a diagram's source), or "Image" without one. Its buttons are named "Close", "Zoom out", "Zoom in", "Fit to view" and "Save as". |
 | Image that could not be loaded | `Image`, named by its alt text, with the help text "Image could not be loaded"; hidden without alt text |
 | `<kbd>` (`UseHtmlSubset()`) | `Text`, read as the key's text |
 | YouTube embed | `Hyperlink`, named by its alt text, or by its URL when there is none |
@@ -52,7 +52,7 @@ Avalonia 12.1.3 has the following gaps:
 
 ## Keyboard
 
-The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a thinking block's header, a foldable heading's fold button, a code block's or a display formula's copy button, an interactive task's check box, a zoomable image or Mermaid diagram, a video embed. `Enter` or `Space` folds or unfolds a focused alert, `<details>` block, thinking block or heading section and ticks a focused task; `Enter` or `Space` on a copy button copies the code or the formula's TeX source, and on an image opens it in the lightbox. In the lightbox, `Tab` moves between the lightbox, its close button and its zoom buttons only; `+` and `-` zoom, `0` fits the picture again, the arrow keys pan it, and `Escape` closes the lightbox and gives the focus back to the image.
+The viewer is one Tab stop, followed by each link and each focusable control in the document, in reading order: a foldable alert's header, a `<details>` summary, a thinking block's header, a foldable heading's fold button, a code block's or a display formula's copy button, an interactive task's check box, a zoomable image or Mermaid diagram, a video embed. `Enter` or `Space` folds or unfolds a focused alert, `<details>` block, thinking block or heading section and ticks a focused task; `Enter` or `Space` on a copy button copies the code or the formula's TeX source, and on an image opens it in the lightbox. In the lightbox, `Tab` moves between the lightbox, its close button, its zoom buttons and its save button only; `+` and `-` zoom, `0` fits the picture again, the arrow keys pan it, `Ctrl+S` (`Cmd+S` on macOS) saves it, and `Escape` closes the lightbox and gives the focus back to the image.
 
 | Key | Action |
 |---|---|

@@ -26,6 +26,9 @@ public partial class MarkdownViewer
     // The anchor of the heading the context menu was opened on, for its Copy link to heading item.
     private string? _contextHeading;
 
+    // The image or diagram the context menu was opened on, for its Save image as item.
+    private Image? _contextImage;
+
     // Noted on the way down, before the viewer opens its menu: a click on a cell's padding, outside its text,
     // reaches the viewer's background rather than the document.
     private static readonly IDisposable ContextBlockHandler = ContextRequestedEvent.AddClassHandler<MarkdownViewer>(
@@ -44,11 +47,12 @@ public partial class MarkdownViewer
     /// <summary>
     /// The viewer's default context menu: Copy and Copy as Markdown (enabled while something is selected),
     /// Copy link (shown when opened on a link), Copy link to heading (shown when opened on a heading), Copy table
-    /// and Copy table as Markdown (shown when opened on a table) and Select all. Its labels are the resources
+    /// and Copy table as Markdown (shown when opened on a table), Save image as (shown when opened on an image or
+    /// diagram that can be saved, see <see cref="IsImageSaveEnabled"/>) and Select all. Its labels are the resources
     /// <c>StringTextFlyoutCopyText</c> (the one a <see cref="TextBox"/> uses), <c>MarkdownStringCopyAsMarkdown</c>,
     /// <c>MarkdownStringCopyLink</c>, <c>MarkdownStringCopyHeadingLink</c>, <c>MarkdownStringCopyTable</c>,
-    /// <c>MarkdownStringCopyTableAsMarkdown</c> and <c>MarkdownStringSelectAll</c>, read when it opens, in English
-    /// when they are not found.
+    /// <c>MarkdownStringCopyTableAsMarkdown</c>, <c>MarkdownStringSaveImage</c> and <c>MarkdownStringSelectAll</c>,
+    /// read when it opens, in English when they are not found.
     /// </summary>
     private MenuFlyout CreateDefaultContextFlyout()
     {
@@ -92,11 +96,19 @@ public partial class MarkdownViewer
                 _ = CopyTableAsMarkdownAsync(table);
         };
 
+        var saveImage = new MenuItem();
+        saveImage.Classes.Add("markdown-context-save-image");
+        saveImage.Click += (_, _) =>
+        {
+            if (_contextImage is { } image)
+                _ = SaveImageAsync(image);
+        };
+
         var selectAll = new MenuItem();
         selectAll.Classes.Add("markdown-context-select-all");
         selectAll.Click += (_, _) => SelectAll();
 
-        var flyout = new MenuFlyout { Items = { copy, copyAsMarkdown, copyLink, copyHeadingLink, copyTable, copyTableAsMarkdown, selectAll } };
+        var flyout = new MenuFlyout { Items = { copy, copyAsMarkdown, copyLink, copyHeadingLink, copyTable, copyTableAsMarkdown, saveImage, selectAll } };
         flyout.Opening += (_, _) =>
         {
             copy.Header = Text("StringTextFlyoutCopyText", "Copy");
@@ -105,6 +117,7 @@ public partial class MarkdownViewer
             copyHeadingLink.Header = Text("MarkdownStringCopyHeadingLink", "Copy link to heading");
             copyTable.Header = Text("MarkdownStringCopyTable", "Copy table");
             copyTableAsMarkdown.Header = Text("MarkdownStringCopyTableAsMarkdown", "Copy table as Markdown");
+            saveImage.Header = Text("MarkdownStringSaveImage", "Save image as…");
             selectAll.Header = Text("MarkdownStringSelectAll", "Select all");
 
             var hotkeys = Application.Current?.PlatformSettings?.HotkeyConfiguration;
@@ -115,12 +128,14 @@ public partial class MarkdownViewer
             copyLink.IsVisible = _contextLink?.NavigateUri is not null;
             copyHeadingLink.IsVisible = _contextHeading is not null;
             copyTable.IsVisible = copyTableAsMarkdown.IsVisible = _contextTable is not null;
+            saveImage.IsVisible = CanSaveImage(_contextImage);
         };
         flyout.Closed += (_, _) =>
         {
             _contextLink = null;
             _contextTable = null;
             _contextHeading = null;
+            _contextImage = null;
         };
         return flyout;
     }
@@ -129,11 +144,12 @@ public partial class MarkdownViewer
         this.TryFindResource(key, ActualThemeVariant, out var value) && value is string text ? text : fallback;
 
     /// <summary>
-    /// Notes the link a context menu is requested on, under the pointer or focused. A request with the pointer
+    /// Notes the link and the image a context menu is requested on, under the pointer or focused. A request with the pointer
     /// outside the selected text clears the selection first, as a text editor does; one inside keeps it.
     /// </summary>
     private void OnContentContextRequested(object? sender, ContextRequestedEventArgs e)
     {
+        _contextImage = e.Source as Image;
         if (_selectionLayer is not { } layer) return;
         if (e.TryGetPosition(layer, out var position))
         {

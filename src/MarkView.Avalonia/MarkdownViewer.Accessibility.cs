@@ -67,6 +67,8 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
             UpdateHighContrast();
         else if (change.Property == IsKeyboardFocusWithinProperty && !change.GetNewValue<bool>())
             _tabStart = null;
+        else if (change.Property == IsImageSaveEnabledProperty && _lightbox is { } lightbox)
+            ShowLightboxSaveButton(lightbox);
     }
 
     /// <inheritdoc />
