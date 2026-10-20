@@ -71,7 +71,7 @@ public class MarkdownViewerImageSaveTests
     private static async Task<Fixture> ShowAsync(string markdown, Action<MarkdownViewer>? configure = null, IImage? picture = null)
     {
         picture ??= new FakeImage(200, 100);
-        var viewer = new MarkdownViewer();
+        var viewer = new MarkdownViewer { IsImageZoomEnabled = true };
         viewer.Extensions.Add(new LoaderExtension(new FakeLoader(picture)));
         viewer.Styles.Add(new StyleInclude((Uri?)null) { Source = new Uri("avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml") });
         configure?.Invoke(viewer);

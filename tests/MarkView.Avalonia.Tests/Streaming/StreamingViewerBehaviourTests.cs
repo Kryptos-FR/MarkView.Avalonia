@@ -557,7 +557,11 @@ public class StreamingViewerBehaviourTests
     [AvaloniaFact]
     public async Task Lightbox_stays_open_across_an_update()
     {
-        using var f = Show("", v => v.Extensions.Add(new LoaderExtension(new FakeLoader(new FakeImage(200, 100)))));
+        using var f = Show("", v =>
+        {
+            v.IsImageZoomEnabled = true;
+            v.Extensions.Add(new LoaderExtension(new FakeLoader(new FakeImage(200, 100))));
+        });
         // The headless text drawing contributes no hit-testable glyph geometry; a transparent
         // background makes each paragraph's whole row hit-testable instead.
         f.Window.Styles.Add(new Style(x => x.OfType<MarkdownSelectableTextBlock>())

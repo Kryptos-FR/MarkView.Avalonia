@@ -18,7 +18,7 @@
 | `CodeBlockMaxHeight` | `double` | `PositiveInfinity` | Maximum height of a code block (toolbar excluded); a taller block scrolls vertically inside itself. See [Line numbers, wrapping and height](#line-numbers-wrapping-and-height). |
 | `AreTaskListsInteractive` | `bool` | `false` | Renders task-list items as checkboxes the user can toggle, raising `TaskToggled`. Setting it re-renders the document. See [Interactive task lists](#interactive-task-lists). |
 | `AreHeadingsFoldable` | `bool` | `false` | Starts each heading with a fold button that hides or shows its section. Setting it re-renders the document. See [Foldable headings](#foldable-headings). |
-| `IsImageZoomEnabled` | `bool` | `true` | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, where it can be zoomed and panned. See [Image zoom](#image-zoom). |
+| `IsImageZoomEnabled` | `bool` | `false` | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, where it can be zoomed and panned. See [Image zoom](#image-zoom). |
 | `IsImageSaveEnabled` | `bool` | `true` | Images and Mermaid diagrams can be saved to a file, as PNG or SVG, from the lightbox and from the context menu. See [Saving images and diagrams](#saving-images-and-diagrams). |
 | `IsSmoothScrollingEnabled` | `bool` | `false` | Animates the scroll to an anchor (a `#anchor` link, a footnote, `ScrollToAnchor`) instead of jumping there at once. See [Smooth scrolling](#smooth-scrolling). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
@@ -630,7 +630,8 @@ placeholder up to the size of a picture that isn't there would leave a large emp
 
 ## Image zoom
 
-Clicking an image opens it in a lightbox laid over the viewer: a dimmed backdrop with the image as
+With `IsImageZoomEnabled` on (it is off by default), clicking an image opens it in a lightbox laid
+over the viewer: a dimmed backdrop with the image as
 large as fits. Images are never enlarged past their natural size to fit, so a small image stays sharp at
 its own size rather than being blown up. Clicking anywhere but on the zoom toolbar, the close button in
 the top right corner or pressing Escape closes it.
@@ -659,11 +660,16 @@ In the lightbox, the picture can be zoomed and panned:
 - The lightbox covers the viewer (not the whole window) and is part of the viewer itself, so it works
   with any template and on every platform. Rendering another document closes it.
 
-Turn it off with `IsImageZoomEnabled`, per viewer or for every viewer of an application:
+The lightbox is off by default. Turn it on with `IsImageZoomEnabled`, per viewer or for every viewer of
+an application:
+
+```xml
+<mv:MarkdownViewer IsImageZoomEnabled="True" />
+```
 
 ```xml
 <Style Selector="mv|MarkdownViewer">
-  <Setter Property="IsImageZoomEnabled" Value="False" />
+  <Setter Property="IsImageZoomEnabled" Value="True" />
 </Style>
 ```
 

@@ -28,7 +28,7 @@ public class MermaidSaveTests
 
     private static async Task<Fixture> ShowAsync()
     {
-        var viewer = new MarkdownViewer().UseMermaid();
+        var viewer = new MarkdownViewer { IsImageZoomEnabled = true }.UseMermaid();
         viewer.Markdown = Diagram;
         var window = new Window { Width = 800, Height = 600, Content = viewer };
         window.Show();
