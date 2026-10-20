@@ -23,7 +23,7 @@ public sealed class MermaidExtension(MermaidStyle style = MermaidStyle.Quiet) : 
     /// <summary>The visual style diagrams are painted in.</summary>
     public MermaidStyle Style { get; } = style;
 
-    /// <summary>Whether the diagrams start rendering in the background once the document is shown.</summary>
+    /// <summary>Whether the diagrams start rendering in the background once they are in a window.</summary>
     internal bool RendersInBackground { get; init; } = MermaidBlockRenderer.DefaultRendersInBackground;
 
     public void Register(AvaloniaRenderer renderer)

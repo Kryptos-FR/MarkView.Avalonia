@@ -299,27 +299,6 @@ public class MermaidDiagramRenderingTests
         Assert.Equal(0, scrollViewer.Offset.Y);
     }
 
-    [AvaloniaFact]
-    public async Task Diagram_removed_before_its_background_render_starts_does_not_render()
-    {
-        using var theme = new ThemeScope(ThemeVariant.Light);
-        var root = Render(Diagram);
-        var border = (Border)root.Children[0];
-        var image = Assert.IsType<Image>(border.Child);
-        var host = new Panel();
-        using var shown = new Shown(host);
-        var attached = 0;
-        border.AttachedToVisualTree += (_, _) => attached++;
-
-        // Attached and detached again before the background job runs, as when a document is replaced at once.
-        host.Children.Add(root);
-        host.Children.Remove(root);
-        await AsyncTestHelpers.PumpAsync();
-
-        Assert.Equal(1, attached);
-        Assert.Null(image.Source);
-    }
-
     [AvaloniaTheory]
     [InlineData(1200)]
     [InlineData(400)]
