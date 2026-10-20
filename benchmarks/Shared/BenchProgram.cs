@@ -10,6 +10,8 @@ namespace MarkView.Benchmarks.Shared;
 /// <list type="bullet">
 /// <item><c>corpus [dir]</c> writes the four documents (and prints their fingerprints);</item>
 /// <item><c>probe [repeats] [configurations] [sizes]</c> measures first-document time and retained memory, one process per case;</item>
+/// <item><c>scenario name configuration size [iterations]</c> times one warm scenario (see <see cref="Scenarios"/>);</item>
+/// <item><c>configurations</c> lists the runner's configurations;</item>
 /// <item><c>shot configuration size [file.png]</c> saves the first rendered frame, to check what a library actually drew;</item>
 /// <item>anything else goes to BenchmarkDotNet (e.g. <c>--filter * --job short</c>).</item>
 /// </list>
@@ -41,6 +43,11 @@ public static class BenchProgram
             }
             case "probe-one":
                 return Probe.RunOne(adapter, args[1], args[2]);
+            case "scenario":
+                return Scenarios.Run(adapter, args[1], args[2], args[3], args.Length > 4 ? int.Parse(args[4], System.Globalization.CultureInfo.InvariantCulture) : 10);
+            case "configurations":
+                Console.WriteLine(string.Join(',', adapter.Configurations));
+                return 0;
             case "shot":
                 return Probe.Screenshot(adapter, args[1], args[2], args.Length > 3 ? args[3] : $"{args[1]}-{args[2]}.png");
             default:

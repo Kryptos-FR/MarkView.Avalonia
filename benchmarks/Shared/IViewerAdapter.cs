@@ -34,4 +34,40 @@ public interface IViewerAdapter
     /// return false until that work has reached the visual tree; the harness keeps rendering frames until then.
     /// </summary>
     bool IsSettled(Control viewer) => true;
+
+    /// <summary>
+    /// Starts streaming a document into <paramref name="viewer"/> through the library's streaming API. A library
+    /// without one gets the text so far set as its whole document on each append, which is what an application
+    /// does with it.
+    /// </summary>
+    IStreamWriter BeginStreaming(Control viewer) => new ReplacingStreamWriter(this, viewer);
+}
+
+/// <summary>Text appended to a document being shown.</summary>
+public interface IStreamWriter
+{
+    void Append(string chunk);
+
+    /// <summary>Whether the last append is shown.</summary>
+    bool IsSettled { get; }
+
+    void Complete();
+}
+
+/// <summary>Streaming without a streaming API: each append sets the whole text so far.</summary>
+public sealed class ReplacingStreamWriter(IViewerAdapter adapter, Control viewer) : IStreamWriter
+{
+    private readonly System.Text.StringBuilder _text = new();
+
+    public void Append(string chunk)
+    {
+        _text.Append(chunk);
+        adapter.SetMarkdown(viewer, _text.ToString());
+    }
+
+    public bool IsSettled => adapter.IsSettled(viewer);
+
+    public void Complete()
+    {
+    }
 }

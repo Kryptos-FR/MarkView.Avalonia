@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="MarkView.Benchmarks/MarkView.Benchmarks.csproj" />
+  <Project Path="MarkView123.Benchmarks/MarkView123.Benchmarks.csproj" />
   <Folder Name="/Competitors/">
     <Project Path="Competitors/LiveMarkdown.Benchmarks/LiveMarkdown.Benchmarks.csproj" />
     <Project Path="Competitors/MarkdownAvalonia.Benchmarks/MarkdownAvalonia.Benchmarks.csproj" />

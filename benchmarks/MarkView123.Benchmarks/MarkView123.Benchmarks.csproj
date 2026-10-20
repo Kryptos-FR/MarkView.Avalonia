@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The released 12.3.0 packages, measured with the same adapter as MarkView.Benchmarks (src/), so that the two
+    runners compare the last release with the current sources. Configurations that need an API added since are
+    compiled out (MARKVIEW_12_3).
+  -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);MARKVIEW_12_3</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\MarkView.Benchmarks\MarkViewAdapter.cs" Link="MarkViewAdapter.cs" />
+    <Compile Include="..\MarkView.Benchmarks\Program.cs" Link="Program.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MarkView.Avalonia" VersionOverride="12.3.0" />
+    <PackageReference Include="MarkView.Avalonia.Math" VersionOverride="12.3.0" />
+    <PackageReference Include="MarkView.Avalonia.Mermaid" VersionOverride="12.3.0" />
+    <PackageReference Include="MarkView.Avalonia.Svg" VersionOverride="12.3.0" />
+    <PackageReference Include="MarkView.Avalonia.SyntaxHighlighting" VersionOverride="12.3.0" />
+  </ItemGroup>
+</Project>
