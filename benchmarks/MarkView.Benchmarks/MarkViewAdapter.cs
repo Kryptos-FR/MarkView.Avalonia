@@ -80,6 +80,9 @@ public sealed class MarkViewAdapter : IViewerAdapter
         var baseUri = new Uri("avares://MarkView.Benchmarks/");
         styles.Add(new StyleInclude(baseUri) { Source = new Uri("avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml") });
         styles.Add(new StyleInclude(baseUri) { Source = new Uri("avares://MarkView.Avalonia.Mermaid/Themes/MermaidTheme.axaml") });
+        // BENCH_PRESET=GitHub|Chat|Docs adds a theme preset after the default theme, as an application would.
+        if (Environment.GetEnvironmentVariable("BENCH_PRESET") is { Length: > 0 } preset)
+            styles.Add(new StyleInclude(baseUri) { Source = new Uri($"avares://MarkView.Avalonia/Themes/{preset}Theme.axaml") });
     }
 
     public Control CreateViewer(string configuration)
