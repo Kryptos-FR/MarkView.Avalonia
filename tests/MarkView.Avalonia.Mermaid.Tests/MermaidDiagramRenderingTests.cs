@@ -34,11 +34,11 @@ public class MermaidDiagramRenderingTests
         ```
         """;
 
-    private static StackPanel Render(string markdown)
+    private static StackPanel Render(string markdown, bool inBackground = true)
     {
         var pipeline = new MarkdownPipelineBuilder().Build();
         var renderer = new AvaloniaRenderer();
-        new MermaidExtension().Register(renderer);
+        new MermaidExtension { RendersInBackground = inBackground }.Register(renderer);
         pipeline.Setup(renderer);
         renderer.Render(Markdown.Parse(markdown, pipeline));
         return renderer.RootPanel;
@@ -250,7 +250,7 @@ public class MermaidDiagramRenderingTests
     public async Task Diagram_below_the_fold_renders_once_scrolled_near()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var root = Render(Diagram);
+        var root = Render(Diagram, inBackground: false);
         var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
         root.Children.Insert(0, new Border { Height = 5000 });
         var scrollViewer = new ScrollViewer { Content = root };
@@ -268,7 +268,7 @@ public class MermaidDiagramRenderingTests
     public async Task Theme_switch_does_not_render_a_diagram_below_the_fold()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
-        var root = Render(Diagram + "\n\n" + Diagram);
+        var root = Render(Diagram + "\n\n" + Diagram, inBackground: false);
         var above = Assert.IsType<Image>(((Border)root.Children[0]).Child);
         var below = Assert.IsType<Image>(((Border)root.Children[1]).Child);
         root.Children.Insert(1, new Border { Height = 5000 });
@@ -281,6 +281,43 @@ public class MermaidDiagramRenderingTests
         await AsyncTestHelpers.WaitUntilAsync(() => above.Source != lightImage);
 
         Assert.Null(below.Source);
+    }
+
+    [AvaloniaFact]
+    public async Task Diagram_below_the_fold_renders_in_the_background_once_shown()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram);
+        var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        root.Children.Insert(0, new Border { Height = 5000 });
+        var scrollViewer = new ScrollViewer { Content = root };
+        using var shown = new Shown(scrollViewer);
+
+        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+
+        Assert.IsType<SvgImage>(image.Source);
+        Assert.Equal(0, scrollViewer.Offset.Y);
+    }
+
+    [AvaloniaFact]
+    public async Task Diagram_removed_before_its_background_render_starts_does_not_render()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram);
+        var border = (Border)root.Children[0];
+        var image = Assert.IsType<Image>(border.Child);
+        var host = new Panel();
+        using var shown = new Shown(host);
+        var attached = 0;
+        border.AttachedToVisualTree += (_, _) => attached++;
+
+        // Attached and detached again before the background job runs, as when a document is replaced at once.
+        host.Children.Add(root);
+        host.Children.Remove(root);
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.Equal(1, attached);
+        Assert.Null(image.Source);
     }
 
     [AvaloniaTheory]

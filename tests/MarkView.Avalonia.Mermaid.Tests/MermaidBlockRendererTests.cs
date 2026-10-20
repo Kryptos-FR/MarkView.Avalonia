@@ -129,4 +129,23 @@ public class MermaidBlockRendererTests
     [Fact]
     public void A_block_renderer_paints_in_the_quiet_style_by_default() =>
         Assert.Equal(MermaidStyle.Quiet, new MermaidBlockRenderer().Style);
+
+    [Fact]
+    public void Diagrams_render_in_the_background_except_in_the_browser()
+    {
+        Assert.Equal(!OperatingSystem.IsBrowser(), new MermaidBlockRenderer().RendersInBackground);
+        Assert.Equal(!OperatingSystem.IsBrowser(), new MermaidExtension().RendersInBackground);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void The_extension_tells_the_block_renderer_whether_to_render_in_the_background(bool inBackground)
+    {
+        var renderer = new AvaloniaRenderer();
+
+        new MermaidExtension { RendersInBackground = inBackground }.Register(renderer);
+
+        Assert.Equal(inBackground, Assert.Single(renderer.ObjectRenderers.OfType<MermaidBlockRenderer>()).RendersInBackground);
+    }
 }
