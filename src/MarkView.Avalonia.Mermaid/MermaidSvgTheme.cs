@@ -101,6 +101,30 @@ internal static partial class MermaidSvgTheme
     [GeneratedRegex(@"<svg\b[^>]*?\sstyle=""([^""]*)""")]
     private static partial Regex RootStyle();
 
+    [GeneratedRegex(@"<svg\b[^>]*>")]
+    private static partial Regex RootElement();
+
+    [GeneratedRegex(@"\sviewBox=""\s*([-\d.eE+]+)[\s,]+([-\d.eE+]+)[\s,]+([-\d.eE+]+)[\s,]+([-\d.eE+]+)\s*""")]
+    private static partial Regex ViewBox();
+
+    /// <summary>
+    /// Paints <paramref name="svg"/>'s whole view box with <paramref name="background"/>, under everything else, so
+    /// that a saved diagram keeps its background colour in any program: a <c>background</c> on the root element is
+    /// CSS that many programs ignore, as SkiaSharp does. The rectangle's colour is an inline style, which the
+    /// diagram's style sheet cannot override.
+    /// </summary>
+    internal static string AddBackground(string svg, string background)
+    {
+        var root = RootElement().Match(svg);
+        if (!root.Success)
+            return svg;
+        var box = ViewBox().Match(root.Value);
+        var bounds = box.Success
+            ? $"x=\"{box.Groups[1].Value}\" y=\"{box.Groups[2].Value}\" width=\"{box.Groups[3].Value}\" height=\"{box.Groups[4].Value}\""
+            : "width=\"100%\" height=\"100%\"";
+        return svg.Insert(root.Index + root.Length, $"\n<rect {bounds} style=\"fill:{background};stroke:none\" />");
+    }
+
     [GeneratedRegex(@"(?<![\w-])svg\s*\{([^}]*)\}")]
     private static partial Regex SvgRule();
 

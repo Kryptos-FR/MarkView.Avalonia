@@ -63,6 +63,7 @@ The viewer has a context menu, opened by a right-click or, when the viewer or a 
 | Copy link to heading | Copies a [link to the heading](#copying-a-link-to-a-heading) the menu was opened on. Shown only on a heading, under the pointer. |
 | Copy table | Copies the whole table the menu was opened on, whatever is selected, as [tab-separated values](#copying-a-table) and an HTML table. Shown only on a table, under the pointer or holding the focused link. |
 | Copy table as Markdown | Copies that table as [Markdown](#copying-a-table). Shown with Copy table. |
+| Save image as… | Saves the image or Mermaid diagram the menu was opened on to a file, see [Saving images and diagrams](configuration.md#saving-images-and-diagrams). Shown only on one, under the pointer or focused with `Tab`, while `IsImageSaveEnabled` is set. |
 | Select all | Selects the whole document, as `Ctrl+A` does. |
 
 A right-click on text outside the selection clears it first, as in a text editor; a right-click inside it keeps it, so it can be copied.
@@ -83,6 +84,7 @@ The labels are resources, read each time the menu opens, so they can be translat
 | `MarkdownStringCopyHeadingLink` | `Copy link to heading` |
 | `MarkdownStringCopyTable` | `Copy table` |
 | `MarkdownStringCopyTableAsMarkdown` | `Copy table as Markdown` |
+| `MarkdownStringSaveImage` | `Save image as…` |
 | `MarkdownStringSelectAll` | `Select all` |
 
 ```xml
@@ -93,11 +95,12 @@ The labels are resources, read each time the menu opens, so they can be translat
   <x:String x:Key="MarkdownStringCopyHeadingLink">Copier le lien vers le titre</x:String>
   <x:String x:Key="MarkdownStringCopyTable">Copier le tableau</x:String>
   <x:String x:Key="MarkdownStringCopyTableAsMarkdown">Copier le tableau en Markdown</x:String>
+  <x:String x:Key="MarkdownStringSaveImage">Enregistrer l'image sous…</x:String>
   <x:String x:Key="MarkdownStringSelectAll">Tout sélectionner</x:String>
 </Application.Resources>
 ```
 
-Each item has a style class (`markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-copy-heading-link`, `markdown-context-copy-table`, `markdown-context-copy-table-markdown`, `markdown-context-select-all`), for instance to give it an icon or hide it:
+Each item has a style class (`markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-copy-heading-link`, `markdown-context-copy-table`, `markdown-context-copy-table-markdown`, `markdown-context-save-image`, `markdown-context-select-all`), for instance to give it an icon or hide it:
 
 ```xml
 <Style Selector="MenuItem.markdown-context-copy-markdown">

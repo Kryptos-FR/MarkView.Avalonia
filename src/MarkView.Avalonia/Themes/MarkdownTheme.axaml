@@ -125,6 +125,7 @@
       <x:String x:Key="MarkdownStringCopyHeadingLink">Copy link to heading</x:String>
       <x:String x:Key="MarkdownStringCopyTable">Copy table</x:String>
       <x:String x:Key="MarkdownStringCopyTableAsMarkdown">Copy table as Markdown</x:String>
+      <x:String x:Key="MarkdownStringSaveImage">Save image as…</x:String>
       <x:String x:Key="MarkdownStringSelectAll">Select all</x:String>
     </ResourceDictionary>
   </Styles.Resources>
@@ -442,6 +443,12 @@
   <Style Selector="Button.markdown-image-lightbox-zoom-fit">
     <Setter Property="ToolTip.Tip" Value="Fit to view" />
     <Setter Property="AutomationProperties.Name" Value="Fit to view" />
+  </Style>
+  <!-- Save button (MarkdownViewer.IsImageSaveEnabled), after the zoom buttons, in their style -->
+  <Style Selector="Button.markdown-image-lightbox-save">
+    <Setter Property="Margin" Value="4,0,0,0" />
+    <Setter Property="ToolTip.Tip" Value="Save as…" />
+    <Setter Property="AutomationProperties.Name" Value="Save as" />
   </Style>
   <Style Selector="TextBlock.markdown-image-lightbox-zoom-level">
     <Setter Property="Foreground" Value="{DynamicResource MarkdownImageLightboxCloseForeground}" />

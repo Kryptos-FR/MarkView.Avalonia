@@ -54,6 +54,12 @@ The speculative HTTP/HTTPS rule means badge services like `shields.io` that retu
 
 When using relative image paths, set `MarkdownViewer.BaseUri` to an HTTP/HTTPS base URL if you want this extension to fetch and parse those images as SVG.
 
+## Saving
+
+An SVG image loaded by this extension can be saved as its own SVG file, or as PNG (rendered at twice its
+size), from the viewer's lightbox or context menu. See
+[Saving images and diagrams](../../docs/configuration.md#saving-images-and-diagrams).
+
 ## How It Works
 
 `UseSvg()` registers a `SvgExtension` which inserts `SvgImageLoader` at index 0 of `renderer.ImageLoaders`. Being first in the chain, it gets first pick on every image URL. If `CanLoad` returns `false` (e.g. a `data:image/png` URI), or if `LoadAsync` returns `null` (e.g. the HTTP response is not valid SVG), the next loader in the chain is tried.

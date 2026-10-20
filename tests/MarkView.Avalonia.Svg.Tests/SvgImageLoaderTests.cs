@@ -75,6 +75,8 @@ public class SvgImageLoaderTests
 
         Assert.NotNull(result);
         Assert.IsType<SvgImage>(result);
+        // Saved as its own file.
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(svg), ImageExport.GetSvg(result));
     }
 
     [AvaloniaFact]
@@ -88,6 +90,8 @@ public class SvgImageLoaderTests
 
         Assert.NotNull(result);
         Assert.IsType<SvgImage>(result);
+        // Saved as its own file.
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(svg), ImageExport.GetSvg(result));
     }
 
     [AvaloniaFact]

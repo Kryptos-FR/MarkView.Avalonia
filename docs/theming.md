@@ -349,10 +349,11 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-image-lightbox-image` | `Image` | The image in the lightbox |
 | `markdown-image-lightbox-close` | `Button` | The lightbox's close button |
 | `markdown-image-lightbox-toolbar` | `Border` | The lightbox's zoom toolbar, at the bottom |
-| `markdown-image-lightbox-zoom` | `Button` | Each button of the zoom toolbar, along with `markdown-image-lightbox-zoom-out`, `-zoom-in` or `-zoom-fit` |
+| `markdown-image-lightbox-zoom` | `Button` | Each button of the zoom toolbar, along with `markdown-image-lightbox-zoom-out`, `-zoom-in` or `-zoom-fit`, and the save button |
+| `markdown-image-lightbox-save` | `Button` | The toolbar's save button, at its end (`IsImageSaveEnabled`) |
 | `markdown-image-lightbox-zoom-level` | `TextBlock` | The zoom level in the toolbar, as a percentage of the natural size |
 | `markdown-link` | `HyperlinkButton` | Hyperlink |
-| `markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-copy-heading-link`, `markdown-context-copy-table`, `markdown-context-copy-table-markdown`, `markdown-context-select-all` | `MenuItem` | Items of the viewer's default [context menu](text-selection.md#context-menu) |
+| `markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-copy-heading-link`, `markdown-context-copy-table`, `markdown-context-copy-table-markdown`, `markdown-context-save-image`, `markdown-context-select-all` | `MenuItem` | Items of the viewer's default [context menu](text-selection.md#context-menu) |
 | `markdown-table` | `Grid` | Table |
 | `markdown-table-cell` | `Border` | Table body cell |
 | `markdown-table-header` | `Border` | Table header cell |
@@ -722,8 +723,9 @@ a subclass — laid over the viewer, holding the `Image.markdown-image-lightbox-
 viewer's edges in the default theme, when fitted), the `Button.markdown-image-lightbox-close`, whose
 cross is drawn in its `Foreground` and sized by its `FontSize`, and the `Border.markdown-image-lightbox-toolbar`
 at the bottom. The toolbar holds the `Button.markdown-image-lightbox-zoom` buttons (with
-`markdown-image-lightbox-zoom-out`, `-zoom-in` or `-zoom-fit`), whose glyphs are drawn the same way, and
-the `TextBlock.markdown-image-lightbox-zoom-level`. The default theme paints the toolbar in the close
+`markdown-image-lightbox-zoom-out`, `-zoom-in` or `-zoom-fit`), whose glyphs are drawn the same way, the
+`TextBlock.markdown-image-lightbox-zoom-level`, and the save button (`Button.markdown-image-lightbox-save`,
+also a `markdown-image-lightbox-zoom` button, shown while `IsImageSaveEnabled` is set). The default theme paints the toolbar in the close
 button's colours. The buttons' tooltips and accessible names come from the theme, so they can be
 translated:
 

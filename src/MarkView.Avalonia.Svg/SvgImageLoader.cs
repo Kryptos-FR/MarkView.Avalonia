@@ -7,6 +7,7 @@ using Avalonia.Media;
 using Avalonia.Svg.Skia;
 
 using MarkView.Avalonia.Extensions;
+using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia.Svg;
 
@@ -44,10 +45,11 @@ public sealed class SvgImageLoader : IImageLoader
         try
         {
             SvgSource source;
+            byte[] bytes;
 
             if (url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
             {
-                var bytes = DecodeDataUri(url);
+                bytes = DecodeDataUri(url);
                 source = await Task.Run(() =>
                 {
                     using var ms = new MemoryStream(bytes);
@@ -61,6 +63,7 @@ public sealed class SvgImageLoader : IImageLoader
                 using var responseStream = await SharedHttpClient.Instance.GetStreamAsync(uri, cancellationToken);
                 using var buffer = new MemoryStream();
                 await responseStream.CopyToAsync(buffer, cancellationToken);
+                bytes = buffer.ToArray();
                 buffer.Position = 0;
                 source = await Task.Run(() => SvgSource.LoadFromStream(buffer), cancellationToken);
             }
@@ -68,7 +71,10 @@ public sealed class SvgImageLoader : IImageLoader
             // SvgImage is an AvaloniaObject — must be created on the UI thread.
             // LoadAsync is always awaited from LoadImageAsync which starts on the Avalonia UI
             // thread, so the SynchronizationContext is captured and continuations resume there.
-            return new SvgImage { Source = source };
+            var image = new SvgImage { Source = source };
+            // A saved copy of the image is its own file.
+            ImageExport.SetSvg(image, bytes);
+            return image;
         }
         catch (OperationCanceledException)
         {

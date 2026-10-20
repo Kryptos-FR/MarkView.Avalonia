@@ -21,7 +21,8 @@ namespace MarkView.Avalonia.Rendering;
 /// The lightbox <see cref="MarkdownViewer"/> lays over itself to show a clicked image or diagram: a
 /// <c>markdown-image-lightbox</c> panel with a dimmed backdrop, the picture
 /// (<c>markdown-image-lightbox-image</c>), a close button (<c>markdown-image-lightbox-close</c>) and a
-/// zoom toolbar (<c>markdown-image-lightbox-toolbar</c>).
+/// toolbar (<c>markdown-image-lightbox-toolbar</c>) with the zoom buttons and a save button
+/// (<c>markdown-image-lightbox-save</c>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,6 +33,10 @@ namespace MarkView.Avalonia.Rendering;
 /// pinch, the toolbar, or the + and - keys (0 fits it again), and panned by dragging it or with the arrow
 /// keys. It follows the source and background of the image it was opened from, so a diagram re-rendered for
 /// another theme shows in its new colours.
+/// </para>
+/// <para>
+/// The save button, and Ctrl+S (Cmd+S on macOS), raise <see cref="SaveRequested"/>; the viewer hides the button
+/// for a picture it cannot save.
 /// </para>
 /// <para>
 /// A click that does not drag, anywhere but on the toolbar, closes the lightbox, as do the close button
@@ -120,6 +125,10 @@ internal sealed class ImageLightbox : Panel
         foreach (var button in new[] { ZoomOutButton, ZoomInButton, FitButton })
             button.Classes.Add("markdown-image-lightbox-zoom");
 
+        // In the zoom buttons' style; the theme sets it apart from them.
+        SaveButton = CreateButton(new ZoomGlyph(ZoomGlyphKind.Save), "markdown-image-lightbox-save", () => SaveRequested?.Invoke());
+        SaveButton.Classes.Add("markdown-image-lightbox-zoom");
+
         ZoomLevel = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center };
         ZoomLevel.Classes.Add("markdown-image-lightbox-zoom-level");
 
@@ -130,7 +139,7 @@ internal sealed class ImageLightbox : Panel
             Child = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Children = { ZoomOutButton, ZoomLevel, ZoomInButton, FitButton },
+                Children = { ZoomOutButton, ZoomLevel, ZoomInButton, FitButton, SaveButton },
             },
         };
         Toolbar.Classes.Add("markdown-image-lightbox-toolbar");
@@ -179,6 +188,9 @@ internal sealed class ImageLightbox : Panel
     /// <summary>The toolbar button that fits the picture to the lightbox again.</summary>
     public Button FitButton { get; }
 
+    /// <summary>The toolbar button that saves the picture to a file.</summary>
+    public Button SaveButton { get; }
+
     /// <summary>The zoom level shown in the toolbar, as a percentage of the picture's natural size.</summary>
     public TextBlock ZoomLevel { get; }
 
@@ -190,6 +202,12 @@ internal sealed class ImageLightbox : Panel
 
     /// <summary>Raised when the user asks to close the lightbox.</summary>
     public event Action? CloseRequested;
+
+    /// <summary>Raised when the user asks to save the picture, with the save button or Ctrl+S, while the button is visible.</summary>
+    public event Action? SaveRequested;
+
+    /// <summary>The document's image the lightbox shows the picture of.</summary>
+    public Image Picture => _picture;
 
     private Size NaturalSize => Image.Source?.Size ?? default;
 
@@ -216,7 +234,7 @@ internal sealed class ImageLightbox : Panel
     internal IInputElement GetNextTabStop(IInputElement current, bool forward)
     {
         var stops = new List<IInputElement> { this };
-        foreach (var button in new[] { CloseButton, ZoomOutButton, ZoomInButton, FitButton })
+        foreach (var button in new[] { CloseButton, ZoomOutButton, ZoomInButton, FitButton, SaveButton })
         {
             if (button is { Focusable: true, IsEffectivelyVisible: true, IsEffectivelyEnabled: true })
                 stops.Add(button);
@@ -359,6 +377,13 @@ internal sealed class ImageLightbox : Panel
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
+        // Left to the application while the picture cannot be saved, which may have its own Ctrl+S.
+        if (e.Key == Key.S && e.KeyModifiers == CommandModifiers && SaveButton.IsVisible)
+        {
+            SaveRequested?.Invoke();
+            e.Handled = true;
+            return;
+        }
         var pan = new Vector(_view.Width, _view.Height) * KeyPanFraction;
         switch (e.Key)
         {
@@ -375,6 +400,10 @@ internal sealed class ImageLightbox : Panel
         }
         e.Handled = true;
     }
+
+    // The modifier of the platform's shortcuts: Ctrl, or Cmd on macOS.
+    private KeyModifiers CommandModifiers =>
+        Application.Current?.PlatformSettings?.HotkeyConfiguration.CommandModifiers ?? KeyModifiers.Control;
 
     // A second touch, which may start a pinch, leaves the first one's press as it is.
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -497,9 +526,10 @@ internal sealed class ImageLightbox : Panel
         ZoomIn,
         ZoomOut,
         Fit,
+        Save,
     }
 
-    /// <summary>The plus, minus or four corners of a zoom button.</summary>
+    /// <summary>The plus, minus or four corners of a zoom button, or the downward arrow into a tray of the save button.</summary>
     internal sealed class ZoomGlyph(ZoomGlyphKind kind) : StrokeGlyph
     {
         internal ZoomGlyphKind Kind { get; } = kind;
@@ -508,6 +538,11 @@ internal sealed class ImageLightbox : Panel
         {
             ZoomGlyphKind.ZoomIn => [(At(0.2, 0.5), At(0.8, 0.5)), (At(0.5, 0.2), At(0.5, 0.8))],
             ZoomGlyphKind.ZoomOut => [(At(0.2, 0.5), At(0.8, 0.5))],
+            ZoomGlyphKind.Save =>
+            [
+                (At(0.5, 0.15), At(0.5, 0.6)), (At(0.3, 0.42), At(0.5, 0.62)), (At(0.7, 0.42), At(0.5, 0.62)),
+                (At(0.15, 0.65), At(0.15, 0.85)), (At(0.15, 0.85), At(0.85, 0.85)), (At(0.85, 0.85), At(0.85, 0.65)),
+            ],
             _ =>
             [
                 (At(0.15, 0.4), At(0.15, 0.15)), (At(0.15, 0.15), At(0.4, 0.15)),

@@ -19,6 +19,7 @@
 | `AreTaskListsInteractive` | `bool` | `false` | Renders task-list items as checkboxes the user can toggle, raising `TaskToggled`. Setting it re-renders the document. See [Interactive task lists](#interactive-task-lists). |
 | `AreHeadingsFoldable` | `bool` | `false` | Starts each heading with a fold button that hides or shows its section. Setting it re-renders the document. See [Foldable headings](#foldable-headings). |
 | `IsImageZoomEnabled` | `bool` | `true` | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, where it can be zoomed and panned. See [Image zoom](#image-zoom). |
+| `IsImageSaveEnabled` | `bool` | `true` | Images and Mermaid diagrams can be saved to a file, as PNG or SVG, from the lightbox and from the context menu. See [Saving images and diagrams](#saving-images-and-diagrams). |
 | `IsSmoothScrollingEnabled` | `bool` | `false` | Animates the scroll to an anchor (a `#anchor` link, a footnote, `ScrollToAnchor`) instead of jumping there at once. See [Smooth scrolling](#smooth-scrolling). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
@@ -667,6 +668,46 @@ Turn it off with `IsImageZoomEnabled`, per viewer or for every viewer of an appl
 ```
 
 The lightbox's colours, close button and toolbar are themable, see [Theming](theming.md#images).
+
+### Saving images and diagrams
+
+An image or a Mermaid diagram can be saved to a file: with the save button at the end of the lightbox's
+toolbar, `Ctrl+S` (`Cmd+S` on macOS) in the lightbox, or **Save image as…** in the viewer's
+[context menu](text-selection.md#context-menu), shown when it is opened on one (this works with
+`IsImageZoomEnabled` turned off too). The platform's save picker asks where; in a browser without one
+(Firefox, Safari), Avalonia downloads the file instead.
+
+| Picture | Formats | Suggested name |
+|---------|---------|----------------|
+| Mermaid diagram | SVG or PNG, in the colours it is shown in, on its background colour | `diagram` |
+| SVG image (`MarkView.Avalonia.Svg`) | SVG (the image's own file) or PNG | The last segment of its address |
+| Any other image | PNG, with the image's own pixels | The last segment of its address |
+
+The first format is the one suggested; the file is written in the format of its extension, or of the file
+type picked. A picture drawn as vectors is written as PNG at twice its size (at most 8192 pixels along its
+longer side). An image inside a link, which opens the link rather than the lightbox, can be saved from the
+context menu; a video thumbnail and an image that failed to load cannot be saved.
+
+Saving raises `SavingImage` first. A handler can change the suggested name, or set `Cancel` and save the
+picture itself with `WriteAsync`, for instance to a folder of its own:
+
+```csharp
+viewer.SavingImage += async (_, e) =>
+{
+    e.Cancel = true;
+    var format = e.Formats[0];
+    await using var file = File.Create(Path.Combine(exportFolder, $"{e.SuggestedFileName}.{format.ToString().ToLowerInvariant()}"));
+    await e.WriteAsync(format, file);
+};
+```
+
+Turn it off with `IsImageSaveEnabled`, which hides the save button and the menu item:
+
+```xml
+<Style Selector="mv|MarkdownViewer">
+  <Setter Property="IsImageSaveEnabled" Value="False" />
+</Style>
+```
 
 ## Code block toolbar
 
