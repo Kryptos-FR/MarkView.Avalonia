@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="LiveMarkdown.Avalonia" />
+    <PackageReference Include="LiveMarkdown.Avalonia.Math" />
+    <PackageReference Include="LiveMarkdown.Avalonia.Mermaid" />
+  </ItemGroup>
+</Project>
