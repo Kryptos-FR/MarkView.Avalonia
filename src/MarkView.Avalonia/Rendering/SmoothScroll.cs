@@ -26,7 +26,8 @@ internal sealed class SmoothScroll
     /// The distance, in pixels, from which an animation takes <see cref="MaxDuration"/>; past it, a longer jump
     /// would only scroll faster, too fast to follow.
     /// </summary>
-    public static double LongDistance => Math.Pow(MaxDuration.TotalMilliseconds / 8, 2);
+    // Stryker disable once all : a static initializer runs before any mutant is activated, so its mutants always survive
+    public static readonly double LongDistance = Math.Pow(MaxDuration.TotalMilliseconds / 8, 2);
 
     private readonly ScrollViewer _scrollViewer;
     private readonly Func<double?> _target;
