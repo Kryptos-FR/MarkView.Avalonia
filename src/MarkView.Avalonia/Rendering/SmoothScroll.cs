@@ -10,7 +10,8 @@ namespace MarkView.Avalonia.Rendering;
 /// Animates a <see cref="ScrollViewer"/>'s vertical offset to a target, one step per rendered frame, easing out
 /// over a <see cref="Duration"/> that grows with the distance. The target is asked for again at each frame, so content that grows or shrinks
 /// above it while the animation runs does not make it miss. The animation stops at the target, when the target
-/// is gone (<c>null</c>), or as soon as something else moves the offset, e.g. the user scrolling.
+/// is gone (<c>null</c>), or as soon as something else moves the offset, e.g. the user scrolling. A jump longer
+/// than <see cref="LongDistance"/> goes at once to a screen away from the target and animates that last screen only.
 /// </summary>
 internal sealed class SmoothScroll
 {
@@ -20,9 +21,15 @@ internal sealed class SmoothScroll
     /// <summary>How long an animation over a long distance takes, at most.</summary>
     public static readonly TimeSpan MaxDuration = TimeSpan.FromMilliseconds(500);
 
+    /// <summary>
+    /// The distance, in pixels, from which an animation takes <see cref="MaxDuration"/>; past it, a longer jump
+    /// would only scroll faster, too fast to follow.
+    /// </summary>
+    public static readonly double LongDistance = Math.Pow(MaxDuration.TotalMilliseconds / 8, 2);
+
     private readonly ScrollViewer _scrollViewer;
     private readonly Func<double?> _target;
-    private readonly double _from;
+    private double _from;
     private double _lastOffset;
     private TimeSpan? _startTime;
 
@@ -84,6 +91,8 @@ internal sealed class SmoothScroll
         if (_startTime is null)
         {
             _startTime = time;
+            if (Math.Abs(target - _from) > LongDistance)
+                _from = target - Math.Sign(target - _from) * Math.Min(_scrollViewer.Viewport.Height, LongDistance);
             Duration = DurationFor(Math.Abs(target - _from));
         }
         var progress = Math.Clamp((time - _startTime.Value) / Duration, 0, 1);

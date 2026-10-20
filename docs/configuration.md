@@ -537,7 +537,7 @@ With `IsSmoothScrollingEnabled`, a jump to an anchor, from a `#anchor` link, a f
 </Style>
 ```
 
-The animation takes longer for a longer jump, as in a browser: from 150 ms for a short one to 500 ms at most. It follows its target if content above it changes height while it runs, and stops where it is as soon as anything else scrolls the document, such as the mouse wheel, the scroll bar or the keyboard. A new jump replaces the one in progress. Opening a document at a fragment (`Source` ending with `#anchor`) still shows the anchor at once, as a browser does. Avalonia has no reduced-motion setting, so an application that has one can bind this property to it.
+The animation takes longer for a longer jump, as in a browser: from 150 ms for a short one to 500 ms at most. A jump of more than about 3,900 px goes at once to a screen away from the anchor and animates only that last screen, so it never scrolls too fast to follow. It follows its target if content above it changes height while it runs, and stops where it is as soon as anything else scrolls the document, such as the mouse wheel, the scroll bar or the keyboard. A new jump replaces the one in progress. Opening a document at a fragment (`Source` ending with `#anchor`) still shows the anchor at once, as a browser does. Avalonia has no reduced-motion setting, so an application that has one can bind this property to it.
 
 ## Table of contents
 

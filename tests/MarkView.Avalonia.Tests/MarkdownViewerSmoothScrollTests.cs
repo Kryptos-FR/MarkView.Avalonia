@@ -31,13 +31,26 @@ public class MarkdownViewerSmoothScrollTests
         {Paragraphs}
         """;
 
-    private static (Window Window, ScrollViewer ScrollViewer, MarkdownViewer Viewer) Show(bool smooth = true)
+    /// <summary>Two headings far enough apart that a jump between them is longer than <see cref="SmoothScroll.LongDistance"/>.</summary>
+    private static readonly string VeryLongMarkdown = $"""
+        {Paragraphs}
+
+        ## Top Heading
+
+        {string.Join("\n\n", Enumerable.Repeat(Paragraphs, 6))}
+
+        ## Bottom Heading
+
+        {Paragraphs}
+        """;
+
+    private static (Window Window, ScrollViewer ScrollViewer, MarkdownViewer Viewer) Show(bool smooth = true, string? markdown = null)
     {
         var viewer = new MarkdownViewer
         {
             Template = ScrollingViewerTemplate.Create(),
             IsSmoothScrollingEnabled = smooth,
-            Markdown = LongMarkdown,
+            Markdown = markdown ?? LongMarkdown,
         };
         var window = new Window { Width = 400, Height = 200, Content = viewer };
         window.Show();
@@ -264,6 +277,66 @@ public class MarkdownViewerSmoothScrollTests
         Assert.Equal(SmoothScroll.DurationFor(expected), scroll.Duration);
         Assert.True(scroll.Duration > SmoothScroll.MinDuration);
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void A_long_jump_down_goes_at_once_to_a_screen_above_the_anchor_and_animates_that_screen()
+    {
+        var (window, scrollViewer, viewer) = Show(markdown: VeryLongMarkdown);
+        var expected = TargetOffset(viewer, scrollViewer, "Bottom Heading");
+        var screen = scrollViewer.Viewport.Height;
+        Assert.True(expected > SmoothScroll.LongDistance + screen);
+        viewer.ScrollToAnchor("bottom-heading");
+        var scroll = viewer.ActiveSmoothScroll!;
+
+        Assert.True(scroll.Step(TimeSpan.Zero));
+        Assert.Equal(expected - screen, scrollViewer.Offset.Y, 3);
+        Assert.Equal(SmoothScroll.DurationFor(screen), scroll.Duration);
+
+        Assert.True(scroll.Step(scroll.Duration / 2));
+        Assert.Equal(expected - screen + screen * SmoothScroll.Ease(0.5), scrollViewer.Offset.Y, 3);
+        Assert.False(scroll.Step(scroll.Duration));
+        Assert.Equal(expected, scrollViewer.Offset.Y, 3);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void A_long_jump_up_goes_at_once_to_a_screen_below_the_anchor()
+    {
+        var (window, scrollViewer, viewer) = Show(markdown: VeryLongMarkdown);
+        scrollViewer.Offset = new Vector(0, scrollViewer.Extent.Height);
+        window.UpdateLayout();
+        var expected = TargetOffset(viewer, scrollViewer, "Top Heading");
+        var screen = scrollViewer.Viewport.Height;
+        Assert.True(scrollViewer.Offset.Y - expected > SmoothScroll.LongDistance + screen);
+        viewer.ScrollToAnchor("top-heading");
+        var scroll = viewer.ActiveSmoothScroll!;
+
+        Assert.True(scroll.Step(TimeSpan.Zero));
+        Assert.Equal(expected + screen, scrollViewer.Offset.Y, 3);
+        Assert.False(scroll.Step(scroll.Duration));
+        Assert.Equal(expected, scrollViewer.Offset.Y, 3);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void A_jump_shorter_than_the_long_distance_animates_all_the_way()
+    {
+        var (window, scrollViewer, viewer) = Show();
+        Assert.True(TargetOffset(viewer, scrollViewer, "Target Heading") < SmoothScroll.LongDistance);
+        viewer.ScrollToAnchor("target-heading");
+
+        viewer.ActiveSmoothScroll!.Step(TimeSpan.Zero);
+
+        Assert.Equal(0, scrollViewer.Offset.Y);
+        window.Close();
+    }
+
+    [Fact]
+    public void The_long_distance_is_where_the_duration_reaches_its_maximum()
+    {
+        Assert.Equal(SmoothScroll.MaxDuration, SmoothScroll.DurationFor(SmoothScroll.LongDistance));
+        Assert.True(SmoothScroll.DurationFor(SmoothScroll.LongDistance - 100) < SmoothScroll.MaxDuration);
     }
 
     [Theory]
