@@ -154,6 +154,7 @@ internal static class HighlightedCode
     // The text of tokens [first, end): a single token keeps its string.
     private static string Concat<T>(IReadOnlyList<T> tokens, int first, int end, Func<T, string> text)
     {
+        // Stryker disable once Arithmetic : concatenating a single token gives the same text; only the copy is saved
         if (end - first == 1)
             return text(tokens[first]);
 
