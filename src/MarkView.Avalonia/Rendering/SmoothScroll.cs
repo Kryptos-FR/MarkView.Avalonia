@@ -11,7 +11,8 @@ namespace MarkView.Avalonia.Rendering;
 /// over a <see cref="Duration"/> that grows with the distance. The target is asked for again at each frame, so content that grows or shrinks
 /// above it while the animation runs does not make it miss. The animation stops at the target, when the target
 /// is gone (<c>null</c>), or as soon as something else moves the offset, e.g. the user scrolling. A jump longer
-/// than <see cref="LongDistance"/> goes at once to a screen away from the target and animates that last screen only.
+/// than <see cref="LongDistance"/> goes at once to <see cref="LongDistance"/> away from the target and animates the
+/// rest, so it takes <see cref="MaxDuration"/> like the longest animated jump.
 /// </summary>
 internal sealed class SmoothScroll
 {
@@ -91,8 +92,9 @@ internal sealed class SmoothScroll
         if (_startTime is null)
         {
             _startTime = time;
+            // Rounded to a whole pixel, so the content is laid out at the same pixel positions as at the target.
             if (Math.Abs(target - _from) > LongDistance)
-                _from = target - Math.Sign(target - _from) * Math.Min(_scrollViewer.Viewport.Height, LongDistance);
+                _from = Math.Round(target - Math.Sign(target - _from) * LongDistance);
             Duration = DurationFor(Math.Abs(target - _from));
         }
         var progress = Math.Clamp((time - _startTime.Value) / Duration, 0, 1);

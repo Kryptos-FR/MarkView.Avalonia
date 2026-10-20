@@ -280,40 +280,41 @@ public class MarkdownViewerSmoothScrollTests
     }
 
     [AvaloniaFact]
-    public void A_long_jump_down_goes_at_once_to_a_screen_above_the_anchor_and_animates_that_screen()
+    public void A_long_jump_down_goes_at_once_to_the_long_distance_above_the_anchor_and_animates_the_rest()
     {
         var (window, scrollViewer, viewer) = Show(markdown: VeryLongMarkdown);
         var expected = TargetOffset(viewer, scrollViewer, "Bottom Heading");
-        var screen = scrollViewer.Viewport.Height;
-        Assert.True(expected > SmoothScroll.LongDistance + screen);
+        var distance = SmoothScroll.LongDistance;
+        Assert.True(expected > distance + 100);
         viewer.ScrollToAnchor("bottom-heading");
         var scroll = viewer.ActiveSmoothScroll!;
 
         Assert.True(scroll.Step(TimeSpan.Zero));
-        Assert.Equal(expected - screen, scrollViewer.Offset.Y, 3);
-        Assert.Equal(SmoothScroll.DurationFor(screen), scroll.Duration);
+        // The jump lands on a whole pixel.
+        Assert.Equal(Math.Round(expected - distance), scrollViewer.Offset.Y, 3);
+        Assert.Equal(SmoothScroll.MaxDuration.TotalMilliseconds, scroll.Duration.TotalMilliseconds, tolerance: 0.1);
 
         Assert.True(scroll.Step(scroll.Duration / 2));
-        Assert.Equal(expected - screen + screen * SmoothScroll.Ease(0.5), scrollViewer.Offset.Y, 3);
+        Assert.Equal(Math.Round(expected - distance) + (expected - Math.Round(expected - distance)) * SmoothScroll.Ease(0.5), scrollViewer.Offset.Y, 3);
         Assert.False(scroll.Step(scroll.Duration));
-        Assert.Equal(expected, scrollViewer.Offset.Y, 3);
+        // The target is measured from a layout at the fractional offset of the previous frame, which rounds to a quarter pixel.
+        Assert.Equal(expected, scrollViewer.Offset.Y, tolerance: 0.5);
         window.Close();
     }
 
     [AvaloniaFact]
-    public void A_long_jump_up_goes_at_once_to_a_screen_below_the_anchor()
+    public void A_long_jump_up_goes_at_once_to_the_long_distance_below_the_anchor()
     {
         var (window, scrollViewer, viewer) = Show(markdown: VeryLongMarkdown);
         scrollViewer.Offset = new Vector(0, scrollViewer.Extent.Height);
         window.UpdateLayout();
         var expected = TargetOffset(viewer, scrollViewer, "Top Heading");
-        var screen = scrollViewer.Viewport.Height;
-        Assert.True(scrollViewer.Offset.Y - expected > SmoothScroll.LongDistance + screen);
+        Assert.True(scrollViewer.Offset.Y - expected > SmoothScroll.LongDistance + 100);
         viewer.ScrollToAnchor("top-heading");
         var scroll = viewer.ActiveSmoothScroll!;
 
         Assert.True(scroll.Step(TimeSpan.Zero));
-        Assert.Equal(expected + screen, scrollViewer.Offset.Y, 3);
+        Assert.Equal(Math.Round(expected + SmoothScroll.LongDistance), scrollViewer.Offset.Y, 3);
         Assert.False(scroll.Step(scroll.Duration));
         Assert.Equal(expected, scrollViewer.Offset.Y, 3);
         window.Close();
