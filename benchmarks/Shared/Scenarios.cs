@@ -19,7 +19,7 @@ namespace MarkView.Benchmarks.Shared;
 /// <item><c>theme</c>: light ↔ dark on a shown document;</item>
 /// <item><c>scroll</c>: page down to the end of a freshly shown document (pays for whatever was deferred);</item>
 /// <item><c>stream</c>: the document arrives in 20-character chunks, each shown before the next;</item>
-/// <item><c>memory</c>: what a shown document keeps alive, managed and native.</item>
+/// <item><c>memory</c>: what a shown document keeps alive, managed (live heap) and native.</item>
 /// </list>
 /// Each prints one tab-separated line: the median, 95th percentile and minimum of the measured operation, the
 /// median allocation per operation, and the number of samples.
@@ -160,14 +160,16 @@ public static class Scenarios
                 Show(other); // warms every cache with a document of the same shape first
                 var viewer = Show(null);
                 var managedBefore = Collect();
+                var heapBefore = Heap();
                 var nativeBefore = PrivateBytes();
                 adapter.SetMarkdown(viewer, document);
                 BenchHost.Settle(() => adapter.IsSettled(viewer));
                 var managed = Collect() - managedBefore;
+                var heap = Heap() - heapBefore;
                 var native = PrivateBytes() - nativeBefore;
                 var visuals = viewer.GetVisualDescendants().Count();
                 GC.KeepAlive(viewer);
-                extra = $"managed_kb={F(managed / 1024.0)} private_kb={F(native / 1024.0)} visuals={visuals}";
+                extra = $"heap_kb={F(heap / 1024.0)} managed_kb={F(managed / 1024.0)} private_kb={F(native / 1024.0)} visuals={visuals}";
                 break;
             }
 
@@ -209,6 +211,20 @@ public static class Scenarios
             GC.WaitForPendingFinalizers();
         }
         return GC.GetTotalMemory(forceFullCollection: true);
+    }
+
+    /// <summary>
+    /// The live managed heap as of the last collection: each generation's size less its fragmentation. Unlike
+    /// <see cref="GC.GetTotalMemory(bool)"/>, whose difference can be off by megabytes, this agrees with gcdump totals.
+    /// Call it right after <see cref="Collect"/>.
+    /// </summary>
+    private static long Heap()
+    {
+        var info = GC.GetGCMemoryInfo(GCKind.Any);
+        long total = 0;
+        foreach (var generation in info.GenerationInfo)
+            total += generation.SizeAfterBytes - generation.FragmentationAfterBytes;
+        return total;
     }
 
     private static long PrivateBytes()
