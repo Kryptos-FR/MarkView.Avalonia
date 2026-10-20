@@ -4,6 +4,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 
 using MarkView.Avalonia.Rendering;
@@ -19,6 +20,14 @@ public partial class MarkdownViewer
     // The link the context menu was opened on, for its Copy link item.
     private MarkdownHyperlink? _contextLink;
 
+    // The table the context menu was opened on, for its Copy table items.
+    private Grid? _contextTable;
+
+    // Noted on the way down, before the viewer opens its menu: a click on a cell's padding, outside its text,
+    // reaches the viewer's background rather than the document.
+    private static readonly IDisposable ContextTableHandler = ContextRequestedEvent.AddClassHandler<MarkdownViewer>(
+        (viewer, e) => viewer.NoteContextTable(e), RoutingStrategies.Tunnel);
+
     /// <inheritdoc/>
     protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
     {
@@ -31,10 +40,11 @@ public partial class MarkdownViewer
 
     /// <summary>
     /// The viewer's default context menu: Copy and Copy as Markdown (enabled while something is selected),
-    /// Copy link (shown when opened on a link) and Select all. Its labels are the resources
-    /// <c>StringTextFlyoutCopyText</c> (the one a <see cref="TextBox"/> uses), <c>MarkdownStringCopyAsMarkdown</c>,
-    /// <c>MarkdownStringCopyLink</c> and <c>MarkdownStringSelectAll</c>, read when it opens, in English when
-    /// they are not found.
+    /// Copy link (shown when opened on a link), Copy table and Copy table as Markdown (shown when opened on a
+    /// table) and Select all. Its labels are the resources <c>StringTextFlyoutCopyText</c> (the one a
+    /// <see cref="TextBox"/> uses), <c>MarkdownStringCopyAsMarkdown</c>, <c>MarkdownStringCopyLink</c>,
+    /// <c>MarkdownStringCopyTable</c>, <c>MarkdownStringCopyTableAsMarkdown</c> and <c>MarkdownStringSelectAll</c>,
+    /// read when it opens, in English when they are not found.
     /// </summary>
     private MenuFlyout CreateDefaultContextFlyout()
     {
@@ -54,16 +64,34 @@ public partial class MarkdownViewer
                 _ = CopyAsync(MarkdownCopyOrigin.Link, uri.OriginalString);
         };
 
+        var copyTable = new MenuItem();
+        copyTable.Classes.Add("markdown-context-copy-table");
+        copyTable.Click += (_, _) =>
+        {
+            if (_contextTable is { } table)
+                _ = CopyTableAsync(table);
+        };
+
+        var copyTableAsMarkdown = new MenuItem();
+        copyTableAsMarkdown.Classes.Add("markdown-context-copy-table-markdown");
+        copyTableAsMarkdown.Click += (_, _) =>
+        {
+            if (_contextTable is { } table)
+                _ = CopyTableAsMarkdownAsync(table);
+        };
+
         var selectAll = new MenuItem();
         selectAll.Classes.Add("markdown-context-select-all");
         selectAll.Click += (_, _) => SelectAll();
 
-        var flyout = new MenuFlyout { Items = { copy, copyAsMarkdown, copyLink, selectAll } };
+        var flyout = new MenuFlyout { Items = { copy, copyAsMarkdown, copyLink, copyTable, copyTableAsMarkdown, selectAll } };
         flyout.Opening += (_, _) =>
         {
             copy.Header = Text("StringTextFlyoutCopyText", "Copy");
             copyAsMarkdown.Header = Text("MarkdownStringCopyAsMarkdown", "Copy as Markdown");
             copyLink.Header = Text("MarkdownStringCopyLink", "Copy link");
+            copyTable.Header = Text("MarkdownStringCopyTable", "Copy table");
+            copyTableAsMarkdown.Header = Text("MarkdownStringCopyTableAsMarkdown", "Copy table as Markdown");
             selectAll.Header = Text("MarkdownStringSelectAll", "Select all");
 
             var hotkeys = Application.Current?.PlatformSettings?.HotkeyConfiguration;
@@ -72,8 +100,13 @@ public partial class MarkdownViewer
 
             copy.IsEnabled = copyAsMarkdown.IsEnabled = HasSelection;
             copyLink.IsVisible = _contextLink?.NavigateUri is not null;
+            copyTable.IsVisible = copyTableAsMarkdown.IsVisible = _contextTable is not null;
         };
-        flyout.Closed += (_, _) => _contextLink = null;
+        flyout.Closed += (_, _) =>
+        {
+            _contextLink = null;
+            _contextTable = null;
+        };
         return flyout;
     }
 
@@ -96,5 +129,20 @@ public partial class MarkdownViewer
         }
         else
             _contextLink = (e.Source as LinkFocusTarget)?.Link;
+    }
+
+    /// <summary>
+    /// Notes the table a context menu is requested on: the one under the pointer, or the one holding the focused
+    /// link. None while the lightbox covers the document.
+    /// </summary>
+    private void NoteContextTable(ContextRequestedEventArgs e)
+    {
+        _contextTable = null;
+        if (_lightbox is not null || _selectionLayer is not { } layer || Content is not Grid { Children: [Panel root, ..] })
+            return;
+        if (e.TryGetPosition(layer, out var position))
+            _contextTable = TableCopy.TableAt(root, layer, position);
+        else if (e.Source is LinkFocusTarget target)
+            _contextTable = TableCopy.TableOf(target.Link);
     }
 }

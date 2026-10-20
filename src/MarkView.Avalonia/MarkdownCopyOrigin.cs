@@ -20,4 +20,13 @@ public enum MarkdownCopyOrigin
 
     /// <summary>The address of a link, copied with the context menu's Copy link.</summary>
     Link,
+
+    /// <summary>
+    /// A whole table as tab-separated values, with an HTML table next to them, copied with the context menu's
+    /// Copy table.
+    /// </summary>
+    Table,
+
+    /// <summary>A whole table as Markdown, copied with the context menu's Copy table as Markdown.</summary>
+    TableAsMarkdown,
 }

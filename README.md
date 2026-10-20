@@ -215,7 +215,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 |---------|--------|
 | Strikethrough | `~~text~~` or `~text~`, as on GitHub |
 | Task lists | `- [x] item` (clickable with `AreTaskListsInteractive`) |
-| Pipe tables | GFM-style `\| col \| col \|` |
+| Pipe tables | GFM-style `\| col \| col \|`; the context menu copies a whole table as cells for a spreadsheet or as Markdown |
 | Autolinks | bare `https://…` URLs |
 | Emoji shortcodes | `:rocket:` → 🚀 (ASCII smileys like `:)` are intentionally left as plain text) |
 | GitHub alert blocks | `> [!NOTE]` etc. |
@@ -451,7 +451,7 @@ Example — increase heading size and add a bottom border:
 - **Click + drag** to select a range.
 - **`Ctrl+A`** to select all text.
 - **`Ctrl+C`** to copy the selection to the clipboard.
-- **Right-click** for a context menu: Copy, Copy as Markdown, Copy link (on a link) and Select all.
+- **Right-click** for a context menu: Copy, Copy as Markdown, Copy link (on a link), Copy table and Copy table as Markdown (on a table) and Select all.
 
 Programmatic API:
 

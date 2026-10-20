@@ -55,6 +55,20 @@ internal sealed partial class SelectionMarkdownWriter
         return new SelectionMarkdownWriter(layer, start, end).Write(root, source, wholeSource).ReplaceLineEndings("\n");
     }
 
+    /// <summary>
+    /// Returns the whole of <paramref name="table"/>, a table of the document whose entries <paramref name="layer"/>
+    /// holds, as a Markdown table rebuilt from its controls, with lines separated by <c>'\n'</c>, whatever is
+    /// selected.
+    /// </summary>
+    public static string WriteTable(DocumentSelectionLayer layer, Grid table)
+    {
+        var cells = layer.Entries.Where(e => e.Element.GetLogicalAncestors().Contains(table)).ToList();
+        if (cells.Count == 0)
+            return string.Empty;
+        return new SelectionMarkdownWriter(layer, cells[0].AbsStart, cells[^1].AbsEnd).WriteTable(table)
+            .ReplaceLineEndings("\n");
+    }
+
     private string Write(Panel root, Func<Block, Block, string>? source, string? wholeSource)
     {
         var groups = Groups(_layer.Entries);

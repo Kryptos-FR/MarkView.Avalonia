@@ -167,9 +167,48 @@ public partial class MarkdownViewer
     }
 
     /// <summary>The selection as an HTML fragment, rendered from <see cref="GetSelectedMarkdown"/>.</summary>
-    private string? GetSelectedHtml()
+    private string? GetSelectedHtml() => RenderHtml(GetSelectedMarkdown());
+
+    /// <summary>
+    /// Copies the whole of <paramref name="table"/>, a table of the rendered document, whatever is selected: as
+    /// tab-separated values, which a spreadsheet pastes as cells, and while <see cref="IsHtmlCopyEnabled"/> is
+    /// <c>true</c>, as an HTML table too, after raising <see cref="CopyingToClipboard"/> with
+    /// <see cref="MarkdownCopyOrigin.Table"/>.
+    /// </summary>
+    internal Task CopyTableAsync(Grid table)
     {
-        var markdown = GetSelectedMarkdown();
+        if (_selectionLayer is not { } layer) return Task.CompletedTask;
+        var text = TableCopy.ToTabSeparatedValues(table, layer);
+        var html = text.Length > 0 && IsHtmlCopyEnabled && HtmlClipboardFormat.IsSupported
+            ? RenderHtml(GetTableMarkdown(table, layer))
+            : null;
+        return CopyAsync(MarkdownCopyOrigin.Table, text, html);
+    }
+
+    /// <summary>
+    /// Copies the whole of <paramref name="table"/>, a table of the rendered document, as Markdown, whatever is
+    /// selected, after raising <see cref="CopyingToClipboard"/> with <see cref="MarkdownCopyOrigin.TableAsMarkdown"/>.
+    /// </summary>
+    internal Task CopyTableAsMarkdownAsync(Grid table) =>
+        _selectionLayer is { } layer
+            ? CopyAsync(MarkdownCopyOrigin.TableAsMarkdown, GetTableMarkdown(table, layer))
+            : Task.CompletedTask;
+
+    /// <summary>
+    /// <paramref name="table"/> as Markdown: its source text when it is a top-level block of the document, as
+    /// <see cref="GetSelectedMarkdown"/> copies a block selected whole, otherwise (in a list, a quote, an alert)
+    /// rebuilt from its cells.
+    /// </summary>
+    private string GetTableMarkdown(Grid table, DocumentSelectionLayer layer)
+    {
+        if (AvaloniaRenderer.GetTopLevelBlock(table) is Markdig.Extensions.Tables.Table block)
+            return SourceOf(block, block).ReplaceLineEndings("\n");
+        return SelectionMarkdownWriter.WriteTable(layer, table);
+    }
+
+    /// <summary><paramref name="markdown"/> as an HTML fragment, or <c>null</c> when it is empty.</summary>
+    private string? RenderHtml(string markdown)
+    {
         if (markdown.Length == 0) return null;
 
         var pipeline = EffectivePipeline;
