@@ -60,6 +60,7 @@ The viewer has a context menu, opened by a right-click or, when the viewer or a 
 | Copy | Copies the selection, as `Ctrl+C` does. Disabled when nothing is selected. |
 | Copy as Markdown | Copies the selection [as Markdown](#copying-as-markdown). Disabled when nothing is selected. |
 | Copy link | Copies the address of the link the menu was opened on, as written in the document. Shown only on a link, under the pointer or focused with `Tab`. |
+| Copy link to heading | Copies a [link to the heading](#copying-a-link-to-a-heading) the menu was opened on. Shown only on a heading, under the pointer. |
 | Copy table | Copies the whole table the menu was opened on, whatever is selected, as [tab-separated values](#copying-a-table) and an HTML table. Shown only on a table, under the pointer or holding the focused link. |
 | Copy table as Markdown | Copies that table as [Markdown](#copying-a-table). Shown with Copy table. |
 | Select all | Selects the whole document, as `Ctrl+A` does. |
@@ -79,6 +80,7 @@ The labels are resources, read each time the menu opens, so they can be translat
 | `StringTextFlyoutCopyText` | `Copy` (the key a `TextBox`'s own menu uses, so a translation of it applies to both) |
 | `MarkdownStringCopyAsMarkdown` | `Copy as Markdown` |
 | `MarkdownStringCopyLink` | `Copy link` |
+| `MarkdownStringCopyHeadingLink` | `Copy link to heading` |
 | `MarkdownStringCopyTable` | `Copy table` |
 | `MarkdownStringCopyTableAsMarkdown` | `Copy table as Markdown` |
 | `MarkdownStringSelectAll` | `Select all` |
@@ -88,19 +90,24 @@ The labels are resources, read each time the menu opens, so they can be translat
   <x:String x:Key="StringTextFlyoutCopyText">Copier</x:String>
   <x:String x:Key="MarkdownStringCopyAsMarkdown">Copier en Markdown</x:String>
   <x:String x:Key="MarkdownStringCopyLink">Copier le lien</x:String>
+  <x:String x:Key="MarkdownStringCopyHeadingLink">Copier le lien vers le titre</x:String>
   <x:String x:Key="MarkdownStringCopyTable">Copier le tableau</x:String>
   <x:String x:Key="MarkdownStringCopyTableAsMarkdown">Copier le tableau en Markdown</x:String>
   <x:String x:Key="MarkdownStringSelectAll">Tout sélectionner</x:String>
 </Application.Resources>
 ```
 
-Each item has a style class (`markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-copy-table`, `markdown-context-copy-table-markdown`, `markdown-context-select-all`), for instance to give it an icon or hide it:
+Each item has a style class (`markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-copy-heading-link`, `markdown-context-copy-table`, `markdown-context-copy-table-markdown`, `markdown-context-select-all`), for instance to give it an icon or hide it:
 
 ```xml
 <Style Selector="MenuItem.markdown-context-copy-markdown">
   <Setter Property="IsVisible" Value="False" />
 </Style>
 ```
+
+### Copying a link to a heading
+
+Copy link to heading writes the address of the document with the heading's [anchor](configuration.md#anchor-navigation) as its fragment, such as `https://example.com/guide.md#installation`, when the document was loaded through `Source` from the web or a file: the link opens the document at that heading in a viewer given it as its `Source`, and on a site that makes the same GitHub-style anchors. Any fragment `Source` had is replaced, and its query is kept. A document set through `Markdown`, or loaded from the application's resources (`avares://`), gives the anchor alone, such as `#installation`, which links to the heading from the same document.
 
 ### Copying a table
 
@@ -143,7 +150,7 @@ The event args carry no text, so raising the event allocates no string. `Selecte
 
 | Property | Meaning |
 |----------|---------|
-| `Origin` | What is copied: `MarkdownCopyOrigin.Selection`, `MarkdownCopyOrigin.SelectionAsMarkdown`, `MarkdownCopyOrigin.CodeBlock`, `MarkdownCopyOrigin.MathBlock` (a display formula's TeX source), `MarkdownCopyOrigin.Link`, `MarkdownCopyOrigin.Table` (tab-separated values) or `MarkdownCopyOrigin.TableAsMarkdown` |
+| `Origin` | What is copied: `MarkdownCopyOrigin.Selection`, `MarkdownCopyOrigin.SelectionAsMarkdown`, `MarkdownCopyOrigin.CodeBlock`, `MarkdownCopyOrigin.MathBlock` (a display formula's TeX source), `MarkdownCopyOrigin.Link`, `MarkdownCopyOrigin.HeadingLink`, `MarkdownCopyOrigin.Table` (tab-separated values) or `MarkdownCopyOrigin.TableAsMarkdown` |
 | `Text` | The text to write, lines separated by `\n`. Set it to change what is written; it is written with the platform's line endings. Set to `null` or `""`, nothing is written. |
 | `Html` | The [HTML](#html-on-the-clipboard) written next to the text, for `Selection` and `Table` only; `null` otherwise, and when `IsHtmlCopyEnabled` is off or the platform has no HTML format. Set it to change or drop the HTML. |
 | `Cancel` | Set to `true` to write nothing, for instance when the application writes the clipboard itself. A copy button then shows no confirmation. |

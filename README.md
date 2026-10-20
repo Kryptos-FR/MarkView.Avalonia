@@ -451,7 +451,7 @@ Example — increase heading size and add a bottom border:
 - **Click + drag** to select a range.
 - **`Ctrl+A`** to select all text.
 - **`Ctrl+C`** to copy the selection to the clipboard.
-- **Right-click** for a context menu: Copy, Copy as Markdown, Copy link (on a link), Copy table and Copy table as Markdown (on a table) and Select all.
+- **Right-click** for a context menu: Copy, Copy as Markdown, Copy link (on a link), Copy link to heading (on a heading), Copy table and Copy table as Markdown (on a table) and Select all.
 
 Programmatic API:
 

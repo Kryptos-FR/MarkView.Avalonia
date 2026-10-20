@@ -352,7 +352,7 @@ Every element rendered by `MarkdownViewer` is tagged with a CSS-style class name
 | `markdown-image-lightbox-zoom` | `Button` | Each button of the zoom toolbar, along with `markdown-image-lightbox-zoom-out`, `-zoom-in` or `-zoom-fit` |
 | `markdown-image-lightbox-zoom-level` | `TextBlock` | The zoom level in the toolbar, as a percentage of the natural size |
 | `markdown-link` | `HyperlinkButton` | Hyperlink |
-| `markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-copy-table`, `markdown-context-copy-table-markdown`, `markdown-context-select-all` | `MenuItem` | Items of the viewer's default [context menu](text-selection.md#context-menu) |
+| `markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-copy-heading-link`, `markdown-context-copy-table`, `markdown-context-copy-table-markdown`, `markdown-context-select-all` | `MenuItem` | Items of the viewer's default [context menu](text-selection.md#context-menu) |
 | `markdown-table` | `Grid` | Table |
 | `markdown-table-cell` | `Border` | Table body cell |
 | `markdown-table-header` | `Border` | Table header cell |
