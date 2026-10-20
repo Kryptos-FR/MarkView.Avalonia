@@ -3,6 +3,7 @@ using global::Avalonia.Controls;
 using global::Avalonia.Controls.Documents;
 using global::Avalonia.Headless.XUnit;
 using global::Avalonia.Media;
+using global::Avalonia.VisualTree;
 using MarkView.Avalonia.Rendering;
 using Xunit;
 
@@ -107,5 +108,103 @@ public class MarkdownSelectableTextBlockTests
             block.Render(context);
 
         Assert.DoesNotContain(drawing.Children, d => d is GeometryDrawing);
+    }
+
+    private static MarkdownSelectableTextBlock Laid(string text, double width = 100)
+    {
+        var block = new MarkdownSelectableTextBlock { Text = text, TextWrapping = TextWrapping.Wrap };
+        block.Measure(new Size(width, double.PositiveInfinity));
+        block.Arrange(new Rect(0, 0, width, block.DesiredSize.Height));
+        return block;
+    }
+
+    [AvaloniaFact]
+    public void Moving_the_block_keeps_its_text_layout()
+    {
+        var block = Laid("Some words that wrap over a few lines");
+        var layout = block.TextLayout;
+
+        block.Arrange(new Rect(0, 50, 100, block.DesiredSize.Height));
+
+        Assert.Equal(50, block.Bounds.Y);
+        Assert.Same(layout, block.TextLayout);
+    }
+
+    [AvaloniaFact]
+    public void Arranging_the_block_at_another_size_rebuilds_its_text_layout()
+    {
+        var block = Laid("Some words that wrap over a few lines");
+        var layout = block.TextLayout;
+
+        block.Arrange(new Rect(0, 0, 60, block.DesiredSize.Height));
+
+        Assert.NotSame(layout, block.TextLayout);
+        Assert.Equal(60, block.TextLayout.MaxWidth);
+    }
+
+    [AvaloniaFact]
+    public void A_text_change_rebuilds_the_text_layout_at_the_same_size()
+    {
+        var block = Laid("Before");
+        var layout = block.TextLayout;
+
+        block.Text = "After";
+        block.Measure(new Size(100, double.PositiveInfinity));
+        block.Arrange(new Rect(0, 0, 100, block.Bounds.Height));
+
+        Assert.NotSame(layout, block.TextLayout);
+        Assert.Equal(Laid("After").TextLayout.TextLines[0].Length, block.TextLayout.TextLines[0].Length);
+    }
+
+    [AvaloniaFact]
+    public void Moving_the_block_keeps_its_inline_controls_in_place()
+    {
+        var control = new Border { Width = 20, Height = 10 };
+        var block = new MarkdownSelectableTextBlock();
+        block.Inlines!.Add(new Run("Press "));
+        block.Inlines.Add(new InlineUIContainer(control));
+        block.Measure(new Size(200, double.PositiveInfinity));
+        block.Arrange(new Rect(0, 0, 200, block.DesiredSize.Height));
+        var bounds = control.Bounds;
+
+        block.Arrange(new Rect(0, 50, 200, block.DesiredSize.Height));
+
+        Assert.Same(block, control.GetVisualParent());
+        Assert.Equal(bounds, control.Bounds);
+        Assert.True(bounds.X > 0);
+    }
+
+    [AvaloniaFact]
+    public void An_inline_control_added_at_the_same_size_is_arranged()
+    {
+        var block = new MarkdownSelectableTextBlock();
+        block.Inlines!.Add(new Run("Press "));
+        block.Measure(new Size(200, 20));
+        block.Arrange(new Rect(0, 0, 200, 20));
+        var control = new Border { Width = 20, Height = 10 };
+
+        block.Inlines.Add(new InlineUIContainer(control));
+        block.Measure(new Size(200, 20));
+        block.Arrange(new Rect(0, 0, 200, 20));
+
+        Assert.Same(block, control.GetVisualParent());
+        Assert.Equal(new Size(20, 10), control.Bounds.Size);
+    }
+
+    [AvaloniaFact]
+    public void A_block_moved_down_by_a_taller_sibling_keeps_its_text_layout()
+    {
+        var above = new Border { Height = 10 };
+        var block = new MarkdownSelectableTextBlock { Text = "Some words that wrap over a few lines", TextWrapping = TextWrapping.Wrap };
+        var window = new Window { Width = 100, Height = 300, Content = new StackPanel { Children = { above, block } } };
+        window.Show();
+        var layout = block.TextLayout;
+
+        above.Height = 60;
+        window.UpdateLayout();
+
+        Assert.Equal(60, block.Bounds.Y);
+        Assert.Same(layout, block.TextLayout);
+        window.Close();
     }
 }
