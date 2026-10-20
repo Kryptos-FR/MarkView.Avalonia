@@ -95,6 +95,8 @@ See [Interactive task lists](docs/configuration.md#interactive-task-lists) for d
 viewer.ScrollToAnchor("my-heading");  // scrolls to the heading's anchor position
 ```
 
+Set `IsSmoothScrollingEnabled` to animate the jumps to anchors, from code, links and footnotes. See [Smooth scrolling](docs/configuration.md#smooth-scrolling).
+
 ### Code block toolbar
 
 Code blocks show their language and a copy button above the code, and display formulas
@@ -515,12 +517,6 @@ and search, how incomplete syntax is healed, and how custom renderers can tell t
 - **Contrast.** Default colours meet WCAG 2.2 AA, and a high-contrast palette follows the OS setting.
 
 See [Accessibility](docs/accessibility.md).
-
-## Known Limitations
-
-| Limitation | Detail |
-|---|---|
-| Anchor scroll is instant | `BringIntoView()` jumps without animation. Smooth scrolling is a future improvement. |
 
 ## Versioning
 

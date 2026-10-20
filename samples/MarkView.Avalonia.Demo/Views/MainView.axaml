@@ -166,6 +166,9 @@
               <MenuItem Header="Detect text direction" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.DetectTextDirection, Mode=TwoWay}"
                         ToolTip.Tip="Lay out each block right to left or left to right from its first letter, like dir=&quot;auto&quot; in HTML" />
+              <MenuItem Header="Smooth scrolling" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.IsSmoothScrollingEnabled, Mode=TwoWay}"
+                        ToolTip.Tip="Animate the jumps to headings, from the outline or from links to them" />
               <Separator />
               <MenuItem Header="Code line numbers" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers, Mode=TwoWay}"
@@ -219,6 +222,7 @@
       <mv:MarkdownViewer x:Name="MarkdownView"
                          Source="{Binding Source}" Markdown="{Binding Markdown}" BaseUri="{Binding BaseUri}"
                          AutoScrollToEnd="True"
+                         IsSmoothScrollingEnabled="True"
                          Classes.custom-styled="{Binding IsCustomStyled}"
                          CodeBlockMaxHeight="{Binding CodeBlockMaxHeight}"
                          IsVisible="{Binding !IsColorExtensionSelected}"

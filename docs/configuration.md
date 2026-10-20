@@ -19,6 +19,7 @@
 | `AreTaskListsInteractive` | `bool` | `false` | Renders task-list items as checkboxes the user can toggle, raising `TaskToggled`. Setting it re-renders the document. See [Interactive task lists](#interactive-task-lists). |
 | `AreHeadingsFoldable` | `bool` | `false` | Starts each heading with a fold button that hides or shows its section. Setting it re-renders the document. See [Foldable headings](#foldable-headings). |
 | `IsImageZoomEnabled` | `bool` | `true` | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, where it can be zoomed and panned. See [Image zoom](#image-zoom). |
+| `IsSmoothScrollingEnabled` | `bool` | `false` | Animates the scroll to an anchor (a `#anchor` link, a footnote, `ScrollToAnchor`) instead of jumping there at once. See [Smooth scrolling](#smooth-scrolling). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
 | `DetectTextDirection` | `bool` | `true` | Gives each block the direction of its first letter that has one, so Hebrew and Arabic text reads right to left. Setting it re-renders the document. See [Right-to-left text](right-to-left.md). |
@@ -525,6 +526,18 @@ viewer.ScrollToAnchor("fn-1");            // matches footnote [^1]
 Anchors are generated from heading text using GitHub-compatible slug rules (lowercase, spaces to hyphens, non-alphanumeric stripped). Headings with identical slugs are disambiguated with a numeric suffix (`-1`, `-2`, …).
 
 A heading inside a collapsed [foldable alert](#alert-blocks), [details block](#html-details-blocks) or [heading section](#foldable-headings) is still listed in `TableOfContents`; scrolling to its anchor expands it first.
+
+### Smooth scrolling
+
+With `IsSmoothScrollingEnabled`, a jump to an anchor, from a `#anchor` link, a footnote reference or `ScrollToAnchor`, scrolls there in an animation that slows down as it arrives, instead of at once:
+
+```xml
+<Style Selector="mv|MarkdownViewer">
+  <Setter Property="IsSmoothScrollingEnabled" Value="True" />
+</Style>
+```
+
+The animation takes longer for a longer jump, as in a browser: from 150 ms for a short one to 500 ms at most. A jump of more than about 3,900 px goes at once to that distance from the anchor and animates the rest in 500 ms, so it never scrolls too fast to follow. It follows its target if content above it changes height while it runs, and stops where it is as soon as anything else scrolls the document, such as the mouse wheel, the scroll bar or the keyboard. A new jump replaces the one in progress. Opening a document at a fragment (`Source` ending with `#anchor`) still shows the anchor at once, as a browser does. Avalonia has no reduced-motion setting, so an application that has one can bind this property to it.
 
 ## Table of contents
 

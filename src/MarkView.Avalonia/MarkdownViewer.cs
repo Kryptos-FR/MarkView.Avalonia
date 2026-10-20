@@ -556,7 +556,7 @@ public partial class MarkdownViewer : ContentControl
     private void ScrollToAnchorAfterRender(string fragment)
     {
         if (string.IsNullOrEmpty(fragment)) return;
-        Dispatcher.UIThread.Post(() => ScrollToAnchor(fragment), DispatcherPriority.Loaded);
+        Dispatcher.UIThread.Post(() => ScrollToAnchor(fragment, animate: false), DispatcherPriority.Loaded);
     }
 
     private static Uri? InferBaseUri(Uri? source)
@@ -1303,9 +1303,13 @@ public partial class MarkdownViewer : ContentControl
     /// <summary>
     /// Scrolls to the anchor (e.g. a heading's slug) named <paramref name="anchorId"/>, if the document
     /// has one. While the viewer itself has the focus, Tab then goes on from that anchor, as in a browser.
+    /// The scroll is animated while <see cref="IsSmoothScrollingEnabled"/> is <c>true</c>.
     /// </summary>
-    public void ScrollToAnchor(string anchorId)
+    public void ScrollToAnchor(string anchorId) => ScrollToAnchor(anchorId, animate: true);
+
+    private void ScrollToAnchor(string anchorId, bool animate)
     {
+        StopSmoothScroll();
         _tabStart = null;
         if (!_anchors.TryGetValue(anchorId, out var control))
             return;
@@ -1336,7 +1340,9 @@ public partial class MarkdownViewer : ContentControl
         }
 
         const double topMargin = 16;
-        var desiredY = _scrollViewer.Offset.Y + point.Value.Y - topMargin;
-        _scrollViewer.Offset = new Vector(_scrollViewer.Offset.X, Math.Max(0, desiredY));
+        var scrollViewer = _scrollViewer;
+        ScrollVerticallyTo(() => control.TranslatePoint(default, scrollViewer) is { } current
+            ? scrollViewer.Offset.Y + current.Y - topMargin
+            : null, animate);
     }
 }
