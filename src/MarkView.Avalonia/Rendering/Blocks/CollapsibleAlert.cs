@@ -14,8 +14,8 @@ namespace MarkView.Avalonia.Rendering.Blocks;
 /// The fold state of a foldable alert (<c>&gt; [!KIND]-</c> / <c>&gt; [!KIND]+</c>), or of an HTML
 /// <c>&lt;details&gt;</c> element (see <see cref="DetailsBlockRenderer"/>). Clicking (tapping) the
 /// header, or pressing Enter or Space while it has focus, shows or hides the body. The block's
-/// <see cref="Border"/> carries the <c>:expanded</c> pseudo-class while the body is shown, and the
-/// header's chevron (<c>markdown-alert-chevron</c> / <c>markdown-details-chevron</c>) points right when
+/// <see cref="Border"/> carries the <c>:expanded</c> pseudo-class while the body is shown, the header
+/// <c>:expanded</c> or <c>:collapsed</c>, and the header's chevron (<c>markdown-alert-chevron</c> / <c>markdown-details-chevron</c>) points right when
 /// collapsed and down when expanded.
 /// </summary>
 internal sealed class CollapsibleAlert
@@ -81,6 +81,8 @@ internal sealed class CollapsibleAlert
         _body.IsVisible = isExpanded;
         _chevron.IsExpanded = isExpanded;
         ((IPseudoClasses)_border.Classes).Set(":expanded", isExpanded);
+        ((IPseudoClasses)_header.Classes).Set(":expanded", isExpanded);
+        ((IPseudoClasses)_header.Classes).Set(":collapsed", !isExpanded);
     }
 
     /// <summary>The block's border, named by its title for screen readers.</summary>

@@ -50,6 +50,8 @@ public sealed class ImageFailureTests : IDisposable
     {
         var pipeline = new MarkdownPipelineBuilder().Build();
         var renderer = new AvaloniaRenderer();
+        if (theme)
+            renderer.Themes = RenderTestBase.MarkdownThemes();
         for (var i = loaders.Length - 1; i >= 0; i--)
             renderer.ImageLoaders.Insert(0, loaders[i]);
         pipeline.Setup(renderer);

@@ -52,6 +52,9 @@ public partial class MarkdownViewer : ContentControl
     private string? _findText;
     private MarkdownFindOptions _findOptions;
     private ImageLightbox? _lightbox;
+    // The control themes of the document's controls, looked up from the viewer, shared by every render.
+    private ThemeLookup? _themes;
+    private ThemeLookup Themes => _themes ??= new ThemeLookup(key => ThemeLookup.Find(this, key));
 
     // The markdown last rendered, with the task toggles made since applied to it; assigning the same
     // text to Markdown (as a host writing a toggle back does) then needs no re-render.
@@ -647,6 +650,7 @@ public partial class MarkdownViewer : ContentControl
             TimeProvider = TimeProvider,
             IsImageZoomEnabled = IsImageZoomEnabled,
             DetectTextDirection = DetectTextDirection,
+            Themes = Themes,
         };
         renderer.LinkClicked += OnLinkClicked;
         renderer.ImageZoomRequested += OpenLightbox;
@@ -690,7 +694,7 @@ public partial class MarkdownViewer : ContentControl
     {
         // Stack panel + transparent selection and link focus layers in a single-cell Grid
         // markdown-document lets a theme size the whole document, e.g. cap its width
-        var contentGrid = new Grid { Classes = { "markdown-document" } };
+        var contentGrid = new Grid { Classes = { "markdown-document" }, Theme = Themes.Get("MarkdownDocumentTheme") };
         contentGrid.Children.Add(renderer.RootPanel);
         contentGrid.Children.Add(layer);
         contentGrid.Children.Add(linkLayer);
@@ -1264,7 +1268,7 @@ public partial class MarkdownViewer : ContentControl
     private void OpenLightbox(Image image)
     {
         if (_lightbox is not null || image.Source is null) return;
-        var lightbox = new ImageLightbox(image, TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement());
+        var lightbox = new ImageLightbox(image, TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement(), Themes);
         lightbox.CloseRequested += CloseLightbox;
         SetUpLightboxSave(lightbox);
         _lightbox = lightbox;

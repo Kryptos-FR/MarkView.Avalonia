@@ -58,6 +58,7 @@ internal sealed class ThinkingBlockRenderer : AvaloniaObjectRenderer<ThinkingBlo
         chevron.Classes.Add("markdown-thinking-chevron");
         var header = new FoldHeader { TextWrapping = TextWrapping.Wrap };
         header.Classes.Add("markdown-thinking-header");
+        renderer.ApplyTheme(header, "MarkdownThinkingHeaderTheme");
         header.Inlines!.Add(new InlineUIContainer(chevron));
         header.Inlines.Add(new Run(" "));
         header.Inlines.Add(new Run(title));
@@ -65,6 +66,7 @@ internal sealed class ThinkingBlockRenderer : AvaloniaObjectRenderer<ThinkingBlo
         var content = new StackPanel { Spacing = 8 };
         var body = new Border { Child = content };
         body.Classes.Add("markdown-thinking-content");
+        renderer.ApplyTheme(body, "MarkdownThinkingContentTheme");
 
         var outer = new StackPanel { Spacing = 8 };
         outer.Children.Add(header);
@@ -72,6 +74,7 @@ internal sealed class ThinkingBlockRenderer : AvaloniaObjectRenderer<ThinkingBlo
 
         var border = new Border { Child = outer };
         border.Classes.Add("markdown-thinking");
+        renderer.ApplyTheme(border, "MarkdownThinkingTheme");
         ((IPseudoClasses)border.Classes).Set(":thinking", isThinking);
         AutomationRoles.Set(border, AutomationControlType.Group);
         AutomationProperties.SetName(border, title);

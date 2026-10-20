@@ -118,95 +118,131 @@
           <SolidColorBrush x:Key="MarkdownHighContrastBorder">#000000</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+
+      <!-- Sizes and spacing (see MarkdownTheme.axaml) -->
+      <!-- Code blocks: a card with 8px corners and a faint outline, the toolbar inside its top edge -->
+      <FontFamily x:Key="MarkdownCodeFontFamily">Cascadia Code, SF Mono, Menlo, Consolas, Liberation Mono, monospace</FontFamily>
+      <x:Double x:Key="MarkdownCodeLineHeight">20</x:Double>
+      <Thickness x:Key="MarkdownCodeBlockBorderThickness">1</Thickness>
+      <CornerRadius x:Key="MarkdownCodeBlockCornerRadius">8</CornerRadius>
+      <Thickness x:Key="MarkdownCodeBlockPadding">12,10</Thickness>
+      <Thickness x:Key="MarkdownCodeBlockMargin">0</Thickness>
+      <Thickness x:Key="MarkdownToolbarCodeBlockBorderThickness">1,0,1,1</Thickness>
+      <Thickness x:Key="MarkdownHighContrastToolbarCodeBlockBorderThickness">1,0,1,1</Thickness>
+      <CornerRadius x:Key="MarkdownToolbarCodeBlockCornerRadius">0,0,8,8</CornerRadius>
+      <Thickness x:Key="MarkdownToolbarCodeBlockPadding">12,0,12,10</Thickness>
+      <Thickness x:Key="MarkdownCodeHeaderBorderThickness">1,1,1,0</Thickness>
+      <CornerRadius x:Key="MarkdownCodeHeaderCornerRadius">8,8,0,0</CornerRadius>
+      <Thickness x:Key="MarkdownCodeHeaderPadding">12,4,4,0</Thickness>
+      <!-- Paragraphs: only the document's 8px block spacing between them, and a little extra line spacing -->
+      <Thickness x:Key="MarkdownParagraphMargin">0</Thickness>
+      <x:Double x:Key="MarkdownParagraphLineSpacing">3</x:Double>
+      <Thickness x:Key="MarkdownListParagraphMargin">0</Thickness>
+      <Thickness x:Key="MarkdownTableParagraphMargin">0</Thickness>
+      <x:Double x:Key="MarkdownTableParagraphLineSpacing">3</x:Double>
+      <Thickness x:Key="MarkdownQuoteParagraphMargin">0</Thickness>
+      <Thickness x:Key="MarkdownAlertParagraphMargin">0</Thickness>
+      <x:Double x:Key="MarkdownAlertParagraphLineSpacing">3</x:Double>
+      <!-- Lists: no extra space above and below them -->
+      <Thickness x:Key="MarkdownListMargin">16,0,0,0</Thickness>
+      <Thickness x:Key="MarkdownNestedListMargin">16,0,0,0</Thickness>
+      <!-- Tables: lines between rows only, a semibold header on a faint tint -->
+      <Thickness x:Key="MarkdownTableMargin">0</Thickness>
+      <Thickness x:Key="MarkdownTableCellPadding">10,6</Thickness>
+      <Thickness x:Key="MarkdownTableCellBorderThickness">0,0,0,1</Thickness>
+      <Thickness x:Key="MarkdownTableFirstRowCellBorderThickness">0,0,0,1</Thickness>
+      <Thickness x:Key="MarkdownTableFirstColumnCellBorderThickness">0,0,0,1</Thickness>
+      <Thickness x:Key="MarkdownTableCornerCellBorderThickness">0,0,0,1</Thickness>
+      <FontWeight x:Key="MarkdownTableHeaderFontWeight">SemiBold</FontWeight>
+      <!-- Alerts: 8px corners on the right, the title at body size -->
+      <Thickness x:Key="MarkdownAlertBorderThickness">3,0,0,0</Thickness>
+      <CornerRadius x:Key="MarkdownAlertCornerRadius">0,8,8,0</CornerRadius>
+      <Thickness x:Key="MarkdownAlertMargin">0</Thickness>
+      <x:Double x:Key="MarkdownAlertHeaderFontSize">14</x:Double>
+      <Thickness x:Key="MarkdownAlertHeaderMargin">0</Thickness>
+      <!-- Space taken out around the other blocks, which the document's 8px spacing already separates -->
+      <Thickness x:Key="MarkdownCodeContainerMargin">0</Thickness>
+      <Thickness x:Key="MarkdownDetailsMargin">0</Thickness>
+      <Thickness x:Key="MarkdownCustomContainerMargin">0</Thickness>
+      <CornerRadius x:Key="MarkdownCustomContainerCornerRadius">8</CornerRadius>
+      <Thickness x:Key="MarkdownCustomFenceMargin">0</Thickness>
+
+      <!-- Headings: semibold, a step or two above the body text, 8px above them (16px with the
+           document's block spacing) and none at the start of a message, a quote or an alert -->
+      <ControlTheme x:Key="MarkdownHeading1Theme" TargetType="mr:MarkdownSelectableTextBlock">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,8,0,0" />
+        <Style Selector="^:nth-child(1)">
+          <Setter Property="Margin" Value="0" />
+        </Style>
+      </ControlTheme>
+      <ControlTheme x:Key="MarkdownHeading2Theme" TargetType="mr:MarkdownSelectableTextBlock">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,8,0,0" />
+        <Style Selector="^:nth-child(1)">
+          <Setter Property="Margin" Value="0" />
+        </Style>
+      </ControlTheme>
+      <ControlTheme x:Key="MarkdownHeading3Theme" TargetType="mr:MarkdownSelectableTextBlock">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,8,0,0" />
+        <Style Selector="^:nth-child(1)">
+          <Setter Property="Margin" Value="0" />
+        </Style>
+      </ControlTheme>
+      <ControlTheme x:Key="MarkdownHeading4Theme" TargetType="mr:MarkdownSelectableTextBlock">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,8,0,0" />
+        <Style Selector="^:nth-child(1)">
+          <Setter Property="Margin" Value="0" />
+        </Style>
+      </ControlTheme>
+      <ControlTheme x:Key="MarkdownHeading5Theme" TargetType="mr:MarkdownSelectableTextBlock">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,8,0,0" />
+        <Style Selector="^:nth-child(1)">
+          <Setter Property="Margin" Value="0" />
+        </Style>
+      </ControlTheme>
+      <ControlTheme x:Key="MarkdownHeading6Theme" TargetType="mr:MarkdownSelectableTextBlock">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,8,0,0" />
+        <Setter Property="Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+        <Style Selector="^:nth-child(1)">
+          <Setter Property="Margin" Value="0" />
+        </Style>
+      </ControlTheme>
+
+      <!-- Inline code: monospace on a faint chip, in the text colour, at 13px in body text -->
+      <ControlTheme x:Key="MarkdownParagraphCodeInlineTheme" TargetType="Run">
+        <Setter Property="FontFamily" Value="{DynamicResource MarkdownCodeFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Background" Value="{DynamicResource MarkdownCodeInlineBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource MarkdownCodeInlineForeground}" />
+      </ControlTheme>
+
+      <!-- Blockquote: a 3px bar and secondary text, no dimming -->
+      <ControlTheme x:Key="MarkdownBlockquoteTheme" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource MarkdownBlockquoteBorder}" />
+        <Setter Property="BorderThickness" Value="3,0,0,0" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+      </ControlTheme>
+
+      <!-- Footnotes: secondary text at 12px, no dimming -->
+      <ControlTheme x:Key="MarkdownFootnoteGroupTheme" TargetType="StackPanel">
+        <Setter Property="Margin" Value="0,8,0,0" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
+        <Setter Property="TextElement.FontSize" Value="12" />
+      </ControlTheme>
     </ResourceDictionary>
   </Styles.Resources>
-
-  <!-- Headings: semibold, a step or two above the body text, 8px above them (16px with the
-       document's block spacing) and none at the start of a message, a quote or an alert -->
-  <Style Selector=":is(TextBlock).markdown-heading">
-    <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Margin" Value="0,8,0,0" />
-  </Style>
-  <Style Selector=":is(TextBlock).markdown-heading:nth-child(1)">
-    <Setter Property="Margin" Value="0" />
-  </Style>
-  <Style Selector=":is(TextBlock).markdown-h1">
-    <Setter Property="FontSize" Value="20" />
-  </Style>
-  <Style Selector=":is(TextBlock).markdown-h2">
-    <Setter Property="FontSize" Value="18" />
-  </Style>
-  <Style Selector=":is(TextBlock).markdown-h3">
-    <Setter Property="FontSize" Value="16" />
-  </Style>
-  <Style Selector=":is(TextBlock).markdown-h4">
-    <Setter Property="FontSize" Value="15" />
-  </Style>
-  <Style Selector=":is(TextBlock).markdown-h5">
-    <Setter Property="FontSize" Value="14" />
-  </Style>
-  <Style Selector=":is(TextBlock).markdown-h6">
-    <Setter Property="FontSize" Value="14" />
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
-  </Style>
-
-  <!-- Paragraphs: only the document's 8px block spacing between them, and a little extra line spacing -->
-  <Style Selector=":is(TextBlock).markdown-paragraph">
-    <Setter Property="Margin" Value="0" />
-    <Setter Property="LineSpacing" Value="3" />
-  </Style>
-
-  <!-- Links -->
-  <Style Selector="mri|MarkdownHyperlink.markdown-link">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownLinkForeground}" />
-  </Style>
-
-  <!-- Code blocks: a card with 8px corners and a faint outline, the toolbar inside its top edge -->
-  <Style Selector="Border.markdown-code-block">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownCodeBlockBorder}" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="8" />
-    <Setter Property="Padding" Value="12,10" />
-    <Setter Property="Margin" Value="0" />
-  </Style>
-  <Style Selector="Border.markdown-code-block TextBlock">
-    <Setter Property="FontFamily" Value="Cascadia Code, SF Mono, Menlo, Consolas, Liberation Mono, monospace" />
-    <Setter Property="FontSize" Value="13" />
-    <Setter Property="LineHeight" Value="20" />
-  </Style>
-  <Style Selector="StackPanel.markdown-code-container > Border.markdown-code-block">
-    <Setter Property="BorderThickness" Value="1,0,1,1" />
-    <Setter Property="CornerRadius" Value="0,0,8,8" />
-    <Setter Property="Padding" Value="12,0,12,10" />
-  </Style>
-  <Style Selector="Border.markdown-code-header">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownCodeBlockBorder}" />
-    <Setter Property="BorderThickness" Value="1,1,1,0" />
-    <Setter Property="CornerRadius" Value="8,8,0,0" />
-    <Setter Property="Padding" Value="12,4,4,0" />
-  </Style>
-
-  <!-- Inline code: monospace on a faint chip, in the text colour -->
-  <Style Selector="Run.markdown-code-inline">
-    <Setter Property="FontFamily" Value="Cascadia Code, SF Mono, Menlo, Consolas, Liberation Mono, monospace" />
-  </Style>
-  <Style Selector=":is(TextBlock).markdown-paragraph Run.markdown-code-inline">
-    <Setter Property="FontSize" Value="13" />
-  </Style>
-
-  <!-- Blockquote: a 3px bar and secondary text, no dimming -->
-  <Style Selector="Border.markdown-blockquote">
-    <Setter Property="BorderThickness" Value="3,0,0,0" />
-    <Setter Property="Padding" Value="12,0" />
-    <Setter Property="Margin" Value="0" />
-    <Setter Property="Opacity" Value="1" />
-    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
-  </Style>
-
-  <!-- Lists: no extra space above and below them -->
-  <Style Selector="StackPanel.markdown-list">
-    <Setter Property="Margin" Value="16,0,0,0" />
-  </Style>
 
   <!-- Horizontal rule: a 1px line -->
   <Style Selector="Separator.markdown-thematic-break">
@@ -215,56 +251,8 @@
     <Setter Property="Margin" Value="0,4" />
   </Style>
 
-  <!-- Tables: lines between rows only, a semibold header on a faint tint -->
-  <Style Selector="Grid.markdown-table">
-    <Setter Property="Margin" Value="0" />
-  </Style>
-  <Style Selector="Border.markdown-table-cell">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownTableBorder}" />
-    <Setter Property="BorderThickness" Value="0,0,0,1" />
-    <Setter Property="Padding" Value="10,6" />
-  </Style>
-  <Style Selector="Border.markdown-table-header">
-    <Setter Property="Background" Value="{DynamicResource MarkdownTableHeaderBackground}" />
-  </Style>
-  <Style Selector="Border.markdown-table-header :is(TextBlock)">
-    <Setter Property="FontWeight" Value="SemiBold" />
-  </Style>
-
-  <!-- Alerts: 8px corners on the right, the title at body size -->
-  <Style Selector="Border.markdown-alert">
-    <Setter Property="BorderThickness" Value="3,0,0,0" />
-    <Setter Property="CornerRadius" Value="0,8,8,0" />
-    <Setter Property="Padding" Value="12,8" />
-    <Setter Property="Margin" Value="0" />
-  </Style>
-  <Style Selector="TextBlock.markdown-alert-header">
-    <Setter Property="FontSize" Value="14" />
-    <Setter Property="Margin" Value="0" />
-  </Style>
-
-  <!-- Space taken out around the other blocks, which the document's 8px spacing already separates -->
-  <Style Selector="StackPanel.markdown-code-container">
-    <Setter Property="Margin" Value="0" />
-  </Style>
+  <!-- Images: no space around them, which the document's 8px spacing already separates -->
   <Style Selector="Image.markdown-image">
     <Setter Property="Margin" Value="0" />
-  </Style>
-  <Style Selector="Border.markdown-details">
-    <Setter Property="Margin" Value="0" />
-  </Style>
-  <Style Selector="Border.markdown-custom-container">
-    <Setter Property="Margin" Value="0" />
-    <Setter Property="CornerRadius" Value="8" />
-  </Style>
-  <Style Selector="Border.markdown-custom-fence">
-    <Setter Property="Margin" Value="0" />
-  </Style>
-
-  <!-- Footnotes: secondary text at 12px, no dimming -->
-  <Style Selector="StackPanel.markdown-footnote-group">
-    <Setter Property="Opacity" Value="1" />
-    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownMutedForeground}" />
-    <Setter Property="TextElement.FontSize" Value="12" />
   </Style>
 </Styles>

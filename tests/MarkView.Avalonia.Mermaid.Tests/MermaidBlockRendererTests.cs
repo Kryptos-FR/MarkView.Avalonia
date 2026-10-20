@@ -4,6 +4,7 @@
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Styling;
 using Markdig;
 using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Rendering.Blocks;
@@ -14,11 +15,13 @@ namespace MarkView.Avalonia.Mermaid.Tests;
 
 public class MermaidBlockRendererTests
 {
-    private static StackPanel Render(string markdown)
+    private static StackPanel Render(string markdown, ThemeLookup? themes = null)
     {
         var pipeline = new MarkdownPipelineBuilder().Build();
         var document = Markdown.Parse(markdown, pipeline);
         var renderer = new AvaloniaRenderer();
+        if (themes is not null)
+            renderer.Themes = themes;
         new MermaidExtension().Register(renderer);
         pipeline.Setup(renderer);
         renderer.Render(document);
@@ -43,6 +46,15 @@ public class MermaidBlockRendererTests
         var result = Render("```mermaid\ngraph TD\n  A --> B\n```");
         var border = Assert.IsType<Border>(Assert.Single(result.Children));
         Assert.Contains("markdown-mermaid", border.Classes);
+    }
+
+    [AvaloniaFact]
+    public void Mermaid_fence_border_takes_the_mermaid_theme()
+    {
+        var theme = new ControlTheme(typeof(Border));
+        var result = Render("```mermaid\ngraph TD\n  A --> B\n```", new ThemeLookup(key => key == "MarkdownMermaidTheme" ? theme : null));
+        var border = Assert.IsType<Border>(Assert.Single(result.Children));
+        Assert.Same(theme, border.Theme);
     }
 
     [AvaloniaFact]

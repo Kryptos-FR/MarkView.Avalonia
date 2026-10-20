@@ -593,6 +593,25 @@ public class AvaloniaRenderer : RendererBase
         _stack.Pop();
     }
 
+    /// <summary>The control themes this renderer's controls get, found from its viewer or the application.</summary>
+    internal ThemeLookup Themes { get; set; } = ThemeLookup.ForApplication();
+
+    /// <summary>
+    /// Gives <paramref name="element"/> the control theme with the resource key <paramref name="resourceKey"/>,
+    /// such as <c>MarkdownCodeBlockTheme</c>, so that a renderer's own control looks like the built-in one
+    /// it stands for. The built-in look of the document's controls comes from these themes, not from
+    /// styles on their <c>markdown-*</c> classes. A key that no theme defines yet gives an empty theme,
+    /// which the viewer replaces once one does. Replaces the theme the control's type would otherwise
+    /// get, so it is meant for plain panels, borders, text blocks and inlines.
+    /// </summary>
+    public void ApplyTheme(StyledElement element, string resourceKey) => element.Theme = Themes.Get(resourceKey);
+
+    /// <summary>
+    /// Whether the inlines being written belong to a paragraph (<c>markdown-paragraph</c>), as opposed to
+    /// a heading, a title or a caption: inline code then takes the paragraph's look.
+    /// </summary>
+    internal bool IsWritingParagraph { get; set; }
+
     /// <summary>
     /// Adds a block-level control to the current block container.
     /// </summary>

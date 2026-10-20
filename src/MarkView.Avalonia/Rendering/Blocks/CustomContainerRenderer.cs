@@ -30,6 +30,7 @@ public sealed class CustomContainerRenderer : AvaloniaObjectRenderer<CustomConta
                 Renderer = renderer,
             };
             title.Classes.Add("markdown-custom-container-title");
+            renderer.ApplyTheme(title, "MarkdownCustomContainerTitleTheme");
             contentPanel.Children.Add(title);
         }
 
@@ -39,6 +40,7 @@ public sealed class CustomContainerRenderer : AvaloniaObjectRenderer<CustomConta
 
         var border = new Border { Child = contentPanel };
         border.Classes.Add("markdown-custom-container");
+        renderer.ApplyTheme(border, "MarkdownCustomContainerTheme");
         // Avalonia reserves names starting with ':' for pseudo-classes.
         if (!string.IsNullOrEmpty(obj.Info) && obj.Info[0] != ':')
             border.Classes.Add(obj.Info);

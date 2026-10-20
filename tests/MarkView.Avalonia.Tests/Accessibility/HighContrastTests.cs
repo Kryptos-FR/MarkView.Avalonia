@@ -399,8 +399,8 @@ public class HighContrastTests
     public void High_contrast_needs_no_style_of_its_own_in_a_preset(string theme)
     {
         // Each :high-contrast style is a style instance and an activator on every control it matches, whether or
-        // not high contrast is on; the palette swap costs nothing until it is. Only the default theme keeps a
-        // few, for the viewer itself and for elements a document has few of.
+        // not high contrast is on; the palette swap costs nothing until it is. Only the default theme keeps two,
+        // for the viewer itself and for separators; its control themes match MarkdownViewer.InHighContrast instead.
         var path = Path.Combine(FindRepoRoot(), "src", "MarkView.Avalonia", "Themes", theme + ".axaml");
         var selectors = System.Xml.Linq.XDocument.Load(path).Descendants()
             .Select(e => (string?)e.Attribute("Selector"))
@@ -408,7 +408,7 @@ public class HighContrastTests
             .ToList();
 
         if (theme == "MarkdownTheme")
-            Assert.Equal(4, selectors.Count);
+            Assert.Equal(2, selectors.Count);
         else
             Assert.Empty(selectors);
     }
@@ -421,5 +421,38 @@ public class HighContrastTests
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Directory.Packages.props")))
             dir = dir.Parent;
         return dir?.FullName ?? throw new InvalidOperationException("Repo root not found.");
+    }
+    [AvaloniaFact]
+    public void InHighContrast_is_inherited_by_the_document_while_high_contrast_is_on()
+    {
+        var viewer = ShowViewer("Text", HighContrastMode.Enabled);
+        var paragraph = viewer.GetVisualDescendants().OfType<TextBlock>().Single();
+        Assert.True(MarkdownViewer.GetInHighContrast(viewer));
+        Assert.True(MarkdownViewer.GetInHighContrast(paragraph));
+
+        viewer.HighContrastMode = HighContrastMode.Disabled;
+
+        Assert.False(MarkdownViewer.GetInHighContrast(viewer));
+        Assert.False(MarkdownViewer.GetInHighContrast(paragraph));
+        Assert.False(viewer.IsSet(MarkdownViewer.InHighContrastProperty));
+    }
+
+    [AvaloniaTheory]
+    [InlineData("> [!NOTE]\n> Text")]
+    [InlineData("> [!NOTE]-\n> Text")]
+    public void Alert_titles_take_the_high_contrast_foreground(string markdown)
+    {
+        using var _ = new ThemeScope(ThemeVariant.Light);
+        var viewer = new MarkdownViewer().UseAlertBlocks();
+        viewer.Markdown = markdown;
+        viewer.Styles.Add(MarkdownThemeInclude());
+        new Window { Width = 400, Height = 300, Content = viewer }.Show();
+        TextBlock Header() => viewer.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Classes.Contains("markdown-alert-header"));
+        var kindColour = Assert.IsAssignableFrom<ISolidColorBrush>(Header().Foreground).Color;
+
+        viewer.HighContrastMode = HighContrastMode.Enabled;
+
+        Assert.Equal(Colors.Black, Assert.IsAssignableFrom<ISolidColorBrush>(Header().Foreground).Color);
+        Assert.NotEqual(Colors.Black, kindColour);
     }
 }

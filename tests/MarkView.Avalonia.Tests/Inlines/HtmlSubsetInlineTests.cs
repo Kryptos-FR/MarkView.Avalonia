@@ -146,7 +146,7 @@ public class HtmlSubsetInlineTests : RenderTestBase
     [AvaloniaFact]
     public void A_key_is_styled_as_a_border()
     {
-        var root = Render("<kbd>K</kbd>", Pipeline);
+        var root = Render("<kbd>K</kbd>", Pipeline, themed: true);
         var key = root.GetLogicalDescendants().OfType<HtmlKeyboardKey>().Single();
         var window = new Window { Content = root };
         window.Styles.Add(new StyleInclude((Uri?)null) { Source = new Uri("avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml") });
