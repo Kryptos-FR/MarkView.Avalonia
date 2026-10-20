@@ -11,7 +11,9 @@ All extension points are accessed through `IMarkViewExtension`.
 To show the fenced code blocks of one language as your own control (```` ```chart ```` → a chart),
 you don't need any of them: register a [fence renderer](#rendering-a-fence-language-as-your-own-control).
 The same goes for a custom container (`:::spoiler` → an expander around its markdown): register a
-[container renderer](#rendering-a-custom-container-as-your-own-control).
+[container renderer](#rendering-a-custom-container-as-your-own-control), and for a pattern in the
+text (`#123` → a link to an issue, `@bob` → a styled mention): register an
+[inline or link pattern](#rendering-patterns-in-the-text-mentions-issue-numbers).
 
 ## Rendering a fence language as your own control
 
@@ -157,6 +159,59 @@ Behaviour:
 
 A container renderer is itself an `IMarkViewExtension` — `new ContainerRendererExtension("spoiler", factory)`
 — so it can be added to an `Extensions` list like any other extension.
+
+## Rendering patterns in the text (mentions, issue numbers)
+
+An inline pattern renders each match of a regular expression in the document's text as an inline
+of your own; a link pattern renders it as a link. No Markdig parser is involved:
+
+```csharp
+using System.Text.RegularExpressions;
+using MarkView.Avalonia;
+
+// #123 → a link to the issue
+viewer.UseLinkPattern(new Regex(@"(?<![\w&])#(\d+)\b"),
+    match => $"https://github.com/owner/repo/issues/{match.Groups[1].Value}");
+// @bob → a semibold run
+viewer.UseInlinePattern(new Regex(@"(?<!\w)@(\w+)"),
+    match => new Run(match.Value) { FontWeight = FontWeight.SemiBold });
+// or for every viewer of the application (App.axaml.cs):
+MarkdownViewerDefaults.Extensions.AddLinkPattern(issuePattern, issueUrl);
+MarkdownViewerDefaults.Extensions.AddInlinePattern(mentionPattern, mentionFactory);
+```
+
+- An inline pattern's factory is an `InlinePatternFactory`, `Inline? (Match match)`. Return a new
+  inline (a `Run`, a `Span`, an `InlineUIContainer` around a control…), or `null` to keep the
+  matched text as it is.
+- A link pattern's factory is a `LinkPatternFactory`, `string? (Match match)`, which returns the
+  link's address, or `null` to keep the matched text. The link shows the matched text and works
+  like any other link of the document: it raises [`LinkClicked`](configuration.md#linkclicked-event),
+  is a Tab stop and is read as a link by screen readers. A relative address resolves against the
+  viewer's `BaseUri`.
+
+Behaviour:
+
+- **Where patterns run.** On the document's plain text, one run at a time: the text between two
+  pieces of markdown syntax (`**`, a link, a line break…), never across them, so `**@bob**`
+  matches inside the bold text but `@**bob**` doesn't match. Link text, image alt text, inline and
+  block code, and raw HTML are left alone. Lookbehinds see only the run's own text, so
+  `(?<!\w)@(\w+)` also matches right after `**`.
+- **Several patterns.** The match that starts first wins; the pattern registered last wins a tie,
+  so a viewer's own `Extensions` override `MarkdownViewerDefaults.Extensions`.
+  Matches never overlap: text matched once is not searched again. Empty matches are ignored.
+- **Registration.** `UseInlinePattern` and `UseLinkPattern` replace the viewer's earlier inline or
+  link pattern with the same pattern text and options, and re-render the document. Adding an
+  `InlinePatternExtension` or `LinkPatternExtension` to `Extensions` directly (or with
+  `AddInlinePattern`/`AddLinkPattern`) takes effect on the next render.
+- **Failures.** When a factory throws, the matched text is kept and the exception is logged as a
+  warning through Avalonia's logger (area `Control`).
+- **Styling.** A link pattern's link has the `markdown-link` and `markdown-pattern-link` classes.
+  An inline pattern's inline is yours to style: give it a class of your own.
+- **Selection and find.** The document's text is unchanged: selection copies the matched text
+  (an `InlineUIContainer` copies it too, unless its control has its own
+  [`MarkdownSelection.CopyText`](#content-that-is-not-text)), and find in document finds it.
+- **Streaming.** A match at the very end of a [streaming](streaming.md) document can grow with the
+  next update (`#12`, then `#123`); it is rendered again with the text around it.
 
 ## IMarkViewExtension
 

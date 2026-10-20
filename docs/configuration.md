@@ -318,7 +318,7 @@ MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new 
 1. `viewer.Pipeline` is used if set; otherwise `MarkdownViewerDefaults.Pipeline`; otherwise the built-in default.
 2. `MarkdownViewerDefaults.Extensions` are registered first, then `viewer.Extensions`.
 3. If the same extension object appears in both lists it is registered only once (reference equality check).
-4. For [fence renderers](#custom-fenced-blocks) and [container renderers](#custom-containers-as-controls), the last one registered for a language or name wins, so a viewer's own overrides a default one.
+4. For [fence renderers](#custom-fenced-blocks) and [container renderers](#custom-containers-as-controls), the last one registered for a language or name wins, so a viewer's own overrides a default one. The same goes for two [patterns](#patterns-in-the-text) that match at the same place.
 
 ### Image cache
 
@@ -799,4 +799,27 @@ container renderer for the same name and re-renders the document.
 The control is wrapped in a `Border` with the `markdown-container-control` and
 `markdown-container-<name>` classes. See
 [Writing custom extensions](custom-extensions.md#rendering-a-custom-container-as-your-own-control)
+for the details.
+
+## Patterns in the text
+
+Matches of a regular expression in the document's text can render as links (`#123` → an issue)
+or as inlines of your own (`@bob` → a styled mention), without writing a Markdig parser:
+
+```csharp
+viewer.UseLinkPattern(new Regex(@"(?<![\w&])#(\d+)\b"),
+    match => $"https://github.com/owner/repo/issues/{match.Groups[1].Value}");
+viewer.UseInlinePattern(new Regex(@"(?<!\w)@(\w+)"),
+    match => new Run(match.Value) { FontWeight = FontWeight.SemiBold });
+// for every viewer of the application:
+MarkdownViewerDefaults.Extensions.AddLinkPattern(issuePattern, issueUrl);
+MarkdownViewerDefaults.Extensions.AddInlinePattern(mentionPattern, mentionFactory);
+```
+
+A link pattern's factory returns the address of each match, and the link works like any other
+(`LinkClicked`, Tab, screen readers), with the `markdown-link` and `markdown-pattern-link`
+classes. An inline pattern's factory returns any inline, `InlineUIContainer` included. Either
+can return `null` to keep the text. Patterns skip link text, code and raw HTML, and the match
+that starts first wins. See
+[Writing custom extensions](custom-extensions.md#rendering-patterns-in-the-text-mentions-issue-numbers)
 for the details.

@@ -36,6 +36,11 @@
       <Setter Property="BorderBrush" Value="{DynamicResource MarkdownAlertWarningBorder}" />
       <Setter Property="Background" Value="{DynamicResource MarkdownAlertWarningBackground}" />
     </Style>
+    <!-- Mentions (@name) written by the demo's inline pattern (App.axaml.cs) -->
+    <Style Selector="Run.mention">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource MarkdownLinkForeground}" />
+    </Style>
   </Application.Styles>
   <Application.Resources>
     <StreamGeometry x:Key="text_bullet_list_tree_regular">
