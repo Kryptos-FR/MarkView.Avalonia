@@ -34,14 +34,14 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         // obj.Kind is a StringSlice — call ToString() once, then use a lookup
         // to avoid two further allocations (ToLowerInvariant + ToUpperInvariant).
         var kindRaw = obj.Kind.ToString();
-        var (kindLower, kindUpper) = kindRaw.ToUpperInvariant() switch
+        var (kindLower, kindUpper, theme) = kindRaw.ToUpperInvariant() switch
         {
-            "NOTE" => ("note", "NOTE"),
-            "TIP" => ("tip", "TIP"),
-            "WARNING" => ("warning", "WARNING"),
-            "IMPORTANT" => ("important", "IMPORTANT"),
-            "CAUTION" => ("caution", "CAUTION"),
-            var upper => (kindRaw.ToLowerInvariant(), upper),
+            "NOTE" => ("note", "NOTE", "Note"),
+            "TIP" => ("tip", "TIP", "Tip"),
+            "WARNING" => ("warning", "WARNING", "Warning"),
+            "IMPORTANT" => ("important", "IMPORTANT", "Important"),
+            "CAUTION" => ("caution", "CAUTION", "Caution"),
+            var upper => (kindRaw.ToLowerInvariant(), upper, ""),
         };
 
         var extended = obj as ExtendedAlertBlock;
@@ -56,9 +56,12 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         // A foldable alert's header is a button for screen readers.
         var header = fold == AlertFold.None ? new StyledInlinesTextBlock() : new FoldHeader();
         header.Classes.Add("markdown-alert-header");
+        renderer.ApplyTheme(header, $"MarkdownAlert{theme}HeaderTheme");
 
         var contentPanel = new StackPanel { Spacing = 4 };
         contentPanel.Classes.Add("markdown-alert-content");
+        // No theme defines it by default; a preset can, to set the body's text size
+        renderer.ApplyTheme(contentPanel, "MarkdownAlertContentTheme");
 
         var outer = new StackPanel { Spacing = 4 };
         outer.Children.Add(header);
@@ -67,6 +70,7 @@ public sealed class AlertBlockRenderer : AvaloniaObjectRenderer<AlertBlock>
         var border = new Border { Child = outer };
         border.Classes.Add("markdown-alert");
         border.Classes.Add($"markdown-alert-{kindLower}");
+        renderer.ApplyTheme(border, $"MarkdownAlert{theme}Theme");
         // A group named by its visible title (set below), so the alert kind is announced as text,
         // not left to colour alone.
         AutomationRoles.Set(border, AutomationControlType.Group);

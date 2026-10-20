@@ -19,6 +19,7 @@ public sealed class CodeInlineRenderer : AvaloniaObjectRenderer<CodeInline>
     {
         var run = new Run(obj.Content);
         run.Classes.Add("markdown-code-inline");
+        renderer.ApplyTheme(run, renderer.IsWritingParagraph ? "MarkdownParagraphCodeInlineTheme" : "MarkdownCodeInlineTheme");
         if (!renderer.IsRightToLeft(obj))
         {
             renderer.WriteInline(run);

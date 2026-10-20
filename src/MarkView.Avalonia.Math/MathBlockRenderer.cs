@@ -51,7 +51,7 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
         ThemeTracking.ReapplyOnThemeChange(border, ApplyTheme);
 
         ApplyTheme();
-        renderer.WriteBlock(renderer.ShowCodeBlockCopyButton ? WithCopyButton(border, source) : border);
+        renderer.WriteBlock(renderer.ShowCodeBlockCopyButton ? WithCopyButton(renderer, border, source) : border);
 
         void ApplyTheme()
         {
@@ -77,8 +77,10 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
     /// code block's, so it looks and behaves the same; its <c>markdown-math-copy</c> class gives it its
     /// own tooltip and accessible name. Text selection skips it, as it does a code block's toolbar.
     /// </summary>
-    private static Grid WithCopyButton(Border border, string source)
+    private static Grid WithCopyButton(AvaloniaRenderer renderer, Border border, string source)
     {
+        // Kept clear of the button by the theme
+        renderer.ApplyTheme(border, "MarkdownMathContentTheme");
         var button = CodeBlockToolbar.CreateCopyButton(source, MarkdownCopyOrigin.MathBlock);
         // Its place in the corner comes from the theme, like the rest of its look.
         button.Classes.Add("markdown-math-copy");

@@ -62,6 +62,7 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
 
         var border = new Border { Child = image };
         border.Classes.Add("markdown-mermaid");
+        renderer.ApplyTheme(border, "MarkdownMermaidTheme");
         MarkdownSelection.SetCopyText(border, $"```mermaid\n{source}\n```");
 
         // A rendered diagram opens in the viewer's lightbox, where it can be zoomed and panned. It is
@@ -173,6 +174,7 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
                     border.Child = panel;
                     border.Classes.Clear();
                     border.Classes.Add("markdown-mermaid-fallback");
+                    border.Theme = null;
                 }
             }
 

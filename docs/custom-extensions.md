@@ -143,13 +143,21 @@ public class MyCodeBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
         var language = obj.Info ?? string.Empty;
         var source   = obj.Lines.ToString();
 
-        var tb = new TextBlock { Text = source };
-        tb.Classes.Add("markdown-code-block");
-        // ... add to renderer
-        renderer.WriteBlock(new Border { Child = tb });
+        var code = new TextBlock { Text = source };
+        renderer.ApplyTheme(code, "MarkdownCodeTheme");
+        var border = new Border { Child = code };
+        border.Classes.Add("markdown-code-block");
+        renderer.ApplyTheme(border, "MarkdownCodeBlockTheme");
+        renderer.WriteBlock(border);
     }
 }
 ```
+
+The built-in look comes from [control themes](theming.md#sizes-spacing-and-control-themes), not from
+the `markdown-*` classes: `renderer.ApplyTheme(control, key)` gives a control the theme with that
+resource key, found from the viewer, so it follows presets and is swapped when a preset is added or
+removed. A class alone only matches the application's own styles. Set the class too, so those
+styles and the [style class reference](theming.md#style-class-reference) still apply.
 
 A custom code block renderer does not get the built-in [code block toolbar](configuration.md#code-block-toolbar), nor its line numbers, wrapping and maximum height; add your own controls if you want them.
 

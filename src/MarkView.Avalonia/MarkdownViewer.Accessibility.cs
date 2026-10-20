@@ -11,6 +11,7 @@ using Avalonia.Platform;
 using Avalonia.VisualTree;
 
 using MarkView.Avalonia.Automation;
+using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia;
 
@@ -28,6 +29,18 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
     /// </summary>
     public static readonly DirectProperty<MarkdownViewer, bool> IsHighContrastProperty =
         AvaloniaProperty.RegisterDirect<MarkdownViewer, bool>(nameof(IsHighContrast), o => o.IsHighContrast);
+
+    /// <summary>
+    /// Defines the InHighContrast attached property, which is <c>true</c> on the viewer and inherited by every
+    /// element of its document while the viewer is in high contrast (<see cref="IsHighContrast"/>). A control
+    /// theme matches it on its own control, <c>^[(mv|MarkdownViewer.InHighContrast)=True]</c>, where a
+    /// <c>:high-contrast</c> style would cost memory on every control of its type.
+    /// </summary>
+    public static readonly AttachedProperty<bool> InHighContrastProperty =
+        AvaloniaProperty.RegisterAttached<MarkdownViewer, StyledElement, bool>("InHighContrast", inherits: true);
+
+    /// <summary>Gets whether <paramref name="element"/> is in a viewer that is in high contrast.</summary>
+    public static bool GetInHighContrast(StyledElement element) => element.GetValue(InHighContrastProperty);
 
     private const string HighContrastPaletteKey = "MarkdownHighContrastPalette";
 
@@ -100,6 +113,8 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         }
         // Stryker disable once Statement : see above
         UpdateHighContrast();
+        // Rendered while detached, the document may have missed themes defined above the viewer
+        UpdateThemes();
         // A preset added or removed, or another value for a MarkdownHighContrast* key above the viewer
         ResourcesChanged += OnResourcesChanged;
     }
@@ -181,10 +196,28 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         };
         IsHighContrast = isHighContrast;
         PseudoClasses.Set(":high-contrast", isHighContrast);
+        if (isHighContrast)
+            SetValue(InHighContrastProperty, true);
+        else
+            ClearValue(InHighContrastProperty);
         UpdateHighContrastResources();
     }
 
-    private void OnResourcesChanged(object? sender, ResourcesChangedEventArgs e) => UpdateHighContrastResources();
+    private void OnResourcesChanged(object? sender, ResourcesChangedEventArgs e)
+    {
+        UpdateHighContrastResources();
+        UpdateThemes();
+    }
+
+    /// <summary>
+    /// Gives the document's controls the control themes their keys now resolve to, when a preset that
+    /// defines some of its own was added or removed, without rendering the document again.
+    /// </summary>
+    private void UpdateThemes()
+    {
+        if (_themes?.Refresh() is { } changed)
+            ThemeLookup.Replace(this, changed);
+    }
 
     /// <summary>
     /// Merges the theme's high-contrast palette into the viewer's resources while it is in high contrast,

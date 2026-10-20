@@ -139,7 +139,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             // started, causing the image to never load.
             if (image.Source != null || cts != null) return;
             cts = new CancellationTokenSource();
-            _ = LoadImageAsync(renderer, image, url, cts.Token, () => ShowFailurePlaceholder(image, altText));
+            _ = LoadImageAsync(renderer, image, url, cts.Token, () => ShowFailurePlaceholder(renderer, image, altText));
         };
         image.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
 
@@ -179,7 +179,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
     /// image. A "=WxH" size hint does not size the placeholder, which keeps its own compact size: the hint
     /// only caps it, the alt text being cut with an ellipsis beyond the width.
     /// </summary>
-    private static void ShowFailurePlaceholder(Image image, string altText)
+    private static void ShowFailurePlaceholder(AvaloniaRenderer renderer, Image image, string altText)
     {
         var content = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 4 };
         content.Children.Add(new BrokenImageGlyph { VerticalAlignment = VerticalAlignment.Center });
@@ -207,6 +207,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             Tag = image.Tag,
         };
         placeholder.Classes.Add("markdown-image-failed");
+        renderer.ApplyTheme(placeholder, "MarkdownImageFailedTheme");
         MarkdownSelection.SetCopyText(placeholder, altText);
         // Named by its alt text, the theme's style saying that it could not be loaded; decorative without one.
         if (string.IsNullOrEmpty(altText))
@@ -319,9 +320,11 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             VerticalAlignment = VerticalAlignment.Center,
         };
         playOverlay.Classes.Add("markdown-youtube-play");
+        renderer.ApplyTheme(playOverlay, "MarkdownYoutubePlayTheme");
 
         var overlayGrid = new Grid();
         overlayGrid.Classes.Add("markdown-youtube-overlay");
+        renderer.ApplyTheme(overlayGrid, "MarkdownYoutubeOverlayTheme");
 
         var button = new Button { Content = overlayGrid };
         button.Classes.Add("markdown-youtube");

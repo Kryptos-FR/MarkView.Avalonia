@@ -29,13 +29,13 @@ internal sealed class HtmlElementInlineRenderer : AvaloniaObjectRenderer<HtmlEle
         // An alias of the markdown emphasis it stands for, so both render and style alike.
         var span = obj.Kind switch
         {
-            HtmlElementKind.Bold => EmphasisInlineRenderer.CreateSpan('*', 2),
-            HtmlElementKind.Italic => EmphasisInlineRenderer.CreateSpan('*', 1),
-            HtmlElementKind.Strikethrough => EmphasisInlineRenderer.CreateSpan('~', 2),
-            HtmlElementKind.Underline => EmphasisInlineRenderer.CreateSpan('+', 2),
-            HtmlElementKind.Mark => EmphasisInlineRenderer.CreateSpan('=', 2),
-            HtmlElementKind.Subscript => EmphasisInlineRenderer.CreateSpan('~', 1),
-            _ => EmphasisInlineRenderer.CreateSpan('^', 1),
+            HtmlElementKind.Bold => EmphasisInlineRenderer.CreateSpan(renderer, '*', 2),
+            HtmlElementKind.Italic => EmphasisInlineRenderer.CreateSpan(renderer, '*', 1),
+            HtmlElementKind.Strikethrough => EmphasisInlineRenderer.CreateSpan(renderer, '~', 2),
+            HtmlElementKind.Underline => EmphasisInlineRenderer.CreateSpan(renderer, '+', 2),
+            HtmlElementKind.Mark => EmphasisInlineRenderer.CreateSpan(renderer, '=', 2),
+            HtmlElementKind.Subscript => EmphasisInlineRenderer.CreateSpan(renderer, '~', 1),
+            _ => EmphasisInlineRenderer.CreateSpan(renderer, '^', 1),
         };
 
         renderer.Push(span.Inlines);
@@ -58,6 +58,8 @@ internal sealed class HtmlElementInlineRenderer : AvaloniaObjectRenderer<HtmlEle
 
         var key = new HtmlKeyboardKey { Child = text };
         key.Classes.Add("markdown-html-kbd");
+        renderer.ApplyTheme(key, "MarkdownKbdTheme");
+        renderer.ApplyTheme(text, "MarkdownKbdTextTheme");
         var plainText = MarkdownSelectableTextBlock.ExtractPlainText(text.Inlines!);
         MarkdownSelection.SetCopyText(key, plainText);
         // Read as the key's text, once: the text block inside it is hidden.

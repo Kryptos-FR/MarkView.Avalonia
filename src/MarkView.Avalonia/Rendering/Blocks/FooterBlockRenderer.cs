@@ -17,6 +17,7 @@ public sealed class FooterBlockRenderer : AvaloniaObjectRenderer<FooterBlock>
     {
         var panel = new StackPanel { Spacing = 4 };
         panel.Classes.Add("markdown-footer");
+        renderer.ApplyTheme(panel, "MarkdownFooterTheme");
 
         renderer.Push(panel);
         renderer.WriteChildren(obj);

@@ -15,11 +15,11 @@
           <SolidColorBrush x:Key="MarkdownMermaidAccent">#3B82F6</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+      <!-- A rendered diagram (the border around it; see MarkdownTheme.axaml's control themes) -->
+      <ControlTheme x:Key="MarkdownMermaidTheme" TargetType="Border">
+        <Setter Property="Margin" Value="0,4" />
+      </ControlTheme>
     </ResourceDictionary>
   </Styles.Resources>
-
-  <Style Selector="Border.markdown-mermaid">
-    <Setter Property="Margin" Value="0,4" />
-  </Style>
 
 </Styles>

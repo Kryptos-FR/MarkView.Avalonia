@@ -36,7 +36,7 @@ public class CodeBlockOptionsTests
         "```\n" + string.Join("\n", Enumerable.Range(1, lines).Select(i => $"line {i}")) + "\n```";
 
     private static StackPanel Render(string markdown, bool lineNumbers = false, bool wrap = false,
-        double maxHeight = double.PositiveInfinity, bool toolbar = false)
+        double maxHeight = double.PositiveInfinity, bool toolbar = false, bool themed = false)
     {
         var pipeline = new MarkdownPipelineBuilder().Build();
         var renderer = new AvaloniaRenderer
@@ -47,6 +47,8 @@ public class CodeBlockOptionsTests
             WrapCodeBlockLines = wrap,
             CodeBlockMaxHeight = maxHeight,
         };
+        if (themed)
+            renderer.Themes = RenderTestBase.MarkdownThemes();
         pipeline.Setup(renderer);
         renderer.Render(Markdig.Markdown.Parse(markdown, pipeline));
         return renderer.RootPanel;
@@ -674,7 +676,7 @@ public class CodeBlockOptionsTests
     public void Default_theme_gives_the_line_numbers_the_code_font_and_their_own_colour()
     {
         using var theme = new ThemeScope(ThemeVariant.Dark);
-        var root = Render(ThreeLines, lineNumbers: true, maxHeight: 200);
+        var root = Render(ThreeLines, lineNumbers: true, maxHeight: 200, themed: true);
         var window = new Window { Content = root };
         window.Styles.Add(new StyleInclude((Uri?)null) { Source = new Uri("avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml") });
         window.Show();
