@@ -1,6 +1,8 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Collections.ObjectModel;
+
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using MarkView.Avalonia.Extensions;
@@ -20,6 +22,9 @@ public sealed class TextMateHighlighter : ICodeHighlighter
 
     // Brush cache: theme colour hex string → brush (avoids per-token allocation)
     private readonly Dictionary<string, IBrush> _brushCache = new(StringComparer.OrdinalIgnoreCase);
+
+    // Tokens of recent lines; read-only, since the same list is returned for the same line.
+    private readonly LineTokenCache<ReadOnlyCollection<(string Text, IBrush? Foreground)>> _tokenCache = new();
 
     public TextMateHighlighter(ThemeName theme = ThemeName.DarkPlus)
         : this(new TextMateGrammars(theme), theme)
@@ -42,10 +47,15 @@ public sealed class TextMateHighlighter : ICodeHighlighter
         if (grammar == null)
             return null;
 
+        if (_tokenCache.TryGet(grammar, line.Span, out var cached))
+            return cached;
+
         var tokens = new List<(string Text, IBrush? Foreground)>();
         foreach (var (text, scopes) in Tokenize(grammar, line))
             tokens.Add((text, GetBrush(scopes)));
-        return tokens;
+        var result = tokens.AsReadOnly();
+        _tokenCache.Add(grammar, line.Span, result);
+        return result;
     }
 
     /// <summary>

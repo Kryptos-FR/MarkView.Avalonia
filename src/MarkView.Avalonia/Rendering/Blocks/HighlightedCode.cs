@@ -92,9 +92,14 @@ internal static class HighlightedCode
                 continue;
             }
 
-            foreach (var (text, dark, light) in tokens)
+            for (var t = 0; t < tokens.Count;)
             {
-                var run = new Run(text);
+                var (_, dark, light) = tokens[t];
+                var end = t + 1;
+                while (end < tokens.Count && SameBrush(tokens[end].Dark, dark) && SameBrush(tokens[end].Light, light))
+                    end++;
+                var run = new Run(Concat(tokens, t, end, static token => token.Text));
+                t = end;
                 if (dark is ISolidColorBrush { Opacity: 1 } d && light is ISolidColorBrush { Opacity: 1 } l)
                 {
                     palette ??= [];
@@ -139,6 +144,33 @@ internal static class HighlightedCode
             run.ClearValue(TextElement.ForegroundProperty);
     }
 
+    // Highlighters split a line by grammar scope, and neighbouring tokens often share a colour (a keyword's
+    // space, a run of punctuation). Each token being its own Run is what makes a highlighted block cost
+    // several times a plain one to create and lay out, so tokens of one colour go into one Run.
+    private static bool SameBrush(IBrush? a, IBrush? b)
+        => ReferenceEquals(a, b)
+           || (a is ISolidColorBrush x && b is ISolidColorBrush y && x.Color == y.Color && x.Opacity == y.Opacity);
+
+    // The text of tokens [first, end): a single token keeps its string.
+    private static string Concat<T>(IReadOnlyList<T> tokens, int first, int end, Func<T, string> text)
+    {
+        if (end - first == 1)
+            return text(tokens[first]);
+
+        var length = 0;
+        for (var t = first; t < end; t++)
+            length += text(tokens[t]).Length;
+        return string.Create(length, (tokens, first, end, text), static (span, state) =>
+        {
+            for (var t = state.first; t < state.end; t++)
+            {
+                var part = state.text(state.tokens[t]);
+                part.CopyTo(span);
+                span = span[part.Length..];
+            }
+        });
+    }
+
     private static void BuildInlines(
         TextBlock textBlock,
         ICodeHighlighter? highlighter,
@@ -157,9 +189,14 @@ internal static class HighlightedCode
 
             if (tokens != null)
             {
-                foreach (var (text, foreground) in tokens)
+                for (var t = 0; t < tokens.Count;)
                 {
-                    var run = new Run(text);
+                    var foreground = tokens[t].Foreground;
+                    var end = t + 1;
+                    while (end < tokens.Count && SameBrush(tokens[end].Foreground, foreground))
+                        end++;
+                    var run = new Run(Concat(tokens, t, end, static token => token.Text));
+                    t = end;
                     if (foreground != null)
                         run.Foreground = foreground;
                     textBlock.Inlines!.Add(run);

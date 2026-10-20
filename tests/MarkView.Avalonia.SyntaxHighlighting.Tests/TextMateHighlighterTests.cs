@@ -1,6 +1,10 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Collections.ObjectModel;
+
+using Avalonia.Media;
+
 using TextMateSharp.Grammars;
 using Xunit;
 
@@ -72,5 +76,31 @@ public class TextMateHighlighterTests
 
         Assert.NotNull(tokens);
         Assert.Empty(tokens);
+    }
+
+    [Fact]
+    public void Highlight_returns_the_same_read_only_tokens_for_a_line_seen_before()
+    {
+        var highlighter = new TextMateHighlighter();
+        var first = highlighter.Highlight("var x = 1;".AsMemory(), "csharp");
+        var again = highlighter.Highlight("xvar x = 1;".AsMemory()[1..], "csharp");
+
+        Assert.Same(first, again);
+        Assert.IsType<ReadOnlyCollection<(string Text, IBrush? Foreground)>>(first);
+        Assert.NotSame(first, highlighter.Highlight("var x = 2;".AsMemory(), "csharp"));
+        Assert.NotSame(first, highlighter.Highlight("var x = 1;".AsMemory(), "javascript"));
+    }
+
+    [Fact]
+    public void HighlightBoth_returns_the_same_tokens_for_a_line_seen_before()
+    {
+        var highlighter = new DualThemeTextMateHighlighter(ThemeName.DarkPlus, ThemeName.LightPlus);
+        var first = highlighter.HighlightBoth("var x = 1;".AsMemory(), "csharp");
+        var again = highlighter.HighlightBoth("xvar x = 1;".AsMemory()[1..], "csharp");
+
+        Assert.NotNull(first);
+        Assert.Same(first, again);
+        Assert.Equal("var x = 1;", string.Concat(first!.Select(t => t.Text)));
+        Assert.NotSame(first, highlighter.HighlightBoth("var x = 2;".AsMemory(), "csharp"));
     }
 }
