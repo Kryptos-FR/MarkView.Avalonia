@@ -22,7 +22,6 @@ internal sealed class ThemeLookup
 {
     private readonly Func<string, object?> _find;
     private readonly Dictionary<string, ControlTheme> _themes = new(StringComparer.Ordinal);
-    private readonly HashSet<ControlTheme> _placeholders = new(ReferenceEqualityComparer.Instance);
 
     /// <param name="find">Returns the resource with the given key, or <c>null</c>.</param>
     public ThemeLookup(Func<string, object?> find) => _find = find;
@@ -62,12 +61,11 @@ internal sealed class ThemeLookup
         {
             var theme = _themes[key];
             var found = _find(key) as ControlTheme;
-            if (found is null ? _placeholders.Contains(theme) : found == theme)
+            if (found is null ? theme is Placeholder : found == theme)
                 continue;
-            var replacement = found ?? Placeholder();
+            var replacement = found ?? new Placeholder();
             (changed ??= [])[theme] = replacement;
             _themes[key] = replacement;
-            _placeholders.Remove(theme);
         }
         return changed;
     }
@@ -86,12 +84,8 @@ internal sealed class ThemeLookup
         }
     }
 
-    private ControlTheme Resolve(string key) => _find(key) as ControlTheme ?? Placeholder();
+    private ControlTheme Resolve(string key) => _find(key) as ControlTheme ?? new Placeholder();
 
-    private ControlTheme Placeholder()
-    {
-        var placeholder = new ControlTheme(typeof(StyledElement));
-        _placeholders.Add(placeholder);
-        return placeholder;
-    }
+    /// <summary>The empty theme of a key no theme defines.</summary>
+    private sealed class Placeholder() : ControlTheme(typeof(StyledElement));
 }
