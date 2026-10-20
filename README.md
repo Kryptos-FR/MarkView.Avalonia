@@ -496,7 +496,7 @@ and search, how incomplete syntax is healed, and how custom renderers can tell t
 
 ## Accessibility
 
-- **Keyboard.** `Tab` / `Shift+Tab` move through the document's links and interactive elements in reading order, with a focus ring, and `Enter` opens the focused link.
+- **Keyboard.** `Tab` / `Shift+Tab` move through the document's links and interactive elements in reading order, with a focus ring, and `Enter` opens the focused link. The arrow keys, `Page Up` / `Page Down`, `Space` and `Home` / `End` scroll the document.
 - **Screen readers.** Headings report their level, and lists, tables, quotes, alerts, images and links report their roles.
 - **Contrast.** Default colours meet WCAG 2.2 AA, and a high-contrast palette follows the OS setting.
 
