@@ -1,7 +1,8 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mv="using:MarkView.Avalonia"
-        xmlns:mri="using:MarkView.Avalonia.Rendering.Inlines">
+        xmlns:mri="using:MarkView.Avalonia.Rendering.Inlines"
+        xmlns:mrb="using:MarkView.Avalonia.Rendering.Blocks">
 
   <Styles.Resources>
     <ResourceDictionary>
@@ -53,8 +54,9 @@
           <SolidColorBrush x:Key="MarkdownImageLightboxCloseForeground">#FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownImageLightboxCloseBackground">#66000000</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownImageLightboxCloseHoverBackground">#33FFFFFF</SolidColorBrush>
-          <!-- High-contrast palette (MarkdownViewer:high-contrast), modelled on Windows' dark contrast
-               themes. Avalonia exposes no system contrast colours, so these stand in for them. -->
+          <!-- High-contrast colours (MarkdownViewer:high-contrast, see MarkdownHighContrastPalette below),
+               modelled on Windows' dark contrast themes. Avalonia exposes no system contrast colours, so
+               these stand in for them. -->
           <SolidColorBrush x:Key="MarkdownHighContrastBackground">#000000</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownHighContrastForeground">#FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="MarkdownHighContrastLink">#FFFF00</SolidColorBrush>
@@ -116,6 +118,85 @@
           <SolidColorBrush x:Key="MarkdownHighContrastBorder">#000000</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+      <!-- Colours that don't change with the theme variant -->
+      <SolidColorBrush x:Key="MarkdownCodeBlockBorder">Transparent</SolidColorBrush>
+      <SolidColorBrush x:Key="MarkdownTableHeaderBackground">#20808080</SolidColorBrush>
+      <SolidColorBrush x:Key="MarkdownFigureBorder">#40808080</SolidColorBrush>
+      <SolidColorBrush x:Key="MarkdownThinkingBorder">#40808080</SolidColorBrush>
+      <!-- Borders and dimming that high contrast changes -->
+      <Thickness x:Key="MarkdownCodeBlockBorderThickness">0</Thickness>
+      <Thickness x:Key="MarkdownCodeHeaderBorderThickness">0</Thickness>
+      <x:Double x:Key="MarkdownBlockquoteOpacity">0.85</x:Double>
+      <x:Double x:Key="MarkdownFootnoteOpacity">0.85</x:Double>
+      <x:Double x:Key="MarkdownFigureCaptionOpacity">0.75</x:Double>
+      <!-- Discreet beside the heading; still 3:1 or more on the page for the default and GitHub headings -->
+      <x:Double x:Key="MarkdownHeadingFoldOpacity">0.7</x:Double>
+      <x:Double x:Key="MarkdownThinkingHeaderOpacity">0.75</x:Double>
+      <x:Double x:Key="MarkdownThinkingContentOpacity">0.8</x:Double>
+      <!-- High contrast. MarkdownViewer gets :high-contrast when the OS asks for it (see HighContrastMode),
+           and then adds these values to its own resources, over the ones above and a preset's: solid colours
+           from the MarkdownHighContrast* keys, solid borders where colour alone told blocks apart, and no
+           dimming. A string names the key the value comes from, looked up from the viewer, so a preset only
+           redefines the MarkdownHighContrast* keys; an entry whose key no theme defines is left out. Swapping
+           values instead of adding :high-contrast styles costs nothing per control while high contrast is off. -->
+      <ResourceDictionary x:Key="MarkdownHighContrastPalette">
+        <!-- The page, set on MarkdownViewer by the GitHub and Docs presets -->
+        <x:String x:Key="MarkdownBackground">MarkdownHighContrastBackground</x:String>
+        <x:String x:Key="MarkdownForeground">MarkdownHighContrastForeground</x:String>
+        <x:String x:Key="MarkdownMutedForeground">MarkdownHighContrastForeground</x:String>
+        <x:String x:Key="MarkdownLinkForeground">MarkdownHighContrastLink</x:String>
+        <x:String x:Key="MarkdownHeadingBorder">MarkdownHighContrastBorder</x:String>
+        <x:Double x:Key="MarkdownHeadingFoldOpacity">1</x:Double>
+        <!-- Code blocks, their toolbar and inline code -->
+        <x:String x:Key="MarkdownCodeBlockBackground">MarkdownHighContrastBackground</x:String>
+        <x:String x:Key="MarkdownCodeBlockForeground">MarkdownHighContrastForeground</x:String>
+        <x:String x:Key="MarkdownCodeBlockBorder">MarkdownHighContrastBorder</x:String>
+        <Thickness x:Key="MarkdownCodeBlockBorderThickness">1</Thickness>
+        <x:String x:Key="MarkdownCodeLineNumberForeground">MarkdownHighContrastForeground</x:String>
+        <x:String x:Key="MarkdownCodeHeaderBackground">MarkdownHighContrastBackground</x:String>
+        <x:String x:Key="MarkdownCodeHeaderForeground">MarkdownHighContrastForeground</x:String>
+        <Thickness x:Key="MarkdownCodeHeaderBorderThickness">1,1,1,0</Thickness>
+        <x:String x:Key="MarkdownCodeCopyButtonBorder">MarkdownHighContrastBorder</x:String>
+        <SolidColorBrush x:Key="MarkdownCodeInlineBackground">Transparent</SolidColorBrush>
+        <x:String x:Key="MarkdownCodeInlineForeground">MarkdownHighContrastForeground</x:String>
+        <!-- Marked text (its text colour is set by a :high-contrast style below) -->
+        <x:String x:Key="MarkdownMarkedBackground">MarkdownHighContrastHighlightBackground</x:String>
+        <!-- Quotes, tables, rules, footnotes and figures -->
+        <x:String x:Key="MarkdownBlockquoteBorder">MarkdownHighContrastBorder</x:String>
+        <x:Double x:Key="MarkdownBlockquoteOpacity">1</x:Double>
+        <x:String x:Key="MarkdownTableBorder">MarkdownHighContrastBorder</x:String>
+        <SolidColorBrush x:Key="MarkdownTableHeaderBackground">Transparent</SolidColorBrush>
+        <SolidColorBrush x:Key="MarkdownTableRowAlternateBackground">Transparent</SolidColorBrush>
+        <x:String x:Key="MarkdownThematicBreakBackground">MarkdownHighContrastBorder</x:String>
+        <x:String x:Key="MarkdownFootnoteSeparatorBackground">MarkdownHighContrastBorder</x:String>
+        <x:Double x:Key="MarkdownFootnoteOpacity">1</x:Double>
+        <x:String x:Key="MarkdownFigureBorder">MarkdownHighContrastBorder</x:String>
+        <x:Double x:Key="MarkdownFigureCaptionOpacity">1</x:Double>
+        <!-- An image that could not be loaded: its alt text and glyph on the page colours, in a solid outline -->
+        <x:String x:Key="MarkdownImageFailedBackground">MarkdownHighContrastBackground</x:String>
+        <x:String x:Key="MarkdownImageFailedBorder">MarkdownHighContrastBorder</x:String>
+        <x:String x:Key="MarkdownImageFailedForeground">MarkdownHighContrastForeground</x:String>
+        <!-- Alerts keep their title text and left bar, but lose the per-kind colours: in a contrast theme
+             every alert uses the same border colour (and title colour, set by a :high-contrast style below) -->
+        <x:String x:Key="MarkdownAlertDefaultBorder">MarkdownHighContrastBorder</x:String>
+        <x:String x:Key="MarkdownAlertDefaultBackground">MarkdownHighContrastBackground</x:String>
+        <x:String x:Key="MarkdownAlertNoteBorder">MarkdownHighContrastBorder</x:String>
+        <x:String x:Key="MarkdownAlertNoteBackground">MarkdownHighContrastBackground</x:String>
+        <x:String x:Key="MarkdownAlertTipBorder">MarkdownHighContrastBorder</x:String>
+        <x:String x:Key="MarkdownAlertTipBackground">MarkdownHighContrastBackground</x:String>
+        <x:String x:Key="MarkdownAlertImportantBorder">MarkdownHighContrastBorder</x:String>
+        <x:String x:Key="MarkdownAlertImportantBackground">MarkdownHighContrastBackground</x:String>
+        <x:String x:Key="MarkdownAlertWarningBorder">MarkdownHighContrastBorder</x:String>
+        <x:String x:Key="MarkdownAlertWarningBackground">MarkdownHighContrastBackground</x:String>
+        <x:String x:Key="MarkdownAlertCautionBorder">MarkdownHighContrastBorder</x:String>
+        <x:String x:Key="MarkdownAlertCautionBackground">MarkdownHighContrastBackground</x:String>
+        <!-- The Docs preset outlines its alerts, which have no bar -->
+        <x:String x:Key="MarkdownAlertBorderThickness">MarkdownHighContrastAlertBorderThickness</x:String>
+        <!-- Thinking blocks -->
+        <x:Double x:Key="MarkdownThinkingHeaderOpacity">1</x:Double>
+        <x:String x:Key="MarkdownThinkingBorder">MarkdownHighContrastBorder</x:String>
+        <x:Double x:Key="MarkdownThinkingContentOpacity">1</x:Double>
+      </ResourceDictionary>
       <!-- Code block copy button icons (16x16) -->
       <StreamGeometry x:Key="MarkdownCodeCopyIcon">M5,1 L15,1 L15,11 L12,11 L12,10 L14,10 L14,2 L6,2 L6,4 L5,4 Z M1,5 L11,5 L11,15 L1,15 Z M2,6 L2,14 L10,14 L10,6 Z</StreamGeometry>
       <StreamGeometry x:Key="MarkdownCodeCopiedIcon">M13.5,3.5 L6,11 L2.5,7.5 L1.5,8.5 L6,13 L14.5,4.5 Z</StreamGeometry>
@@ -194,12 +275,11 @@
 
   <!-- Foldable headings (MarkdownViewer.AreHeadingsFoldable): the fold button before the heading's text;
        the heading gets :expanded while its section is shown -->
-  <Style Selector=":is(Control).markdown-heading-fold">
+  <Style Selector="mrb|HeadingFoldToggle.markdown-heading-fold">
     <Setter Property="Margin" Value="0,0,6,0" />
-    <!-- Discreet beside the heading; still 3:1 or more on the page for the default and GitHub headings -->
-    <Setter Property="Opacity" Value="0.7" />
+    <Setter Property="Opacity" Value="{DynamicResource MarkdownHeadingFoldOpacity}" />
   </Style>
-  <Style Selector=":is(Control).markdown-heading-fold:pointerover, :is(Control).markdown-heading-fold:focus-visible">
+  <Style Selector="mrb|HeadingFoldToggle.markdown-heading-fold:pointerover, mrb|HeadingFoldToggle.markdown-heading-fold:focus-visible">
     <Setter Property="Opacity" Value="1" />
   </Style>
 
@@ -211,6 +291,8 @@
   <!-- Code blocks -->
   <Style Selector="Border.markdown-code-block">
     <Setter Property="Background" Value="{DynamicResource MarkdownCodeBlockBackground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownCodeBlockBorder}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource MarkdownCodeBlockBorderThickness}" />
     <Setter Property="CornerRadius" Value="4" />
     <Setter Property="Padding" Value="12,8" />
     <Setter Property="Margin" Value="0,4" />
@@ -242,6 +324,8 @@
   </Style>
   <Style Selector="Border.markdown-code-header">
     <Setter Property="Background" Value="{DynamicResource MarkdownCodeHeaderBackground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownCodeBlockBorder}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource MarkdownCodeHeaderBorderThickness}" />
     <Setter Property="CornerRadius" Value="4,4,0,0" />
     <Setter Property="Padding" Value="12,2,4,2" />
     <Setter Property="MinHeight" Value="28" />
@@ -346,7 +430,7 @@
     <Setter Property="BorderThickness" Value="3,0,0,0" />
     <Setter Property="Padding" Value="12,4" />
     <Setter Property="Margin" Value="0,4" />
-    <Setter Property="Opacity" Value="0.85" />
+    <Setter Property="Opacity" Value="{DynamicResource MarkdownBlockquoteOpacity}" />
   </Style>
 
   <!-- Lists -->
@@ -477,7 +561,7 @@
     <Setter Property="Padding" Value="8,4" />
   </Style>
   <Style Selector="Border.markdown-table-header">
-    <Setter Property="Background" Value="#20808080" />
+    <Setter Property="Background" Value="{DynamicResource MarkdownTableHeaderBackground}" />
   </Style>
   <Style Selector="Border.markdown-table-header > StackPanel > :is(TextBlock)">
     <Setter Property="FontWeight" Value="Bold" />
@@ -486,7 +570,7 @@
   <!-- Footnotes -->
   <Style Selector="StackPanel.markdown-footnote-group">
     <Setter Property="Margin" Value="0,8,0,0" />
-    <Setter Property="Opacity" Value="0.85" />
+    <Setter Property="Opacity" Value="{DynamicResource MarkdownFootnoteOpacity}" />
   </Style>
   <Style Selector="Grid.markdown-footnote-item">
     <Setter Property="Margin" Value="0,2" />
@@ -584,17 +668,17 @@
     <!-- A background makes the whole header row clickable, not just its glyphs -->
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Cursor" Value="Hand" />
-    <Setter Property="Opacity" Value="0.75" />
+    <Setter Property="Opacity" Value="{DynamicResource MarkdownThinkingHeaderOpacity}" />
   </Style>
   <Style Selector="TextBlock.markdown-thinking-header:focus-visible">
     <Setter Property="TextDecorations" Value="Underline" />
   </Style>
   <Style Selector="Border.markdown-thinking-content">
-    <Setter Property="BorderBrush" Value="#40808080" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownThinkingBorder}" />
     <Setter Property="BorderThickness" Value="2,0,0,0" />
     <Setter Property="Padding" Value="12,0,0,0" />
     <Setter Property="Margin" Value="4,0,0,0" />
-    <Setter Property="Opacity" Value="0.8" />
+    <Setter Property="Opacity" Value="{DynamicResource MarkdownThinkingContentOpacity}" />
   </Style>
 
   <!-- Abbreviations -->
@@ -605,7 +689,7 @@
 
   <!-- Figures -->
   <Style Selector="Border.markdown-figure">
-    <Setter Property="BorderBrush" Value="#40808080" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownFigureBorder}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="4" />
     <Setter Property="Padding" Value="12,8" />
@@ -614,7 +698,7 @@
   <Style Selector=":is(TextBlock).markdown-figure-caption">
     <Setter Property="FontStyle" Value="Italic" />
     <Setter Property="TextAlignment" Value="Center" />
-    <Setter Property="Opacity" Value="0.75" />
+    <Setter Property="Opacity" Value="{DynamicResource MarkdownFigureCaptionOpacity}" />
     <Setter Property="Margin" Value="0,4,0,0" />
   </Style>
 
@@ -671,91 +755,21 @@
     <Setter Property="Opacity" Value="0.85" />
   </Style>
 
-  <!-- High contrast. MarkdownViewer gets :high-contrast when the OS asks for it (see HighContrastMode).
-       These styles come last so they win over the ones above: solid colours from the
-       MarkdownHighContrast* palette, solid borders where colour alone told blocks apart, and no
-       opacity dimming. -->
+  <!-- High contrast: most of it is MarkdownHighContrastPalette above. These few styles set what no key
+       expresses, on the viewer itself and on elements a document has few of. They come last so they win
+       over the ones above. -->
   <Style Selector=":is(mv|MarkdownViewer):high-contrast">
     <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBackground}" />
     <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
   </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast mri|MarkdownHyperlink">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastLink}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-code-block">
-    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBackground}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-    <Setter Property="BorderThickness" Value="1" />
-  </Style>
-  <!-- Descendants: the code and its line numbers, also inside the line-number grid or the max-height scroll viewer -->
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-code-block TextBlock">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-code-header">
-    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBackground}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-    <Setter Property="BorderThickness" Value="1,1,1,0" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast TextBlock.markdown-code-language">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Button.markdown-code-copy">
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Run.markdown-code-inline">
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
   <Style Selector=":is(mv|MarkdownViewer):high-contrast Span.markdown-marked">
-    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastHighlightBackground}" />
     <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastHighlightForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-blockquote">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-    <Setter Property="Opacity" Value="1" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-table-cell">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-table-header">
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast StackPanel.markdown-footnote-group">
-    <Setter Property="Opacity" Value="1" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-figure">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(TextBlock).markdown-figure-caption">
-    <Setter Property="Opacity" Value="1" />
-  </Style>
-  <!-- An image that could not be loaded: its alt text and glyph on the page colours, in a solid outline -->
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-image-failed">
-    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBackground}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-    <Setter Property="TextElement.Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
   </Style>
   <Style Selector=":is(mv|MarkdownViewer):high-contrast Separator.markdown-thematic-break">
     <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBorder}" />
   </Style>
-  <!-- Alerts keep their title text and left bar, but lose the per-kind colours: in a contrast
-       theme every alert uses the same text and border colours. -->
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-alert">
-    <Setter Property="Background" Value="{DynamicResource MarkdownHighContrastBackground}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-  </Style>
   <Style Selector=":is(mv|MarkdownViewer):high-contrast TextBlock.markdown-alert-header">
     <Setter Property="Foreground" Value="{DynamicResource MarkdownHighContrastForeground}" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast :is(Control).markdown-heading-fold">
-    <Setter Property="Opacity" Value="1" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast TextBlock.markdown-thinking-header">
-    <Setter Property="Opacity" Value="1" />
-  </Style>
-  <Style Selector=":is(mv|MarkdownViewer):high-contrast Border.markdown-thinking-content">
-    <Setter Property="BorderBrush" Value="{DynamicResource MarkdownHighContrastBorder}" />
-    <Setter Property="Opacity" Value="1" />
   </Style>
 
 </Styles>
