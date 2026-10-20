@@ -333,6 +333,24 @@ public class MarkdownViewerSmoothScrollTests
         window.Close();
     }
 
+    [AvaloniaFact]
+    public void A_short_jump_far_down_the_document_animates_all_the_way()
+    {
+        var (window, scrollViewer, viewer) = Show(markdown: VeryLongMarkdown);
+        var expected = TargetOffset(viewer, scrollViewer, "Bottom Heading");
+        // Far from the top, so the start and target offsets add up to more than the long distance.
+        scrollViewer.Offset = new Vector(0, expected - 500);
+        window.UpdateLayout();
+        viewer.ScrollToAnchor("bottom-heading");
+        var scroll = viewer.ActiveSmoothScroll!;
+
+        scroll.Step(TimeSpan.Zero);
+
+        Assert.Equal(expected - 500, scrollViewer.Offset.Y, 3);
+        Assert.Equal(SmoothScroll.DurationFor(500).TotalMilliseconds, scroll.Duration.TotalMilliseconds, tolerance: 1);
+        window.Close();
+    }
+
     [Fact]
     public void The_long_distance_is_where_the_duration_reaches_its_maximum()
     {

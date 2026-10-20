@@ -32,6 +32,7 @@ internal sealed class DetailsBlockRenderer : AvaloniaObjectRenderer<DetailsBlock
         var summaryText = obj.Summary ?? DefaultSummary;
         var summary = new FoldHeader { TextWrapping = TextWrapping.Wrap };
         summary.Classes.Add("markdown-details-summary");
+        renderer.ApplyTheme(summary, "MarkdownDetailsSummaryTheme");
         summary.Inlines!.Add(new InlineUIContainer(chevron));
         summary.Inlines.Add(new Run(" "));
         if (obj.SummaryInline is { } inline)
@@ -54,6 +55,7 @@ internal sealed class DetailsBlockRenderer : AvaloniaObjectRenderer<DetailsBlock
 
         var border = new Border { Child = outer };
         border.Classes.Add("markdown-details");
+        renderer.ApplyTheme(border, "MarkdownDetailsTheme");
         // A group named by its summary, like an alert by its title.
         AutomationRoles.Set(border, AutomationControlType.Group);
         AutomationProperties.SetName(border, summaryText);

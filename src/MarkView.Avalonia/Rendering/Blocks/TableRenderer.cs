@@ -22,6 +22,7 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
     {
         var grid = new Grid();
         grid.Classes.Add("markdown-table");
+        renderer.ApplyTheme(grid, "MarkdownTableTheme");
         AutomationRoles.Set(grid, AutomationControlType.Table);
 
         // Define columns
@@ -52,9 +53,17 @@ public sealed class TableRenderer : AvaloniaObjectRenderer<Table>
                     Child = cellPanel,
                 };
                 border.Classes.Add("markdown-table-cell");
+                renderer.ApplyTheme(border, (rowIndex, colIndex) switch
+                {
+                    (0, 0) => "MarkdownTableCornerCellTheme",
+                    (0, _) => "MarkdownTableFirstRowCellTheme",
+                    (_, 0) => "MarkdownTableFirstColumnCellTheme",
+                    _ => "MarkdownTableCellTheme",
+                });
                 if (row.IsHeader)
                 {
                     border.Classes.Add("markdown-table-header");
+                    renderer.ApplyTheme(cellPanel, "MarkdownTableHeaderContentTheme");
                     AutomationRoles.Set(border, AutomationControlType.HeaderItem);
                 }
                 else

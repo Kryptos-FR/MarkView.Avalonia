@@ -97,6 +97,8 @@ Avalonia reports whether the operating system asks for high contrast. It detects
 - draws the placeholder of an image that could not be loaded in `MarkdownHighContrastForeground` on `MarkdownHighContrastBackground`, with a `MarkdownHighContrastBorder` outline;
 - drops the per-kind alert colours (the titles carry the kind) and all opacity dimming.
 
+It does this mostly by swapping values rather than through styles. The theme's `MarkdownHighContrastPalette` resource is a dictionary that gives a high-contrast value for each key that changes (`MarkdownLinkForeground`, `MarkdownCodeBlockBackground`, `MarkdownBlockquoteOpacity`…); a string entry names the `MarkdownHighContrast*` key the value comes from. While high contrast is on, the viewer adds it to its own `Resources.MergedDictionaries`, resolved for its theme variant, so every `DynamicResource` in the document picks up the new values; while it is off, nothing is added, and the mode costs nothing per element. Only the viewer itself and separators keep a `:high-contrast` style; `==marked==` text and alert titles change through their [control themes](theming.md#sizes-spacing-and-control-themes), which only cost on those controls.
+
 | Resource key | Dark | Light |
 |---|---|---|
 | `MarkdownHighContrastBackground` | `#000000` | `#FFFFFF` |
@@ -106,7 +108,7 @@ Avalonia reports whether the operating system asks for high contrast. It detects
 | `MarkdownHighContrastHighlightForeground` | `#000000` | `#FFFFFF` |
 | `MarkdownHighContrastBorder` | `#FFFFFF` | `#000000` |
 
-Every pair is at least 7:1, as Windows' contrast themes are, and `ThemeContrastTests` checks it. The [GitHub preset](theming.md#github) redefines these keys with Primer's high-contrast colours; the [Chat](theming.md#chat) and [Docs](theming.md#docs) presets keep the default theme's. The column used follows the theme variant Avalonia reports along with the contrast setting. On Windows, Avalonia only reports Light for contrast themes whose name contains "White". Override any of these keys in your own resources to match your app's contrast palette.
+Every pair is at least 7:1, as Windows' contrast themes are, and `ThemeContrastTests` checks it. The [GitHub preset](theming.md#github) redefines these keys with Primer's high-contrast colours; the [Chat](theming.md#chat) and [Docs](theming.md#docs) presets keep the default theme's. The column used follows the theme variant Avalonia reports along with the contrast setting. On Windows, Avalonia only reports Light for contrast themes whose name contains "White". Override any of these keys in your own resources to match your app's contrast palette; a preset changes its high-contrast look the same way, without styles of its own.
 
 `HighContrastMode` controls when the palette is used:
 
@@ -122,6 +124,17 @@ Every pair is at least 7:1, as Windows' contrast themes are, and `ThemeContrastT
 <Style Selector="mv|MarkdownViewer:high-contrast TextBlock.my-caption">
   <Setter Property="Opacity" Value="1" />
 </Style>
+```
+
+Every control of a document in high contrast also inherits the `MarkdownViewer.InHighContrast` attached property (`MarkdownViewer.GetInHighContrast(control)`). A control theme can only select on the control itself, so it uses that property rather than the pseudo-class:
+
+```xml
+<ControlTheme x:Key="MyCaptionTheme" TargetType="TextBlock">
+  <Setter Property="Opacity" Value="0.8" />
+  <Style Selector="^[(mv|MarkdownViewer.InHighContrast)=True]">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+</ControlTheme>
 ```
 
 Syntax-highlighted code keeps its token colours in high contrast. The Dark+ and Light+ themes already contrast with black and white backgrounds. Mermaid diagrams keep their regular palette. [Find](find-in-document.md) highlights keep their colours too; the default palette's high-contrast text and links stay above 7:1 on them.

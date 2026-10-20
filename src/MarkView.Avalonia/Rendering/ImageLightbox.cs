@@ -94,8 +94,10 @@ internal sealed class ImageLightbox : Panel
 
     /// <param name="picture">The document's image to show.</param>
     /// <param name="returnFocus">What had focus when the lightbox opened.</param>
-    public ImageLightbox(Image picture, IInputElement? returnFocus)
+    /// <param name="themes">The control themes of the viewer it opens in.</param>
+    public ImageLightbox(Image picture, IInputElement? returnFocus, ThemeLookup? themes = null)
     {
+        themes ??= ThemeLookup.ForApplication();
         _picture = picture;
         _enlargeToFit = ImageZoom.GetEnlargeToFit(picture);
         ReturnFocus = returnFocus;
@@ -114,6 +116,7 @@ internal sealed class ImageLightbox : Panel
 
         Backing = new Border { Background = ImageZoom.GetBackground(picture), IsHitTestVisible = false };
         Backing.Classes.Add("markdown-image-lightbox-backing");
+        Backing.Theme = themes.Get("MarkdownImageLightboxBackingTheme");
 
         CloseButton = CreateButton(new CloseGlyph(), "markdown-image-lightbox-close", () => CloseRequested?.Invoke());
         CloseButton.HorizontalAlignment = HorizontalAlignment.Right;
@@ -131,6 +134,7 @@ internal sealed class ImageLightbox : Panel
 
         ZoomLevel = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center };
         ZoomLevel.Classes.Add("markdown-image-lightbox-zoom-level");
+        ZoomLevel.Theme = themes.Get("MarkdownImageLightboxZoomLevelTheme");
 
         Toolbar = new Border
         {
@@ -143,6 +147,7 @@ internal sealed class ImageLightbox : Panel
             },
         };
         Toolbar.Classes.Add("markdown-image-lightbox-toolbar");
+        Toolbar.Theme = themes.Get("MarkdownImageLightboxToolbarTheme");
 
         // Tab order: the close button, then the toolbar.
         Children.Add(Backing);

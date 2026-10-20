@@ -23,7 +23,7 @@ internal sealed class CustomFenceRenderer : AvaloniaObjectRenderer<FencedCodeBlo
     {
         if (obj.Info is { } language
             && renderer.FenceRenderers.TryGetValue(language, out var factory)
-            && TryCreate(factory, obj, language) is { } border)
+            && TryCreate(renderer, factory, obj, language) is { } border)
         {
             renderer.WriteBlock(border);
             return;
@@ -34,7 +34,7 @@ internal sealed class CustomFenceRenderer : AvaloniaObjectRenderer<FencedCodeBlo
 
     // The factory is application code: a failure renders the block as code instead of losing the
     // rest of the document.
-    private Border? TryCreate(FenceRendererFactory factory, FencedCodeBlock obj, string language)
+    private Border? TryCreate(AvaloniaRenderer renderer, FenceRendererFactory factory, FencedCodeBlock obj, string language)
     {
         var code = CodeBlockToolbar.GetCode(obj);
         var info = string.IsNullOrEmpty(obj.Arguments) ? language : $"{language} {obj.Arguments}";
@@ -47,6 +47,7 @@ internal sealed class CustomFenceRenderer : AvaloniaObjectRenderer<FencedCodeBlo
             var border = new Border { Child = control };
             border.Classes.Add("markdown-custom-fence");
             border.Classes.Add($"markdown-fence-{language.ToLowerInvariant()}");
+            renderer.ApplyTheme(border, "MarkdownCustomFenceTheme");
 
             var fence = new string(obj.FencedChar, obj.OpeningFencedCharCount);
             MarkdownSelection.SetCopyText(border, control.IsSet(MarkdownSelection.CopyTextProperty)

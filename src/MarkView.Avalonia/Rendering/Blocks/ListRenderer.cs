@@ -26,6 +26,7 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
         Grid.SetIsSharedSizeScope(listPanel, true);
         AutomationRoles.Set(listPanel, AutomationControlType.List);
         listPanel.Classes.Add("markdown-list");
+        renderer.ApplyTheme(listPanel, IsNested(obj) ? "MarkdownNestedListTheme" : "MarkdownListTheme");
         if (obj.IsOrdered)
             listPanel.Classes.Add("markdown-list-ordered");
         else
@@ -66,6 +67,7 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
                 var glyph = new TaskCheckGlyph(taskList.Checked);
                 glyph.Classes.Add("markdown-list-marker");
                 glyph.Classes.Add("markdown-task-list");
+                renderer.ApplyTheme(glyph, "MarkdownTaskMarkerTheme");
 
                 // Interactive: the glyph becomes the content of a toggle; the toggle takes the
                 // marker's place (and layout) in the item grid.
@@ -118,6 +120,16 @@ public sealed class ListRenderer : AvaloniaObjectRenderer<ListBlock>
         }
 
         renderer.WriteBlock(listPanel);
+    }
+
+    private static bool IsNested(ListBlock list)
+    {
+        for (var parent = list.Parent; parent is not null; parent = parent.Parent)
+        {
+            if (parent is ListBlock)
+                return true;
+        }
+        return false;
     }
 
     /// <summary>

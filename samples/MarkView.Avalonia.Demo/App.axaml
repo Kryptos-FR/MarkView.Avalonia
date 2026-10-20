@@ -10,11 +10,11 @@
 
     <!-- "Custom Styling" demo page: scoped override of a few markdown-* classes, proving they
          can be restyled per-instance without touching the app's global theme. -->
-    <Style Selector="mv|MarkdownViewer.custom-styled TextBlock.markdown-h1">
+    <Style Selector="mv|MarkdownViewer.custom-styled :is(TextBlock).markdown-h1">
       <Setter Property="Foreground" Value="#a855f7" />
       <Setter Property="FontFamily" Value="Georgia,Times New Roman,serif" />
     </Style>
-    <Style Selector="mv|MarkdownViewer.custom-styled TextBlock.markdown-h2">
+    <Style Selector="mv|MarkdownViewer.custom-styled :is(TextBlock).markdown-h2">
       <Setter Property="Foreground" Value="#a855f7" />
       <Setter Property="FontFamily" Value="Georgia,Times New Roman,serif" />
     </Style>
@@ -28,7 +28,7 @@
 
     <!-- Extensions showcase: targets the {.demo-highlight} generic attribute and the :::warning
          custom container. -->
-    <Style Selector="TextBlock.markdown-paragraph.demo-highlight">
+    <Style Selector=":is(TextBlock).markdown-paragraph.demo-highlight">
       <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
       <Setter Property="FontStyle" Value="Italic" />
     </Style>

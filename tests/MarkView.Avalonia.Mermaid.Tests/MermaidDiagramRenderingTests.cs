@@ -129,6 +129,7 @@ public class MermaidDiagramRenderingTests
         Assert.StartsWith("Mermaid render error: ", texts[0]);
         Assert.Equal("this is not a diagram\nsecond line", texts[1]); // multi-line source joined with '\n'
         Assert.Equal(["markdown-mermaid-fallback"], border.Classes.Where(c => !c.StartsWith(':')).ToArray());
+        Assert.Null(border.Theme); // the diagram's margin and background don't apply to the error text
         Assert.Equal(4, panel.Spacing);
     }
 

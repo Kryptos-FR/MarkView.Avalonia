@@ -16,7 +16,7 @@ public sealed class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInli
         // inline custom container (::text::)
         var span = obj is CustomContainerInline && obj.DelimiterChar == ':'
             ? new Span { Classes = { "markdown-custom-inline" } }
-            : CreateSpan(obj.DelimiterChar, obj.DelimiterCount);
+            : CreateSpan(renderer, obj.DelimiterChar, obj.DelimiterCount);
 
         renderer.Push(span.Inlines);
         renderer.WriteChildren(obj);
@@ -30,7 +30,7 @@ public sealed class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInli
     /// characters renders as. HTML formatting elements render as the same spans (see
     /// <see cref="HtmlElementInlineRenderer"/>), so both syntaxes look and style alike.
     /// </summary>
-    internal static Span CreateSpan(char delimiterChar, int delimiterCount) => delimiterChar switch
+    internal static Span CreateSpan(AvaloniaRenderer renderer, char delimiterChar, int delimiterCount) => delimiterChar switch
     {
         // bold
         '*' or '_' when delimiterCount == 2 => new Bold(),
@@ -58,15 +58,15 @@ public sealed class EmphasisInlineRenderer : AvaloniaObjectRenderer<EmphasisInli
         // underline
         '+' when delimiterCount == 2 => new Underline(),
         // marked
-        '=' when delimiterCount == 2 => new Span
-        {
-            Classes = { "markdown-marked" }
-        },
+        '=' when delimiterCount == 2 => Themed(renderer, new Span { Classes = { "markdown-marked" } }, "MarkdownMarkedTheme"),
         // citation
-        '"' when delimiterCount == 2 => new Span
-        {
-            Classes = { "markdown-citation" }
-        },
+        '"' when delimiterCount == 2 => Themed(renderer, new Span { Classes = { "markdown-citation" } }, "MarkdownCitationTheme"),
         _ => new Span(),
     };
+
+    private static Span Themed(AvaloniaRenderer renderer, Span span, string theme)
+    {
+        renderer.ApplyTheme(span, theme);
+        return span;
+    }
 }

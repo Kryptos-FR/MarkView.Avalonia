@@ -32,6 +32,7 @@ public sealed class FigureRenderer : AvaloniaObjectRenderer<Figure>
                     Renderer = renderer,
                 };
                 captionBlock.Classes.Add("markdown-figure-caption");
+                renderer.ApplyTheme(captionBlock, "MarkdownFigureCaptionTheme");
                 renderer.Push(captionBlock.Inlines!);
                 renderer.WriteLeafInline(caption);
                 renderer.Pop();
@@ -52,6 +53,7 @@ public sealed class FigureRenderer : AvaloniaObjectRenderer<Figure>
             HorizontalAlignment = HorizontalAlignment.Center,
         };
         border.Classes.Add("markdown-figure");
+        renderer.ApplyTheme(border, "MarkdownFigureTheme");
         AutomationRoles.Set(border, AutomationControlType.Group);
         if (firstCaption is not null)
             AutomationProperties.SetLabeledBy(border, firstCaption);

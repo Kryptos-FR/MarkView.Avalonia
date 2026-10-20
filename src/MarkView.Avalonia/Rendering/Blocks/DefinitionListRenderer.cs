@@ -35,6 +35,7 @@ public sealed class DefinitionListRenderer : AvaloniaObjectRenderer<DefinitionLi
                         Renderer = renderer,
                     };
                     termBlock.Classes.Add("markdown-definition-term");
+                    renderer.ApplyTheme(termBlock, "MarkdownDefinitionTermTheme");
                     renderer.Push(termBlock.Inlines!);
                     renderer.WriteLeafInline(term);
                     renderer.Pop();
@@ -47,6 +48,7 @@ public sealed class DefinitionListRenderer : AvaloniaObjectRenderer<DefinitionLi
                 {
                     definition = new StackPanel { Spacing = 8 };
                     definition.Classes.Add("markdown-definition");
+                    renderer.ApplyTheme(definition, "MarkdownDefinitionTheme");
                     listPanel.Children.Add(definition);
                 }
 

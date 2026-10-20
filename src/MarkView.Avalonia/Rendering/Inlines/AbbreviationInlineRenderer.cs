@@ -23,6 +23,7 @@ public sealed class AbbreviationInlineRenderer : AvaloniaObjectRenderer<Abbrevia
 
         var tb = new TextBlock { Text = labelText };
         tb.Classes.Add("markdown-abbr");
+        renderer.ApplyTheme(tb, "MarkdownAbbreviationTheme");
         if (!string.IsNullOrEmpty(tooltipText))
             ToolTip.SetTip(tb, tooltipText);
 

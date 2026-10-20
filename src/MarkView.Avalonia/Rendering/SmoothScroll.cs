@@ -26,6 +26,7 @@ internal sealed class SmoothScroll
     /// The distance, in pixels, from which an animation takes <see cref="MaxDuration"/>; past it, a longer jump
     /// would only scroll faster, too fast to follow.
     /// </summary>
+    // Stryker disable once all : a static initializer runs before any mutant is activated, so its mutants always survive
     public static readonly double LongDistance = Math.Pow(MaxDuration.TotalMilliseconds / 8, 2);
 
     private readonly ScrollViewer _scrollViewer;
@@ -93,6 +94,7 @@ internal sealed class SmoothScroll
         {
             _startTime = time;
             // Rounded to a whole pixel, so the content is laid out at the same pixel positions as at the target.
+            // Stryker disable once Equality : at exactly the long distance, both paths start from the same offset
             if (Math.Abs(target - _from) > LongDistance)
                 _from = Math.Round(target - Math.Sign(target - _from) * LongDistance);
             Duration = DurationFor(Math.Abs(target - _from));
@@ -116,6 +118,7 @@ internal sealed class SmoothScroll
     internal static TimeSpan DurationFor(double distance)
     {
         var duration = TimeSpan.FromMilliseconds(8 * Math.Sqrt(distance));
+        // Stryker disable once Equality : at either bound, both branches return the same duration
         return duration < MinDuration ? MinDuration : duration > MaxDuration ? MaxDuration : duration;
     }
 

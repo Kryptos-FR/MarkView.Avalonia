@@ -27,6 +27,7 @@ public sealed class HeadingRenderer : AvaloniaObjectRenderer<HeadingBlock>
         };
         textBlock.Classes.Add("markdown-heading");
         textBlock.Classes.Add($"markdown-h{obj.Level}");
+        renderer.ApplyTheme(textBlock, $"MarkdownHeading{obj.Level}Theme");
         AutomationProperties.SetHeadingLevel(textBlock, obj.Level);
 
         HeadingFoldToggle? toggle = null;

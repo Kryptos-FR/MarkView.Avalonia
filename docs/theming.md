@@ -52,11 +52,87 @@ Each extension theme is independent — it does not import the core `MarkdownThe
 | `MarkdownAlertCautionBackground` | `[!CAUTION]` background | `#1AEF4444` | `#FEF2F2` |
 | `MarkdownMarkedBackground` | Highlighted text (`==text==`) | `#5C4B00` | `#FFFF00` |
 
-Colours are `#AARRGGBB` when translucent. The theme also defines two `StreamGeometry` resources, the same in both variants: `MarkdownCodeCopyIcon` and `MarkdownCodeCopiedIcon`, the copy button's icons (see [Code block toolbar](#code-block-toolbar)). The default theme sets a few colours directly in its styles rather than through a key: the figure border (`#40808080`) and the table header background (`#20808080`); restyle those selectors to change them. The defaults meet WCAG 2.2 AA contrast; see [Accessibility](accessibility.md#colour-contrast). The `MarkdownHighContrast*` keys, the palette of the high-contrast mode, are listed under [High contrast](accessibility.md#high-contrast).
+Colours are `#AARRGGBB` when translucent. The theme also defines two `StreamGeometry` resources, the same in both variants: `MarkdownCodeCopyIcon` and `MarkdownCodeCopiedIcon`, the copy button's icons (see [Code block toolbar](#code-block-toolbar)). A few colours are the same in both variants and sit outside the `Light` and `Dark` dictionaries: `MarkdownTableHeaderBackground` (`#20808080`), `MarkdownFigureBorder` and `MarkdownThinkingBorder` (`#40808080`), and `MarkdownCodeBlockBorder`, the outline of code blocks and their toolbar (`Transparent`, drawn only in high contrast unless a preset gives it a width). The dimming and outline widths that high contrast changes are keys too: `MarkdownBlockquoteOpacity` and `MarkdownFootnoteOpacity` (0.85), `MarkdownFigureCaptionOpacity` and `MarkdownThinkingHeaderOpacity` (0.75), `MarkdownThinkingContentOpacity` (0.8), `MarkdownHeadingFoldOpacity` (0.7), `MarkdownCodeBlockBorderThickness` and `MarkdownCodeHeaderBorderThickness` (0). The defaults meet WCAG 2.2 AA contrast; see [Accessibility](accessibility.md#colour-contrast). The `MarkdownHighContrast*` keys, the palette of the high-contrast mode, are listed under [High contrast](accessibility.md#high-contrast).
+
+## Sizes, spacing and control themes
+
+The renderers give each control of the document a [control theme](https://docs.avaloniaui.net/docs/basics/user-interface/styling/control-themes) for its role, found by resource key from the viewer: a paragraph gets `MarkdownParagraphTheme`, a code block `MarkdownCodeBlockTheme`, and so on. The themes read their colours from the [colour resources](#colour-resources) and their sizes and spacing from the keys below, so most of the look can be changed by redefining keys, the same way as colours. The `markdown-*` classes stay on the controls for your own styles.
+
+Prefer keys and themes to styles for changes to the whole document. A theme only costs memory on the controls it is set on, while every style costs a little on every control of its selector's type, whether or not the selector's classes match, and a long document has tens of thousands of controls. A style still wins over a theme for the same property, so the style examples on this page work as before.
+
+| Resource key | Default | Used for |
+|---|---|---|
+| `MarkdownCodeFontFamily`, `MarkdownCodeFontSize`, `MarkdownCodeLineHeight` | Cascadia Code, Consolas, Courier New, monospace; 13; `NaN` (the font's own) | Code blocks (the font family also for inline code) |
+| `MarkdownCodeBlockCornerRadius`, `MarkdownCodeBlockPadding`, `MarkdownCodeBlockMargin` | 4; 12,8; 0,4 | A code block without a toolbar |
+| `MarkdownToolbarCodeBlockCornerRadius`, `MarkdownToolbarCodeBlockPadding`, `MarkdownToolbarCodeBlockBorderThickness` | 0,0,4,4; 12,8; 0 | A code block under its [toolbar](#code-block-toolbar), which takes the top corners |
+| `MarkdownCodeHeaderCornerRadius`, `MarkdownCodeHeaderPadding` | 4,4,0,0; 12,2,4,2 | The toolbar |
+| `MarkdownCodeContainerMargin`, `MarkdownCustomFenceMargin` | 0,4 | A code block with its toolbar; a [custom fenced block](configuration.md#custom-fenced-blocks)'s control |
+| `MarkdownMathContentMargin` | 32,0 | Room for a display formula's copy button on both sides |
+| `MarkdownParagraphMargin`, `MarkdownParagraphLineSpacing` | 0,2; 0 | Paragraphs |
+| `MarkdownListParagraphMargin`, `MarkdownTableParagraphMargin`, `MarkdownQuoteParagraphMargin`, `MarkdownAlertParagraphMargin` | 0,2 | Paragraphs in a list item, a table cell, a quote or an alert |
+| `MarkdownTableParagraphLineSpacing`, `MarkdownAlertParagraphLineSpacing` | 0 | Line spacing in a table cell or an alert |
+| `MarkdownListMargin`, `MarkdownNestedListMargin` | 16,4,0,4 | Lists, and lists inside a list item |
+| `MarkdownTableMargin`, `MarkdownTableCellPadding` | 0,4; 8,4 | Tables |
+| `MarkdownTableCellBorderThickness`, `MarkdownTableFirstRowCellBorderThickness`, `MarkdownTableFirstColumnCellBorderThickness`, `MarkdownTableCornerCellBorderThickness` | 0,0,1,1 | Cell borders: each cell draws its right and bottom ones, and those of the first row and column can add the top and left ones |
+| `MarkdownTableHeaderFontWeight` | Bold | The header row |
+| `MarkdownAlertCornerRadius`, `MarkdownAlertPadding`, `MarkdownAlertMargin` | 0,4,4,0; 12,8; 0,4 | Alerts (their bar is `MarkdownAlertBorderThickness`, 4,0,0,0) |
+| `MarkdownAlertHeaderFontWeight`, `MarkdownAlertHeaderFontSize`, `MarkdownAlertHeaderMargin` | SemiBold; 13; 0,0,0,4 | Alert titles |
+| `MarkdownDetailsMargin`, `MarkdownDefinitionMargin` | 0,4; 24,0,0,0 | `<details>` blocks; definitions |
+| `MarkdownCustomContainerCornerRadius`, `MarkdownCustomContainerMargin` | 4; 0,4 | Custom containers |
+
+For what keys don't cover, redefine a whole theme under the same key, with a `TargetType` the control derives from. The new theme replaces the default one, so repeat the setters you want to keep. Avalonia only applies a theme's nested styles when their selector starts from the control itself (`^:nth-child(1)`, `^.markdown-table-header`, `^:expanded`): a selector that names an ancestor first, such as `:is(mv|MarkdownViewer):high-contrast ^`, compiles without an error but matches every control. To change a value in [high contrast](accessibility.md#high-contrast), use the `MarkdownViewer.InHighContrast` attached property, which every control of a document in high contrast inherits: `^[(mv|MarkdownViewer.InHighContrast)=True]`.
+
+```xml
+<!-- h1 in a serif font, with a line under it -->
+<ControlTheme x:Key="MarkdownHeading1Theme" TargetType="mr:MarkdownSelectableTextBlock"
+              xmlns:mr="using:MarkView.Avalonia.Rendering">
+  <Setter Property="FontFamily" Value="Georgia, serif" />
+  <Setter Property="FontSize" Value="30" />
+  <Setter Property="FontWeight" Value="SemiBold" />
+  <Setter Property="Margin" Value="0,16,0,8" />
+  <Setter Property="Padding" Value="0,0,0,6" />
+  <Setter Property="BorderBrush" Value="{DynamicResource MarkdownBlockquoteBorder}" />
+  <Setter Property="BorderThickness" Value="0,0,0,1" />
+</ControlTheme>
+```
+
+| Theme | Control | Role |
+|---|---|---|
+| `MarkdownDocumentTheme` | `Grid` | The whole document (`Grid.markdown-document`); defined only by the Docs preset |
+| `MarkdownHeading1Theme` … `MarkdownHeading6Theme` | `MarkdownSelectableTextBlock` | Headings |
+| `MarkdownParagraphTheme`, `MarkdownListParagraphTheme`, `MarkdownTableParagraphTheme`, `MarkdownQuoteParagraphTheme`, `MarkdownAlertParagraphTheme` | `MarkdownSelectableTextBlock` | Paragraphs; in an alert, otherwise in a table cell, otherwise in a quote, otherwise in a list item |
+| `MarkdownCodeBlockTheme`, `MarkdownToolbarCodeBlockTheme` | `Border` | Code blocks, without and with a toolbar |
+| `MarkdownCodeTheme`, `MarkdownCodeLineNumbersTheme` | `TextBlock` | A code block's text and its line numbers |
+| `MarkdownCodeContainerTheme`, `MarkdownCodeHeaderTheme`, `MarkdownCodeLanguageTheme` | `StackPanel`, `Border`, `TextBlock` | A code block with its toolbar, the toolbar, the language label |
+| `MarkdownCustomFenceTheme`, `MarkdownMathContentTheme` | `Border` | A custom fenced block's control; a display formula next to its copy button |
+| `MarkdownCodeInlineTheme`, `MarkdownParagraphCodeInlineTheme` | `Run` | Inline code in a paragraph, and elsewhere (a heading, for example) |
+| `MarkdownMarkedTheme`, `MarkdownCitationTheme` | `Span` | `==marked==` text; `""citations""` |
+| `MarkdownKbdTheme`, `MarkdownKbdTextTheme` | `Border`, `TextBlock` | `<kbd>` keys |
+| `MarkdownAbbreviationTheme` | `TextBlock` | Abbreviations |
+| `MarkdownBlockquoteTheme` | `Border` | Blockquotes |
+| `MarkdownListTheme`, `MarkdownNestedListTheme`, `MarkdownTaskMarkerTheme` | `StackPanel`, `StackPanel`, `TextBlock` | Lists, nested lists, a task's check box glyph |
+| `MarkdownTableTheme`, `MarkdownTableHeaderContentTheme` | `Grid`, `StackPanel` | Tables; the content of a header cell |
+| `MarkdownTableCellTheme`, `MarkdownTableFirstRowCellTheme`, `MarkdownTableFirstColumnCellTheme`, `MarkdownTableCornerCellTheme` | `Border` | Table cells, by position (header and even rows have the `markdown-table-header` and `markdown-table-row-even` classes) |
+| `MarkdownAlertTheme`, `MarkdownAlert<Kind>Theme` | `Border` | Alerts of another kind, and of each of the five GitHub kinds |
+| `MarkdownAlertHeaderTheme`, `MarkdownAlert<Kind>HeaderTheme` | `TextBlock` | Alert titles; a foldable title has `:expanded` or `:collapsed` |
+| `MarkdownAlertContentTheme` | `StackPanel` | An alert's body; defined only by the Docs preset |
+| `MarkdownDetailsTheme`, `MarkdownDetailsSummaryTheme` | `Border`, `TextBlock` | `<details>` blocks and their summary |
+| `MarkdownThinkingTheme`, `MarkdownThinkingHeaderTheme`, `MarkdownThinkingContentTheme` | `Border`, `TextBlock`, `Border` | Thinking blocks |
+| `MarkdownFigureTheme`, `MarkdownFigureCaptionTheme` | `Border`, `MarkdownSelectableTextBlock` | Figures |
+| `MarkdownDefinitionTermTheme`, `MarkdownDefinitionTheme` | `MarkdownSelectableTextBlock`, `StackPanel` | Definition lists |
+| `MarkdownCustomContainerTheme`, `MarkdownCustomContainerTitleTheme` | `Border`, `MarkdownSelectableTextBlock` | Custom containers |
+| `MarkdownFootnoteGroupTheme`, `MarkdownFootnoteItemTheme` | `StackPanel`, `Grid` | The footnotes, and each of them |
+| `MarkdownFooterTheme` | `StackPanel` | Footers |
+| `MarkdownImageFailedTheme` | `Border` | The placeholder of an image that failed to load |
+| `MarkdownImageLightboxBackingTheme`, `MarkdownImageLightboxToolbarTheme`, `MarkdownImageLightboxZoomLevelTheme` | `Border`, `Border`, `TextBlock` | The image lightbox |
+| `MarkdownYoutubeOverlayTheme`, `MarkdownYoutubePlayTheme` | `Grid`, `TextBlock` | A YouTube thumbnail's overlay and play glyph |
+| `MarkdownMermaidTheme` | `Border` | Mermaid diagrams (`MermaidTheme.axaml`) |
+
+A viewer looks its themes up when it renders, and again when its resources change, so adding or removing a preset or a theme at run time restyles the open document in place.
 
 ## Theme presets
 
-A theme preset is a style file included after `MarkdownTheme.axaml` that gives the whole document another look. It builds on the default theme rather than replacing it: it redefines the [colour resources](#colour-resources) and adds styles only where its look differs, so the default theme (and its `ControlTemplate`) must still be included before it.
+A theme preset is a style file included after `MarkdownTheme.axaml` that gives the whole document another look. It builds on the default theme rather than replacing it: it redefines the [colour resources](#colour-resources) and the [size and spacing keys](#sizes-spacing-and-control-themes), redefines a few control themes (headings, inline code in paragraphs, blockquotes) and adds styles only for the viewer, buttons, rules, links and images, so the default theme (and its `ControlTemplate`) must still be included before it.
 
 ### GitHub
 
@@ -273,7 +349,7 @@ and redefines the default theme's keys as follows:
 | `MarkdownMarkedBackground` | `#5C4B00` | `#FFF3C4` |
 | `MarkdownFindCurrentMatchBackground` | `#652A00` | `#FFD3A3` |
 
-The current find match is a paler orange than the default theme's in the light variant, so inline code, drawn in the link colour, keeps 4.5:1 on it. The other find highlight, the image lightbox and the `MarkdownHighContrast*` palette keep the default theme's colours. In high contrast the preset gives up its own page colours, muted text, soft table headers and striped rows for that palette, the divider above h2 turns solid, and alerts, which have no bar, get a 1px outline.
+The current find match is a paler orange than the default theme's in the light variant, so inline code, drawn in the link colour, keeps 4.5:1 on it. The other find highlight, the image lightbox and the `MarkdownHighContrast*` palette keep the default theme's colours. In high contrast the preset gives up its own page colours, muted text, soft table headers and striped rows for that palette, the divider above h2 turns solid, and alerts, which have no bar, get a 1px outline (`MarkdownAlertBorderThickness`, which `MarkdownHighContrastPalette` takes from `MarkdownHighContrastAlertBorderThickness` in high contrast).
 
 ### Overriding a preset
 
@@ -588,7 +664,7 @@ Read the docs first. {.note}
 ```
 
 ```xml
-<Style Selector="TextBlock.markdown-paragraph.note">
+<Style Selector=":is(TextBlock).markdown-paragraph.note">
   <Setter Property="FontStyle" Value="Italic" />
 </Style>
 ```
@@ -641,8 +717,10 @@ Use this class rather than a `/template/` style on the viewer's `PART_ContentPre
 
 ### Larger headings
 
+Headings are `MarkdownSelectableTextBlock`s, so select them with `:is(TextBlock)` (a type selector only matches the exact type), or redefine `MarkdownHeading1Theme` as shown under [Sizes, spacing and control themes](#sizes-spacing-and-control-themes):
+
 ```xml
-<Style Selector="TextBlock.markdown-h1">
+<Style Selector=":is(TextBlock).markdown-h1">
   <Setter Property="FontSize" Value="36" />
   <Setter Property="FontWeight" Value="Bold" />
   <Setter Property="Margin" Value="0,16,0,8" />
@@ -650,6 +728,8 @@ Use this class rather than a `/template/` style on the viewer's `PART_ContentPre
 ```
 
 ### Custom code block style
+
+Redefine the [keys](#sizes-spacing-and-control-themes) `MarkdownCodeBlockCornerRadius` and `MarkdownCodeBlockPadding`, and the colours `MarkdownCodeBlockBackground` and `MarkdownCodeBlockBorder`, or style the block itself:
 
 ```xml
 <Style Selector="Border.markdown-code-block">
@@ -663,19 +743,22 @@ Use this class rather than a `/template/` style on the viewer's `PART_ContentPre
 
 ### Monospace font override
 
+Code blocks and inline code take their font family from one key:
+
 ```xml
-<Style Selector="Border.markdown-code-block TextBlock">
-  <Setter Property="FontFamily" Value="JetBrains Mono, Cascadia Code, Consolas, Courier New, monospace" />
-</Style>
+<Application.Resources>
+  <FontFamily x:Key="MarkdownCodeFontFamily">JetBrains Mono, Cascadia Code, Consolas, Courier New, monospace</FontFamily>
+</Application.Resources>
 ```
 
 ### Code block toolbar
 
 When a code block shows its [toolbar](configuration.md#code-block-toolbar), the renderer
 writes a `StackPanel.markdown-code-container` holding a `Border.markdown-code-header` and the
-unchanged `Border.markdown-code-block`. The default theme rounds only the outer corners of the
-pair, so if you give `Border.markdown-code-block` your own `CornerRadius` or `Margin`, also
-style `StackPanel.markdown-code-container > Border.markdown-code-block` to keep them joined.
+`Border.markdown-code-block`, which then takes `MarkdownToolbarCodeBlockTheme` rather than
+`MarkdownCodeBlockTheme`. The default theme rounds only the outer corners of the pair: if you
+change the corners, redefine `MarkdownCodeHeaderCornerRadius` and `MarkdownToolbarCodeBlockCornerRadius`
+along with `MarkdownCodeBlockCornerRadius` to keep them joined.
 
 The copy button's icon (a `PathIcon`), tooltip and accessible name come from the theme, so
 they can be replaced or translated:

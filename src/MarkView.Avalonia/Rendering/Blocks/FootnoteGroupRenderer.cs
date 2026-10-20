@@ -24,6 +24,7 @@ public sealed class FootnoteGroupRenderer : AvaloniaObjectRenderer<FootnoteGroup
 
         var group = new StackPanel { Spacing = 4 };
         group.Classes.Add("markdown-footnote-group");
+        renderer.ApplyTheme(group, "MarkdownFootnoteGroupTheme");
 
         foreach (var fn in obj.OfType<Footnote>())
         {
@@ -32,6 +33,7 @@ public sealed class FootnoteGroupRenderer : AvaloniaObjectRenderer<FootnoteGroup
                 ColumnDefinitions = new ColumnDefinitions("Auto,*"),
             };
             row.Classes.Add("markdown-footnote-item");
+            renderer.ApplyTheme(row, "MarkdownFootnoteItemTheme");
 
             var label = new TextBlock
             {

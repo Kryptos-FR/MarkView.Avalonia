@@ -5,11 +5,13 @@ using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Styling;
 using Avalonia.Input;
 using Avalonia.Platform;
 using Avalonia.VisualTree;
 
 using MarkView.Avalonia.Automation;
+using MarkView.Avalonia.Rendering;
 
 namespace MarkView.Avalonia;
 
@@ -28,8 +30,28 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
     public static readonly DirectProperty<MarkdownViewer, bool> IsHighContrastProperty =
         AvaloniaProperty.RegisterDirect<MarkdownViewer, bool>(nameof(IsHighContrast), o => o.IsHighContrast);
 
+    /// <summary>
+    /// Defines the InHighContrast attached property, which is <c>true</c> on the viewer and inherited by every
+    /// element of its document while the viewer is in high contrast (<see cref="IsHighContrast"/>). A control
+    /// theme matches it on its own control, <c>^[(mv|MarkdownViewer.InHighContrast)=True]</c>, where a
+    /// <c>:high-contrast</c> style would cost memory on every control of its type.
+    /// </summary>
+    public static readonly AttachedProperty<bool> InHighContrastProperty =
+        AvaloniaProperty.RegisterAttached<MarkdownViewer, StyledElement, bool>("InHighContrast", inherits: true);
+
+    /// <summary>Gets whether <paramref name="element"/> is in a viewer that is in high contrast.</summary>
+    public static bool GetInHighContrast(StyledElement element) => element.GetValue(InHighContrastProperty);
+
+    private const string HighContrastPaletteKey = "MarkdownHighContrastPalette";
+
     private IPlatformSettings? _platformSettings;
     private bool _platformHighContrast;
+
+    // The theme's MarkdownHighContrastPalette resolved from this viewer, merged into its resources
+    // while it is in high contrast; null otherwise.
+    private ResourceDictionary? _highContrastResources;
+    // Set while the viewer swaps that dictionary, which raises ResourcesChanged on the viewer itself.
+    private bool _updatingHighContrastResources;
 
     // Where Tab goes on from while the viewer itself has the focus: the anchor the viewer last
     // jumped to, as a browser moves its starting point to a fragment's target. Cleared by a click
@@ -48,7 +70,7 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
 
     /// <summary>
     /// Gets whether the viewer currently uses its high-contrast palette, i.e. whether it has the
-    /// <c>:high-contrast</c> pseudo-class that <c>MarkdownTheme.axaml</c> styles against.
+    /// <c>:high-contrast</c> pseudo-class and the theme's <c>MarkdownHighContrastPalette</c> in its resources.
     /// </summary>
     public bool IsHighContrast
     {
@@ -65,6 +87,8 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         base.OnPropertyChanged(change);
         if (change.Property == HighContrastModeProperty)
             UpdateHighContrast();
+        else if (change.Property == ThemeVariantScope.ActualThemeVariantProperty)
+            UpdateHighContrastResources();
         else if (change.Property == IsKeyboardFocusWithinProperty && !change.GetNewValue<bool>())
             _tabStart = null;
         else if (change.Property == IsImageSaveEnabledProperty && _lightbox is { } lightbox)
@@ -89,6 +113,10 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         }
         // Stryker disable once Statement : see above
         UpdateHighContrast();
+        // Rendered while detached, the document may have missed themes defined above the viewer
+        UpdateThemes();
+        // A preset added or removed, or another value for a MarkdownHighContrast* key above the viewer
+        ResourcesChanged += OnResourcesChanged;
     }
 
     /// <inheritdoc />
@@ -99,6 +127,7 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
             _platformSettings.ColorValuesChanged -= OnPlatformColorValuesChanged;
         _platformSettings = null;
         // Stryker restore all
+        ResourcesChanged -= OnResourcesChanged;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -167,5 +196,78 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         };
         IsHighContrast = isHighContrast;
         PseudoClasses.Set(":high-contrast", isHighContrast);
+        if (isHighContrast)
+            SetValue(InHighContrastProperty, true);
+        else
+            ClearValue(InHighContrastProperty);
+        UpdateHighContrastResources();
     }
+
+    private void OnResourcesChanged(object? sender, ResourcesChangedEventArgs e)
+    {
+        UpdateHighContrastResources();
+        UpdateThemes();
+    }
+
+    /// <summary>
+    /// Gives the document's controls the control themes their keys now resolve to, when a preset that
+    /// defines some of its own was added or removed, without rendering the document again.
+    /// </summary>
+    private void UpdateThemes()
+    {
+        if (_themes?.Refresh() is { } changed)
+            ThemeLookup.Replace(this, changed);
+    }
+
+    /// <summary>
+    /// Merges the theme's high-contrast palette into the viewer's resources while it is in high contrast,
+    /// so the styles' DynamicResource bindings pick up the high-contrast values: an entry whose value is a
+    /// string takes the value of the resource it names, found from the viewer for its theme variant (a
+    /// preset's MarkdownHighContrast* colours), and is left out when nothing defines that resource. Off,
+    /// the viewer's resources are left as they are. Rebuilt when the theme variant or the resources
+    /// above the viewer change; a rebuild that resolves to the same values changes nothing.
+    /// </summary>
+    private void UpdateHighContrastResources()
+    {
+        if (_updatingHighContrastResources)
+            return;
+        ResourceDictionary? resolved = null;
+        if (IsHighContrast && this.TryFindResource(HighContrastPaletteKey, ActualThemeVariant, out var found)
+            && found is IResourceDictionary palette)
+        {
+            resolved = [];
+            foreach (var key in palette.Keys)
+            {
+                if (!palette.TryGetResource(key, ActualThemeVariant, out var value))
+                    continue;
+                if (value is string source && !this.TryFindResource(source, ActualThemeVariant, out value))
+                    continue;
+                resolved[key] = value;
+            }
+        }
+
+        if (resolved is null && _highContrastResources is null)
+            return;
+        var merged = Resources.MergedDictionaries;
+        // Stryker disable once Logical : only differs when Resources was replaced, which raises no ResourcesChanged to test it with
+        if (_highContrastResources is { } current && merged.Contains(current) && SameValues(current, resolved))
+            return;
+        _updatingHighContrastResources = true;
+        try
+        {
+            if (_highContrastResources is not null)
+                merged.Remove(_highContrastResources);
+            _highContrastResources = resolved;
+            if (resolved is not null)
+                merged.Add(resolved);
+        }
+        finally
+        {
+            _updatingHighContrastResources = false;
+        }
+    }
+
+    private static bool SameValues(ResourceDictionary current, ResourceDictionary? resolved) =>
+        resolved is not null && current.Count == resolved.Count
+        && resolved.All(entry => current.TryGetValue(entry.Key, out var value) && ReferenceEquals(value, entry.Value));
 }

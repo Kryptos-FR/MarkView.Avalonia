@@ -15,6 +15,7 @@ public sealed class QuoteBlockRenderer : AvaloniaObjectRenderer<QuoteBlock>
         var contentPanel = new StackPanel { Spacing = 8 };
         var border = new Border { Child = contentPanel };
         border.Classes.Add("markdown-blockquote");
+        renderer.ApplyTheme(border, "MarkdownBlockquoteTheme");
         AutomationRoles.Set(border, AutomationControlType.Group);
 
         renderer.Push(contentPanel);

@@ -43,15 +43,18 @@ internal static class CodeBlockToolbar
         var showCopyButton = renderer.ShowCodeBlockCopyButton;
         if (!showLanguage && !showCopyButton)
         {
+            renderer.ApplyTheme(border, "MarkdownCodeBlockTheme");
             renderer.WriteBlock(border);
             return;
         }
+        renderer.ApplyTheme(border, "MarkdownToolbarCodeBlockTheme");
 
         var toolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         if (showLanguage)
         {
             var label = new TextBlock { Text = language, VerticalAlignment = VerticalAlignment.Center };
             label.Classes.Add("markdown-code-language");
+            renderer.ApplyTheme(label, "MarkdownCodeLanguageTheme");
             toolbar.Children.Add(label);
         }
         if (showCopyButton)
@@ -63,9 +66,11 @@ internal static class CodeBlockToolbar
 
         var header = new Border { Child = toolbar };
         header.Classes.Add("markdown-code-header");
+        renderer.ApplyTheme(header, "MarkdownCodeHeaderTheme");
 
         var container = new StackPanel();
         container.Classes.Add("markdown-code-container");
+        renderer.ApplyTheme(container, "MarkdownCodeContainerTheme");
         container.Children.Add(header);
         container.Children.Add(border);
 
@@ -81,6 +86,7 @@ internal static class CodeBlockToolbar
     /// </summary>
     private static void LayOut(AvaloniaRenderer renderer, Border border, TextBlock code, int lineCount)
     {
+        renderer.ApplyTheme(code, "MarkdownCodeTheme");
         var wrap = renderer.WrapCodeBlockLines;
         if (wrap)
             code.TextWrapping = TextWrapping.Wrap;
@@ -92,6 +98,7 @@ internal static class CodeBlockToolbar
             // they are neither highlighted nor copied with the code.
             var numbers = new TextBlock { Text = LineNumbers(lineCount), TextAlignment = TextAlignment.Right };
             numbers.Classes.Add("markdown-code-line-numbers");
+            renderer.ApplyTheme(numbers, "MarkdownCodeLineNumbersTheme");
             // Nor are they read out by screen readers.
             AutomationRoles.Hide(numbers);
             // A wrapped line takes several rows of the code, and the gutter leaves all but its
