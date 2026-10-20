@@ -96,7 +96,7 @@ The opt-in extensions above are Markdig's own pipeline methods, except `UseHardl
 The last six (`UseDefinitionLists()` to `UseGenericAttributes()`) render as follows:
 
 - **Definition lists** render terms as `TextBlock.markdown-definition-term` and each definition as an indented `StackPanel.markdown-definition`.
-- **Custom containers** render as `Border.markdown-custom-container` with the container's name as an extra class, so `:::warning` can be styled with `Border.markdown-custom-container.warning`. Text after the name (`:::warning Read this first`) becomes a `markdown-custom-container-title` header. Inline `::text::` renders as `Span.markdown-custom-inline`.
+- **Custom containers** render as `Border.markdown-custom-container` with the container's name as an extra class, so `:::warning` can be styled with `Border.markdown-custom-container.warning`. Text after the name (`:::warning Read this first`) becomes a `markdown-custom-container-title` header. Inline `::text::` renders as `Span.markdown-custom-inline`. A container can also render as your own control: see [Custom containers as controls](#custom-containers-as-controls).
 - **Footers** render as `StackPanel.markdown-footer`, in smaller, dimmed text by default.
 - **SmartyPants** uses the replacements of the `SmartyPantOptions` passed to `UseSmartyPants()`, decoding HTML entities, so for example French guillemets with non-breaking spaces work:
 
@@ -318,7 +318,7 @@ MarkdownViewerDefaults.Extensions.AddFenceRenderer("chart", (code, info) => new 
 1. `viewer.Pipeline` is used if set; otherwise `MarkdownViewerDefaults.Pipeline`; otherwise the built-in default.
 2. `MarkdownViewerDefaults.Extensions` are registered first, then `viewer.Extensions`.
 3. If the same extension object appears in both lists it is registered only once (reference equality check).
-4. For [fence renderers](#custom-fenced-blocks), the last one registered for a language wins, so a viewer's own overrides a default one.
+4. For [fence renderers](#custom-fenced-blocks) and [container renderers](#custom-containers-as-controls), the last one registered for a language or name wins, so a viewer's own overrides a default one.
 
 ### Image cache
 
@@ -774,3 +774,29 @@ The control is wrapped in a `Border` with the `markdown-custom-fence` and `markd
 classes, and text selection copies it as its fenced source. See
 [Writing custom extensions](custom-extensions.md#rendering-a-fence-language-as-your-own-control)
 for the details, including how to follow theme changes.
+
+## Custom containers as controls
+
+A custom container (`:::name` … `:::`, Markdig's `UseCustomContainers()`) can render as your own
+control, built around the container's markdown:
+
+```csharp
+viewer.UseContainerRenderer("spoiler", (content, title) => new Expander { Header = title, Content = content });
+// for every viewer of the application:
+MarkdownViewerDefaults.Extensions.AddContainerRenderer("spoiler",
+    (content, title) => new Expander { Header = title, Content = content });
+```
+
+The factory receives the container's blocks, already rendered (`content`), and the text after
+the name on the opening line (`title` above, e.g. `What is the answer?` for
+`:::spoiler What is the answer?`), and returns a new control holding `content`, or `null` to
+render the container as usual. Selection, find, links and the keyboard keep working inside it,
+and Tab also reaches your control's own focusable parts (an expander's header). The pipeline
+needs `UseCustomContainers()`, which the default one doesn't have. A factory that throws renders
+its container as usual and logs a warning. `UseContainerRenderer` replaces the viewer's earlier
+container renderer for the same name and re-renders the document.
+
+The control is wrapped in a `Border` with the `markdown-container-control` and
+`markdown-container-<name>` classes. See
+[Writing custom extensions](custom-extensions.md#rendering-a-custom-container-as-your-own-control)
+for the details.

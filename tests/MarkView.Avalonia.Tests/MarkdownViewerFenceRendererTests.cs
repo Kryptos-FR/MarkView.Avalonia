@@ -29,7 +29,7 @@ public class MarkdownViewerFenceRendererTests
 
     private static Control FenceControl(MarkdownViewer viewer)
     {
-        var border = Assert.IsType<Border>(Block(viewer, 1));
+        var border = Assert.IsType<Border>(Block(viewer, 1), exactMatch: false);
         Assert.Contains("markdown-custom-fence", border.Classes);
         return border.Child!;
     }

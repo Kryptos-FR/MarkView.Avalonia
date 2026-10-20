@@ -127,6 +127,17 @@ viewer.UseFenceRenderer("chart", (code, info) => new MyChart(code));   // ```cha
 
 See [Custom fenced blocks](docs/configuration.md#custom-fenced-blocks) for details.
 
+### Custom containers as controls
+
+Render a custom container (`:::spoiler` … `:::`, Markdig's `UseCustomContainers()`) as your own
+control. The factory gets the container's markdown, already rendered, and the text after its name:
+
+```csharp
+viewer.UseContainerRenderer("spoiler", (content, title) => new Expander { Header = title, Content = content });
+```
+
+See [Custom containers as controls](docs/configuration.md#custom-containers-as-controls) for details.
+
 ### Using a custom Markdig pipeline
 
 ```csharp
@@ -411,6 +422,8 @@ Override any style class in your own `Styles` to customise appearance:
 | `markdown-definition` | Definition (indented) | `StackPanel` |
 | `markdown-custom-container` | Custom container (`:::name`, also gets `name` as a class) | `Border` |
 | `markdown-custom-container-title` | Custom container title | `TextBlock` |
+| `markdown-container-control` | Control a container renderer built (`UseContainerRenderer`) | `Border` |
+| `markdown-container-<name>` | The same, by container name in lower case | `Border` |
 | `markdown-custom-inline` | Inline custom container (`::text::`) | `Span` |
 | `markdown-footer` | Footer (`^^`) | `StackPanel` |
 

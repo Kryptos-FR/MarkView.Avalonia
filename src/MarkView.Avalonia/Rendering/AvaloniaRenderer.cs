@@ -268,6 +268,12 @@ public class AvaloniaRenderer : RendererBase
     internal Dictionary<string, FenceRendererFactory> FenceRenderers { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// Factories of the controls that replace custom containers, by name (case-insensitive).
+    /// Filled by <see cref="ContainerRendererExtension"/>.
+    /// </summary>
+    internal Dictionary<string, ContainerRendererFactory> ContainerRenderers { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Raised when a hyperlink is clicked.
     /// </summary>
     public event EventHandler<LinkClickedEventArgs>? LinkClicked;

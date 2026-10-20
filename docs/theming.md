@@ -559,6 +559,8 @@ Requires Markdig's `UseCustomContainers()`.
 |-------|---------|---------|
 | `markdown-custom-container` | `Border` | A `:::name` block; it also gets `name` as a class |
 | `markdown-custom-container-title` | `TextBlock` | Text after the name (`:::name Title`) |
+| `markdown-container-control` | `Border` | Wraps the control a [container renderer](custom-extensions.md#rendering-a-custom-container-as-your-own-control) built for a `:::name` block, instead of `markdown-custom-container` |
+| `markdown-container-<name>` | `Border` | The same `Border`, by container name in lower case (e.g. `markdown-container-spoiler`) |
 | `markdown-custom-inline` | `Span` | An inline `::text::` |
 
 Example: style `:::warning` containers like the warning alert:

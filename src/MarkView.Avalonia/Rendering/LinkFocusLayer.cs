@@ -8,6 +8,7 @@ using Avalonia.Controls.Documents;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 
+using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Rendering.Inlines;
 
 namespace MarkView.Avalonia.Rendering;
@@ -16,7 +17,8 @@ namespace MarkView.Avalonia.Rendering;
 /// A transparent overlay, placed over the markdown <see cref="StackPanel"/> like
 /// <see cref="DocumentSelectionLayer"/>, that hosts one <see cref="LinkFocusTarget"/> per link and
 /// keeps each one over its link's text. It also records the document's keyboard stops in reading
-/// order: those targets, and the focusable controls renderers emitted (e.g. a video embed's button).
+/// order: those targets, the focusable controls renderers emitted (e.g. a video embed's button), and
+/// the focusable parts of the controls an application's factories returned (see <see cref="ComponentHost"/>).
 /// </summary>
 internal sealed class LinkFocusLayer : Panel
 {
@@ -86,6 +88,12 @@ internal sealed class LinkFocusLayer : Panel
         var stops = new List<IInputElement>(_stops.Count);
         foreach (var stop in _stops)
         {
+            if (stop is ComponentHost host)
+            {
+                if (host.IsEffectivelyVisible)
+                    stops.AddRange(host.GetFocusableParts());
+                continue;
+            }
             var visible = stop is LinkFocusTarget target
                 ? target.TextBlock.IsEffectivelyVisible
                 : stop.IsEffectivelyVisible && stop.IsEffectivelyEnabled && ((Visual)stop).IsAttachedToVisualTree();
@@ -105,6 +113,13 @@ internal sealed class LinkFocusLayer : Panel
             case MarkdownSelectableTextBlock { Inlines: { } inlines } textBlock:
                 var offset = 0;
                 CollectInlines(textBlock, inlines, ref offset);
+                break;
+            // The application's control: its parts are looked up at each Tab press (see GetActiveStops),
+            // then come the stops of the markdown it holds.
+            case ComponentHost host:
+                _stops.Add(host);
+                if (host.ContentPanel is { } content)
+                    Collect(content);
                 break;
             case InputElement input when input.Focusable && input.IsTabStop:
                 _stops.Add(input);

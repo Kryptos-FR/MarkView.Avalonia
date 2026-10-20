@@ -797,6 +797,10 @@ public partial class MarkdownViewer : ContentControl
                 case Control blockControl when MarkdownSelection.GetCopyText(blockControl) is { } copyText:
                     Register(layer, IndexEntry.ForBlockControl(blockControl, copyText), ref marker);
                     break;
+                // The markdown inside an application's control (a container renderer's).
+                case ComponentHost { ContentPanel: { } content }:
+                    RegisterBlocks(layer, content, ref marker);
+                    break;
                 case MarkdownSelectableTextBlock tb:
                     var text = MarkdownSelectableTextBlock.ExtractPlainText(tb.Inlines!, out var embeddedText);
                     Register(layer, new IndexEntry(tb, text, "\n", embeddedText), ref marker);
