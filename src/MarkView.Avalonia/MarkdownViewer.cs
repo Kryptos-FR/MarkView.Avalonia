@@ -1289,14 +1289,14 @@ public partial class MarkdownViewer : ContentControl
         base.OnApplyTemplate(e);
         if (_scrollViewer is not null)
         {
-            _scrollViewer.ScrollChanged -= OnScrollChanged;
+            _scrollViewer.PropertyChanged -= OnScrollViewerPropertyChanged;
             LayoutUpdated -= OnLayoutUpdatedKeepAnchor;
         }
         _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
         _scrollAnchor.Reset();
         if (_scrollViewer is not null)
         {
-            _scrollViewer.ScrollChanged += OnScrollChanged;
+            _scrollViewer.PropertyChanged += OnScrollViewerPropertyChanged;
             LayoutUpdated += OnLayoutUpdatedKeepAnchor;
         }
         // Applying a template replaces every visual child, the open lightbox included.
