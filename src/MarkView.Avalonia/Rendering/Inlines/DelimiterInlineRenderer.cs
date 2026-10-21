@@ -11,7 +11,7 @@ public sealed class DelimiterInlineRenderer : AvaloniaObjectRenderer<DelimiterIn
 {
     protected override void Write(AvaloniaRenderer renderer, DelimiterInline obj)
     {
-        renderer.WriteInline(new Run(obj.ToLiteral()));
+        renderer.WriteText(obj.ToLiteral());
         renderer.WriteChildren(obj);
     }
 }

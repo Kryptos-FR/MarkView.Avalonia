@@ -17,6 +17,6 @@ public sealed class LiteralInlineRenderer : AvaloniaObjectRenderer<LiteralInline
         if (obj.Content.IsEmpty)
             return;
 
-        renderer.WriteInline(new Run(obj.Content.ToString()));
+        renderer.WriteText(obj.Content.AsSpan());
     }
 }
