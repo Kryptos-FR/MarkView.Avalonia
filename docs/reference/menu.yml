@@ -1,0 +1,8 @@
+reference:
+  - {path: readme.md, title: "Reference"}
+  - {path: markdown-viewer.md, title: "MarkdownViewer"}
+  - {path: markdown-syntax.md, title: "Markdown syntax"}
+  - {path: style-classes.md, title: "Style classes and control themes"}
+  - {path: resource-keys.md, title: "Resource keys"}
+  - {path: theme-presets.md, title: "Theme presets"}
+  - {path: versioning.md, title: "Versioning"}
