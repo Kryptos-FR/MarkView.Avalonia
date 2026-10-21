@@ -8,6 +8,10 @@ Creative Commons Attribution-ShareAlike 4.0 International license
 the source code of the libraries, is licensed under the MIT license in
 LICENSE.md at the root of the repository.
 
+The code samples in the documentation are also available under that MIT
+license, so they can be copied into an application without the
+ShareAlike condition.
+
 Attribution-ShareAlike 4.0 International
 
 =======================================================================
