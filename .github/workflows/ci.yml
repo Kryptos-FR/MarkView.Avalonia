@@ -26,8 +26,9 @@ jobs:
   # Decides what the rest of the run does. Pull requests only run what their changes need:
   # - docs-only changes run nothing (Gate still reports);
   # - drafts only build and test on Ubuntu, unless labelled `ci-run-on-draft`;
-  # - mutation testing only covers the packages the pull request touches, and within them only
-  #   the code it changes (Stryker's `--since`), unless labelled `ci-full`;
+  # - mutation testing only runs when labelled `ci-mutation-testing` (drafts included) or
+  #   `ci-full`. With `ci-mutation-testing` it only covers the packages the pull request touches,
+  #   and within them only the code it changes (Stryker's `--since`); `ci-full` runs it in full;
   # - the AOT publish runs on Ubuntu only, unless labelled `ci-full`.
   # Pushes to main run everything, but mutation testing only covers the code changed since the
   # previous main commit (in full when that commit is not an ancestor, e.g. after a force push).
@@ -134,9 +135,11 @@ jobs:
               if [ "$full" = true ]; then aot_os=$all_os; else aot_os='["ubuntu-latest"]'; fi
             fi
 
+            # Mutation testing is the slowest suite, so pull requests only run it on request. The
+            # label asks for it explicitly, so it runs on a draft too.
             mutation_projects='[]'
             since=''
-            if [ "$heavy" = true ]; then
+            if [ "$full" = true ] || has_label ci-mutation-testing; then
               if [ "$full" = true ] || [ "$SHARED" = "true" ]; then
                 mutation_projects=$all_projects
               else
