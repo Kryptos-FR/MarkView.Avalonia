@@ -168,11 +168,34 @@ public class YoutubeTests : RenderTestBase
         try
         {
             window.Show();
+            // A new text layout takes the embed out of the visual tree and puts it back.
+            ((TextBlock)renderer.RootPanel.Children[0]).FontSize = 30;
+            await AsyncTestHelpers.PumpAsync();
+
+            Assert.Single(loader.Requests);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task A_youtube_embed_put_back_after_its_thumbnail_load_was_cancelled_requests_it_again()
+    {
+        var loader = new RecordingLoader();
+        var renderer = RenderWith($"![]({YoutubeShortUrl})", loader);
+        var window = new Window { Content = renderer.RootPanel };
+        try
+        {
+            window.Show();
             window.Content = null;
             window.Content = renderer.RootPanel;
             await AsyncTestHelpers.PumpAsync();
 
-            Assert.Single(loader.Requests);
+            Assert.Equal(2, loader.Requests.Count);
+            Assert.True(loader.Tokens[0].IsCancellationRequested);
+            Assert.False(loader.Tokens[1].IsCancellationRequested);
         }
         finally
         {

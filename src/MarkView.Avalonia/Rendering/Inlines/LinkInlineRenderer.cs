@@ -127,7 +127,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         // Can be saved, under the name its address gives it.
         ImageExport.SetFileName(image, ImageExport.FileNameFromUrl(url));
 
-        // Start loading on first attach; cancel on detach.
+        // Start loading on first attach; cancel on detach, and load again when attached once more.
         // Deferring to AttachedToVisualTree avoids spurious cancellations from
         // Avalonia's layout passes that detach/reattach controls during initialisation.
         CancellationTokenSource? cts = null;
@@ -141,7 +141,11 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             cts = new CancellationTokenSource();
             _ = LoadImageAsync(renderer, image, url, cts.Token, () => ShowFailurePlaceholder(renderer, image, altText));
         };
-        image.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
+        image.DetachedFromLogicalTree += (_, _) =>
+        {
+            cts?.Cancel();
+            cts = null;
+        };
 
         // An image inside a link opens the link instead.
         if (renderer.IsImageZoomEnabled && !IsInsideLink(obj))
@@ -346,8 +350,13 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             _ = LoadImageAsync(renderer, thumbnail, thumbnailUrl, cts.Token);
         };
         // DetachedFromLogicalTree fires on genuine content replacement (e.g. Markdown property
-        // change), unlike DetachedFromVisualTree which also fires during layout passes.
-        thumbnail.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
+        // change), unlike DetachedFromVisualTree which also fires during layout passes. Forgetting
+        // the cancelled load lets the next attach start a new one.
+        thumbnail.DetachedFromLogicalTree += (_, _) =>
+        {
+            cts?.Cancel();
+            cts = null;
+        };
 
         overlayGrid.Children.Add(thumbnail);
         overlayGrid.Children.Add(playOverlay);
