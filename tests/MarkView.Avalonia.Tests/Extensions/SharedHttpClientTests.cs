@@ -67,6 +67,20 @@ public class SharedHttpClientTests
     }
 
     [Fact]
+    public async Task Rejects_a_body_declared_larger_than_the_largest_size_before_reading_it()
+    {
+        // Declares 1,008 bytes, sends 8, then drops the connection: only the declared length can tell.
+        using var server = new LoopbackHttpServer(new Dictionary<string, Action<HttpListenerResponse>>
+        {
+            ["/declared"] = LoopbackHttpServer.Truncated(Body),
+        });
+
+        var error = await Assert.ThrowsAsync<HttpRequestException>(
+            () => SharedHttpClient.DownloadAsync(new Uri(server.Url("/declared")), Token, maxSize: 100));
+        Assert.Contains("larger than 100 bytes", error.Message);
+    }
+
+    [Fact]
     public async Task Rejects_an_error_response()
     {
         using var server = Server();
