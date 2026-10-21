@@ -26,7 +26,7 @@ namespace MarkView.Avalonia.Rendering;
 /// which a theme uses to rule off a heading.
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class MarkdownSelectableTextBlock : TextBlock
+public sealed class MarkdownSelectableTextBlock : TextBlock
 {
     /// <summary>
     /// U+FFFC, written in place of an embedded control so plain-text offsets match
