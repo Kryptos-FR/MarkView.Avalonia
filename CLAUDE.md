@@ -8,7 +8,7 @@ MarkView.Avalonia is a Markdig-powered markdown viewer control for Avalonia UI v
 
 ## Documentation
 
-`docs/` is the source of the documentation site, https://kryptos-fr.github.io/MarkView.Avalonia/. Look there before reading the code to learn what a feature does:
+`docs/` is the source of the documentation site, https://kryptos-fr.github.io/MarkView.Avalonia/, and is licensed under CC BY-SA 4.0 (`docs/LICENSE.txt`; its code samples are also MIT, like the code). Look there before reading the code to learn what a feature does:
 
 | Path | Holds |
 |---|---|
