@@ -3,7 +3,7 @@
 [![NuGet Version](https://img.shields.io/nuget/v/MarkView.Avalonia.Math)](https://www.nuget.org/packages/MarkView.Avalonia.Math)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MarkView.Avalonia.Math)](https://www.nuget.org/packages/MarkView.Avalonia.Math)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12-blue)](https://avaloniaui.net)
-[![CI](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml/badge.svg)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/Kryptos-FR/MarkView.Avalonia/ci.yml?branch=main&label=CI)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md)
 
 LaTeX math for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia), typeset with [CSharpMath](https://github.com/verybadcat/CSharpMath) in .NET: no browser, WebView or JavaScript. Math is opt-in, since `$` is common in ordinary prose.
