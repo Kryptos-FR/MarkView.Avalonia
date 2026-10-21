@@ -1,3 +1,7 @@
+---
+title: "Text Selection"
+---
+
 # Text Selection
 
 `MarkdownViewer` supports document-wide text selection via a transparent `DocumentSelectionLayer` overlay. The layer covers the entire rendered document and uses `TextBlock.TextLayout` hit-testing to map pointer positions to character offsets.

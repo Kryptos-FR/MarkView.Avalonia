@@ -1,9 +1,13 @@
+---
+title: "Extension Packages"
+---
+
 # Extension Packages
 
 ## SyntaxHighlighting
 
 **Package:** `MarkView.Avalonia.SyntaxHighlighting`  
-**[README](../src/MarkView.Avalonia.SyntaxHighlighting/README.md)**
+**[README](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/src/MarkView.Avalonia.SyntaxHighlighting/README.md)**
 
 Replaces the built-in `CodeBlockRenderer` with `TextMateCodeBlockRenderer`, which tokenises each line via TextMate grammars and emits coloured `Run` elements.
 
@@ -41,7 +45,7 @@ Languages not in the grammar registry fall back to monochrome rendering automati
 ## Svg
 
 **Package:** `MarkView.Avalonia.Svg`  
-**[README](../src/MarkView.Avalonia.Svg/README.md)**
+**[README](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/src/MarkView.Avalonia.Svg/README.md)**
 
 Renders SVG images using [Svg.Skia](https://github.com/wieslawsoltes/Svg.Skia), the same vector backend Avalonia uses internally.
 
@@ -69,7 +73,7 @@ Badge services (e.g. `shields.io`) that return SVG without a `.svg` extension ar
 ## Mermaid
 
 **Package:** `MarkView.Avalonia.Mermaid`  
-**[README](../src/MarkView.Avalonia.Mermaid/README.md)**
+**[README](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/src/MarkView.Avalonia.Mermaid/README.md)**
 
 Renders fenced `mermaid` code blocks as SVG diagrams using [Mermaider](https://github.com/nullean/mermaider) — a pure .NET implementation with no browser, WebView, or JavaScript runtime.
 
@@ -135,7 +139,7 @@ If rendering fails, the extension falls back to a plain-text block containing th
 ## Math
 
 **Package:** `MarkView.Avalonia.Math`
-**[README](../src/MarkView.Avalonia.Math/README.md)**
+**[README](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/src/MarkView.Avalonia.Math/README.md)**
 
 Renders `$...$` and `\(...\)` (inline) and `$$...$$` and `\[...\]` (display) LaTeX math via CSharpMath's SkiaSharp renderer.
 
@@ -163,7 +167,7 @@ Since CommonMark reads `\(` and `\[` as escaped punctuation, enabling them chang
 render, but only in a viewer with math enabled: an opening glued to a letter or digit (`arr\[i\]`),
 left unclosed, or around nothing (`\(\)`) is still an escape. As the formula's lines are first read
 as a paragraph, a blank line or a line that starts a list item or heading inside it leaves it
-unclosed. See the [package README](../src/MarkView.Avalonia.Math/README.md#latex-bracket-delimiters)
+unclosed. See the [package README](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/src/MarkView.Avalonia.Math/README.md#latex-bracket-delimiters)
 for details.
 
 ### Copy button

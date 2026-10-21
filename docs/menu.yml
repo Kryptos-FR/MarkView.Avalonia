@@ -1,0 +1,20 @@
+home:
+  - {path: readme.md, title: "<i class='bi bi-house-door' aria-hidden='true'></i> Home", self: true}
+  - {path: getting-started.md, title: "<i class='bi bi-book' aria-hidden='true'></i> Docs"}
+  - {path: api/readme.md, title: "<i class='bi bi-braces' aria-hidden='true'></i> API", folder: true}
+
+home2:
+  - {url: "https://kryptos-fr.github.io/MarkView.Avalonia/demo/", title: '<i class="bi bi-play-circle"></i> Demo', link_class: btn btn-outline-secondary}
+  - {url: "https://github.com/Kryptos-FR/MarkView.Avalonia/", title: '<i class="bi bi-github"></i> GitHub', link_class: btn btn-info}
+
+doc:
+  - {path: getting-started.md, title: "Getting started"}
+  - {path: configuration.md, title: "Configuration"}
+  - {path: extensions.md, title: "Extension packages"}
+  - {path: streaming.md, title: "Streaming"}
+  - {path: theming.md, title: "Theming"}
+  - {path: text-selection.md, title: "Text selection"}
+  - {path: find-in-document.md, title: "Find in document"}
+  - {path: accessibility.md, title: "Accessibility"}
+  - {path: right-to-left.md, title: "Right-to-left text"}
+  - {path: custom-extensions.md, title: "Custom extensions"}

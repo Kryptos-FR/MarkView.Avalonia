@@ -1,3 +1,7 @@
+---
+title: "Streaming"
+---
+
 # Streaming
 
 `MarkdownViewer` can render markdown as it arrives, for text that grows at its end such as the

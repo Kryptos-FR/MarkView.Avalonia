@@ -1,3 +1,7 @@
+---
+title: "Configuration"
+---
+
 # Configuration
 
 ## MarkdownViewer properties
@@ -641,7 +645,7 @@ large as fits. Images are never enlarged past their natural size to fit, so a sm
 its own size rather than being blown up. Clicking anywhere but on the zoom toolbar, the close button in
 the top right corner or pressing Escape closes it.
 
-[Mermaid diagrams](../src/MarkView.Avalonia.Mermaid/README.md) open the same way. They are drawn as
+[Mermaid diagrams](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/src/MarkView.Avalonia.Mermaid/README.md) open the same way. They are drawn as
 vectors, so the lightbox enlarges a small diagram to fit, up to twice its natural size.
 
 In the lightbox, the picture can be zoomed and panned:

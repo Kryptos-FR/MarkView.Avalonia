@@ -1,3 +1,7 @@
+---
+title: "Find in Document"
+---
+
 # Find in Document
 
 `MarkdownViewer` can search its rendered document for a piece of text, highlight every match, and
@@ -52,7 +56,7 @@ viewer.PropertyChanged += (_, e) =>
 };
 ```
 
-The [demo application](../samples/MarkView.Avalonia.Demo) has such a find bar: `Ctrl+F` focuses it,
+The [demo application](https://github.com/Kryptos-FR/MarkView.Avalonia/tree/main/samples/MarkView.Avalonia.Demo) has such a find bar: `Ctrl+F` focuses it,
 `Enter` and `Shift+Enter` go to the next and previous match, and `Esc` clears the search.
 
 ## Options
