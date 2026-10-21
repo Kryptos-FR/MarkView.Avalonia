@@ -80,7 +80,7 @@ public class MathFormulaRendererTests
     // whose data holds backslashes back to their test. On the UI thread, like every other render, since
     // CSharpMath is not known to be thread-safe.
     [AvaloniaFact]
-    public void Draw_draws_the_pixels_of_CSharpMaths_own_png()
+    public void Draw_draws_what_CSharpMaths_own_png_shows()
     {
         string[] formulas =
         [
@@ -103,8 +103,20 @@ public class MathFormulaRendererTests
             Assert.Equal((png.Width, png.Height), (drawn.Width, drawn.Height));
             Assert.Equal(SKColorType.Bgra8888, drawn.ColorType);
             Assert.Equal(SKAlphaType.Premul, drawn.AlphaType);
-            Assert.True(png.GetPixelSpan().SequenceEqual(drawn.GetPixelSpan()), $"Pixels differ for {latex}");
+            var delta = MaxDelta(png.GetPixelSpan(), drawn.GetPixelSpan());
+            Assert.True(delta <= 8, $"Pixels differ by up to {delta} for {latex}");
         }
+    }
+
+    // The PNG round trip unpremultiplies and premultiplies again, which on ARM (macOS CI) moves the
+    // edge pixels of a glyph by a few levels out of 255; a missing or miscoloured formula is off by far more.
+    private static int MaxDelta(ReadOnlySpan<byte> expected, ReadOnlySpan<byte> actual)
+    {
+        Assert.Equal(expected.Length, actual.Length);
+        var max = 0;
+        for (var i = 0; i < expected.Length; i++)
+            max = System.Math.Max(max, System.Math.Abs(expected[i] - actual[i]));
+        return max;
     }
 
     [AvaloniaFact]
