@@ -8,14 +8,16 @@ using TextMateSharp.Grammars;
 namespace MarkView.Avalonia.SyntaxHighlighting;
 
 /// <summary>
-/// Keeps the tokens of the lines a highlighter has seen recently, by grammar and line text, so that a code
-/// block rendered again (on each update of a streamed document, the whole open block is) only tokenises the
-/// lines it has not seen.
+/// Keeps the tokens of the lines a highlighter has seen recently, and the state each line ended in, by grammar,
+/// the state the line started from and line text, so that a code block rendered again (on each update of a
+/// streamed document, the whole open block is) only tokenises the lines it has not seen.
 /// </summary>
 /// <remarks>
-/// The line text is the whole key because each line is tokenised on its own, without the state the previous
-/// line ended in. The cache holds at most <see cref="Budget"/> characters of lines; when a line does not fit,
-/// it starts again empty. A line longer than <see cref="MaxLineLength"/> is not kept.
+/// TextMate states compare by value, so a line is found wherever it starts from the same state as before:
+/// a block seen before is found line after line, up to its first changed line, and the lines after a
+/// change are found again once the state they start from is back to one seen before. The cache holds at most
+/// <see cref="Budget"/> characters of lines; when a line does not fit, it starts again empty. A line longer
+/// than <see cref="MaxLineLength"/> is not kept.
 /// </remarks>
 internal sealed class LineTokenCache<T>
     where T : class
@@ -26,20 +28,30 @@ internal sealed class LineTokenCache<T>
     /// <summary>The length of the longest line the cache keeps.</summary>
     public const int MaxLineLength = 1024;
 
-    private readonly Dictionary<IGrammar, Dictionary<string, T>> _lines = [];
+    private readonly Dictionary<(IGrammar Grammar, IStateStack? Start), Dictionary<string, (T Tokens, IStateStack End)>> _lines = [];
 
     /// <summary>The number of characters of the lines the cache holds.</summary>
     public int Length { get; private set; }
 
-    public bool TryGet(IGrammar grammar, ReadOnlySpan<char> line, [MaybeNullWhen(false)] out T tokens)
+    public bool TryGet(
+        IGrammar grammar,
+        IStateStack? start,
+        ReadOnlySpan<char> line,
+        [MaybeNullWhen(false)] out T tokens,
+        [MaybeNullWhen(false)] out IStateStack end)
     {
-        if (_lines.TryGetValue(grammar, out var lines))
-            return lines.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(line, out tokens);
+        if (_lines.TryGetValue((grammar, start), out var lines)
+            && lines.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(line, out var found))
+        {
+            (tokens, end) = found;
+            return true;
+        }
         tokens = null;
+        end = null;
         return false;
     }
 
-    public void Add(IGrammar grammar, ReadOnlySpan<char> line, T tokens)
+    public void Add(IGrammar grammar, IStateStack? start, ReadOnlySpan<char> line, T tokens, IStateStack end)
     {
         if (line.Length > MaxLineLength)
             return;
@@ -49,9 +61,9 @@ internal sealed class LineTokenCache<T>
             Length = 0;
         }
 
-        if (!_lines.TryGetValue(grammar, out var lines))
-            _lines[grammar] = lines = new Dictionary<string, T>(StringComparer.Ordinal);
-        if (lines.GetAlternateLookup<ReadOnlySpan<char>>().TryAdd(line, tokens))
+        if (!_lines.TryGetValue((grammar, start), out var lines))
+            _lines[(grammar, start)] = lines = new Dictionary<string, (T, IStateStack)>(StringComparer.Ordinal);
+        if (lines.GetAlternateLookup<ReadOnlySpan<char>>().TryAdd(line, (tokens, end)))
             Length += line.Length;
     }
 }

@@ -33,10 +33,23 @@ internal sealed class DualThemeTextMateHighlighter : IDualThemeCodeHighlighter
     public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language)
         => HighlightVariant(line, language, Application.Current?.ActualThemeVariant == ThemeVariant.Dark);
 
+    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language, ref object? state)
+        => HighlightVariant(line, language, Application.Current?.ActualThemeVariant == ThemeVariant.Dark, ref state);
+
     public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark)
         => isDark ? _dark.Highlight(line, language) : _light.Highlight(line, language);
 
+    // Both themes share the grammars, so a state one of them returned carries over to the other.
+    public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark, ref object? state)
+        => isDark ? _dark.Highlight(line, language, ref state) : _light.Highlight(line, language, ref state);
+
     public IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language)
+    {
+        object? state = null;
+        return HighlightBoth(line, language, ref state);
+    }
+
+    public IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language, ref object? state)
     {
         if (string.IsNullOrEmpty(language))
             return null;
@@ -45,14 +58,18 @@ internal sealed class DualThemeTextMateHighlighter : IDualThemeCodeHighlighter
         if (grammar == null)
             return null;
 
-        if (_cache.TryGet(grammar, line.Span, out var cached))
+        var start = state as IStateStack;
+        if (_cache.TryGet(grammar, start, line.Span, out var cached, out var end))
+        {
+            state = end;
             return cached;
+        }
 
         var tokens = new List<(string Text, IBrush? Dark, IBrush? Light)>();
-        foreach (var (text, scopes) in TextMateHighlighter.Tokenize(grammar, line))
-            tokens.Add((text, _dark.GetBrush(scopes), _light.GetBrush(scopes)));
+        end = TextMateHighlighter.Tokenize(grammar, line, start, (text, scopes) => tokens.Add((text, _dark.GetBrush(scopes), _light.GetBrush(scopes))));
         var result = tokens.ToArray();
-        _cache.Add(grammar, line.Span, result);
+        _cache.Add(grammar, start, line.Span, result, end);
+        state = end;
         return result;
     }
 }

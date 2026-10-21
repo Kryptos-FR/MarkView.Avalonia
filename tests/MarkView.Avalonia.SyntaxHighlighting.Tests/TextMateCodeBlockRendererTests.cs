@@ -219,6 +219,29 @@ public class TextMateCodeBlockRendererTests
     }
 
     [AvaloniaFact]
+    public void A_block_comment_over_several_lines_is_coloured_as_a_comment_throughout()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Dark);
+        var (_, text) = SingleCodeBlock(Render("""
+        ```csharp
+        /* opens
+        int inside;
+        closes */
+        int after;
+        ```
+        """));
+
+        var runs = text.Inlines!.OfType<Run>().ToList();
+        Color ColourOf(string part) =>
+            ((ISolidColorBrush)runs.First(r => r.Text!.Contains(part, StringComparison.Ordinal)).Foreground!).Color;
+        var comment = ColourOf("opens");
+        Assert.Equal(comment, ColourOf("inside"));
+        Assert.Equal(comment, ColourOf("closes"));
+        var after = runs.Last(r => r.Text!.Contains("int", StringComparison.Ordinal));
+        Assert.NotEqual(comment, ((ISolidColorBrush)after.Foreground!).Color);
+    }
+
+    [AvaloniaFact]
     public void Tokens_without_colour_leave_run_foreground_unset()
     {
         var pipeline = new MarkdownPipelineBuilder().Build();

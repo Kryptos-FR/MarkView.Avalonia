@@ -126,11 +126,13 @@ internal static class HighlightedCode
             }
         });
 
+        // Each line goes on from the state the one before ended in (inside a block comment, a string...).
+        object? lineState = null;
         for (int i = 0; i < lines.Count; i++)
         {
             if (i > 0) runs.AddLineEnd();
 
-            var tokens = highlighter.HighlightBoth(lines[i], language);
+            var tokens = highlighter.HighlightBoth(lines[i], language, ref lineState);
             if (tokens == null)
             {
                 runs.Add(lines[i].Span, null, null);
@@ -189,14 +191,15 @@ internal static class HighlightedCode
             if (foreground != null)
                 run.Foreground = foreground;
         });
+        object? lineState = null;
         for (int i = 0; i < lines.Count; i++)
         {
             if (i > 0) runs.AddLineEnd();
 
             var line = lines[i];
             var tokens = highlighter is IThemeAwareCodeHighlighter th
-                ? th.HighlightVariant(line, language, isDark)
-                : highlighter?.Highlight(line, language);
+                ? th.HighlightVariant(line, language, isDark, ref lineState)
+                : highlighter?.Highlight(line, language, ref lineState);
 
             if (tokens != null)
             {
