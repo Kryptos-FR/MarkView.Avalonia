@@ -177,6 +177,10 @@ switch as the code block copy button, `ShowCodeBlockCopyButton`. See
 Formulas re-render automatically on light/dark theme switch, matching Mermaid's exact two-hex
 convention (dark `#FAFAFA`, light `#27272A` text).
 
+The bitmaps of recently rendered formulas are kept (up to 16 MB of pixels, shared by every viewer),
+so a formula shown again (the document re-rendered, a streamed paragraph updated, the theme
+switched back) is not typeset again.
+
 ### Fallback
 
 Invalid LaTeX renders CSharpMath's own inline error text. Unexpected exceptions fall back to a

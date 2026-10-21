@@ -3,8 +3,10 @@
 
 using Avalonia;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Styling;
 
+using CSharpMath.Rendering.FrontEnd;
 using CSharpMath.SkiaSharp;
 
 using SkiaSharp;
@@ -20,10 +22,19 @@ internal static class MathFormulaRenderer
     private const int MaxLatexLength = 10_000;
     private const int MaxBraceNestingDepth = 50;
 
+    /// <summary>
+    /// Returns the bitmap of <paramref name="latex"/> in <paramref name="textColor"/>, from
+    /// <see cref="FormulaCache.Shared"/> when it was rendered recently.
+    /// </summary>
     public static Bitmap Render(string latex, SKColor textColor, float fontSize = 16f)
     {
         EnsureSafeToRender(latex);
+        return FormulaCache.Shared.GetOrAdd(latex, textColor, fontSize, () => Bake(latex, textColor, fontSize));
+    }
 
+    /// <summary>Typesets <paramref name="latex"/> and draws it into a new bitmap.</summary>
+    internal static Bitmap Bake(string latex, SKColor textColor, float fontSize)
+    {
         var painter = new MathPainter
         {
             LaTeX = latex,
@@ -32,12 +43,18 @@ internal static class MathFormulaRenderer
             DisplayErrorInline = true, // bad LaTeX renders its own error text instead of throwing
         };
 
-        // NOTE: DrawAsStream() has never returned null in empirical testing (even for "" or
-        // whitespace-only input) — this is defensive against a future CSharpMath behavior change,
-        // not a currently-reachable path.
-        using var stream = painter.DrawAsStream()
-            ?? throw new InvalidOperationException("CSharpMath failed to render the formula to a stream.");
-        return new Bitmap(stream);
+        // Sized as CSharpMath's own DrawAsStream() sizes its surface, but drawn straight into pixels
+        // Avalonia copies, without encoding and decoding a PNG.
+        var size = painter.Measure().Size;
+        var info = new SKImageInfo(System.Math.Max((int)size.Width, 1), System.Math.Max((int)size.Height, 1), SKColorType.Bgra8888, SKAlphaType.Premul);
+        using var pixels = new SKBitmap(info);
+        using (var canvas = new SKCanvas(pixels))
+        {
+            canvas.Clear(SKColors.Transparent);
+            painter.Draw(canvas, TextAlignment.TopLeft);
+        }
+        return new Bitmap(PixelFormat.Bgra8888, AlphaFormat.Premul, pixels.GetPixels(),
+            new PixelSize(info.Width, info.Height), new Vector(96, 96), pixels.RowBytes);
     }
 
     /// <summary>
