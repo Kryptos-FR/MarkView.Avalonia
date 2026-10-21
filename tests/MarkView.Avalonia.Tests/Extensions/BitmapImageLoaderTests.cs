@@ -108,9 +108,30 @@ public class BitmapImageLoaderTests
     [InlineData("data:image/png;base64,AQIDBA==", new byte[] { 1, 2, 3, 4 })]
     [InlineData("data:image/png;base64,AQIDBAU=", new byte[] { 1, 2, 3, 4, 5 })]
     [InlineData("data:image/png;base64,AQ ID", new byte[] { 1, 2, 3 })]
+    [InlineData("data:image/png;base64,AQID    ", new byte[] { 1, 2, 3 })]
     [InlineData("data:image/png;base64,", new byte[0])]
     public void DecodeDataUri_decodes_padded_and_spaced_base64(string uri, byte[] expected) =>
         Assert.Equal(expected, DataUri.Decode(uri));
+
+    [Theory]
+    [InlineData(300_000)]
+    [InlineData(300_001)]
+    [InlineData(300_002)]
+    public void DecodeDataUri_decodes_base64_without_copying_the_payload(int length)
+    {
+        var expected = new byte[length];
+        new Random(length).NextBytes(expected);
+        var uri = "data:image/png;base64," + Convert.ToBase64String(expected);
+        DataUri.Decode("data:image/png;base64,AQID");
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        var bytes = DataUri.Decode(uri);
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.Equal(expected, bytes);
+        // Only the decoded bytes: a copy of the payload alone would take two bytes per character.
+        Assert.InRange(allocated, length, length + 1024);
+    }
 
     [Theory]
     [InlineData("data:image/png;base64,AQI*")]

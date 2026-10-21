@@ -36,6 +36,7 @@ internal sealed class BitmapImageLoader : IImageLoader
         // Every image is decoded on the thread pool: a large one would otherwise stall the layout pass
         // that attaches it (data: and avares: images load synchronously up to here). Bitmap is not an
         // AvaloniaObject, so it can be created on any thread.
+        // Stryker disable Boolean : ConfigureAwait(true) only resumes on the caller's thread, which changes no result a test can see
         try
         {
             if (url.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
@@ -65,6 +66,7 @@ internal sealed class BitmapImageLoader : IImageLoader
             buffer.Position = 0;
             return await Task.Run(() => new Bitmap(buffer), cancellationToken).ConfigureAwait(false);
         }
+        // Stryker restore Boolean
         catch (OperationCanceledException) { throw; }
         // Stryker disable once Block : removing the body leaves an empty catch, and Stryker substitutes the default return value (null) for the missing return, which is exactly what the body returns
         catch (Exception e) when (e is HttpRequestException or IOException) { return null; }
