@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The sources of an older commit, measured with the same adapter as MarkView.Benchmarks, to show what changed
+    since. Check the commit out in a worktree and point MarkViewBaselineRoot at it:
+
+      git worktree add ../markview-baseline <commit>
+      dotnet build benchmarks/MarkViewBaseline.Benchmarks -c Release -p:MarkViewBaselineRoot=$PWD/../markview-baseline
+
+    Only the configurations 12.3 already had are compiled (MARKVIEW_12_3), plus the streaming session.
+  -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);MARKVIEW_12_3;MARKVIEW_STREAMING</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\MarkView.Benchmarks\MarkViewAdapter.cs" Link="MarkViewAdapter.cs" />
+    <Compile Include="..\MarkView.Benchmarks\Program.cs" Link="Program.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(MarkViewBaselineRoot)\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
+    <ProjectReference Include="$(MarkViewBaselineRoot)\src\MarkView.Avalonia.Math\MarkView.Avalonia.Math.csproj" />
+    <ProjectReference Include="$(MarkViewBaselineRoot)\src\MarkView.Avalonia.Mermaid\MarkView.Avalonia.Mermaid.csproj" />
+    <ProjectReference Include="$(MarkViewBaselineRoot)\src\MarkView.Avalonia.Svg\MarkView.Avalonia.Svg.csproj" />
+    <ProjectReference Include="$(MarkViewBaselineRoot)\src\MarkView.Avalonia.SyntaxHighlighting\MarkView.Avalonia.SyntaxHighlighting.csproj" />
+  </ItemGroup>
+</Project>

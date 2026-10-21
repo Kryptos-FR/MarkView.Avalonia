@@ -120,7 +120,13 @@ public static class Probe
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
             GC.WaitForPendingFinalizers();
         }
-        return GC.GetTotalMemory(forceFullCollection: true);
+        // The live heap: each generation's size less its fragmentation. GC.GetTotalMemory's difference can be off by
+        // megabytes on .NET 10 (regions), even negative.
+        var info = GC.GetGCMemoryInfo(GCKind.Any);
+        long total = 0;
+        foreach (var generation in info.GenerationInfo)
+            total += generation.SizeAfterBytes - generation.FragmentationAfterBytes;
+        return total;
     }
 
     private static string F(double value) => value.ToString("0.0", CultureInfo.InvariantCulture);

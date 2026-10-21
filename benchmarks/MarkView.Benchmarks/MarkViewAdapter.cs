@@ -20,6 +20,8 @@ namespace MarkView.Benchmarks;
 /// (MarkView123.Benchmarks, <c>MARKVIEW_12_3</c>). The configurations both runners share have the same name and
 /// mean the same thing for a user: "Default" is the viewer with no pipeline set, which was
 /// <c>UseSupportedExtensions()</c> in 12.3.0 and is <c>UseGitHubExtensions()</c> since.
+/// MarkViewBaseline.Benchmarks compiles it a third time, against the sources of an older commit, with the 12.3
+/// configurations and the streaming session (<c>MARKVIEW_STREAMING</c>).
 /// </summary>
 public sealed class MarkViewAdapter : IViewerAdapter
 {
@@ -136,7 +138,7 @@ public sealed class MarkViewAdapter : IViewerAdapter
 
     public void SetMarkdown(Control viewer, string markdown) => ((MarkdownViewer)viewer).Markdown = markdown;
 
-#if !MARKVIEW_12_3
+#if !MARKVIEW_12_3 || MARKVIEW_STREAMING
     public IStreamWriter BeginStreaming(Control viewer) => new SessionWriter((MarkdownViewer)viewer);
 
     /// <summary>

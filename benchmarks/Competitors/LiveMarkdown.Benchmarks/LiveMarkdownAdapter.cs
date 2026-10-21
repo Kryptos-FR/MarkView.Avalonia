@@ -66,6 +66,20 @@ public sealed class LiveMarkdownAdapter : IViewerAdapter
         return renderer.RenderedTextProjection is { } projection && projection.SourceVersion == renderer.MarkdownBuilder!.Version;
     }
 
+    /// <summary>Streaming through the builder the renderer watches, as the README does it.</summary>
+    public IStreamWriter BeginStreaming(Control viewer) => new BuilderWriter(Renderer(viewer));
+
+    private sealed class BuilderWriter(MarkdownRenderer renderer) : IStreamWriter
+    {
+        public void Append(string chunk) => renderer.MarkdownBuilder!.Append(chunk);
+
+        public bool IsSettled => renderer.RenderedTextProjection is { } projection && projection.SourceVersion == renderer.MarkdownBuilder!.Version;
+
+        public void Complete()
+        {
+        }
+    }
+
     private static MarkdownRenderer Renderer(Control viewer) => (MarkdownRenderer)((ScrollViewer)viewer).Content!;
 
     public static int PrintDefaultPipeline()

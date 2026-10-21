@@ -107,7 +107,8 @@ public static class Scenarios
                     if (Environment.GetEnvironmentVariable("BENCH_FIND") is { Length: > 0 } find)
                         viewer.GetType().GetMethod("Find")!.Invoke(viewer, [find, Type.Missing]);
                     BenchHost.Settle();
-                    var scrollViewer = viewer.GetVisualDescendants().OfType<ScrollViewer>().First();
+                    // The viewer itself when an adapter hosts the library in a ScrollViewer, else the first one inside.
+                    var scrollViewer = viewer as ScrollViewer ?? viewer.GetVisualDescendants().OfType<ScrollViewer>().First();
                     var pages = 0;
                     var sample = Measure(() =>
                     {
