@@ -92,6 +92,17 @@ var highlighter = new TextMateHighlighter(ThemeName.DarkPlus);
 var tokens = highlighter.Highlight("var x = 1;", "csharp");
 ```
 
+`Highlight(line, language)` reads the line on its own, as the first line of a block. To highlight the lines of a block, pass on the state each line ends in, so that a comment or a string that spans lines is coloured on all of them:
+
+```csharp
+object? state = null;
+foreach (var line in code.Split('\n'))
+{
+    var tokens = highlighter.Highlight(line.AsMemory(), "csharp", ref state);
+    // ...
+}
+```
+
 ## Implementing a Custom Highlighter
 
 Any `ICodeHighlighter` from the core package can be used instead:

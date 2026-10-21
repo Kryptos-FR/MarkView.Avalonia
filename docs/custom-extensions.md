@@ -334,6 +334,8 @@ public class MyHighlighter : ICodeHighlighter
 
 `IDualThemeCodeHighlighter` goes further: `HighlightBoth(line, language)` tokenises a line once and returns each token's colour for both variants, so a theme switch only recolours the existing text instead of highlighting it again and rebuilding it.
 
+Each of these methods also has an overload with a `ref object? state` parameter. A code block calls it for its lines in turn, from a `null` state for the first line, each time passing on the state the previous call set, so a highlighter can carry a construct that spans lines (a block comment, a multi-line string) on to the next line. By default the overload ignores the state and calls the one without it.
+
 Register on the renderer:
 
 ```csharp

@@ -132,6 +132,56 @@ public class HighlightedCodeTests
             throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
     }
 
+    // Each line is one token naming the line before it ("start" for the first line), as the state the line
+    // starts from; only the overloads that carry the state on are expected.
+    private sealed class StatefulDualHighlighter : IDualThemeCodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language, ref object? state)
+        {
+            var token = (string?)state ?? "start";
+            state = line.ToString();
+            return [(token, DarkKeyword, LightKeyword)];
+        }
+
+        public IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("Each line is highlighted from the state the line before ended in.");
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+    }
+
+    private sealed class StatefulThemeAwareHighlighter : IThemeAwareCodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark, ref object? state)
+        {
+            var token = (string?)state ?? "start";
+            state = line.ToString();
+            return [(token, isDark ? DarkKeyword : LightKeyword)];
+        }
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark) =>
+            throw new InvalidOperationException("Each line is highlighted from the state the line before ended in.");
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("A theme-aware highlighter is asked for the current variant.");
+    }
+
+    private sealed class StatefulHighlighter : ICodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language, ref object? state)
+        {
+            var token = (string?)state ?? "start";
+            state = line.ToString();
+            return [(token, LightKeyword)];
+        }
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("Each line is highlighted from the state the line before ended in.");
+    }
+
     private static (Border Border, TextBlock Text) Write(ICodeHighlighter? highlighter, string language = "fake", bool lazy = false,
         string code = "first\nsecond")
     {
@@ -476,5 +526,49 @@ public class HighlightedCodeTests
         {
             window.Close();
         }
+    }
+
+    [AvaloniaFact]
+    public void Dual_highlighter_highlights_each_line_from_the_state_the_line_before_ended_in()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var highlighter = new StatefulDualHighlighter();
+        var (_, text) = Write(highlighter);
+        var (_, again) = Write(highlighter);
+
+        Assert.Equal("start\nfirst", string.Concat(text.Inlines!.OfType<Run>().Select(r => r.Text)));
+        Assert.Equal("start\nfirst", string.Concat(again.Inlines!.OfType<Run>().Select(r => r.Text)));
+    }
+
+    [AvaloniaFact]
+    public void Theme_aware_highlighter_highlights_each_line_from_the_state_the_line_before_ended_in()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (border, text) = Write(new StatefulThemeAwareHighlighter());
+        var window = new Window { Content = border };
+        try
+        {
+            window.Show();
+            Assert.Equal("start\nfirst", string.Concat(text.Inlines!.OfType<Run>().Select(r => r.Text)));
+
+            theme.Switch(ThemeVariant.Dark);
+
+            var runs = text.Inlines!.OfType<Run>().ToList();
+            Assert.Equal("start\nfirst", string.Concat(runs.Select(r => r.Text)));
+            Assert.All(runs, r => Assert.Equal(Colors.LightBlue, ColourOf(r)));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Plain_highlighter_highlights_each_line_from_the_state_the_line_before_ended_in()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, text) = Write(new StatefulHighlighter());
+
+        Assert.Equal("start\nfirst", string.Concat(text.Inlines!.OfType<Run>().Select(r => r.Text)));
     }
 }

@@ -11,18 +11,20 @@ public class LineTokenCacheTests
     private static readonly TextMateGrammars Grammars = new(ThemeName.DarkPlus);
     private static readonly IGrammar CSharp = Grammars.Get("csharp")!;
     private static readonly IGrammar Json = Grammars.Get("json")!;
+    private static readonly IStateStack End = CSharp.TokenizeLine("int x;", null, TimeSpan.MaxValue).RuleStack;
+    private static readonly IStateStack InComment = CSharp.TokenizeLine("/* a", null, TimeSpan.MaxValue).RuleStack;
 
     [Fact]
     public void A_line_is_found_once_added()
     {
         var cache = new LineTokenCache<string>();
-        Assert.False(cache.TryGet(CSharp, "var x = 1;", out _));
+        Assert.False(cache.TryGet(CSharp, null, "var x = 1;", out _, out _));
 
-        cache.Add(CSharp, "var x = 1;", "tokens");
+        cache.Add(CSharp, null, "var x = 1;", "tokens", End);
 
-        Assert.True(cache.TryGet(CSharp, "var x = 1;".AsSpan(), out var tokens));
+        Assert.True(cache.TryGet(CSharp, null, "var x = 1;".AsSpan(), out var tokens, out _));
         Assert.Equal("tokens", tokens);
-        Assert.False(cache.TryGet(CSharp, "var x = 2;", out _));
+        Assert.False(cache.TryGet(CSharp, null, "var x = 2;", out _, out _));
         Assert.Equal(10, cache.Length);
     }
 
@@ -30,15 +32,15 @@ public class LineTokenCacheTests
     public void Lines_are_kept_per_grammar()
     {
         var cache = new LineTokenCache<string>();
-        cache.Add(CSharp, "1", "csharp");
+        cache.Add(CSharp, null, "1", "csharp", End);
 
-        Assert.False(cache.TryGet(Json, "1", out _));
+        Assert.False(cache.TryGet(Json, null, "1", out _, out _));
 
-        cache.Add(Json, "1", "json");
+        cache.Add(Json, null, "1", "json", End);
 
-        Assert.True(cache.TryGet(CSharp, "1", out var csharp));
+        Assert.True(cache.TryGet(CSharp, null, "1", out var csharp, out _));
         Assert.Equal("csharp", csharp);
-        Assert.True(cache.TryGet(Json, "1", out var json));
+        Assert.True(cache.TryGet(Json, null, "1", out var json, out _));
         Assert.Equal("json", json);
         Assert.Equal(2, cache.Length);
     }
@@ -47,10 +49,10 @@ public class LineTokenCacheTests
     public void Adding_a_line_again_keeps_the_first_tokens()
     {
         var cache = new LineTokenCache<string>();
-        cache.Add(CSharp, "line", "first");
-        cache.Add(CSharp, "line", "second");
+        cache.Add(CSharp, null, "line", "first", End);
+        cache.Add(CSharp, null, "line", "second", End);
 
-        Assert.True(cache.TryGet(CSharp, "line", out var tokens));
+        Assert.True(cache.TryGet(CSharp, null, "line", out var tokens, out _));
         Assert.Equal("first", tokens);
         Assert.Equal(4, cache.Length);
     }
@@ -62,11 +64,11 @@ public class LineTokenCacheTests
         var longest = new string('a', LineTokenCache<string>.MaxLineLength);
         var tooLong = longest + "a";
 
-        cache.Add(CSharp, tooLong, "tokens");
-        cache.Add(CSharp, longest, "tokens");
+        cache.Add(CSharp, null, tooLong, "tokens", End);
+        cache.Add(CSharp, null, longest, "tokens", End);
 
-        Assert.False(cache.TryGet(CSharp, tooLong, out _));
-        Assert.True(cache.TryGet(CSharp, longest, out _));
+        Assert.False(cache.TryGet(CSharp, null, tooLong, out _, out _));
+        Assert.True(cache.TryGet(CSharp, null, longest, out _, out _));
         Assert.Equal(LineTokenCache<string>.MaxLineLength, cache.Length);
     }
 
@@ -77,16 +79,47 @@ public class LineTokenCacheTests
         var length = LineTokenCache<string>.MaxLineLength;
         var count = LineTokenCache<string>.Budget / length;
         for (var i = 0; i < count; i++)
-            cache.Add(i % 2 == 0 ? CSharp : Json, i.ToString("D4") + new string('a', length - 4), "tokens");
+            cache.Add(i % 2 == 0 ? CSharp : Json, null, i.ToString("D4") + new string('a', length - 4), "tokens", End);
         Assert.Equal(LineTokenCache<string>.Budget, cache.Length);
-        Assert.True(cache.TryGet(CSharp, "0000" + new string('a', length - 4), out _));
-        Assert.True(cache.TryGet(Json, "0001" + new string('a', length - 4), out _));
+        Assert.True(cache.TryGet(CSharp, null, "0000" + new string('a', length - 4), out _, out _));
+        Assert.True(cache.TryGet(Json, null, "0001" + new string('a', length - 4), out _, out _));
 
-        cache.Add(CSharp, "x", "tokens");
+        cache.Add(CSharp, null, "x", "tokens", End);
 
         Assert.Equal(1, cache.Length);
-        Assert.True(cache.TryGet(CSharp, "x", out _));
-        Assert.False(cache.TryGet(CSharp, "0000" + new string('a', length - 4), out _));
-        Assert.False(cache.TryGet(Json, "0001" + new string('a', length - 4), out _));
+        Assert.True(cache.TryGet(CSharp, null, "x", out _, out _));
+        Assert.False(cache.TryGet(CSharp, null, "0000" + new string('a', length - 4), out _, out _));
+        Assert.False(cache.TryGet(Json, null, "0001" + new string('a', length - 4), out _, out _));
+    }
+
+    [Fact]
+    public void A_line_hands_back_the_state_it_ended_in()
+    {
+        var cache = new LineTokenCache<string>();
+        cache.Add(CSharp, null, "/* a", "tokens", InComment);
+
+        Assert.True(cache.TryGet(CSharp, null, "/* a", out _, out var end));
+        Assert.Same(InComment, end);
+    }
+
+    [Fact]
+    public void Lines_are_kept_per_start_state()
+    {
+        var cache = new LineTokenCache<string>();
+        cache.Add(CSharp, null, "a */", "first line", End);
+
+        Assert.False(cache.TryGet(CSharp, InComment, "a */", out _, out _));
+
+        cache.Add(CSharp, InComment, "a */", "in a comment", End);
+
+        Assert.True(cache.TryGet(CSharp, null, "a */", out var first, out _));
+        Assert.Equal("first line", first);
+        Assert.True(cache.TryGet(CSharp, InComment, "a */", out var inComment, out _));
+        Assert.Equal("in a comment", inComment);
+        // States compare by value: another comment's state finds the same line.
+        var otherComment = CSharp.TokenizeLine("/* b", null, TimeSpan.MaxValue).RuleStack;
+        Assert.True(cache.TryGet(CSharp, otherComment, "a */", out var again, out _));
+        Assert.Equal("in a comment", again);
+        Assert.Equal(8, cache.Length);
     }
 }
