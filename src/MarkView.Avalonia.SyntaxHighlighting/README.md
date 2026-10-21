@@ -4,9 +4,9 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MarkView.Avalonia.SyntaxHighlighting)](https://www.nuget.org/packages/MarkView.Avalonia.SyntaxHighlighting)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12-blue)](https://avaloniaui.net)
 [![CI](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml/badge.svg)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](../../LICENSE.md)
+[![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md)
 
-TextMate grammar-based syntax highlighting for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia) fenced code blocks. Colours update in-place when the user switches between light and dark themes — no document rebuild or scroll reset.
+Syntax highlighting of code blocks for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia), with the TextMate grammars and themes that VS Code uses. Switching between light and dark only recolours the code: the document is not rebuilt, and the scroll position is kept.
 
 ## Installation
 
@@ -14,136 +14,27 @@ TextMate grammar-based syntax highlighting for [MarkView.Avalonia](https://www.n
 dotnet add package MarkView.Avalonia.SyntaxHighlighting
 ```
 
-## Quick Start
-
-Call `UseTextMateHighlighting()` before setting `Markdown`:
+## Usage
 
 ```csharp
-var viewer = new MarkdownViewer();
-viewer.UseTextMateHighlighting();
-viewer.Markdown = markdownText;
-```
+viewer.UseTextMateHighlighting();   // Dark+ and Light+
 
-Or activate globally at application startup so every `MarkdownViewer` in the app gets highlighting automatically:
+// other themes, from TextMateSharp.Grammars
+viewer.UseTextMateHighlighting(darkTheme: ThemeName.Monokai, lightTheme: ThemeName.QuietLight);
 
-```csharp
-// App.axaml.cs
+// every viewer of the application, at startup
 MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
 ```
 
-By default, `DarkPlus` is used for dark themes and `LightPlus` for light themes. Both highlighters are created lazily — only the one matching the active variant is loaded at startup.
+Fenced code blocks with a language are coloured; a language without a grammar shows as plain code. Viewers that use the same pair of themes share one highlighter, so the grammars are loaded once however many viewers there are.
 
-## Theme Selection
+## Documentation
 
-Pass explicit `ThemeName` values to override the defaults:
+- [Syntax highlighting](https://kryptos-fr.github.io/MarkView.Avalonia/guides/code-blocks/#syntax-highlighting): themes, lazy colouring and highlighting outside the viewer.
+- [Writing a custom code highlighter](https://kryptos-fr.github.io/MarkView.Avalonia/guides/custom-extensions/#writing-a-custom-code-highlighter): `ICodeHighlighter` and theme-aware highlighters.
 
-```csharp
-using TextMateSharp.Grammars;
-
-viewer.UseTextMateHighlighting(
-    darkTheme:  ThemeName.Monokai,
-    lightTheme: ThemeName.QuietLight);
-```
-
-Available themes (from `TextMateSharp.Grammars.ThemeName`):
-
-| Dark | Light |
-|------|-------|
-| `DarkPlus` | `LightPlus` |
-| `Monokai` | `QuietLight` |
-| `SolarizedDark` | `SolarizedLight` |
-| `TomorrowNightBlue` | `Abyss` |
-| `HighContrastDark` | `HighContrastLight` |
-| `KimbieDark` | — |
-| `DimmedMonokai` | — |
-
-## How It Works
-
-`UseTextMateHighlighting()` registers a `TextMateExtension` which:
-
-1. Creates a `DualThemeTextMateHighlighter` wrapping two `TextMateHighlighter` instances (one per variant).
-2. Replaces the built-in `CodeBlockRenderer` with `TextMateCodeBlockRenderer`.
-
-Each line is tokenised via `IGrammar.TokenizeLine` and emitted as coloured `Run` elements inside a `TextBlock`. Grammars are cached per language per highlighter instance. With the viewer's lazy rendering (`IsLazyRenderingEnabled`, on by default), a block is written as plain text first and only tokenised once it comes within a screen of the viewport, before it is first drawn; with it off, every block is tokenised at render time.
-
-Every viewer that uses the same pair of themes shares one highlighter, so its themes and grammars are loaded once, however many viewers call `UseTextMateHighlighting()` (a chat with a viewer per message, for instance). It is released once no viewer uses it.
-
-When the user switches between light and dark themes, only `TextBlock.Inlines` is rebuilt — the surrounding `Border` and the rest of the document are untouched. Images stay loaded, scroll position is preserved, and Mermaid diagrams are not retriggered.
-
-Languages not supported by the grammar registry fall back to the default monochrome rendering automatically.
-
-## Low-Level API
-
-Use `TextMateExtension` directly for full control:
-
-```csharp
-using MarkView.Avalonia.SyntaxHighlighting;
-using MarkView.Avalonia.Rendering;
-using TextMateSharp.Grammars;
-
-var renderer = new AvaloniaRenderer();
-new TextMateExtension(ThemeName.Monokai, ThemeName.QuietLight).Register(renderer);
-```
-
-Or supply a `TextMateHighlighter` as a standalone `ICodeHighlighter` (for use outside `MarkdownViewer`):
-
-```csharp
-var highlighter = new TextMateHighlighter(ThemeName.DarkPlus);
-var tokens = highlighter.Highlight("var x = 1;", "csharp");
-```
-
-`Highlight(line, language)` reads the line on its own, as the first line of a block. To highlight the lines of a block, pass on the state each line ends in, so that a comment or a string that spans lines is coloured on all of them:
-
-```csharp
-object? state = null;
-foreach (var line in code.Split('\n'))
-{
-    var tokens = highlighter.Highlight(line.AsMemory(), "csharp", ref state);
-    // ...
-}
-```
-
-## Implementing a Custom Highlighter
-
-Any `ICodeHighlighter` from the core package can be used instead:
-
-```csharp
-using Avalonia.Media;
-using MarkView.Avalonia.Extensions;
-
-public class MyHighlighter : ICodeHighlighter
-{
-    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(
-        ReadOnlyMemory<char> line, string? language)
-    {
-        // return null to fall back to monochrome rendering
-        return null;
-    }
-}
-
-renderer.CodeHighlighter = new MyHighlighter();
-```
-
-For automatic dark/light updates without a document rebuild, implement `IThemeAwareCodeHighlighter` instead:
-
-```csharp
-public class MyHighlighter : IThemeAwareCodeHighlighter
-{
-    public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(
-        ReadOnlyMemory<char> line, string? language)
-        => HighlightVariant(line, language, isDark: false);
-
-    public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(
-        ReadOnlyMemory<char> line, string? language, bool isDark)
-    {
-        // return coloured tokens for the requested variant
-        return null;
-    }
-}
-```
-
-`IThemeAwareCodeHighlighter` rebuilds a code block's text on every theme switch. To recolour the existing text instead, which is much cheaper on large documents, implement `IDualThemeCodeHighlighter`: its `HighlightBoth(line, language)` tokenises a line once and returns each token's dark and light colours. The built-in TextMate highlighter works this way.
+The [documentation site](https://kryptos-fr.github.io/MarkView.Avalonia/) covers the whole library, and the [demo](https://kryptos-fr.github.io/MarkView.Avalonia/demo/) shows every feature in the browser.
 
 ## License
 
-[MIT](../../LICENSE.md) © Nicolas Musset
+[MIT](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md) © Nicolas Musset

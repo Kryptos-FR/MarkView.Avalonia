@@ -121,4 +121,4 @@ views (footnotes, alert blocks, …) are intentionally unavailable here. `Extens
 (the rendering side) is additive instead: this page still benefits from the app's global
 syntax-highlighting extension for the code fences above, on top of `ColorSpanExtension`.
 
-See [docs/custom-extensions.md](../../../docs/custom-extensions.md) for the full write-up.
+See [Custom extensions](https://kryptos-fr.github.io/MarkView.Avalonia/guides/custom-extensions/) for the full write-up.

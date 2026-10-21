@@ -72,6 +72,18 @@ Any `ThemeName` of `TextMateSharp.Grammars` can be used for either variant: `Dar
 
 To use another highlighter, implement `ICodeHighlighter`; see [Custom extensions](custom-extensions.md#writing-a-custom-code-highlighter).
 
+`TextMateHighlighter` also colours code outside a viewer. Pass on the state each line ends in, so that a comment or a string that spans lines is coloured on all of them:
+
+```csharp
+var highlighter = new TextMateHighlighter(ThemeName.DarkPlus);
+
+object? state = null;
+foreach (var line in code.Split('\n'))
+{
+    var tokens = highlighter.Highlight(line.AsMemory(), "csharp", ref state);   // (Text, Foreground) pairs
+}
+```
+
 ## Custom fenced blocks
 
 The fenced blocks of a language can render as your own control instead of code, without writing a Markdig renderer:
