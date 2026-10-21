@@ -1,3 +1,7 @@
+---
+title: "Writing Custom Extensions"
+---
+
 # Writing Custom Extensions
 
 MarkView.Avalonia is designed to be extended. The three main extension points are:

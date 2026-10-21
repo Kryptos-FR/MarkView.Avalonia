@@ -1,0 +1,72 @@
+name: Site
+
+# Builds the documentation site (docs/, with Lunet) and the browser demo, and deploys both to
+# GitHub Pages: the docs at the site root, the demo under /demo/. Deploys on each published
+# release, so the site matches the packages on NuGet.org rather than unreleased main, and on a
+# manual run. Pull requests that change docs/ only build the docs, to catch a broken page.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/site.yml'
+
+permissions:
+  contents: read
+
+# One deployment at a time; a newer one waits rather than cancelling one in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  LUNET_VERSION: 1.1.1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      - name: Install Lunet
+        run: dotnet tool install --global lunet --version ${{ env.LUNET_VERSION }}
+
+      - name: Build the docs
+        working-directory: docs
+        run: lunet build
+
+      - name: Install the WebAssembly workload
+        if: github.event_name != 'pull_request'
+        run: dotnet workload install wasm-tools
+
+      - name: Publish the browser demo
+        if: github.event_name != 'pull_request'
+        run: |
+          dotnet publish samples/MarkView.Avalonia.Demo.Browser --configuration Release --output publish/demo
+          mkdir -p docs/.lunet/build/www/demo
+          cp -r publish/demo/wwwroot/. docs/.lunet/build/www/demo/
+
+      - uses: actions/upload-pages-artifact@v5
+        if: github.event_name != 'pull_request'
+        with:
+          path: docs/.lunet/build/www
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

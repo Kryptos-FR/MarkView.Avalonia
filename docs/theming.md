@@ -1,3 +1,7 @@
+---
+title: "Theming"
+---
+
 # Theming
 
 ## Including the default theme

@@ -1,0 +1,33 @@
+# Lunet site for https://kryptos-fr.github.io/MarkView.Avalonia/
+# Build locally from this folder with `lunet build` or `lunet serve` (dotnet tool install -g lunet).
+# The Pages workflow (.github/workflows/site.yml) also publishes the browser demo under /demo/.
+extend "lunet-io/templates"
+
+site_project_name = "MarkView.Avalonia"
+site_project_description = "A Markdig-powered Markdown viewer control for Avalonia UI 12."
+site_project_baseurl = "https://kryptos-fr.github.io"
+site_project_basepath = "/MarkView.Avalonia"
+site_project_logo_path = "/img/markview-logo.svg"
+site_project_package_id = "MarkView.Avalonia"
+site_project_github_user = "Kryptos-FR"
+site_project_github_repo = "MarkView.Avalonia"
+site_project_owner_name = "Nicolas Musset"
+site_project_owner_alias = "Kryptos-FR"
+site_project_owner_url = "https://github.com/Kryptos-FR"
+
+site_project_init
+
+with api.dotnet
+  title = "MarkView.Avalonia API Reference"
+  path = "/api"
+  menu_name = "api"
+  menu_title = "API Reference"
+  properties = { TargetFramework: "net10.0" }
+  projects = [
+    { name: "MarkView.Avalonia", path: "../src/MarkView.Avalonia/MarkView.Avalonia.csproj" },
+    { name: "MarkView.Avalonia.SyntaxHighlighting", path: "../src/MarkView.Avalonia.SyntaxHighlighting/MarkView.Avalonia.SyntaxHighlighting.csproj" },
+    { name: "MarkView.Avalonia.Svg", path: "../src/MarkView.Avalonia.Svg/MarkView.Avalonia.Svg.csproj" },
+    { name: "MarkView.Avalonia.Mermaid", path: "../src/MarkView.Avalonia.Mermaid/MarkView.Avalonia.Mermaid.csproj" },
+    { name: "MarkView.Avalonia.Math", path: "../src/MarkView.Avalonia.Math/MarkView.Avalonia.Math.csproj" }
+  ]
+end

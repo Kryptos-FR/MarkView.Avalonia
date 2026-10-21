@@ -1,3 +1,7 @@
+---
+title: "Accessibility"
+---
+
 # Accessibility
 
 `MarkdownViewer` exposes the structure of the rendered document to screen readers, lets keyboard users reach and open every link and interactive element, ships default colours that meet WCAG 2.2 AA contrast, and switches to a high-contrast palette when the operating system asks for one. Screen reader and keyboard support don't change how the document looks or behaves with the mouse.

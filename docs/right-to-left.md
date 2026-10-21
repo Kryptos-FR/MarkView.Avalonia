@@ -1,3 +1,7 @@
+---
+title: "Right-to-left text"
+---
+
 # Right-to-left text
 
 Hebrew, Arabic and other right-to-left documents render the way they read: each block of the
