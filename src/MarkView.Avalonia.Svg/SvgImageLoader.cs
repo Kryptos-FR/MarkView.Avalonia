@@ -60,11 +60,8 @@ public sealed class SvgImageLoader : IImageLoader
             {
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                     return null;
-                using var responseStream = await SharedHttpClient.Instance.GetStreamAsync(uri, cancellationToken);
-                using var buffer = new MemoryStream();
-                await responseStream.CopyToAsync(buffer, cancellationToken);
+                using var buffer = await SharedHttpClient.DownloadAsync(uri, cancellationToken);
                 bytes = buffer.ToArray();
-                buffer.Position = 0;
                 source = await Task.Run(() => SvgSource.LoadFromStream(buffer), cancellationToken);
             }
 

@@ -60,10 +60,7 @@ internal sealed class BitmapImageLoader : IImageLoader
                 }, cancellationToken).ConfigureAwait(false);
             }
 
-            using var responseStream = await SharedHttpClient.Instance.GetStreamAsync(uri, cancellationToken).ConfigureAwait(false);
-            using var buffer = new MemoryStream();
-            await responseStream.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
-            buffer.Position = 0;
+            using var buffer = await SharedHttpClient.DownloadAsync(uri, cancellationToken).ConfigureAwait(false);
             return await Task.Run(() => new Bitmap(buffer), cancellationToken).ConfigureAwait(false);
         }
         // Stryker restore Boolean

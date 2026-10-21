@@ -538,7 +538,7 @@ public partial class MarkdownViewer : ContentControl
             }
             else
             {
-                using var stream = await SharedHttpClient.Instance.GetStreamAsync(uri, cts.Token);
+                using var stream = await SharedHttpClient.DownloadAsync(uri, cts.Token);
                 using var reader = new StreamReader(stream);
                 text = await reader.ReadToEndAsync(cts.Token);
             }
