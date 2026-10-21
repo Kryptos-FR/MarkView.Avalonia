@@ -172,6 +172,9 @@
               <MenuItem Header="Smooth scrolling" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.IsSmoothScrollingEnabled, Mode=TwoWay}"
                         ToolTip.Tip="Animate the jumps to headings, from the outline or from links to them" />
+              <MenuItem Header="Lazy rendering" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.IsLazyRenderingEnabled, Mode=TwoWay}"
+                        ToolTip.Tip="Load images, typeset formulas and colour code only when they come within a screen of the visible area" />
               <Separator />
               <MenuItem Header="Code line numbers" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers, Mode=TwoWay}"

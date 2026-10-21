@@ -32,7 +32,7 @@ public sealed class TextMateCodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock
         if (!string.IsNullOrEmpty(language))
             border.Classes.Add($"language-{language}");
 
-        HighlightedCode.Write(border, textBlock, obj, language, renderer.CodeHighlighter);
+        HighlightedCode.Write(renderer, border, textBlock, obj, language);
 
         CodeBlockToolbar.Write(renderer, border, obj, language);
     }

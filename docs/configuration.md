@@ -21,6 +21,7 @@
 | `IsImageZoomEnabled` | `bool` | `false` | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, where it can be zoomed and panned. See [Image zoom](#image-zoom). |
 | `IsImageSaveEnabled` | `bool` | `true` | Images and Mermaid diagrams can be saved to a file, as PNG or SVG, from the lightbox and from the context menu. See [Saving images and diagrams](#saving-images-and-diagrams). |
 | `IsSmoothScrollingEnabled` | `bool` | `false` | Animates the scroll to an anchor (a `#anchor` link, a footnote, `ScrollToAnchor`) instead of jumping there at once. See [Smooth scrolling](#smooth-scrolling). |
+| `IsLazyRenderingEnabled` | `bool` | `true` | Images, formulas, Mermaid diagrams and syntax colours wait until they are about to scroll into view. Setting it re-renders the document. See [Lazy rendering](#lazy-rendering). |
 | `TableOfContents` | `IReadOnlyList<TocEntry>` | `[]` | Get-only. The document's headings as a nested tree, recomputed after every render. See [Table of contents](#table-of-contents). |
 | `TableOfContentsMaxDepth` | `int` | `6` | Maximum heading level included in `TableOfContents`; deeper headings (and their descendants) are excluded. See [Table of contents](#table-of-contents). |
 | `DetectTextDirection` | `bool` | `true` | Gives each block the direction of its first letter that has one, so Hebrew and Arabic text reads right to left. Setting it re-renders the document. See [Right-to-left text](right-to-left.md). |
@@ -718,6 +719,48 @@ Turn it off with `IsImageSaveEnabled`, which hides the save button and the menu 
   <Setter Property="IsImageSaveEnabled" Value="False" />
 </Style>
 ```
+
+## Lazy rendering
+
+Some content costs far more to build than text: decoding an image, typesetting a formula, laying out
+a Mermaid diagram, colouring the tokens of a code block. The viewer builds it only when its element
+first comes within one viewport height of the visible area, so a long document shows its first screen
+quickly and the parts nobody scrolls to cost nothing. On the desktop, Mermaid diagrams are rendered on a
+background thread as soon as the viewer is shown instead, so scrolling never waits for one:
+
+| Content | Before it comes near | Once it comes near |
+|---|---|---|
+| Image, YouTube thumbnail | Not loaded; an image already loaded by an earlier render (it is in the [image cache](#image-cache)) shows at once | Starts loading |
+| Formula (`$…$`, `$$…$$`, `MarkView.Avalonia.Math`) | Empty | Typeset |
+| Mermaid diagram (`MarkView.Avalonia.Mermaid`), in the browser only | Empty | Rendered |
+| Code block with syntax highlighting | Its text, uncoloured | Coloured |
+
+The "before" column is never seen on screen. Content is built a screen before it scrolls into view,
+and content already in view is built during the layout pass that first lays it out, before that pass is
+drawn: a code block is coloured, and a formula typeset, the first time it appears. An uncoloured code
+block only shows through what works on the whole document: find, selection and copy already cover its
+text. Images are the exception, as they still have to load: they start a screen ahead, but a slow
+download can still arrive after the image has scrolled into view.
+
+A theme switch only rebuilds the content already built, which also makes switching faster on a long
+document.
+
+Content built as you scroll is often taller than the space it held (an image that loads, a formula that
+replaces an empty line), and so is a block a streaming session updates. When that happens above the
+part of the document in view, the viewer moves the scroll position by as much, as browsers do: the
+text you are reading stays where it is. A heading reached with `ScrollToAnchor` or a match found with
+`FindNext` stays where it was shown while the content above it loads, until the document is scrolled
+again.
+
+Turn it off when the viewer is never scrolled into view but must show everything, for example when it
+is rendered to a bitmap for printing or export:
+
+```xml
+<mv:MarkdownViewer IsLazyRenderingEnabled="False" />
+```
+
+With it off, formulas and colours are built during the render, and images and diagrams start loading as
+soon as the viewer is shown.
 
 ## Code block toolbar
 

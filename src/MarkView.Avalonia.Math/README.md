@@ -94,6 +94,13 @@ Formulas are rendered with colours matching the active Avalonia theme variant (d
 light `#27272A` text), and are automatically re-rendered when the user switches between light and
 dark.
 
+## Lazy Rendering
+
+With the viewer's lazy rendering (`IsLazyRenderingEnabled`, on by default), a formula is typeset the
+first time it comes within a screen of the viewport, before it is first drawn, so formulas further down
+a long document cost nothing while it loads, and a theme switch only re-renders those already shown.
+With it off, every formula is typeset at render time.
+
 ## Combining with Mermaid
 
 `MathExtension` and `MermaidExtension` can both be registered in either order — each scans for
@@ -118,7 +125,8 @@ While a document is streaming, a `$$` or `\[` block at the end of the text is sh
 
 ## Error Handling
 
-Invalid LaTeX renders CSharpMath's own inline error text rather than throwing. Unexpected
+Invalid LaTeX renders CSharpMath's own inline error text rather than throwing. A formula past the
+safety limits (10,000 characters, or braces nested more than 50 deep) is shown as its source. Unexpected
 rendering failures fall back to a plain-text panel (block math) or leave the last successfully
 rendered formula in place (inline math).
 

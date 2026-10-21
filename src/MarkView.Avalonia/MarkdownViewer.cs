@@ -42,6 +42,7 @@ public partial class MarkdownViewer : ContentControl
     private DocumentSelectionLayer? _selectionLayer;
     private LinkFocusLayer? _linkFocusLayer;
     private ScrollViewer? _scrollViewer;
+    private readonly ScrollAnchor _scrollAnchor = new();
     private bool _isDragging;
     private Point _dragStart;
     private const double DragThreshold = 3.0;
@@ -159,6 +160,12 @@ public partial class MarkdownViewer : ContentControl
     /// </summary>
     public static readonly StyledProperty<bool> DetectTextDirectionProperty =
         AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(DetectTextDirection), true);
+
+    /// <summary>
+    /// Defines the <see cref="IsLazyRenderingEnabled"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsLazyRenderingEnabledProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(IsLazyRenderingEnabled), true);
 
     /// <summary>
     /// Defines the <see cref="TableOfContentsMaxDepth"/> property.
@@ -365,6 +372,21 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets whether costly content waits until it is about to scroll into view: images start
+    /// loading, formulas and Mermaid diagrams render, and code blocks, shown as plain text until then,
+    /// get their syntax colours once they come within one viewport height of the visible area. The
+    /// content is laid out before it is shown, and an image already loaded by an earlier render shows at
+    /// once. Turn it off when the viewer is never scrolled into view, e.g. when it is rendered to a bitmap
+    /// for printing or export, so that everything renders without being seen first. Defaults to
+    /// <c>true</c>. Can be set from a style, e.g. for every viewer of an application.
+    /// </summary>
+    public bool IsLazyRenderingEnabled
+    {
+        get => GetValue(IsLazyRenderingEnabledProperty);
+        set => SetValue(IsLazyRenderingEnabledProperty, value);
+    }
+
+    /// <summary>
     /// Gets or sets the maximum heading level included in <see cref="TableOfContents"/>.
     /// Headings deeper than this level, and their descendants, are excluded. Defaults to 6 (no limit).
     /// </summary>
@@ -470,6 +492,7 @@ public partial class MarkdownViewer : ContentControl
         AreHeadingsFoldableProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         IsImageZoomEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         DetectTextDirectionProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        IsLazyRenderingEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
     }
@@ -652,6 +675,7 @@ public partial class MarkdownViewer : ContentControl
             IsImageZoomEnabled = IsImageZoomEnabled,
             DetectTextDirection = DetectTextDirection,
             Themes = Themes,
+            IsLazyRenderingEnabled = IsLazyRenderingEnabled,
         };
         renderer.LinkClicked += OnLinkClicked;
         renderer.ImageZoomRequested += OpenLightbox;
@@ -715,6 +739,7 @@ public partial class MarkdownViewer : ContentControl
         contentGrid.AddHandler(InputElement.ContextRequestedEvent, OnContentContextRequested);
 
         Content = contentGrid;
+        _scrollAnchor.Reset();
         // The image it shows may not be part of the new document. Closed once the old document is gone,
         // so that focus does not return to one of its controls.
         CloseLightbox();
@@ -1204,6 +1229,10 @@ public partial class MarkdownViewer : ContentControl
             var transform = textBlock.TransformToVisual(scrollViewer)!.Value;
             scrollViewer.BringIntoView(bounds.TransformToAABB(transform));
         }
+
+        // Content above the match that grows once realized leaves the match where it is shown.
+        if (_scrollViewer is not null && DocumentRoot is { } root)
+            _scrollAnchor.Pin(textBlock, root, _scrollViewer);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -1244,14 +1273,32 @@ public partial class MarkdownViewer : ContentControl
             await launcher.LaunchUriAsync(uri);
     }
 
+    /// <summary>The root panel of the rendered document, or <c>null</c> when nothing is rendered.</summary>
+    private Panel? DocumentRoot => Content is Grid { Children: [Panel root, ..] } ? root : null;
+
+    // Content that grew above the text in view (an image loading, a formula rendered once near) moves
+    // the scroll offset with it rather than pushing that text down; see ScrollAnchor.
+    private void OnLayoutUpdatedKeepAnchor(object? sender, EventArgs e)
+    {
+        if (_scrollViewer is not null && DocumentRoot is { } root)
+            _scrollAnchor.Update(root, _scrollViewer);
+    }
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
         if (_scrollViewer is not null)
-            _scrollViewer.ScrollChanged -= OnScrollChanged;
+        {
+            _scrollViewer.PropertyChanged -= OnScrollViewerPropertyChanged;
+            LayoutUpdated -= OnLayoutUpdatedKeepAnchor;
+        }
         _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+        _scrollAnchor.Reset();
         if (_scrollViewer is not null)
-            _scrollViewer.ScrollChanged += OnScrollChanged;
+        {
+            _scrollViewer.PropertyChanged += OnScrollViewerPropertyChanged;
+            LayoutUpdated += OnLayoutUpdatedKeepAnchor;
+        }
         // Applying a template replaces every visual child, the open lightbox included.
         if (_lightbox is not null)
             VisualChildren.Add(_lightbox);
@@ -1351,5 +1398,9 @@ public partial class MarkdownViewer : ContentControl
         ScrollVerticallyTo(() => control.TranslatePoint(default, scrollViewer) is { } current
             ? scrollViewer.Offset.Y + current.Y - topMargin
             : null, animate);
+        // Content above the heading that grows once realized leaves the heading where it is shown. An animated
+        // scroll follows the heading on its own, and the anchor lets go as soon as the offset moves.
+        if (DocumentRoot is { } root)
+            _scrollAnchor.Pin(control, root, scrollViewer);
     }
 }

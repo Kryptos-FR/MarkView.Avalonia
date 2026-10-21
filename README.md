@@ -201,7 +201,7 @@ Per-instance `Pipeline` and `Extensions` take precedence over the defaults; an e
 | Blockquotes | CommonMark |
 | Ordered and unordered lists | CommonMark, tight and loose |
 | Links and autolinks | CommonMark + extension |
-| Images | CommonMark, remote URLs loaded async and cached in memory ([image cache](docs/configuration.md#image-cache)) |
+| Images | CommonMark, remote URLs loaded async, once about to scroll into view ([lazy rendering](docs/configuration.md#lazy-rendering)), and cached in memory ([image cache](docs/configuration.md#image-cache)) |
 | Image sizing | `![alt](url =WxH)` — inline pixel dimensions, e.g. `=80x80` |
 | Image zoom | Clicking an image or a Mermaid diagram opens it in a lightbox over the viewer, with zoom and pan (`IsImageZoomEnabled`, off by default) |
 | Save images | Images and Mermaid diagrams can be saved as PNG, or SVG for diagrams and SVG images, from the lightbox or the context menu ([saving](docs/configuration.md#saving-images-and-diagrams)) |

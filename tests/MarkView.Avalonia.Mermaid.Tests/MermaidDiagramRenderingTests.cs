@@ -34,10 +34,10 @@ public class MermaidDiagramRenderingTests
         ```
         """;
 
-    private static StackPanel Render(string markdown, bool inBackground = true)
+    private static StackPanel Render(string markdown, bool inBackground = true, bool lazy = true)
     {
         var pipeline = new MarkdownPipelineBuilder().Build();
-        var renderer = new AvaloniaRenderer();
+        var renderer = new AvaloniaRenderer { IsLazyRenderingEnabled = lazy };
         new MermaidExtension { RendersInBackground = inBackground }.Register(renderer);
         pipeline.Setup(renderer);
         renderer.Render(Markdown.Parse(markdown, pipeline));
@@ -262,6 +262,48 @@ public class MermaidDiagramRenderingTests
         scrollViewer.Offset = new Vector(0, 4500);
         await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
         Assert.IsType<SvgImage>(image.Source);
+    }
+
+    [AvaloniaFact]
+    public async Task Without_lazy_rendering_a_diagram_below_the_fold_renders_once_attached()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram, lazy: false);
+        var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        root.Children.Insert(0, new Border { Height = 5000 });
+        using var shown = new Shown(new ScrollViewer { Content = root });
+
+        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+        Assert.IsType<SvgImage>(image.Source);
+    }
+
+    [AvaloniaFact]
+    public async Task Without_lazy_rendering_a_never_attached_diagram_is_not_rendered()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var image = Assert.IsType<Image>(((Border)Render(Diagram, lazy: false).Children[0]).Child);
+
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.Null(image.Source);
+    }
+
+    [AvaloniaFact]
+    public async Task Without_lazy_rendering_a_diagram_attached_again_is_rendered_only_once()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram, lazy: false);
+        var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        var scrollViewer = new ScrollViewer { Content = root };
+        using var shown = new Shown(scrollViewer);
+        await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+        var first = image.Source;
+
+        scrollViewer.Content = null;
+        scrollViewer.Content = root;
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.Same(first, image.Source);
     }
 
     [AvaloniaFact]
