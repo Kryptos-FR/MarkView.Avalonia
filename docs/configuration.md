@@ -381,7 +381,7 @@ viewer.Source = null;
 |--------|---------|-------|
 | `avares://` | Synchronous | `ManifestResourceStream` — already in memory, no I/O cost |
 | `file://` | Async | Suitable for local and network paths |
-| `http/https` | Async | In-flight request is cancelled when `Source` changes |
+| `http/https` | Async | In-flight request is cancelled when `Source` changes; a response over 64 MB is not loaded (remote images too) |
 
 **Precedence:** when both `Source` and `Markdown` are set, `Source` wins.
 

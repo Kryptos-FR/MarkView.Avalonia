@@ -4,11 +4,54 @@
 namespace MarkView.Avalonia.Extensions;
 
 /// <summary>
-/// Shared <see cref="HttpClient"/> instance for all image loaders.
+/// Shared <see cref="HttpClient"/> instance for the image loaders and remote documents.
 /// A single static instance is sufficient — and recommended — to allow connection pooling
-/// across <see cref="BitmapImageLoader"/>, <c>SvgImageLoader</c>, and <see cref="Rendering.Inlines.LinkInlineRenderer"/>.
+/// across <see cref="BitmapImageLoader"/>, <c>SvgImageLoader</c>, and <see cref="MarkdownViewer.Source"/>.
 /// </summary>
 internal static class SharedHttpClient
 {
-    internal static readonly HttpClient Instance = new();
+    /// <summary>The largest response <see cref="DownloadAsync"/> reads: 64 MB.</summary>
+    internal const long MaxResponseSize = 64L * 1024 * 1024;
+
+    internal static readonly HttpClient Instance = Create();
+
+    // Pooled connections are recycled after a while, so that a long-running application sees DNS changes.
+    // The browser has no SocketsHttpHandler (fetch has no connection pool of its own to recycle).
+    // Stryker disable once all : runs in the static initializer, before Stryker activates any mutant
+    private static HttpClient Create() => SocketsHttpHandler.IsSupported
+        ? new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) })
+        : new HttpClient();
+
+    /// <summary>
+    /// Downloads <paramref name="uri"/> into memory, positioned at its start. An untrusted document can point
+    /// at anything, so a response larger than <paramref name="maxSize"/> is not read.
+    /// </summary>
+    /// <exception cref="HttpRequestException">
+    /// The response is not a success, or it is larger than <paramref name="maxSize"/>.
+    /// </exception>
+    internal static async Task<MemoryStream> DownloadAsync(Uri uri, CancellationToken cancellationToken, long maxSize = MaxResponseSize)
+    {
+        // Stryker disable Boolean : ConfigureAwait(true) only resumes on the caller's thread, which changes no result a test can see
+        using var response = await Instance.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        if (response.Content.Headers.ContentLength > maxSize)
+            throw TooLarge(uri, maxSize);
+
+        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        var buffer = new MemoryStream();
+        var chunk = new byte[81920];
+        int read;
+        while ((read = await stream.ReadAsync(chunk, cancellationToken).ConfigureAwait(false)) > 0)
+        {
+            if (buffer.Length + read > maxSize)
+                throw TooLarge(uri, maxSize);
+            buffer.Write(chunk, 0, read);
+        }
+        // Stryker restore Boolean
+        buffer.Position = 0;
+        return buffer;
+    }
+
+    private static HttpRequestException TooLarge(Uri uri, long maxSize) =>
+        new($"The response from {uri} is larger than {maxSize} bytes.");
 }
