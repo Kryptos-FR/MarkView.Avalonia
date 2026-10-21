@@ -13,7 +13,7 @@ namespace MarkView.Avalonia.Rendering;
 /// TODO: expose ISlugGenerator interface and allow injection via AvaloniaRenderer
 /// to support alternative anchor schemes (e.g. GitLab, Gitea, or user-defined).
 /// </remarks>
-public class SlugGenerator
+public sealed class SlugGenerator
 {
     private readonly Dictionary<string, int> _seen = new(StringComparer.Ordinal);
 
