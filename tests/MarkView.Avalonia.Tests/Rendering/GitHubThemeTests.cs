@@ -118,6 +118,15 @@ public class GitHubThemeTests
     }
 
     [AvaloniaFact]
+    public void Font_stack_falls_back_to_the_embedded_Inter()
+    {
+        // A browser build has no system fonts: without it, the text would take SkiaSharp's own font.
+        using var f = Show();
+
+        Assert.Contains("Arial, fonts:Inter#Inter", f.Viewer.FontFamily.ToString());
+    }
+
+    [AvaloniaFact]
     public void Switching_the_theme_variant_recolours_the_document_live()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);

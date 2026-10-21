@@ -22,7 +22,7 @@ What it changes:
 
 | Element | GitHub look |
 |---|---|
-| Document | GitHub's page background and text colour (`#FFFFFF` / `#1F2328` light, `#0D1117` / `#F0F6FC` dark) set on `MarkdownViewer`, its system font stack (Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial) at 16px, and 16px between paragraphs with a little extra line spacing |
+| Document | GitHub's page background and text colour (`#FFFFFF` / `#1F2328` light, `#0D1117` / `#F0F6FC` dark) set on `MarkdownViewer`, its system font stack (Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial, then the Inter the application embeds with `WithInterFont()`, for platforms without those fonts such as the browser) at 16px, and 16px between paragraphs with a little extra line spacing |
 | Headings | 2em / 1.5em / 1.25em / 1em / 0.875em / 0.85em (32 to 13.6px), semibold, 24px above and 16px below (none above the first block of the document, a quote or an alert); a 1px rule under h1 and h2; h6 in the secondary text colour |
 | Links | GitHub's blue (`#0969DA` / `#4493F8`), underlined |
 | Code blocks | GitHub's code background, 16px padding, 6px corners, 13.6px monospace (SF Mono, Menlo, Consolas, Liberation Mono). The toolbar takes the code's background, so the language label and the outlined copy button sit inside the block's top edge |
@@ -164,7 +164,7 @@ What it changes:
 
 | Element | Docs look |
 |---|---|
-| Document | VitePress' page background and text colour (`#FFFFFF` / `#3C3C43` light, `#1B1B1F` / `#DFDFD6` dark) set on `MarkdownViewer`, Inter (then Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial) at 16px, paragraphs 16px apart with 6px of extra line spacing. The document is at most 768px wide, centred in a wider viewer (the `markdown-document` style class) |
+| Document | VitePress' page background and text colour (`#FFFFFF` / `#3C3C43` light, `#1B1B1F` / `#DFDFD6` dark) set on `MarkdownViewer`, Inter (the one the application embeds with `WithInterFont()`, else an installed one, then Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial) at 16px, paragraphs 16px apart with 6px of extra line spacing. The document is at most 768px wide, centred in a wider viewer (the `markdown-document` style class) |
 | Headings | 32 / 24 / 20 / 18 / 16 / 16px, semibold, with space above them (none at the start of the document, a quote or an alert); h2 opens a section with a 1px divider 24px above its text; h6 in the secondary text colour |
 | Links | VitePress' indigo (`#3451B2` / `#A8B1FF`), medium weight, underlined |
 | Code blocks | VitePress' code background, 20×24px padding, 8px corners, 14px monospace (SF Mono, Menlo, Monaco, Consolas, Liberation Mono) on 24px lines. The toolbar takes the code's background, with an outlined copy button |

@@ -110,7 +110,9 @@ public class DocsThemeTests
         AssertColor(background, f.Viewer.Background);
         AssertColor(foreground, f.Viewer.Foreground);
         Assert.Equal(16, f.Viewer.FontSize);
+        // The Inter the application embeds (WithInterFont) first, then an installed one
         Assert.Equal("Inter", f.Viewer.FontFamily.FamilyNames[0]);
+        Assert.Contains("fonts:Inter#Inter, Inter, Segoe UI", f.Viewer.FontFamily.ToString());
         var paragraph = f.Paragraph("Text with");
         AssertColor(foreground, paragraph.Foreground);
         Assert.Equal(6, paragraph.LineSpacing);

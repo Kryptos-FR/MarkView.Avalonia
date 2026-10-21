@@ -274,11 +274,13 @@
   </Styles.Resources>
 
   <!-- Document: GitHub's background, text colour and system font stack at 16px. Local values set on
-       a MarkdownViewer (Background="Transparent", FontSize="14") still win. -->
+       a MarkdownViewer (Background="Transparent", FontSize="14") still win. The stack ends with the
+       Inter an application embeds (WithInterFont), which stands in for CSS's sans-serif where none of
+       the system fonts exist, as in the browser (Avalonia would otherwise take SkiaSharp's own font). -->
   <Style Selector=":is(mv|MarkdownViewer)">
     <Setter Property="Background" Value="{DynamicResource MarkdownBackground}" />
     <Setter Property="Foreground" Value="{DynamicResource MarkdownForeground}" />
-    <Setter Property="FontFamily" Value="Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial" />
+    <Setter Property="FontFamily" Value="Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial, fonts:Inter#Inter" />
     <Setter Property="FontSize" Value="16" />
   </Style>
 

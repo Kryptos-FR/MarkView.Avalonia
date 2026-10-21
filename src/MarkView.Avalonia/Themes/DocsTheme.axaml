@@ -285,11 +285,12 @@
   </Styles.Resources>
 
   <!-- Document: VitePress' background, text colour and Inter at 16px. Local values set on a
-       MarkdownViewer (Background="Transparent", FontSize="14") still win. -->
+       MarkdownViewer (Background="Transparent", FontSize="14") still win. The Inter an application
+       embeds (WithInterFont) comes first, since a plain "Inter" only names an installed one. -->
   <Style Selector=":is(mv|MarkdownViewer)">
     <Setter Property="Background" Value="{DynamicResource MarkdownBackground}" />
     <Setter Property="Foreground" Value="{DynamicResource MarkdownForeground}" />
-    <Setter Property="FontFamily" Value="Inter, Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial" />
+    <Setter Property="FontFamily" Value="fonts:Inter#Inter, Inter, Segoe UI, SF Pro Text, Helvetica Neue, Noto Sans, Helvetica, Arial" />
     <Setter Property="FontSize" Value="16" />
   </Style>
 

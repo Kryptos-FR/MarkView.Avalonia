@@ -35,6 +35,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The demo embeds its Hebrew and Arabic fonts, stored with Git LFS; without them it would
+          # ship the LFS pointer files and draw those letters as boxes.
+          lfs: ${{ github.event_name != 'pull_request' }}
 
       - uses: actions/setup-dotnet@v6
         with:
