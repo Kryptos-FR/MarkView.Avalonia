@@ -80,7 +80,26 @@ public sealed class MarkdownSelectableTextBlock : TextBlock
         // Avalonia leaves inlines unstyled after a change to the application's styles
         // (https://github.com/AvaloniaUI/Avalonia/issues/22505).
         StyledInlinesTextBlock.ApplyInlineStyling(Inlines);
+        _measuredSinceArrange = true;
         return base.MeasureOverride(availableSize);
+    }
+
+    private bool _measuredSinceArrange;
+    private Size _arrangedSize;
+
+    /// <inheritdoc />
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        // Avalonia rebuilds the text layout on every arrange, and a block is arranged again whenever it
+        // moves: a diagram or an image appearing above it, a section folding. Any change to the text or
+        // its formatting measures the block again first, so an arrange at the size it already has, with
+        // no measure in between, can keep its layout, and its inline controls where they are.
+        if (!_measuredSinceArrange && finalSize == _arrangedSize)
+            return finalSize;
+
+        _measuredSinceArrange = false;
+        _arrangedSize = finalSize;
+        return base.ArrangeOverride(finalSize);
     }
 
     /// <inheritdoc />
