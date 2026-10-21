@@ -5,6 +5,9 @@ name: PR Labels
 #
 # - `ci-full`: the AOT publish on Windows and macOS (CI already covers Ubuntu) and a full,
 #   non-incremental mutation run of every test project.
+# - `ci-mutation-testing`: the incremental mutation run that ci.yml makes on later pushes (the
+#   packages the pull request touches, only the code it changes; see ci-plan.yml). Nothing when
+#   the pull request is also labelled `ci-full`, which already runs it in full.
 # - `ci-run-on-draft`: nothing here; ci.yml runs the normal suites on the draft's next push.
 #
 # Adding a label needs write access to the repository, so the label is the authorization.
@@ -38,3 +41,23 @@ jobs:
       contents: read
       pull-requests: write
     uses: ./.github/workflows/mutation.yml
+
+  plan:
+    if: >
+      github.event.label.name == 'ci-mutation-testing'
+      && !contains(github.event.pull_request.labels.*.name, 'ci-full')
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/ci-plan.yml
+
+  incremental-mutation:
+    needs: plan
+    if: needs.plan.outputs.mutation-projects != '[]'
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/mutation.yml
+    with:
+      projects: ${{ needs.plan.outputs.mutation-projects }}
+      since: ${{ needs.plan.outputs.mutation-since }}
