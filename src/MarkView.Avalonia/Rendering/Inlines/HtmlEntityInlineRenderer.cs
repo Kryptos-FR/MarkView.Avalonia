@@ -11,6 +11,6 @@ public sealed class HtmlEntityInlineRenderer : AvaloniaObjectRenderer<HtmlEntity
 {
     protected override void Write(AvaloniaRenderer renderer, HtmlEntityInline obj)
     {
-        renderer.WriteInline(new Run(obj.Transcoded.ToString()));
+        renderer.WriteText(obj.Transcoded.AsSpan());
     }
 }

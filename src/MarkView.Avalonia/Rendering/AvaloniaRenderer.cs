@@ -637,6 +637,26 @@ public class AvaloniaRenderer : RendererBase
     }
 
     /// <summary>
+    /// Adds plain text to the current inline container. Text written right after other plain text goes into
+    /// the same <see cref="Run"/>: Markdig splits prose into several literals (at each line break, escape,
+    /// entity or unmatched delimiter), and a Run each would multiply what every paragraph costs to attach,
+    /// style and lay out. Text that takes attribute classes gets a Run of its own.
+    /// </summary>
+    internal void WriteText(ReadOnlySpan<char> text)
+    {
+        if (_stack.Peek() is not InlineContainer container)
+            return;
+        if (_writing.TryPeek(out var entry) && entry.IsInline && entry.Classes is not null)
+        {
+            var run = new Run(text.ToString());
+            AddAttributeClasses(run, isInline: true);
+            container.Add(run);
+            return;
+        }
+        container.AddText(text);
+    }
+
+    /// <summary>
     /// Adds a control wrapped in InlineUIContainer to the current inline container.
     /// </summary>
     public void WriteInline(Control control)

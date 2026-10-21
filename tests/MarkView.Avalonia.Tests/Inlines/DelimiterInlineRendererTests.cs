@@ -34,10 +34,8 @@ public class DelimiterInlineRendererTests
 
         var container = RenderInline(delimiter);
 
-        var inlines = container.Inlines!.ToList();
-        Assert.Equal(2, inlines.Count);
-        Assert.Equal("[", Assert.IsType<Run>(inlines[0]).Text);
-        Assert.Equal("foo", Assert.IsType<Run>(inlines[1]).Text);
+        // Plain text written in a row shares one run.
+        Assert.Equal("[foo", Assert.IsType<Run>(Assert.Single(container.Inlines!)).Text);
     }
 
     private static Span RenderInline(Markdig.Syntax.Inlines.Inline inline)
