@@ -11,6 +11,7 @@
     <AvaloniaResource Include="TestAssets\**" />
     <!-- The streaming equivalence tests stream real documents: the repository's own, not copies. -->
     <AvaloniaResource Include="..\..\README.md" Link="TestAssets\Streaming\readme.md" />
-    <AvaloniaResource Include="..\..\docs\theming.md" Link="TestAssets\Streaming\theming.md" />
+    <AvaloniaResource Include="..\..\docs\guides\themes.md" Link="TestAssets\Streaming\themes.md" />
+    <AvaloniaResource Include="..\..\docs\reference\style-classes.md" Link="TestAssets\Streaming\style-classes.md" />
   </ItemGroup>
 </Project>
