@@ -165,6 +165,36 @@ public class DocumentSelectionLayerViewportTests
         Assert.Contains(Highlights(s.Layer), h => h.Intersects(after));
     }
 
+    [AvaloniaTheory]
+    [InlineData(40, 0)]
+    [InlineData(0, 40)]
+    public void Blocks_are_found_where_they_are_when_the_document_is_offset_from_the_layer(double documentTop, double layerTop)
+    {
+        using var s = Show();
+        s.Layer.Document!.Margin = new Thickness(0, documentTop, 0, 0);
+        s.Layer.Margin = new Thickness(0, layerTop, 0, 0);
+        s.Window.UpdateLayout();
+        var paragraph = s.Paragraph(2);
+        var bounds = s.BoundsInLayer(paragraph);
+        var entry = s.Layer.Entries.Single(e => e.Element == paragraph);
+
+        Assert.Equal(entry.AbsStart, s.Layer.HitTestOffset(new Point(bounds.Left + 1, bounds.Center.Y)));
+        Assert.Same(entry, s.Layer.HitTestEntry(bounds.Center));
+    }
+
+    [AvaloniaFact]
+    public void Find_draws_nothing_when_no_entry_is_in_view()
+    {
+        using var s = Show(string.Join("\n\n", Enumerable.Range(1, 3).Select(i => $"Paragraph {i}")));
+        s.Layer.Document!.Children.Add(new Border { Height = 2000 });
+        s.Window.UpdateLayout();
+        Assert.Equal(3, s.Viewer.Find("Paragraph"));
+
+        s.ScrollTo(s.Scroll.Extent.Height);
+
+        Assert.Empty(Highlights(s.Layer));
+    }
+
     [AvaloniaFact]
     public void Cached_bounds_are_stale_after_a_layout_pass()
     {

@@ -133,7 +133,7 @@ internal sealed class DocumentSelectionLayer : Control
     {
         _viewport = e.EffectiveViewport;
         // What was out of view and left out of the highlight may be in view now.
-        // Stryker disable once Equality,Logical : drawing again without any match draws the same nothing
+        // Stryker disable once all : drawing again without any match draws the same nothing, and a headless test cannot see a redraw
         if (_anchor is not null || _findMatches.Count > 0)
             InvalidateVisual();
     }
@@ -204,7 +204,6 @@ internal sealed class DocumentSelectionLayer : Control
     /// </summary>
     public void Register(IndexEntry entry)
     {
-        entry.Layer = this;
         entry.AbsStart = _totalLength;
         _entries.Add(entry);
         _totalLength += entry.PlainText.Length + entry.Separator.Length;
@@ -703,8 +702,6 @@ internal sealed class DocumentSelectionLayer : Control
     private bool EnsureBounds(IndexEntry entry)
     {
         if (entry.CachedBounds is not null) return true;
-        // An entry registered elsewhere caches nothing; bounds computed now are used now.
-        entry.Layer ??= this;
 
         if (entry.Element.BoundsIn(this) is not { } bounds) return false;
 
@@ -716,7 +713,7 @@ internal sealed class DocumentSelectionLayer : Control
                 clip = clip.Intersect(visualBounds);
         }
 
-        entry.CacheBounds(bounds, clip);
+        entry.CacheBounds(this, bounds, clip);
         return true;
     }
 
@@ -733,12 +730,14 @@ internal sealed class DocumentSelectionLayer : Control
     private (int First, int End) EntriesAcross(double top, double bottom)
     {
         var all = (0, _entries.Count);
-        if (Document is null || _entries.Count == 0)
+        if (Document is null)
             return all;
 
         var blocks = ShownBlocks();
+        // Stryker disable Equality : a block that only touches the band has nothing in it
         var firstBlock = FirstIndex(blocks, block => block.Bottom >= top);
         var endBlock = FirstIndex(blocks, block => block.Top > bottom);
+        // Stryker restore Equality
         if (firstBlock >= endBlock)
             return (0, 0);
 
@@ -748,6 +747,7 @@ internal sealed class DocumentSelectionLayer : Control
         int IndexOf(IndexEntry entry)
         {
             var index = DocumentIndexOf(entry);
+            // Stryker disable once Assignment,Statement : entries are registered in order, so one outside the document comes after its entries, where the range found reaches it anyway
             unplaced |= index < 0;
             return index;
         }
@@ -759,6 +759,7 @@ internal sealed class DocumentSelectionLayer : Control
     /// <summary>The children of <see cref="Document"/> shown in the last layout pass, with their extent in the layer.</summary>
     private List<(int Index, double Top, double Bottom)> ShownBlocks()
     {
+        // Stryker disable once all : finding the blocks again finds the same blocks
         if (_shownBlocksLayout == LayoutCount)
             return _shownBlocks;
 
@@ -772,6 +773,7 @@ internal sealed class DocumentSelectionLayer : Control
             if (child.IsVisible)
                 _shownBlocks.Add((i, child.Bounds.Top + offset, child.Bounds.Bottom + offset));
         }
+        // Stryker disable once all : finding the blocks again finds the same blocks
         _shownBlocksLayout = LayoutCount;
         return _shownBlocks;
     }
@@ -782,6 +784,7 @@ internal sealed class DocumentSelectionLayer : Control
     /// </summary>
     private int DocumentIndexOf(IndexEntry entry)
     {
+        // Stryker disable once all : finding the index again finds the same index
         if (entry.DocumentIndex >= 0)
             return entry.DocumentIndex;
 

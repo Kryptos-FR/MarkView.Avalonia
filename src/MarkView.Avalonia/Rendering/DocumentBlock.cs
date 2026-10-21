@@ -57,15 +57,13 @@ internal sealed class IndexEntry
     public int AbsEnd => AbsStart + PlainText.Length;
     public int AbsEndWithSep => AbsEnd + Separator.Length;
 
-    /// <summary>The layer the entry is registered with; set by <see cref="DocumentSelectionLayer.Register"/>.</summary>
-    internal DocumentSelectionLayer? Layer { get; set; }
-
-    // The bounds and clip last cached, and the layout pass of the layer they were cached in.
+    // The bounds and clip last cached, and the layer and its layout pass they were cached in.
     private Rect _bounds;
     private Rect _clip;
-    private int _boundsLayout = -1;
+    private DocumentSelectionLayer? _boundsLayer;
+    private int _boundsLayout;
 
-    private bool HasCurrentBounds => Layer is { } layer && _boundsLayout == layer.LayoutCount;
+    private bool HasCurrentBounds => _boundsLayer is { } layer && _boundsLayout == layer.LayoutCount;
 
     /// <summary>
     /// Bounding rect in the <see cref="DocumentSelectionLayer"/>'s coordinate space.
@@ -81,12 +79,13 @@ internal sealed class IndexEntry
     /// </summary>
     public Rect? CachedClip => HasCurrentBounds ? _clip : null;
 
-    /// <summary>Caches <see cref="CachedBounds"/> and <see cref="CachedClip"/> until the layer's next layout pass.</summary>
-    internal void CacheBounds(Rect bounds, Rect clip)
+    /// <summary>Caches <see cref="CachedBounds"/> and <see cref="CachedClip"/> until the next layout pass of <paramref name="layer"/>.</summary>
+    internal void CacheBounds(DocumentSelectionLayer layer, Rect bounds, Rect clip)
     {
         _bounds = bounds;
         _clip = clip;
-        _boundsLayout = Layer?.LayoutCount ?? -1;
+        _boundsLayer = layer;
+        _boundsLayout = layer.LayoutCount;
     }
 
     /// <summary>
