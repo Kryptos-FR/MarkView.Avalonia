@@ -1,12 +1,18 @@
 name: Site
 
 # Builds the documentation site (docs/, with Lunet) and the browser demo, and deploys both to
-# GitHub Pages: the docs at the site root, the demo under /demo/. Deploys on each published
-# release, so the site matches the packages on NuGet.org rather than unreleased main, and on a
-# manual run. Pull requests that change docs/ only build the docs, to catch a broken page.
+# GitHub Pages: the docs at the site root, the demo under /demo/. The site shows the latest
+# release rather than unreleased main, so it deploys:
+# - on each published release, from its tag;
+# - on each push to a docs/<version> branch (e.g. docs/12.4, cut from the release tag), which
+#   takes documentation fixes cherry-picked from main between releases;
+# - on a manual run, from the branch or tag picked.
+# Pull requests that change docs/ only build the docs, to catch a broken page.
 on:
   release:
     types: [published]
+  push:
+    branches: ['docs/*']
   workflow_dispatch:
   pull_request:
     paths:
