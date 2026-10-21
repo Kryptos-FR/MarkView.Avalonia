@@ -694,7 +694,7 @@ public class AvaloniaRenderer : RendererBase
     }
 
     /// <summary>
-    /// Writes the raw text lines of a leaf block (code blocks).
+    /// Writes the raw text lines of a leaf block (code blocks), as one Run.
     /// </summary>
     public void WriteLeafRawLines(LeafBlock leafBlock)
     {
@@ -702,13 +702,14 @@ public class AvaloniaRenderer : RendererBase
             // Stryker disable once Statement : a group without line storage has Count 0, so the loop below is a no-op as well
             return;
 
+        // One Run for the whole block, each line end a '\n' in its text: a Run and a LineBreak per line
+        // cost far more to create and lay out.
         var lines = leafBlock.Lines;
         for (int i = 0; i < lines.Count; i++)
         {
-            var line = lines.Lines[i];
             if (i > 0)
-                WriteInline(new LineBreak());
-            WriteInline(new Run(line.Slice.ToString()));
+                WriteText("\n");
+            WriteText(lines.Lines[i].Slice.AsSpan());
         }
     }
 

@@ -77,7 +77,7 @@ public class TextMateLazyRenderingTests
 
             session.Append("var y = 2;\n");
             await AsyncTestHelpers.WaitUntilAsync(() =>
-                StreamedCode(viewer) is { } code && IsColoured(code) && code.Inlines!.OfType<LineBreak>().Count() == 1);
+                StreamedCode(viewer) is { } code && IsColoured(code) && code.Inlines!.OfType<Run>().Any(r => r.Text!.Contains("y")));
 
             session.Complete();
             window.UpdateLayout();
