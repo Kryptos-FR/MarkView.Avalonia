@@ -45,6 +45,8 @@ public class SlugGeneratorTests
     [InlineData(new[] { "A-1", "A", "A" }, new[] { "a-1", "a", "a-2" })]
     [InlineData(new[] { "A", "A-1", "A", "A" }, new[] { "a", "a-1", "a-2", "a-3" })]
     [InlineData(new[] { "A", "A", "A-1", "A-1" }, new[] { "a", "a-1", "a-1-1", "a-1-2" })]
+    // The anchors github.com gives these headings.
+    [InlineData(new[] { "A", "A", "A-1", "A-1", "A-2" }, new[] { "a", "a-1", "a-1-1", "a-1-2", "a-2" })]
     public void GenerateSlug_never_repeats_a_slug(string[] headings, string[] expected)
     {
         var gen = new SlugGenerator();
