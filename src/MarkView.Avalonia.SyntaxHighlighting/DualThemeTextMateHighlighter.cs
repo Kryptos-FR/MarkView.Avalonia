@@ -21,6 +21,7 @@ internal sealed class DualThemeTextMateHighlighter : IDualThemeCodeHighlighter
     private readonly TextMateGrammars _grammars;
     private readonly TextMateHighlighter _dark;
     private readonly TextMateHighlighter _light;
+    private readonly LineTokenCache<(string Text, IBrush? Dark, IBrush? Light)[]> _cache = new();
 
     public DualThemeTextMateHighlighter(ThemeName darkTheme, ThemeName lightTheme)
     {
@@ -44,9 +45,14 @@ internal sealed class DualThemeTextMateHighlighter : IDualThemeCodeHighlighter
         if (grammar == null)
             return null;
 
+        if (_cache.TryGet(grammar, line.Span, out var cached))
+            return cached;
+
         var tokens = new List<(string Text, IBrush? Dark, IBrush? Light)>();
         foreach (var (text, scopes) in TextMateHighlighter.Tokenize(grammar, line))
             tokens.Add((text, _dark.GetBrush(scopes), _light.GetBrush(scopes)));
-        return tokens;
+        var result = tokens.ToArray();
+        _cache.Add(grammar, line.Span, result);
+        return result;
     }
 }

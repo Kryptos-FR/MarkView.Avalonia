@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 
 using Markdig;
@@ -72,6 +73,36 @@ public class HighlightedCodeTests
 
         public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
             throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+    }
+
+    // Neighbouring tokens that share a colour, as TextMate splits a line by scope: "a" and "b" coloured alike,
+    // "b" with another brush of the same colour, "c" and "d" uncoloured, "e" with the dark colour of "a" but
+    // another light one, and "f" with the colour of "a" at half opacity.
+    private sealed class SplitDualHighlighter : IDualThemeCodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language) =>
+        [
+            ("a", DarkKeyword, LightKeyword),
+            ("b", new SolidColorBrush(Colors.LightBlue).ToImmutable(), new SolidColorBrush(Colors.DarkBlue).ToImmutable()),
+            ("c", null, null),
+            ("d", null, null),
+            ("e", DarkKeyword, LightOnly),
+            ("f", new ImmutableSolidColorBrush(Colors.LightBlue, 0.5), LightOnly),
+        ];
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+    }
+
+    // The same split for a single variant: "a" and "b" coloured alike, "c" and "d" uncoloured, then "e" in
+    // another colour.
+    private sealed class SplitHighlighter : ICodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            [("a", LightKeyword), ("b", new SolidColorBrush(Colors.DarkBlue).ToImmutable()), ("c", null), ("d", null), ("e", LightOnly)];
     }
 
     private static (Border Border, TextBlock Text) Write(ICodeHighlighter? highlighter, string language = "fake")
@@ -244,5 +275,54 @@ public class HighlightedCodeTests
         Assert.Equal(["first", "second"], runs.Select(r => r.Text));
         Assert.All(runs, r => Assert.False(r.IsSet(TextElement.ForegroundProperty)));
         Assert.Single(text.Inlines!.OfType<LineBreak>());
+    }
+
+    [AvaloniaFact]
+    public void Dual_highlighter_writes_neighbouring_tokens_of_one_colour_as_one_run()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, text) = Write(new SplitDualHighlighter());
+
+        var runs = text.Inlines!.OfType<Run>().ToList();
+        Assert.Equal(["ab", "cd", "e", "f", "ab", "cd", "e", "f"], runs.Select(r => r.Text));
+        Assert.Equal(Colors.DarkBlue, ColourOf(runs[0]));
+        Assert.Null(ColourOf(runs[1]));
+        Assert.Equal(Colors.Purple, ColourOf(runs[2]));
+    }
+
+    [AvaloniaFact]
+    public void Merged_tokens_follow_the_theme()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (border, text) = Write(new SplitDualHighlighter());
+        var window = new Window { Content = border };
+        try
+        {
+            window.Show();
+
+            theme.Switch(ThemeVariant.Dark);
+
+            var runs = text.Inlines!.OfType<Run>().ToList();
+            Assert.Equal(Colors.LightBlue, ColourOf(runs[0]));
+            Assert.Null(ColourOf(runs[1]));
+            Assert.Equal(Colors.LightBlue, ColourOf(runs[2]));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Plain_highlighter_writes_neighbouring_tokens_of_one_colour_as_one_run()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, text) = Write(new SplitHighlighter());
+
+        var runs = text.Inlines!.OfType<Run>().ToList();
+        Assert.Equal(["ab", "cd", "e", "ab", "cd", "e"], runs.Select(r => r.Text));
+        Assert.Equal(Colors.DarkBlue, ColourOf(runs[0]));
+        Assert.Null(ColourOf(runs[1]));
+        Assert.Equal(Colors.Purple, ColourOf(runs[2]));
     }
 }
