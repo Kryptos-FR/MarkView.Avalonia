@@ -449,7 +449,7 @@ public sealed class ColorSpanParser : InlineParser
 
 Setting `Span`/`Line`/`Column` via `InlineProcessor.GetSourcePosition` matters beyond
 bookkeeping — `MarkView.Avalonia`'s cross-block text selection (see
-[docs/text-selection.md](text-selection.md)) relies on accurate source spans to map screen
+[Selection and copy](text-selection.md)) relies on accurate source spans to map screen
 selections back to document positions.
 
 ### 3. Registering the parser — a Markdig `IMarkdownExtension`
@@ -516,4 +516,4 @@ addition to) `MarkdownViewerDefaults.Pipeline`: an instance `Pipeline` fully **r
 the global default — none of `MarkdownViewerDefaults.Pipeline`'s extensions apply unless
 you add them again yourself. `Extensions`, by contrast, is **additive** — an instance's
 `Extensions` list is combined with `MarkdownViewerDefaults.Extensions`, not a replacement
-for it. See [docs/configuration.md](../reference/markdown-viewer.md) for the full precedence rules.
+for it. See [Settings for every viewer](displaying-documents.md#settings-for-every-viewer) for the full precedence rules.
