@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
 
 using MarkView.Avalonia.Extensions;
@@ -170,10 +171,18 @@ public class MarkdownViewerImageCacheTests
     }
 
     [AvaloniaFact]
-    public void The_cache_holds_a_hundred_images_by_default_and_rejects_a_negative_size()
+    public void The_cache_holds_100_MB_by_default_and_rejects_a_negative_size()
     {
-        Assert.Equal(100, MarkdownViewerDefaults.ImageCacheSize);
+        Assert.Equal(100 * 1024 * 1024, MarkdownViewerDefaults.ImageCacheSize);
         Assert.Throws<ArgumentOutOfRangeException>(() => MarkdownViewerDefaults.ImageCacheSize = -1);
-        Assert.Equal(100, MarkdownViewerDefaults.ImageCacheSize);
+        Assert.Equal(100 * 1024 * 1024, MarkdownViewerDefaults.ImageCacheSize);
+    }
+
+    [AvaloniaFact]
+    public void A_bitmap_costs_four_bytes_per_pixel()
+    {
+        using var bitmap = new WriteableBitmap(new PixelSize(10, 5), new Vector(192, 192));
+
+        Assert.Equal(4 * 10 * 5, ImageCache.CostOf(bitmap));
     }
 }
