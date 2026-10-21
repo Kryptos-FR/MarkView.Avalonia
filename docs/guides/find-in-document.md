@@ -1,8 +1,8 @@
 ---
-title: "Find in Document"
+title: "Find in document"
 ---
 
-# Find in Document
+# Find in document
 
 `MarkdownViewer` can search its rendered document for a piece of text, highlight every match, and
 move from one match to the next, scrolling each into view. The control has no find bar of its own:
@@ -86,8 +86,8 @@ paragraphs, headings, code blocks, blockquotes, list items, table cells and foot
   alert and the summary of a details block (neither is selectable), and a code block's toolbar and
   line numbers.
 - **Collapsed content is searched.** Matches in the body of a collapsed
-  [foldable alert](configuration.md#alert-blocks), [details block](configuration.md#html-details-blocks)
-  or [heading section](configuration.md#foldable-headings) count in `FindMatchCount` but are not highlighted while hidden. Moving to such a match expands
+  [foldable alert](markdown.md#alerts), [details block](markdown.md#details-blocks)
+  or [heading section](folding.md#foldable-headings) count in `FindMatchCount` but are not highlighted while hidden. Moving to such a match expands
   every collapsed block around it before scrolling to it, as browsers open `<details>` on find.
 
 ## Scrolling
@@ -96,7 +96,7 @@ paragraphs, headings, code blocks, blockquotes, list items, table cells and foot
 `PART_ScrollViewer` with as little scrolling as possible, keeping 16 pixels between the match and
 the top or bottom of the viewport. A match already in view, with that margin, does not scroll the
 document. A match in a code block taller than
-[`CodeBlockMaxHeight`](configuration.md#line-numbers-wrapping-and-height) first scrolls the code
+[`CodeBlockMaxHeight`](code-blocks.md#line-numbers-wrapping-and-height) first scrolls the code
 block itself, then the document to that code block.
 
 ## When the document changes
@@ -144,5 +144,5 @@ the body text, code blocks (`MarkdownCodeBlockForeground`) and inline code
 | Inline code | 4.7:1 | 4.7:1 | 6.2:1 | 4.7:1 |
 
 Text in another colour, such as links (`MarkdownLinkForeground`) or the tokens of a
-[syntax-highlighted](extensions.md) code block, keeps that colour on the highlight, with whatever
+[syntax-highlighted](../packages.md) code block, keeps that colour on the highlight, with whatever
 contrast it gives. Without `MarkdownTheme.axaml` the viewer uses the same colours.

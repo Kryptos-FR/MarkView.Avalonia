@@ -144,8 +144,8 @@ exception handling instead.
   `AreTaskListsInteractive` is on.
 - **Focus.** Keyboard focus inside a block that is re-rendered returns to the viewer, as the
   control that had it is replaced.
-- **Folded blocks.** A foldable alert, details block, [thinking block](configuration.md#thinking-blocks)
-  or [heading](configuration.md#foldable-headings) that the reader expanded or collapsed keeps that
+- **Folded blocks.** A foldable alert, details block, [thinking block](chat.md#thinking-blocks)
+  or [heading](folding.md#foldable-headings) that the reader expanded or collapsed keeps that
   state when an update renders it again.
 - **Screen readers.** Assistive technology gets one children-changed notification when the
   session completes, not one per update. It is sent through the viewer's own automation peer; a
@@ -264,7 +264,7 @@ blocks stay open until they end:
 - A list, a quote or a table is one top-level block. While it is the last block, it is rebuilt
   whole on each update, however many items it holds, because a new item or row extends it. It is
   kept once it closes.
-- A [thinking block](configuration.md#thinking-blocks) is the exception: a model's reasoning can run
+- A [thinking block](chat.md#thinking-blocks) is the exception: a model's reasoning can run
   for pages before the answer starts, so while it is the last block, its frame is kept and only its
   blocks that changed are rendered again, the same way as top-level blocks. It is rendered again
   whole once, when its closing tag arrives and its header changes.

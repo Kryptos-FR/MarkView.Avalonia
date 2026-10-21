@@ -1,0 +1,17 @@
+guides:
+  - {path: readme.md, title: "Guides"}
+  - {path: displaying-documents.md, title: "Displaying documents"}
+  - {path: markdown.md, title: "Markdown and the pipeline"}
+  - {path: chat.md, title: "Chat and AI answers"}
+  - {path: streaming.md, title: "Streaming"}
+  - {path: code-blocks.md, title: "Code blocks"}
+  - {path: images.md, title: "Images and diagrams"}
+  - {path: math.md, title: "Math"}
+  - {path: themes.md, title: "Themes and presets"}
+  - {path: text-selection.md, title: "Selection and copy"}
+  - {path: find-in-document.md, title: "Find in document"}
+  - {path: folding.md, title: "Folding"}
+  - {path: task-lists.md, title: "Task lists"}
+  - {path: accessibility.md, title: "Accessibility"}
+  - {path: right-to-left.md, title: "Right-to-left text"}
+  - {path: custom-extensions.md, title: "Custom extensions"}
