@@ -57,11 +57,21 @@ internal sealed class IndexEntry
     public int AbsEnd => AbsStart + PlainText.Length;
     public int AbsEndWithSep => AbsEnd + Separator.Length;
 
+    /// <summary>The layer the entry is registered with; set by <see cref="DocumentSelectionLayer.Register"/>.</summary>
+    internal DocumentSelectionLayer? Layer { get; set; }
+
+    // The bounds and clip last cached, and the layout pass of the layer they were cached in.
+    private Rect _bounds;
+    private Rect _clip;
+    private int _boundsLayout = -1;
+
+    private bool HasCurrentBounds => Layer is { } layer && _boundsLayout == layer.LayoutCount;
+
     /// <summary>
     /// Bounding rect in the <see cref="DocumentSelectionLayer"/>'s coordinate space.
-    /// Populated by <c>DocumentSelectionLayer.EnsureBounds()</c> and invalidated on layout.
+    /// Populated by <c>DocumentSelectionLayer.EnsureBounds()</c>; <c>null</c> once the layer has been laid out again.
     /// </summary>
-    public Rect? CachedBounds { get; internal set; }
+    public Rect? CachedBounds => HasCurrentBounds ? _bounds : null;
 
     /// <summary>
     /// The visible part of <see cref="CachedBounds"/>: what is left once the ancestors inside the
@@ -69,7 +79,21 @@ internal sealed class IndexEntry
     /// height) have cut it. Equal to <see cref="CachedBounds"/> when nothing clips the entry.
     /// Populated and invalidated together with it.
     /// </summary>
-    public Rect? CachedClip { get; internal set; }
+    public Rect? CachedClip => HasCurrentBounds ? _clip : null;
+
+    /// <summary>Caches <see cref="CachedBounds"/> and <see cref="CachedClip"/> until the layer's next layout pass.</summary>
+    internal void CacheBounds(Rect bounds, Rect clip)
+    {
+        _bounds = bounds;
+        _clip = clip;
+        _boundsLayout = Layer?.LayoutCount ?? -1;
+    }
+
+    /// <summary>
+    /// The index, among the children of the layer's <see cref="DocumentSelectionLayer.Document"/>, of the
+    /// top-level control the entry is part of; <c>-1</c> until the layer has found it.
+    /// </summary>
+    internal int DocumentIndex { get; set; } = -1;
 
     public IndexEntry(TextBlock textBlock, string plainText, string separator = "\n",
         IReadOnlyDictionary<int, string>? embeddedText = null)

@@ -6,6 +6,7 @@ using System.Text;
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Media.TextFormatting;
@@ -74,6 +75,7 @@ internal sealed class DocumentSelectionLayer : Control
     public DocumentSelectionLayer()
     {
         IsHitTestVisible = false;
+        EffectiveViewportChanged += OnEffectiveViewportChanged;
         Bind(FindMatchBrushProperty, this.GetResourceObservable("MarkdownFindMatchBackground"));
         Bind(CurrentFindMatchBrushProperty, this.GetResourceObservable("MarkdownFindCurrentMatchBackground"));
     }
@@ -110,11 +112,36 @@ internal sealed class DocumentSelectionLayer : Control
         LayoutUpdated -= OnLayoutUpdated;
     }
 
+    /// <summary>
+    /// The panel whose children are the document's top-level controls, which the registered entries are part
+    /// of. Once it is set, only the entries of the top-level controls in view are highlighted, and only those
+    /// under the pointer are hit-tested; without it, every entry is.
+    /// </summary>
+    public Panel? Document { get; set; }
+
+    /// <summary>The number of layout passes so far: bounds an entry cached in an earlier one are stale.</summary>
+    internal int LayoutCount { get; private set; }
+
+    // The part of the layer in view, in its own coordinates; null until the layer is told.
+    private Rect? _viewport;
+
+    // The children of Document shown in the last layout pass, in order, with their extent in the layer.
+    private readonly List<(int Index, double Top, double Bottom)> _shownBlocks = [];
+    private int _shownBlocksLayout = -1;
+
+    private void OnEffectiveViewportChanged(object? sender, EffectiveViewportChangedEventArgs e)
+    {
+        _viewport = e.EffectiveViewport;
+        // What was out of view and left out of the highlight may be in view now.
+        // Stryker disable once Equality,Logical : drawing again without any match draws the same nothing
+        if (_anchor is not null || _findMatches.Count > 0)
+            InvalidateVisual();
+    }
+
     private void OnLayoutUpdated(object? sender, EventArgs e)
     {
-        // Invalidate cached bounds so they're recomputed on the next pointer event.
-        foreach (var entry in _entries)
-            entry.CachedBounds = null;
+        // Every cached bound becomes stale, to be computed again when next needed.
+        LayoutCount++;
 
         // Text can move without the layer itself being laid out again, as when a code block with a
         // maximum height scrolls inside itself, so the highlight is drawn again where it now is.
@@ -177,6 +204,7 @@ internal sealed class DocumentSelectionLayer : Control
     /// </summary>
     public void Register(IndexEntry entry)
     {
+        entry.Layer = this;
         entry.AbsStart = _totalLength;
         _entries.Add(entry);
         _totalLength += entry.PlainText.Length + entry.Separator.Length;
@@ -391,8 +419,10 @@ internal sealed class DocumentSelectionLayer : Control
     /// </summary>
     public int? HitTestOffset(Point posInLayer)
     {
-        foreach (var entry in _entries)
+        var (first, end) = EntriesAcross(posInLayer.Y, posInLayer.Y);
+        for (var i = first; i < end; i++)
         {
+            var entry = _entries[i];
             // A hidden entry keeps the bounds of its last layout, which may lie anywhere.
             if (IsHidden(entry)) continue;
 
@@ -423,8 +453,10 @@ internal sealed class DocumentSelectionLayer : Control
     /// </summary>
     public IndexEntry? HitTestEntry(Point posInLayer)
     {
-        foreach (var entry in _entries)
+        var (first, end) = EntriesAcross(posInLayer.Y, posInLayer.Y);
+        for (var i = first; i < end; i++)
         {
+            var entry = _entries[i];
             if (IsHidden(entry)) continue;
 
             if (entry.CachedBounds is { } b && b.Top > posInLayer.Y)
@@ -452,8 +484,10 @@ internal sealed class DocumentSelectionLayer : Control
         int selEnd = Math.Max(_anchor.Value, _focus.Value);
         if (selStart == selEnd) return;
 
-        foreach (var entry in _entries)
+        var (first, end) = EntriesInView();
+        for (var i = first; i < end; i++)
         {
+            var entry = _entries[i];
             if (entry.AbsEnd <= selStart) continue;
             if (entry.AbsStart >= selEnd) break;
             if (IsHidden(entry)) continue;
@@ -490,9 +524,16 @@ internal sealed class DocumentSelectionLayer : Control
         var matchBrush = FindMatchBrush ?? (isDark ? DarkFindMatchBrush : LightFindMatchBrush);
         var currentBrush = CurrentFindMatchBrush ?? (isDark ? DarkCurrentFindMatchBrush : LightCurrentFindMatchBrush);
 
-        for (int i = 0; i < _findMatches.Count; i++)
+        // Matches are in entry order, so those of the entries in view are found by their entry's offset.
+        var (firstEntry, endEntry) = EntriesInView();
+        if (firstEntry >= endEntry) return;
+        var fromOffset = _entries[firstEntry].AbsStart;
+        var toOffset = _entries[endEntry - 1].AbsStart;
+        var first = FirstIndex(_findMatches, match => match.Entry.AbsStart >= fromOffset);
+        for (int i = first; i < _findMatches.Count; i++)
         {
             var (entry, start, length) = _findMatches[i];
+            if (entry.AbsStart > toOffset) break;
             // A match in hidden content (e.g. the body of a collapsed alert) is counted, not drawn.
             if (IsHidden(entry) || !EnsureBounds(entry)) continue;
             var bounds = entry.CachedBounds!.Value;
@@ -662,6 +703,8 @@ internal sealed class DocumentSelectionLayer : Control
     private bool EnsureBounds(IndexEntry entry)
     {
         if (entry.CachedBounds is not null) return true;
+        // An entry registered elsewhere caches nothing; bounds computed now are used now.
+        entry.Layer ??= this;
 
         if (entry.Element.BoundsIn(this) is not { } bounds) return false;
 
@@ -673,8 +716,95 @@ internal sealed class DocumentSelectionLayer : Control
                 clip = clip.Intersect(visualBounds);
         }
 
-        entry.CachedBounds = bounds;
-        entry.CachedClip = clip;
+        entry.CacheBounds(bounds, clip);
         return true;
+    }
+
+    /// <summary>The entries that may be in view: see <see cref="EntriesAcross"/>.</summary>
+    private (int First, int End) EntriesInView() =>
+        _viewport is { } viewport ? EntriesAcross(viewport.Top, viewport.Bottom) : (0, _entries.Count);
+
+    /// <summary>
+    /// The range of entries that may cross the band from <paramref name="top"/> to <paramref name="bottom"/>
+    /// in the layer: those of the top-level controls of <see cref="Document"/> shown across it, found by
+    /// binary search since both are in document order. Every entry when the layer has no document, or when an
+    /// entry in the way is not part of it.
+    /// </summary>
+    private (int First, int End) EntriesAcross(double top, double bottom)
+    {
+        var all = (0, _entries.Count);
+        if (Document is null || _entries.Count == 0)
+            return all;
+
+        var blocks = ShownBlocks();
+        var firstBlock = FirstIndex(blocks, block => block.Bottom >= top);
+        var endBlock = FirstIndex(blocks, block => block.Top > bottom);
+        if (firstBlock >= endBlock)
+            return (0, 0);
+
+        var fromIndex = blocks[firstBlock].Index;
+        var toIndex = blocks[endBlock - 1].Index;
+        var unplaced = false;
+        int IndexOf(IndexEntry entry)
+        {
+            var index = DocumentIndexOf(entry);
+            unplaced |= index < 0;
+            return index;
+        }
+        var first = FirstIndex(_entries, entry => IndexOf(entry) >= fromIndex);
+        var end = FirstIndex(_entries, entry => IndexOf(entry) > toIndex);
+        return unplaced ? all : (first, end);
+    }
+
+    /// <summary>The children of <see cref="Document"/> shown in the last layout pass, with their extent in the layer.</summary>
+    private List<(int Index, double Top, double Bottom)> ShownBlocks()
+    {
+        if (_shownBlocksLayout == LayoutCount)
+            return _shownBlocks;
+
+        _shownBlocks.Clear();
+        var document = Document!;
+        // The document panel and the layer share their parent, so only their offset in it differs.
+        var offset = document.Bounds.Top - Bounds.Top;
+        for (var i = 0; i < document.Children.Count; i++)
+        {
+            var child = document.Children[i];
+            if (child.IsVisible)
+                _shownBlocks.Add((i, child.Bounds.Top + offset, child.Bounds.Bottom + offset));
+        }
+        _shownBlocksLayout = LayoutCount;
+        return _shownBlocks;
+    }
+
+    /// <summary>
+    /// The index among the children of <see cref="Document"/> of the top-level control <paramref name="entry"/>
+    /// is part of, or <c>-1</c> when it is not part of one (yet).
+    /// </summary>
+    private int DocumentIndexOf(IndexEntry entry)
+    {
+        if (entry.DocumentIndex >= 0)
+            return entry.DocumentIndex;
+
+        Visual? visual = entry.Element;
+        while (visual is not null && visual.GetVisualParent() != Document)
+            visual = visual.GetVisualParent();
+        if (visual is Control child)
+            entry.DocumentIndex = Document!.Children.IndexOf(child);
+        return entry.DocumentIndex;
+    }
+
+    /// <summary>The index of the first item of <paramref name="items"/> that satisfies <paramref name="predicate"/>, which is false then true along them.</summary>
+    private static int FirstIndex<T>(IReadOnlyList<T> items, Func<T, bool> predicate)
+    {
+        int low = 0, high = items.Count;
+        while (low < high)
+        {
+            var middle = (low + high) / 2;
+            if (predicate(items[middle]))
+                high = middle;
+            else
+                low = middle + 1;
+        }
+        return low;
     }
 }
