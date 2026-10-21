@@ -152,7 +152,7 @@ public partial class MarkdownViewer : ContentControl
     /// Defines the <see cref="IsImageZoomEnabled"/> property.
     /// </summary>
     public static readonly StyledProperty<bool> IsImageZoomEnabledProperty =
-        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(IsImageZoomEnabled), true);
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(IsImageZoomEnabled));
 
     /// <summary>
     /// Defines the <see cref="DetectTextDirection"/> property.
@@ -341,7 +341,7 @@ public partial class MarkdownViewer : ContentControl
     /// as fits, never enlarged past its natural size, on a dimmed backdrop. Clicking anywhere, the close
     /// button or Escape closes it, and focus returns to where it was. A zoomable image shows the zoom-in
     /// cursor and also opens with Enter or Space while it has focus; an image inside a link opens the
-    /// link instead. Defaults to <c>true</c>. Can be set from a style, e.g. for every viewer of an application.
+    /// link instead. Defaults to <c>false</c>. Can be set from a style, e.g. for every viewer of an application.
     /// </summary>
     public bool IsImageZoomEnabled
     {

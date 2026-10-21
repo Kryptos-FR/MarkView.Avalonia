@@ -188,7 +188,11 @@ public class MarkdownViewerTableCopyTests
     [AvaloniaFact]
     public async Task A_context_menu_over_the_lightbox_offers_no_table_items()
     {
-        using var f = Show($"| Picture |\n|---|\n| ![logo](fake://{Guid.NewGuid()}.png) |", v => v.Extensions.Add(new FakeLoader()));
+        using var f = Show($"| Picture |\n|---|\n| ![logo](fake://{Guid.NewGuid()}.png) |", v =>
+        {
+            v.IsImageZoomEnabled = true;
+            v.Extensions.Add(new FakeLoader());
+        });
         var image = f.Viewer.GetVisualDescendants().OfType<Image>().First(i => i.Classes.Contains("markdown-image"));
         await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
         f.Window.UpdateLayout();

@@ -64,7 +64,7 @@ See the [Mermaid documentation](https://mermaid.js.org/intro/) for syntax refere
 Clicking a diagram, or pressing Enter or Space when it has focus, opens it in the viewer's lightbox, as
 an image: fitted to the viewer (enlarged up to twice its natural size, since it is drawn as vectors),
 with zoom (mouse wheel, pinch, + and − keys, toolbar buttons) and pan (drag, arrow keys). It follows the
-viewer's `IsImageZoomEnabled` (on by default). See
+viewer's `IsImageZoomEnabled` (off by default). See
 [Image zoom](../../docs/configuration.md#image-zoom).
 
 ## Saving a Diagram

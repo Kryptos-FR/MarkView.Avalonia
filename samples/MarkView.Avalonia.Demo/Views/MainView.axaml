@@ -166,6 +166,9 @@
               <MenuItem Header="Detect text direction" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.DetectTextDirection, Mode=TwoWay}"
                         ToolTip.Tip="Lay out each block right to left or left to right from its first letter, like dir=&quot;auto&quot; in HTML" />
+              <MenuItem Header="Image zoom" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.IsImageZoomEnabled, Mode=TwoWay}"
+                        ToolTip.Tip="Open a clicked image or diagram in a lightbox, where it can be zoomed and panned" />
               <MenuItem Header="Smooth scrolling" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.IsSmoothScrollingEnabled, Mode=TwoWay}"
                         ToolTip.Tip="Animate the jumps to headings, from the outline or from links to them" />
@@ -227,6 +230,7 @@
                          AutoScrollToEnd="True"
                          IsSmoothScrollingEnabled="True"
                          ShowCodeBlockLanguage="True"
+                         IsImageZoomEnabled="True"
                          Classes.custom-styled="{Binding IsCustomStyled}"
                          CodeBlockMaxHeight="{Binding CodeBlockMaxHeight}"
                          IsVisible="{Binding !IsColorExtensionSelected}"
