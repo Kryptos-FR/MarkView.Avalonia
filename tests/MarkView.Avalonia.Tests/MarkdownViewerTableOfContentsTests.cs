@@ -81,4 +81,12 @@ public class MarkdownViewerTableOfContentsTests
             first => Assert.Equal("hello", first.Slug),
             second => Assert.Equal("hello-1", second.Slug));
     }
+
+    [AvaloniaFact]
+    public void A_heading_whose_text_is_a_suffixed_slug_gets_a_slug_of_its_own()
+    {
+        var viewer = new MarkdownViewer { Markdown = "# A\n\n# A\n\n# A-1" };
+
+        Assert.Equal(["a", "a-1", "a-1-1"], viewer.TableOfContents.Select(entry => entry.Slug));
+    }
 }
