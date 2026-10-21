@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question
+    url: https://github.com/Kryptos-FR/MarkView.Avalonia/discussions/categories/q-a
+    about: Ask how to do something in the Q&A discussions.
+  - name: Documentation
+    url: https://kryptos-fr.github.io/MarkView.Avalonia/
+    about: Guides, reference tables and the API reference.
