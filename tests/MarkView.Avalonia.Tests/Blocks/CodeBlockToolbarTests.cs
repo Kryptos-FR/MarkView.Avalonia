@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Platform;
@@ -12,6 +13,7 @@ using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Markdig;
 using Markdig.Syntax;
 using MarkView.Avalonia.Rendering;
@@ -79,7 +81,7 @@ public class CodeBlockToolbarTests
 
         var button = Assert.IsType<Button>(CopyButton(toolbar));
         Assert.Equal(1, Grid.GetColumn(button));
-        Assert.IsType<PathIcon>(button.Content);
+        Assert.IsAssignableFrom<PathIcon>(button.Content);
 
         Assert.Contains("language-csharp", code.Classes);
     }
@@ -316,10 +318,13 @@ public class CodeBlockToolbarTests
         try
         {
             var button = Assert.IsType<Button>(CopyButton(Wrapped(root).Toolbar));
-            var icon = Assert.IsType<PathIcon>(button.Content);
+            var icon = Assert.IsAssignableFrom<PathIcon>(button.Content);
             Assert.Equal("Copy code", AutomationProperties.GetName(button));
             var copyIcon = icon.Data;
             Assert.NotNull(copyIcon);
+            // The icon draws its geometry itself, without the template of a PathIcon.
+            Assert.Empty(icon.GetVisualChildren());
+            Assert.Equal(new Size(14, 14), icon.Bounds.Size);
 
             button.Classes.Add("copied");
             Assert.NotNull(icon.Data);

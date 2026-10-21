@@ -81,7 +81,7 @@ public sealed class MathBlockRenderer : AvaloniaObjectRenderer<MathBlock>
     {
         // Kept clear of the button by the theme
         renderer.ApplyTheme(border, "MarkdownMathContentTheme");
-        var button = CodeBlockToolbar.CreateCopyButton(source, MarkdownCopyOrigin.MathBlock);
+        var button = CodeBlockToolbar.CreateCopyButton(() => source, MarkdownCopyOrigin.MathBlock);
         // Its place in the corner comes from the theme, like the rest of its look.
         button.Classes.Add("markdown-math-copy");
 
