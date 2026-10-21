@@ -3,7 +3,7 @@
 [![NuGet Version](https://img.shields.io/nuget/v/MarkView.Avalonia.SyntaxHighlighting)](https://www.nuget.org/packages/MarkView.Avalonia.SyntaxHighlighting)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MarkView.Avalonia.SyntaxHighlighting)](https://www.nuget.org/packages/MarkView.Avalonia.SyntaxHighlighting)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12-blue)](https://avaloniaui.net)
-[![CI](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml/badge.svg)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/Kryptos-FR/MarkView.Avalonia/ci.yml?branch=main&label=CI)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md)
 
 Syntax highlighting of code blocks for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia), with the TextMate grammars and themes that VS Code uses. Switching between light and dark only recolours the code: the document is not rebuilt, and the scroll position is kept.

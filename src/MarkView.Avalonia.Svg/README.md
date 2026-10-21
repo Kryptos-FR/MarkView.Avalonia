@@ -3,7 +3,7 @@
 [![NuGet Version](https://img.shields.io/nuget/v/MarkView.Avalonia.Svg)](https://www.nuget.org/packages/MarkView.Avalonia.Svg)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MarkView.Avalonia.Svg)](https://www.nuget.org/packages/MarkView.Avalonia.Svg)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12-blue)](https://avaloniaui.net)
-[![CI](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml/badge.svg)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/Kryptos-FR/MarkView.Avalonia/ci.yml?branch=main&label=CI)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md)
 
 SVG images for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia), rendered with [Svg.Skia](https://github.com/wieslawsoltes/Svg.Skia), the vector library Avalonia uses itself.

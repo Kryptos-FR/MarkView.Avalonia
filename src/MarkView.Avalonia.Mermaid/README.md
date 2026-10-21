@@ -3,7 +3,7 @@
 [![NuGet Version](https://img.shields.io/nuget/v/MarkView.Avalonia.Mermaid)](https://www.nuget.org/packages/MarkView.Avalonia.Mermaid)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MarkView.Avalonia.Mermaid)](https://www.nuget.org/packages/MarkView.Avalonia.Mermaid)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12-blue)](https://avaloniaui.net)
-[![CI](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml/badge.svg)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/Kryptos-FR/MarkView.Avalonia/ci.yml?branch=main&label=CI)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md)
 
 [Mermaid](https://mermaid.js.org) diagrams for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia), drawn with [Mermaider](https://github.com/nullean/mermaider) in .NET: no browser, WebView or JavaScript.
