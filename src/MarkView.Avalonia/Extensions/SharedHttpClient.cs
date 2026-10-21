@@ -17,6 +17,7 @@ internal static class SharedHttpClient
 
     // Pooled connections are recycled after a while, so that a long-running application sees DNS changes.
     // The browser has no SocketsHttpHandler (fetch has no connection pool of its own to recycle).
+    // Stryker disable once all : runs in the static initializer, before Stryker activates any mutant
     private static HttpClient Create() => SocketsHttpHandler.IsSupported
         ? new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) })
         : new HttpClient();
@@ -30,6 +31,7 @@ internal static class SharedHttpClient
     /// </exception>
     internal static async Task<MemoryStream> DownloadAsync(Uri uri, CancellationToken cancellationToken, long maxSize = MaxResponseSize)
     {
+        // Stryker disable Boolean : ConfigureAwait(true) only resumes on the caller's thread, which changes no result a test can see
         using var response = await Instance.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         if (response.Content.Headers.ContentLength > maxSize)
@@ -45,6 +47,7 @@ internal static class SharedHttpClient
                 throw TooLarge(uri, maxSize);
             buffer.Write(chunk, 0, read);
         }
+        // Stryker restore Boolean
         buffer.Position = 0;
         return buffer;
     }
