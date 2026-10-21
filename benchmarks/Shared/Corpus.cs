@@ -31,6 +31,7 @@ public static class Corpus
         Medium => Sections(new Random(seed), 2),
         Long => Sections(new Random(seed), 20),
         Large => Sections(new Random(seed), 200),
+        _ when size.StartsWith("file:") => File.ReadAllText(size[5..]),
         _ => throw new ArgumentOutOfRangeException(nameof(size), size, null),
     };
 

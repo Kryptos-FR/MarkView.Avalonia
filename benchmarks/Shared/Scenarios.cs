@@ -102,6 +102,11 @@ public static class Scenarios
                 for (var i = -1; i < iterations; i++)
                 {
                     var viewer = Show(document);
+                    if (Environment.GetEnvironmentVariable("BENCH_SELECT") == "all")
+                        viewer.GetType().GetMethod("SelectAll")!.Invoke(viewer, null);
+                    if (Environment.GetEnvironmentVariable("BENCH_FIND") is { Length: > 0 } find)
+                        viewer.GetType().GetMethod("Find")!.Invoke(viewer, [find, Type.Missing]);
+                    BenchHost.Settle();
                     var scrollViewer = viewer.GetVisualDescendants().OfType<ScrollViewer>().First();
                     var pages = 0;
                     var sample = Measure(() =>
