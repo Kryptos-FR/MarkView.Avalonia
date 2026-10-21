@@ -7,7 +7,7 @@
     <!-- NuGet shared metadata (opt-in packaging per project) -->
     <IsPackable>false</IsPackable>
     <Authors>Nicolas Musset</Authors>
-    <PackageProjectUrl>https://github.com/Kryptos-FR/MarkView.Avalonia</PackageProjectUrl>
+    <PackageProjectUrl>https://kryptos-fr.github.io/MarkView.Avalonia/</PackageProjectUrl>
     <PackageIcon>markview-logo128.png</PackageIcon>
     <RepositoryUrl>https://github.com/Kryptos-FR/MarkView.Avalonia</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
