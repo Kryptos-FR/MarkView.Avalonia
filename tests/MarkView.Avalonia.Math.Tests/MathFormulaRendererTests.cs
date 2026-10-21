@@ -1,16 +1,12 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-using System.Runtime.InteropServices;
-
-using Avalonia;
 using Avalonia.Headless.XUnit;
-using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 
-using MarkView.Avalonia.Tests.Shared;
-
 using CSharpMath.SkiaSharp;
+
+using MarkView.Avalonia.Tests.Shared;
 
 using SkiaSharp;
 
@@ -62,10 +58,14 @@ public class MathFormulaRendererTests
     [AvaloniaFact]
     public void Render_returns_the_same_bitmap_for_the_same_formula()
     {
-        var first = MathFormulaRenderer.Render(@"\frac{a}{b} + \text{cached}", SKColors.Black);
+        // A formula no other test renders, so that the shared cache cannot already hold it.
+        var latex = $@"\frac{{a}}{{b}} + \text{{{Guid.NewGuid():N}}}";
 
-        Assert.Same(first, MathFormulaRenderer.Render(@"\frac{a}{b} + \text{cached}", SKColors.Black));
-        Assert.NotSame(first, MathFormulaRenderer.Render(@"\frac{a}{b} + \text{cached}", SKColors.White));
+        var first = MathFormulaRenderer.Render(latex, SKColors.Black);
+
+        Assert.NotNull(first);
+        Assert.Same(first, MathFormulaRenderer.Render(latex, SKColors.Black));
+        Assert.NotSame(first, MathFormulaRenderer.Render(latex, SKColors.White));
     }
 
     [AvaloniaFact]
@@ -76,41 +76,47 @@ public class MathFormulaRendererTests
         Assert.Throws<InvalidOperationException>(() => MathFormulaRenderer.Render(latex, SKColors.Black));
     }
 
-    [AvaloniaTheory]
-    [InlineData(@"x^2")]
-    [InlineData(@"\sum_{i=0}^{n} i^2 = \frac{n(n+1)(2n+1)}{6}")]
-    [InlineData(@"\begin{pmatrix} a & b \\ c & d \end{pmatrix}")]
-    [InlineData(@"\frac{")]
-    [InlineData("")]
-    public void Bake_draws_the_pixels_of_CSharpMaths_own_png(string latex)
+    // One test over every formula rather than a theory: mutation testing does not map theory cases
+    // whose data holds backslashes back to their test. On the UI thread, like every other render, since
+    // CSharpMath is not known to be thread-safe.
+    [AvaloniaFact]
+    public void Draw_draws_the_pixels_of_CSharpMaths_own_png()
     {
+        string[] formulas =
+        [
+            @"x^2",
+            @"\sum_{i=0}^{n} i^2 = \frac{n(n+1)(2n+1)}{6}",
+            @"\begin{pmatrix} a & b \\ c & d \end{pmatrix}",
+            @"\frac{",
+            "",
+        ];
         var color = SKColor.Parse("#27272A");
-        var painter = new MathPainter { LaTeX = latex, FontSize = 16f, TextColor = color, DisplayErrorInline = true };
-        using var stream = painter.DrawAsStream()!;
-        var expected = new Bitmap(stream);
+        foreach (var latex in formulas)
+        {
+            var painter = new MathPainter { LaTeX = latex, FontSize = 16f, TextColor = color, DisplayErrorInline = true };
+            using var stream = painter.DrawAsStream()!;
+            using var codec = SKCodec.Create(stream);
+            using var png = SKBitmap.Decode(codec, codec.Info with { ColorType = SKColorType.Bgra8888, AlphaType = SKAlphaType.Premul });
 
-        var actual = MathFormulaRenderer.Bake(latex, color, 16f);
+            using var drawn = MathFormulaRenderer.Draw(latex, color, 16f);
 
-        Assert.Equal(expected.PixelSize, actual.PixelSize);
-        Assert.Equal(expected.Dpi, actual.Dpi);
-        Assert.Equal(Pixels(expected), Pixels(actual));
+            Assert.Equal((png.Width, png.Height), (drawn.Width, drawn.Height));
+            Assert.Equal(SKColorType.Bgra8888, drawn.ColorType);
+            Assert.Equal(SKAlphaType.Premul, drawn.AlphaType);
+            Assert.True(png.GetPixelSpan().SequenceEqual(drawn.GetPixelSpan()), $"Pixels differ for {latex}");
+        }
     }
 
-    private static byte[] Pixels(Bitmap bitmap)
+    [AvaloniaFact]
+    public void Draw_draws_formulas_in_their_colour_and_size()
     {
-        var stride = bitmap.PixelSize.Width * 4;
-        var bytes = new byte[stride * bitmap.PixelSize.Height];
-        var buffer = Marshal.AllocHGlobal(bytes.Length);
-        try
-        {
-            bitmap.CopyPixels(new PixelRect(bitmap.PixelSize), buffer, bytes.Length, stride);
-            Marshal.Copy(buffer, bytes, 0, bytes.Length);
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(buffer);
-        }
-        return bytes;
+        using var dark = MathFormulaRenderer.Draw("x", SKColors.Black, 16f);
+        using var light = MathFormulaRenderer.Draw("x", SKColors.White, 16f);
+        using var large = MathFormulaRenderer.Draw("x", SKColors.Black, 32f);
+
+        Assert.Contains(dark.GetPixelSpan().ToArray(), b => b != 0);
+        Assert.False(dark.GetPixelSpan().SequenceEqual(light.GetPixelSpan()));
+        Assert.True(large.Width > dark.Width);
     }
 
     [AvaloniaTheory]

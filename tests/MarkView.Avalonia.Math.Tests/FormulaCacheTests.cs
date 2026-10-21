@@ -152,4 +152,19 @@ public class FormulaCacheTests
         cache.GetOrAdd("a", SKColors.Black, 16f, () => { rendered = true; return NewBitmap(); });
         Assert.True(rendered);
     }
+
+    [AvaloniaFact]
+    public void A_cleared_cache_evicts_only_what_it_holds_since()
+    {
+        var cache = new FormulaCache(2 * Cost);
+        cache.GetOrAdd("a", SKColors.Black, 16f, () => NewBitmap());
+        cache.GetOrAdd("b", SKColors.Black, 16f, () => NewBitmap());
+        cache.Clear();
+
+        foreach (var latex in new[] { "c", "d", "e" })
+            cache.GetOrAdd(latex, SKColors.Black, 16f, () => NewBitmap());
+
+        Assert.Equal(2, cache.Count);
+        Assert.Equal(2 * Cost, cache.Bytes);
+    }
 }

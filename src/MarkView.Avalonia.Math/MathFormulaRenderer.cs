@@ -35,6 +35,17 @@ internal static class MathFormulaRenderer
     /// <summary>Typesets <paramref name="latex"/> and draws it into a new bitmap.</summary>
     internal static Bitmap Bake(string latex, SKColor textColor, float fontSize)
     {
+        using var pixels = Draw(latex, textColor, fontSize);
+        return new Bitmap(PixelFormat.Bgra8888, AlphaFormat.Premul, pixels.GetPixels(),
+            new PixelSize(pixels.Width, pixels.Height), new Vector(96, 96), pixels.RowBytes);
+    }
+
+    /// <summary>
+    /// Typesets <paramref name="latex"/> and draws it into BGRA premultiplied pixels, sized as CSharpMath's
+    /// own <c>DrawAsStream()</c> sizes its surface, so that <see cref="Bake"/> needs no PNG encoding and decoding.
+    /// </summary>
+    internal static SKBitmap Draw(string latex, SKColor textColor, float fontSize)
+    {
         var painter = new MathPainter
         {
             LaTeX = latex,
@@ -43,18 +54,14 @@ internal static class MathFormulaRenderer
             DisplayErrorInline = true, // bad LaTeX renders its own error text instead of throwing
         };
 
-        // Sized as CSharpMath's own DrawAsStream() sizes its surface, but drawn straight into pixels
-        // Avalonia copies, without encoding and decoding a PNG.
         var size = painter.Measure().Size;
-        var info = new SKImageInfo(System.Math.Max((int)size.Width, 1), System.Math.Max((int)size.Height, 1), SKColorType.Bgra8888, SKAlphaType.Premul);
-        using var pixels = new SKBitmap(info);
-        using (var canvas = new SKCanvas(pixels))
-        {
-            canvas.Clear(SKColors.Transparent);
-            painter.Draw(canvas, TextAlignment.TopLeft);
-        }
-        return new Bitmap(PixelFormat.Bgra8888, AlphaFormat.Premul, pixels.GetPixels(),
-            new PixelSize(info.Width, info.Height), new Vector(96, 96), pixels.RowBytes);
+        var pixels = new SKBitmap(new SKImageInfo(
+            System.Math.Max((int)size.Width, 1), System.Math.Max((int)size.Height, 1), SKColorType.Bgra8888, SKAlphaType.Premul));
+        using var canvas = new SKCanvas(pixels);
+        // Stryker disable once Statement: a new SKBitmap is already zeroed; cleared in case that changes
+        canvas.Clear(SKColors.Transparent);
+        painter.Draw(canvas, TextAlignment.TopLeft);
+        return pixels;
     }
 
     /// <summary>
