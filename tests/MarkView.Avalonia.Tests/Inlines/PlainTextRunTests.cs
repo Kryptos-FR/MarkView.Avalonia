@@ -1,6 +1,7 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 
@@ -96,5 +97,33 @@ public class PlainTextRunTests : RenderTestBase
         renderer.Pop();
 
         Assert.Equal(["one", "two", "three"], span.Inlines.Cast<Run>().Select(r => r.Text));
+    }
+
+    [AvaloniaFact]
+    public void An_empty_literal_adds_no_run()
+    {
+        var renderer = new AvaloniaRenderer();
+        new MarkdownPipelineBuilder().Build().Setup(renderer);
+        var span = new Span();
+
+        renderer.Push(span.Inlines);
+        renderer.Write(new LiteralInline(""));
+        renderer.Pop();
+
+        Assert.Empty(span.Inlines);
+    }
+
+    [AvaloniaFact]
+    public void Text_written_outside_an_inline_container_is_dropped()
+    {
+        var renderer = new AvaloniaRenderer();
+        new MarkdownPipelineBuilder().Build().Setup(renderer);
+        var panel = new StackPanel();
+
+        renderer.Push(panel);
+        renderer.Write(new LiteralInline("text"));
+        renderer.Pop();
+
+        Assert.Empty(panel.Children);
     }
 }
