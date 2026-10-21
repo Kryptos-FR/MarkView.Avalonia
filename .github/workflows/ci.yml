@@ -24,7 +24,8 @@ concurrency:
 
 jobs:
   # Decides what the rest of the run does. Pull requests only run what their changes need:
-  # - docs-only changes run nothing (Gate still reports);
+  # - docs-only changes run nothing (Gate still reports): Markdown files never count as code,
+  #   wherever they are, except the test projects' own test documents;
   # - drafts only build and test on Ubuntu, unless labelled `ci-run-on-draft`;
   # - mutation testing only runs when labelled `ci-mutation-testing` (drafts included) or
   #   `ci-full`. With `ci-mutation-testing` it only covers the packages the pull request touches,
@@ -48,6 +49,8 @@ jobs:
         id: filter
         if: github.event_name == 'pull_request'
         with:
+          # A file counts when it matches one of a filter's patterns and none of its '!' ones.
+          predicate-quantifier: some-with-excludes
           filters: |
             shared:
               - 'Directory.Build.props'
@@ -60,23 +63,30 @@ jobs:
               - 'tests/Shared/**'
               - '.github/workflows/**'
               - '.github/scripts/**'
+              - '!**/*.md'
             core:
               - 'src/MarkView.Avalonia/**'
               - 'tests/MarkView.Avalonia.Tests/**'
+              - '!src/**/*.md'
             math:
               - 'src/MarkView.Avalonia.Math/**'
               - 'tests/MarkView.Avalonia.Math.Tests/**'
+              - '!src/**/*.md'
             mermaid:
               - 'src/MarkView.Avalonia.Mermaid/**'
               - 'tests/MarkView.Avalonia.Mermaid.Tests/**'
+              - '!src/**/*.md'
             svg:
               - 'src/MarkView.Avalonia.Svg/**'
               - 'tests/MarkView.Avalonia.Svg.Tests/**'
+              - '!src/**/*.md'
             syntax:
               - 'src/MarkView.Avalonia.SyntaxHighlighting/**'
               - 'tests/MarkView.Avalonia.SyntaxHighlighting.Tests/**'
+              - '!src/**/*.md'
             samples:
               - 'samples/**'
+              - '!**/*.md'
 
       - name: Plan the run
         id: plan
