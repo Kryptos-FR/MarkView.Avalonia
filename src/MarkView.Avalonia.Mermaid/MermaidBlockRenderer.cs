@@ -29,6 +29,9 @@ namespace MarkView.Avalonia.Mermaid;
 /// While <see cref="AvaloniaRenderer.IsProvisional"/> holds for a block (it contains the end of the text
 /// being streamed), a Mermaid fence is rendered as a <c>mermaid</c> code block and no diagram render is
 /// scheduled; it renders as a diagram once a blank line or another block follows it.
+/// A diagram renders as soon as it comes within a screen of the viewport. Where threads are available (not in the
+/// browser), every diagram also starts rendering in the background once it is in a window, so that scrolling
+/// to it later costs nothing.
 /// With <see cref="MarkdownViewer.IsImageZoomEnabled"/>, clicking a rendered diagram opens it in the viewer's
 /// lightbox, as an image, where it is fitted to the view and can be zoomed and panned.
 /// </summary>
@@ -38,15 +41,23 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
     /// <summary>The visual style diagrams are painted in.</summary>
     public MermaidStyle Style { get; } = style;
 
+    /// <summary>
+    /// Whether diagrams start rendering in the background once they are in a window, rather than only when they come
+    /// near the viewport. On by default except in the browser, where background work shares the UI thread.
+    /// </summary>
+    internal bool RendersInBackground { get; init; } = DefaultRendersInBackground;
+
+    internal static bool DefaultRendersInBackground => !OperatingSystem.IsBrowser();
+
     protected override void Write(AvaloniaRenderer renderer, FencedCodeBlock obj)
     {
         if (string.Equals(obj.Info, "mermaid", StringComparison.OrdinalIgnoreCase) && !renderer.IsProvisional(obj))
-            WriteMermaid(renderer, obj, Style);
+            WriteMermaid(renderer, obj, Style, RendersInBackground);
         else
             WriteStandardCodeBlock(renderer, obj);
     }
 
-    private static void WriteMermaid(AvaloniaRenderer renderer, FencedCodeBlock obj, MermaidStyle style)
+    private static void WriteMermaid(AvaloniaRenderer renderer, FencedCodeBlock obj, MermaidStyle style, bool inBackground)
     {
         var source = ExtractSource(obj);
 
@@ -90,6 +101,17 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
         // most in the browser, where Task.Run below shares the UI thread.
         border.EffectiveViewportChanged += OnEffectiveViewportChanged;
 
+        // A diagram that appears after the document has been laid out moves everything below it, which costs a
+        // relayout of the document each. Rendered in the background from the moment the document is attached,
+        // the diagrams are mostly ready by the time the document is first laid out.
+        if (inBackground)
+            border.AttachedToVisualTree += (_, _) =>
+            {
+                // Stryker disable once all : starting a diagram already rendering cancels that render and renders it again
+                if (!started)
+                    Start();
+            };
+
         // A ScrollViewer passes infinite available width to its children.
         // Constrain MaxWidth to the viewport width, updating on resize.
         image.AttachedToVisualTree += (_, _) =>
@@ -115,6 +137,11 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
         void OnEffectiveViewportChanged(object? sender, EffectiveViewportChangedEventArgs e)
         {
             if (!IsNearViewport(border.Bounds.Size, e.EffectiveViewport)) return;
+            Start();
+        }
+
+        void Start()
+        {
             border.EffectiveViewportChanged -= OnEffectiveViewportChanged;
             started = true;
             _ = ApplyThemeAsync();
