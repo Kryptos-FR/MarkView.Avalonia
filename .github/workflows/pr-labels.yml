@@ -5,9 +5,10 @@ name: PR Labels
 #
 # - `ci-full`: the AOT publish on Windows and macOS (CI already covers Ubuntu) and a full,
 #   non-incremental mutation run of every test project.
-# - `ci-mutation-testing`: the incremental mutation run that ci.yml makes on later pushes (the
-#   packages the pull request touches, only the code it changes; see ci-plan.yml). Nothing when
-#   the pull request is also labelled `ci-full`, which already runs it in full.
+# - `ci-mutation-testing`: an incremental mutation run (Stryker's `--since` the pull request's
+#   own base) of every test project; the projects the pull request does not touch test no
+#   mutants. Later pushes run it from ci.yml, for the touched projects only. Nothing when the
+#   pull request is also labelled `ci-full`, which already runs it in full.
 # - `ci-run-on-draft`: nothing here; ci.yml runs the normal suites on the draft's next push.
 #
 # Adding a label needs write access to the repository, so the label is the authorization.
@@ -35,29 +36,38 @@ jobs:
     with:
       os: ${{ matrix.os }}
 
-  mutation:
-    if: github.event.label.name == 'ci-full'
-    permissions:
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/mutation.yml
-
-  plan:
+  # In a stack of pull requests, github.base_ref is the stack's base (main) for every pull
+  # request in it, so diffing against it would mutate the whole stack below. The pull request's
+  # own base branch is only in the API.
+  mutation-base:
     if: >
       github.event.label.name == 'ci-mutation-testing'
       && !contains(github.event.pull_request.labels.*.name, 'ci-full')
+    runs-on: ubuntu-latest
     permissions:
-      contents: read
       pull-requests: read
-    uses: ./.github/workflows/ci-plan.yml
+    outputs:
+      since: ${{ steps.base.outputs.since }}
+    steps:
+      - id: base
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          own_base=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq .base.ref || true)
+          echo "since=origin/${own_base:-$BASE_REF}" | tee -a "$GITHUB_OUTPUT"
 
-  incremental-mutation:
-    needs: plan
-    if: needs.plan.outputs.mutation-projects != '[]'
+  # Full for `ci-full`, incremental for `ci-mutation-testing`.
+  mutation:
+    needs: mutation-base
+    if: >
+      !cancelled()
+      && (github.event.label.name == 'ci-full' || needs.mutation-base.result == 'success')
     permissions:
       contents: read
       pull-requests: write
     uses: ./.github/workflows/mutation.yml
     with:
-      projects: ${{ needs.plan.outputs.mutation-projects }}
-      since: ${{ needs.plan.outputs.mutation-since }}
+      since: ${{ needs.mutation-base.outputs.since }}
