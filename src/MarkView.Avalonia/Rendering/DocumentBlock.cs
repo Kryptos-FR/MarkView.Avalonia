@@ -57,11 +57,19 @@ internal sealed class IndexEntry
     public int AbsEnd => AbsStart + PlainText.Length;
     public int AbsEndWithSep => AbsEnd + Separator.Length;
 
+    // The bounds and clip last cached, and the layer and its layout pass they were cached in.
+    private Rect _bounds;
+    private Rect _clip;
+    private DocumentSelectionLayer? _boundsLayer;
+    private int _boundsLayout;
+
+    private bool HasCurrentBounds => _boundsLayer is { } layer && _boundsLayout == layer.LayoutCount;
+
     /// <summary>
     /// Bounding rect in the <see cref="DocumentSelectionLayer"/>'s coordinate space.
-    /// Populated by <c>DocumentSelectionLayer.EnsureBounds()</c> and invalidated on layout.
+    /// Populated by <c>DocumentSelectionLayer.EnsureBounds()</c>; <c>null</c> once the layer has been laid out again.
     /// </summary>
-    public Rect? CachedBounds { get; internal set; }
+    public Rect? CachedBounds => HasCurrentBounds ? _bounds : null;
 
     /// <summary>
     /// The visible part of <see cref="CachedBounds"/>: what is left once the ancestors inside the
@@ -69,7 +77,22 @@ internal sealed class IndexEntry
     /// height) have cut it. Equal to <see cref="CachedBounds"/> when nothing clips the entry.
     /// Populated and invalidated together with it.
     /// </summary>
-    public Rect? CachedClip { get; internal set; }
+    public Rect? CachedClip => HasCurrentBounds ? _clip : null;
+
+    /// <summary>Caches <see cref="CachedBounds"/> and <see cref="CachedClip"/> until the next layout pass of <paramref name="layer"/>.</summary>
+    internal void CacheBounds(DocumentSelectionLayer layer, Rect bounds, Rect clip)
+    {
+        _bounds = bounds;
+        _clip = clip;
+        _boundsLayer = layer;
+        _boundsLayout = layer.LayoutCount;
+    }
+
+    /// <summary>
+    /// The index, among the children of the layer's <see cref="DocumentSelectionLayer.Document"/>, of the
+    /// top-level control the entry is part of; <c>-1</c> until the layer has found it.
+    /// </summary>
+    internal int DocumentIndex { get; set; } = -1;
 
     public IndexEntry(TextBlock textBlock, string plainText, string separator = "\n",
         IReadOnlyDictionary<int, string>? embeddedText = null)

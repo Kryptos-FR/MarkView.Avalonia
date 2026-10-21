@@ -699,6 +699,7 @@ public partial class MarkdownViewer : ContentControl
         contentGrid.Children.Add(renderer.RootPanel);
         contentGrid.Children.Add(layer);
         contentGrid.Children.Add(linkLayer);
+        layer.Document = renderer.RootPanel;
         // Tab moves through the document in reading order (ICustomKeyboardNavigation.GetNext),
         // so default navigation must not walk into it in visual-tree order as well.
         KeyboardNavigation.SetTabNavigation(contentGrid, KeyboardNavigationMode.None);
