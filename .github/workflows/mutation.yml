@@ -52,11 +52,17 @@ jobs:
       # With --since, Stryker only tests the mutants in changed files and the mutants that
       # changed test files cover; any other change inside the test project (lock file, test
       # assets, stryker-config.json) makes it test the whole project.
+      # Stryker diffs the checkout against that commit directly, so the base branch's own newer
+      # commits would count as changes too: a pull request's merge ref is only rebuilt on a push,
+      # and a run from a label reuses it after the base has moved on. Diffing against the fork
+      # point leaves only the pull request's changes.
       - name: Run Stryker
         working-directory: tests/${{ matrix.test-project }}
         env:
           SINCE: ${{ inputs.since }}
-        run: dotnet stryker ${SINCE:+--since:$SINCE}
+        run: |
+          if [ -n "$SINCE" ]; then SINCE=$(git merge-base "$SINCE" HEAD); fi
+          dotnet stryker ${SINCE:+--since:$SINCE}
 
       # The reports go into a folder named after the test project, which Merge-MutationReports.ps1
       # reads the project name from: when only one artifact matches its pattern, download-artifact
