@@ -99,13 +99,14 @@ Set `IsSmoothScrollingEnabled` to animate the jumps to anchors, from code, links
 
 ### Code block toolbar
 
-Code blocks show their language and a copy button above the code, and display formulas
-(`MarkView.Avalonia.Math`) a copy button for their TeX source in their top right corner. Turn
-either off per viewer or for the whole application with a style, or show the copy buttons only
-while the pointer is over their block:
+Code blocks show a copy button above the code, and display formulas (`MarkView.Avalonia.Math`)
+a copy button for their TeX source in their top right corner. Show the language of each block
+next to its copy button, turn the buttons off per viewer or for the whole application with a
+style, or show them only while the pointer is over their block:
 
 ```xml
-<mv:MarkdownViewer ShowCodeBlockLanguage="False" ShowCodeBlockCopyButton="False" />
+<mv:MarkdownViewer ShowCodeBlockLanguage="True" />
+<mv:MarkdownViewer ShowCodeBlockCopyButton="False" />
 <mv:MarkdownViewer ShowCodeBlockCopyButtonOnHover="True" />
 ```
 

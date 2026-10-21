@@ -19,7 +19,7 @@ public class MermaidBlockRendererTests
     {
         var pipeline = new MarkdownPipelineBuilder().Build();
         var document = Markdown.Parse(markdown, pipeline);
-        var renderer = new AvaloniaRenderer();
+        var renderer = new AvaloniaRenderer { ShowCodeBlockLanguage = true };
         if (themes is not null)
             renderer.Themes = themes;
         new MermaidExtension().Register(renderer);

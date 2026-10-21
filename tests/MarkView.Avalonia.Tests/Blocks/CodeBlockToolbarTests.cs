@@ -61,10 +61,10 @@ public class CodeBlockToolbarTests
         toolbar.Children.OfType<Button>().SingleOrDefault(b => b.Classes.Contains("markdown-code-copy"));
 
     [AvaloniaFact]
-    public void Renderer_shows_both_by_default()
+    public void Renderer_shows_the_copy_button_but_not_the_language_by_default()
     {
         var renderer = new AvaloniaRenderer();
-        Assert.True(renderer.ShowCodeBlockLanguage);
+        Assert.False(renderer.ShowCodeBlockLanguage);
         Assert.True(renderer.ShowCodeBlockCopyButton);
     }
 
@@ -248,12 +248,16 @@ public class CodeBlockToolbarTests
     }
 
     [AvaloniaFact]
-    public void Viewer_shows_both_by_default_and_rerenders_when_either_changes()
+    public void Viewer_shows_the_copy_button_but_not_the_language_by_default_and_rerenders_when_either_changes()
     {
         var viewer = new MarkdownViewer { Markdown = "```csharp\nvar x = 1;\n```" };
-        Assert.True(viewer.ShowCodeBlockLanguage);
+        Assert.False(viewer.ShowCodeBlockLanguage);
         Assert.True(viewer.ShowCodeBlockCopyButton);
         Assert.Single(viewer.GetLogicalDescendants().OfType<Button>());
+        Assert.DoesNotContain(viewer.GetLogicalDescendants().OfType<TextBlock>(), tb => tb.Classes.Contains("markdown-code-language"));
+
+        viewer.ShowCodeBlockLanguage = true;
+        Assert.Single(viewer.GetLogicalDescendants().OfType<TextBlock>(), tb => tb.Classes.Contains("markdown-code-language"));
 
         viewer.ShowCodeBlockCopyButton = false;
         Assert.Empty(viewer.GetLogicalDescendants().OfType<Button>());
@@ -264,14 +268,14 @@ public class CodeBlockToolbarTests
     }
 
     [AvaloniaFact]
-    public void Viewer_toolbar_can_be_turned_off_from_a_style()
+    public void Viewer_toolbar_parts_can_be_switched_from_a_style()
     {
         var window = new Window();
         window.Styles.Add(new Style(x => x.OfType<MarkdownViewer>())
         {
             Setters =
             {
-                new Setter(MarkdownViewer.ShowCodeBlockLanguageProperty, false),
+                new Setter(MarkdownViewer.ShowCodeBlockLanguageProperty, true),
                 new Setter(MarkdownViewer.ShowCodeBlockCopyButtonProperty, false),
             },
         });
@@ -280,8 +284,8 @@ public class CodeBlockToolbarTests
         window.Show();
         try
         {
-            Assert.DoesNotContain(viewer.GetLogicalDescendants().OfType<Border>(), b => b.Classes.Contains("markdown-code-header"));
-            Assert.Contains(viewer.GetLogicalDescendants().OfType<Border>(), b => b.Classes.Contains("markdown-code-block"));
+            Assert.Single(viewer.GetLogicalDescendants().OfType<TextBlock>(), tb => tb.Classes.Contains("markdown-code-language"));
+            Assert.Empty(viewer.GetLogicalDescendants().OfType<Button>());
         }
         finally
         {

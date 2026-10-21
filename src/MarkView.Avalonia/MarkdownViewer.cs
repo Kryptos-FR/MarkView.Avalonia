@@ -103,7 +103,7 @@ public partial class MarkdownViewer : ContentControl
     /// Defines the <see cref="ShowCodeBlockLanguage"/> property.
     /// </summary>
     public static readonly StyledProperty<bool> ShowCodeBlockLanguageProperty =
-        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(ShowCodeBlockLanguage), true);
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(ShowCodeBlockLanguage));
 
     /// <summary>
     /// Defines the <see cref="ShowCodeBlockCopyButton"/> property.
@@ -239,7 +239,8 @@ public partial class MarkdownViewer : ContentControl
 
     /// <summary>
     /// Gets or sets whether code blocks show their language (the info string of a fenced code
-    /// block, e.g. <c>csharp</c>) in a toolbar above the code. Defaults to <c>true</c>.
+    /// block, e.g. <c>csharp</c>) in a toolbar above the code. Defaults to <c>false</c>, as on
+    /// GitHub.
     /// Can be set from a style, e.g. for every viewer of an application.
     /// </summary>
     public bool ShowCodeBlockLanguage
