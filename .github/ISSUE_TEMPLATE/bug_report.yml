@@ -1,0 +1,59 @@
+name: Bug report
+description: Something renders, behaves or performs differently from what you expect.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. For a question about how to do something, the [Q&A discussions](https://github.com/Kryptos-FR/MarkView.Avalonia/discussions/categories/q-a) are the better place.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead. A screenshot helps for anything visual.
+    validations:
+      required: true
+  - type: textarea
+    id: markdown
+    attributes:
+      label: Markdown that shows it
+      description: The smallest document that reproduces the problem. It will be shown as code.
+      render: markdown
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and setup
+      description: Anything else needed to see it, such as the viewer's properties, the extensions you call (`UseMath()`, `UseTextMateHighlighting()`…), the theme preset, or a code snippet.
+  - type: input
+    id: version
+    attributes:
+      label: MarkView.Avalonia version
+      description: And the versions of the other MarkView packages you use, if any.
+      placeholder: "12.4.0"
+    validations:
+      required: true
+  - type: input
+    id: avalonia
+    attributes:
+      label: Avalonia version
+      placeholder: "12.1.4"
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Browser (WebAssembly)
+        - Android
+        - iOS
+    validations:
+      required: true
+  - type: checkboxes
+    id: demo
+    attributes:
+      label: Browser demo
+      options:
+        - label: I can reproduce it in the [browser demo](https://kryptos-fr.github.io/MarkView.Avalonia/demo/)
