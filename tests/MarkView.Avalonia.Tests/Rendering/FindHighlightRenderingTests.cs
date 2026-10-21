@@ -203,7 +203,7 @@ public class FindHighlightRenderingTests
         var lines = f.Code.TextLayout.TextLines;
         var codeOrigin = f.Code.TranslatePoint(new Point(f.Code.Padding.Left, f.Code.Padding.Top), f.Layer)!.Value;
         Assert.Equal(new Vector(codeOrigin.X, codeOrigin.Y + lines[0].Height), offset);
-        Assert.Equal("second match".Length, run.Characters.Length);
+        Assert.Equal("second match\n", run.Characters.ToString());
     }
 
     [AvaloniaFact]

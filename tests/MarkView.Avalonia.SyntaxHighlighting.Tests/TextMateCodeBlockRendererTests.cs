@@ -205,7 +205,7 @@ public class TextMateCodeBlockRendererTests
     }
 
     [AvaloniaFact]
-    public void Lines_are_separated_by_exactly_one_line_break()
+    public void Lines_are_separated_by_exactly_one_line_end()
     {
         var (_, text) = SingleCodeBlock(Render("""
         ```csharp
@@ -214,10 +214,8 @@ public class TextMateCodeBlockRendererTests
         ```
         """));
 
-        var inlines = text.Inlines!.ToList();
-        Assert.IsNotType<LineBreak>(inlines[0]);
-        Assert.Single(inlines.OfType<LineBreak>());
-        Assert.IsNotType<LineBreak>(inlines[^1]);
+        Assert.Empty(text.Inlines!.OfType<LineBreak>());
+        Assert.Equal("int a;\nint b;", string.Concat(text.Inlines!.OfType<Run>().Select(r => r.Text)));
     }
 
     [AvaloniaFact]

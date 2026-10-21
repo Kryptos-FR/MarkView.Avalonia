@@ -318,8 +318,8 @@ internal sealed class DocumentSelectionLayer : Control
                 Append(sb, entry.Separator, ref otherLineEndings);
         }
 
-        // Code block lines are written with the platform's line ending (LineBreak inlines), and a copy text
-        // keeps whatever its renderer gave it. Replaced in place, as string.ReplaceLineEndings would.
+        // A LineBreak inline (a hard line break, or one a renderer wrote) reads as the platform's line ending,
+        // and a copy text keeps whatever its renderer gave it. Replaced in place, as string.ReplaceLineEndings would.
         if (otherLineEndings)
         {
             sb.Replace("\r\n", "\n");

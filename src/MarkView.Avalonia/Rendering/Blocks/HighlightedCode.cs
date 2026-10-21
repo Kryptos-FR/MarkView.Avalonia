@@ -1,6 +1,8 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Text;
+
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
@@ -108,41 +110,37 @@ internal static class HighlightedCode
     {
         Dictionary<(Color Dark, Color Light), SolidColorBrush>? palette = null;
         List<(Run Run, IBrush? Dark, IBrush? Light)>? others = null;
+        var runs = new CodeRuns(textBlock.Inlines!, (run, dark, light) =>
+        {
+            if (dark is ISolidColorBrush { Opacity: 1 } d && light is ISolidColorBrush { Opacity: 1 } l)
+            {
+                palette ??= [];
+                if (!palette.TryGetValue((d.Color, l.Color), out var brush))
+                    palette[(d.Color, l.Color)] = brush = new SolidColorBrush(isDark ? d.Color : l.Color);
+                run.Foreground = brush;
+            }
+            else if (dark != null || light != null)
+            {
+                (others ??= []).Add((run, dark, light));
+                SetForeground(run, isDark ? dark : light);
+            }
+        });
 
         for (int i = 0; i < lines.Count; i++)
         {
-            if (i > 0) textBlock.Inlines!.Add(new LineBreak());
+            if (i > 0) runs.AddLineEnd();
 
             var tokens = highlighter.HighlightBoth(lines[i], language);
             if (tokens == null)
             {
-                textBlock.Inlines!.Add(new Run(lines[i].ToString()));
+                runs.Add(lines[i].Span, null, null);
                 continue;
             }
 
-            for (var t = 0; t < tokens.Count;)
-            {
-                var (_, dark, light) = tokens[t];
-                var end = t + 1;
-                while (end < tokens.Count && SameBrush(tokens[end].Dark, dark) && SameBrush(tokens[end].Light, light))
-                    end++;
-                var run = new Run(Concat(tokens, t, end, static token => token.Text));
-                t = end;
-                if (dark is ISolidColorBrush { Opacity: 1 } d && light is ISolidColorBrush { Opacity: 1 } l)
-                {
-                    palette ??= [];
-                    if (!palette.TryGetValue((d.Color, l.Color), out var brush))
-                        palette[(d.Color, l.Color)] = brush = new SolidColorBrush(isDark ? d.Color : l.Color);
-                    run.Foreground = brush;
-                }
-                else if (dark != null || light != null)
-                {
-                    (others ??= []).Add((run, dark, light));
-                    SetForeground(run, isDark ? dark : light);
-                }
-                textBlock.Inlines!.Add(run);
-            }
+            foreach (var (text, dark, light) in tokens)
+                runs.Add(text, dark, light);
         }
+        runs.Flush();
 
         if (palette == null && others == null)
             return;
@@ -179,27 +177,6 @@ internal static class HighlightedCode
         => ReferenceEquals(a, b)
            || (a is ISolidColorBrush x && b is ISolidColorBrush y && x.Color == y.Color && x.Opacity == y.Opacity);
 
-    // The text of tokens [first, end): a single token keeps its string.
-    private static string Concat<T>(IReadOnlyList<T> tokens, int first, int end, Func<T, string> text)
-    {
-        // Stryker disable once Arithmetic : concatenating a single token gives the same text; only the copy is saved
-        if (end - first == 1)
-            return text(tokens[first]);
-
-        var length = 0;
-        for (var t = first; t < end; t++)
-            length += text(tokens[t]).Length;
-        return string.Create(length, (tokens, first, end, text), static (span, state) =>
-        {
-            for (var t = state.first; t < state.end; t++)
-            {
-                var part = state.text(state.tokens[t]);
-                part.CopyTo(span);
-                span = span[part.Length..];
-            }
-        });
-    }
-
     private static void BuildInlines(
         TextBlock textBlock,
         ICodeHighlighter? highlighter,
@@ -207,9 +184,14 @@ internal static class HighlightedCode
         bool isDark,
         IReadOnlyList<ReadOnlyMemory<char>> lines)
     {
+        var runs = new CodeRuns(textBlock.Inlines!, static (run, foreground, _) =>
+        {
+            if (foreground != null)
+                run.Foreground = foreground;
+        });
         for (int i = 0; i < lines.Count; i++)
         {
-            if (i > 0) textBlock.Inlines!.Add(new LineBreak());
+            if (i > 0) runs.AddLineEnd();
 
             var line = lines[i];
             var tokens = highlighter is IThemeAwareCodeHighlighter th
@@ -218,23 +200,85 @@ internal static class HighlightedCode
 
             if (tokens != null)
             {
-                for (var t = 0; t < tokens.Count;)
-                {
-                    var foreground = tokens[t].Foreground;
-                    var end = t + 1;
-                    while (end < tokens.Count && SameBrush(tokens[end].Foreground, foreground))
-                        end++;
-                    var run = new Run(Concat(tokens, t, end, static token => token.Text));
-                    t = end;
-                    if (foreground != null)
-                        run.Foreground = foreground;
-                    textBlock.Inlines!.Add(run);
-                }
+                foreach (var (text, foreground) in tokens)
+                    runs.Add(text, foreground, foreground);
             }
             else
             {
-                textBlock.Inlines!.Add(new Run(line.ToString()));
+                runs.Add(line.Span, null, null);
             }
+        }
+        runs.Flush();
+    }
+
+    /// <summary>
+    /// Collects a code block's text into Runs: text of one colour goes into one Run, across tokens and
+    /// line ends, so a plain block is a single Run. A line end is a <c>'\n'</c> in the text rather than
+    /// a <see cref="LineBreak"/>, and goes into whichever Run is open, as it shows no colour.
+    /// </summary>
+    private sealed class CodeRuns(InlineCollection inlines, Action<Run, IBrush?, IBrush?> colour)
+    {
+        // The open Run's text: a lone token keeps its own string, more text goes into the builder.
+        private readonly StringBuilder _builder = new();
+        private string? _single;
+        private IBrush? _dark;
+        private IBrush? _light;
+        // Whether the open text has a colour yet: line ends alone take the colour of what follows.
+        private bool _coloured;
+
+        public void Add(string text, IBrush? dark, IBrush? light)
+        {
+            Join(dark, light);
+            // Stryker disable once Equality : appending a lone token to the builder gives the same text; only the copy is saved
+            if (_single is null && _builder.Length == 0)
+                _single = text;
+            else
+                Builder().Append(text);
+        }
+
+        public void Add(ReadOnlySpan<char> text, IBrush? dark, IBrush? light)
+        {
+            Join(dark, light);
+            Builder().Append(text);
+        }
+
+        public void AddLineEnd() => Builder().Append('\n');
+
+        /// <summary>Adds the open Run, if any.</summary>
+        public void Flush()
+        {
+            var text = _single ?? _builder.ToString();
+            _single = null;
+            _builder.Clear();
+            if (text.Length == 0)
+                return;
+            var run = new Run(text);
+            if (_coloured)
+                colour(run, _dark, _light);
+            _coloured = false;
+            inlines.Add(run);
+        }
+
+        // Closes the open Run when it has another colour, and makes the colour the open one.
+        private void Join(IBrush? dark, IBrush? light)
+        {
+            if (_coloured && !(SameBrush(dark, _dark) && SameBrush(light, _light)))
+                Flush();
+            if (!_coloured)
+            {
+                (_dark, _light) = (dark, light);
+                _coloured = true;
+            }
+        }
+
+        private StringBuilder Builder()
+        {
+            if (_single is { } single)
+            {
+                _builder.Append(single);
+                _single = null;
+            }
+            return _builder;
         }
     }
 }
