@@ -43,10 +43,11 @@ The **View options** menu (the sliders icon) toggles the viewer settings that ch
 
 - **Clickable tasks**: `AreTaskListsInteractive`, task-list items as check boxes you can toggle.
 - **Smooth scrolling**: `IsSmoothScrollingEnabled`, animated jumps to headings from the outline and from anchor links. On in the demo.
+- **Lazy rendering**: `IsLazyRenderingEnabled`, on by default. Images load, formulas are typeset and code is coloured only once they come within a screen of the visible area; off, the document renders again with all of it built up front, which shows the cost on a long page.
 - **Code line numbers**: `ShowCodeBlockLineNumbers`.
 - **Wrap long code lines**: `WrapCodeBlockLines`.
 - **Short code blocks**: `CodeBlockMaxHeight` at 160 pixels, so taller blocks scroll inside themselves.
-- **Stream the document**: replays the current page through `BeginStreaming()` with `AutoScrollToEnd` on, so you can watch healing and provisional rendering work. Changing the page, opening a file or changing one of the view options above stops the replay (the code block options re-render the document, which ends the session). The viewer's `BaseUri` is set to the page's folder for the replay, since the page is unbound from `Source` to stream, so relative links and images keep resolving.
+- **Stream the document**: replays the current page through `BeginStreaming()` with `AutoScrollToEnd` on, so you can watch healing and provisional rendering work. Changing the page, opening a file or changing one of the view options above stops the replay (lazy rendering and the code block options re-render the document, which ends the session). The viewer's `BaseUri` is set to the page's folder for the replay, since the page is unbound from `Source` to stream, so relative links and images keep resolving.
 - **Heal incomplete syntax**: `BeginStreaming(healIncompleteSyntax:)`, on by default. Off, the text renders as Markdig parses it at each update, so an unmatched `` ` `` or `**` shows until its closer arrives. A change takes effect at once in a replay: the session is completed and a new one continues from the text streamed so far.
 - **Chunk size** and **Interval**: two sliders, 8 to 64 characters appended every 16 to 256 ms (40 every 20 ms by default). A small chunk every 200 ms or so is the pace of a language model, where the difference healing makes is easy to see. Both take effect at once in a replay.
 
