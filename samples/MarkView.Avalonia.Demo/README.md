@@ -22,7 +22,7 @@ The toolbar has three groups: the outline, history and **Open…** buttons on th
 | **Feature Showcase** | Core markdown: headings, text formatting (strikethrough, subscript, superscript, underline, highlight), blockquotes, task lists, tables, code blocks (multi-language), bitmap image, SVG image, Mermaid diagram |
 | **Extensions Showcase** | Opt-in extensions: footnotes, GitHub alert blocks, abbreviations with tooltips, figures with captions, YouTube thumbnail embeds |
 | **Custom Styling** | Same shared `MarkdownViewer` as the pages above, with a `custom-styled` class toggled on it; `App.axaml` scopes a handful of `markdown-*` class overrides to that class, showing that theming can be done per-instance, not only globally |
-| **Color Extension** | A dedicated `ColorExtensionView` control hosting its own `MarkdownViewer`, configured with its own `Pipeline`/`Extensions` instead of `MarkdownViewerDefaults`. Demonstrates writing a complete custom Markdig + MarkView extension (`%[color:red]text%` colour spans) — see `ColorExtension/` and [docs/custom-extensions.md](../../docs/custom-extensions.md) |
+| **Color Extension** | A dedicated `ColorExtensionView` control hosting its own `MarkdownViewer`, configured with its own `Pipeline`/`Extensions` instead of `MarkdownViewerDefaults`. Demonstrates writing a complete custom Markdig + MarkView extension (`%[color:red]text%` colour spans) — see `ColorExtension/` and [Custom extensions](../../docs/guides/custom-extensions.md) |
 | **README** | The project's own `README.md` loaded from disk (relative to the solution root) |
 
 ### Navigation and History
@@ -35,7 +35,7 @@ The toolbar has three groups: the outline, history and **Open…** buttons on th
 
 The **sun / moon** button switches the entire application between Avalonia's `Light` and `Dark` theme variants; its icon shows the current one. Syntax-highlighted code blocks and Mermaid diagrams update in-place — no document rebuild or scroll reset.
 
-The **theme preset** drop-down switches the documents between the default theme and the [theme presets](../../docs/theming.md#theme-presets), GitHub (`GitHubTheme.axaml`), Chat (`ChatTheme.axaml`) and Docs (`DocsTheme.axaml`), by inserting or removing the preset's `StyleInclude` right after `MarkdownTheme.axaml` in the application's styles (see `MainViewModel.ThemePresetIndex`). Every preset follows the Light/Dark switch.
+The **theme preset** drop-down switches the documents between the default theme and the [theme presets](../../docs/guides/themes.md#presets), GitHub (`GitHubTheme.axaml`), Chat (`ChatTheme.axaml`) and Docs (`DocsTheme.axaml`), by inserting or removing the preset's `StyleInclude` right after `MarkdownTheme.axaml` in the application's styles (see `MainViewModel.ThemePresetIndex`). Every preset follows the Light/Dark switch.
 
 ### View Options
 
@@ -43,10 +43,11 @@ The **View options** menu (the sliders icon) toggles the viewer settings that ch
 
 - **Clickable tasks**: `AreTaskListsInteractive`, task-list items as check boxes you can toggle.
 - **Smooth scrolling**: `IsSmoothScrollingEnabled`, animated jumps to headings from the outline and from anchor links. On in the demo.
+- **Lazy rendering**: `IsLazyRenderingEnabled`, on by default. Images load, formulas are typeset and code is coloured only once they come within a screen of the visible area; off, the document renders again with all of it built up front, which shows the cost on a long page.
 - **Code line numbers**: `ShowCodeBlockLineNumbers`.
 - **Wrap long code lines**: `WrapCodeBlockLines`.
 - **Short code blocks**: `CodeBlockMaxHeight` at 160 pixels, so taller blocks scroll inside themselves.
-- **Stream the document**: replays the current page through `BeginStreaming()` with `AutoScrollToEnd` on, so you can watch healing and provisional rendering work. Changing the page, opening a file or changing one of the view options above stops the replay (the code block options re-render the document, which ends the session). The viewer's `BaseUri` is set to the page's folder for the replay, since the page is unbound from `Source` to stream, so relative links and images keep resolving.
+- **Stream the document**: replays the current page through `BeginStreaming()` with `AutoScrollToEnd` on, so you can watch healing and provisional rendering work. Changing the page, opening a file or changing one of the view options above stops the replay (lazy rendering and the code block options re-render the document, which ends the session). The viewer's `BaseUri` is set to the page's folder for the replay, since the page is unbound from `Source` to stream, so relative links and images keep resolving.
 - **Heal incomplete syntax**: `BeginStreaming(healIncompleteSyntax:)`, on by default. Off, the text renders as Markdig parses it at each update, so an unmatched `` ` `` or `**` shows until its closer arrives. A change takes effect at once in a replay: the session is completed and a new one continues from the text streamed so far.
 - **Chunk size** and **Interval**: two sliders, 8 to 64 characters appended every 16 to 256 ms (40 every 20 ms by default). A small chunk every 200 ms or so is the pace of a language model, where the difference healing makes is easy to see. Both take effect at once in a replay.
 
@@ -58,7 +59,7 @@ The button is not a library feature: the demo adds it with `MermaidStylesExtensi
 
 ## How the Demo Is Configured
 
-Most configuration is done once in `App.axaml.cs` and applies globally to every `MarkdownViewer` instance. The **Color Extension** page is the exception: its dedicated control sets `Pipeline` and `Extensions` on its own `MarkdownViewer` instance instead, bypassing these app-wide defaults for parsing (see [docs/configuration.md](../../docs/configuration.md#markdig-pipeline) for the precedence rules, and [docs/custom-extensions.md](../../docs/custom-extensions.md) for the extension itself).
+Most configuration is done once in `App.axaml.cs` and applies globally to every `MarkdownViewer` instance. The **Color Extension** page is the exception: its dedicated control sets `Pipeline` and `Extensions` on its own `MarkdownViewer` instance instead, bypassing these app-wide defaults for parsing (see [Settings for every viewer](../../docs/guides/displaying-documents.md#settings-for-every-viewer) for the precedence rules, and [Custom extensions](../../docs/guides/custom-extensions.md) for the extension itself).
 
 ```csharp
 // Global pipeline — includes all opt-in extensions for the full showcase

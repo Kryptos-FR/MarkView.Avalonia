@@ -3,12 +3,10 @@
 [![NuGet Version](https://img.shields.io/nuget/v/MarkView.Avalonia.Math)](https://www.nuget.org/packages/MarkView.Avalonia.Math)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MarkView.Avalonia.Math)](https://www.nuget.org/packages/MarkView.Avalonia.Math)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12-blue)](https://avaloniaui.net)
-[![CI](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml/badge.svg)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](../../LICENSE.md)
+[![CI](https://img.shields.io/github/actions/workflow/status/Kryptos-FR/MarkView.Avalonia/ci.yml?branch=main&label=CI)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md)
 
-LaTeX math rendering extension for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia). Renders `$...$` and `\(...\)` (inline) and `$$...$$` and `\[...\]` (display) math using [CSharpMath](https://github.com/verybadcat/CSharpMath)'s SkiaSharp renderer — pure .NET, no browser, no WebView, no JavaScript runtime.
-
-Because `$` is common in ordinary prose (currency amounts, etc.), this parsing is opt-in only — enabling it changes how literal `$` characters are interpreted in your documents.
+LaTeX math for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia), typeset with [CSharpMath](https://github.com/verybadcat/CSharpMath) in .NET: no browser, WebView or JavaScript. Math is opt-in, since `$` is common in ordinary prose.
 
 ## Installation
 
@@ -16,20 +14,16 @@ Because `$` is common in ordinary prose (currency amounts, etc.), this parsing i
 dotnet add package MarkView.Avalonia.Math
 ```
 
-## Quick Start
-
-Call `UseMath()` before setting `Markdown`:
+## Usage
 
 ```csharp
-var viewer = new MarkdownViewer();
-viewer.UseMath();
-viewer.Markdown = markdownText;
+viewer.UseMath();                              // $…$, $$…$$, \(…\) and \[…\]
+viewer.UseMath(bracketDelimiters: false);      // dollars only
 ```
 
-Or activate globally at application startup:
+`UseMath()` also sets the viewer's pipeline, so that the delimiters are parsed. To enable math on every viewer of the application, add the extension and the pipeline at startup:
 
 ```csharp
-// App.axaml.cs
 MarkdownViewerDefaults.Extensions.AddMath();
 MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
     .UseGitHubExtensions()
@@ -38,90 +32,22 @@ MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
     .Build();
 ```
 
-Unlike most opt-in extensions in this repo, math needs both a pipeline change (`.UseMathematics()`
-and `.UseMathBracketDelimiters()`, so the delimiters are even parsed) and a renderer registration —
-`UseMath()` does both for you.
-
 ```markdown
-Inline: Einstein's famous equation is $E = mc^2$.
-
-Block:
+Einstein's famous equation is $E = mc^2$.
 
 $$
-\left( \sum_{k=1}^n a_k b_k \right)^2 \leq \left( \sum_{k=1}^n a_k^2 \right) \left( \sum_{k=1}^n b_k^2 \right)
-$$
-```
-
-## LaTeX Bracket Delimiters
-
-LLMs and LaTeX sources often write math as `\(...\)` (inline) and `\[...\]` (display) rather than with
-dollars. `UseMath()` enables these too, through `UseMathBracketDelimiters()`, and renders them exactly
-like their dollar counterparts:
-
-```markdown
-The roots of \(ax^2 + bx + c = 0\) are
-\[
 x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
-\]
-for any \(a \neq 0\).
+$$
 ```
 
-- `\(...\)` stays on one line, like `$...$`.
-- `\[...\]` may span several lines. When it has its lines to itself, it renders as a block (even
-  directly under a line of text, with no blank line in between); when it shares a line with text,
-  it renders inline, like `$$...$$` within a paragraph.
-- Code spans and code blocks are left alone.
+Formulas follow the theme between light and dark, display formulas get a copy button for their TeX source, and invalid LaTeX shows an error instead of throwing.
 
-In CommonMark, `\(` and `\[` are an escaped parenthesis and bracket, so with the bracket delimiters on,
-text such as `\(see below\)` becomes a formula. They keep their CommonMark meaning when the opening
-is glued to a letter or digit (`arr\[i\]`, `f\(x\)`), is never closed, or encloses nothing (`\(\)`).
-A formula's lines are still read as a paragraph first: a line inside `\[...\]` that starts like a list
-item (`- `, `+ `, `1. `) or a heading ends the paragraph, as does a blank line (which LaTeX does not
-allow in display math either), leaving the `\[` unclosed, so the source shows as text.
+## Documentation
 
-To keep only the dollar delimiters (and the CommonMark escapes):
+- [Math](https://kryptos-fr.github.io/MarkView.Avalonia/guides/math/): delimiters, the bracket rules, copy, streaming and errors.
 
-```csharp
-viewer.UseMath(bracketDelimiters: false);
-```
-
-The bracket delimiters can also be used without the dollar ones, for documents where `$` is
-common in prose: build the pipeline with `.UseMathBracketDelimiters()` and no `.UseMathematics()`.
-
-## Theme Awareness
-
-Formulas are rendered with colours matching the active Avalonia theme variant (dark `#FAFAFA`,
-light `#27272A` text), and are automatically re-rendered when the user switches between light and
-dark.
-
-## Combining with Mermaid
-
-`MathExtension` and `MermaidExtension` can both be registered in either order — each scans for
-(rather than assumes) its position in the renderer list, so `$$...$$` blocks are never mistaken
-for a Mermaid diagram or a plain code block regardless of registration order. `\[...\]` blocks are
-math blocks too, so the same applies to them.
-
-## Copy Button
-
-Each display formula gets a copy button in its top right corner, which copies its TeX source
-without the `$$`/`\[` delimiters. It follows the viewer's `ShowCodeBlockCopyButton` and
-`ShowCodeBlockCopyButtonOnHover`, like the code block copy button, and its look, tooltip and
-accessible name ("Copy formula") come from `MarkdownTheme.axaml`.
-
-```xml
-<mv:MarkdownViewer ShowCodeBlockCopyButton="False" />
-```
-
-## Streaming
-
-While a document is streaming, a `$$` or `\[` block at the end of the text is shown as a plain code block (its source as text) and becomes a formula once a blank line or another block follows it.
-
-## Error Handling
-
-Invalid LaTeX renders CSharpMath's own inline error text rather than throwing. Unexpected
-rendering failures fall back to a plain-text panel (block math) or leave the last successfully
-rendered formula in place (inline math).
+The [documentation site](https://kryptos-fr.github.io/MarkView.Avalonia/) covers the whole library, and the [demo](https://kryptos-fr.github.io/MarkView.Avalonia/demo/) shows every feature in the browser.
 
 ## License
 
-[MIT](../../LICENSE.md) © Nicolas Musset
+[MIT](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md) © Nicolas Musset

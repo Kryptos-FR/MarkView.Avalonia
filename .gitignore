@@ -486,3 +486,7 @@ $RECYCLE.BIN/
 
 # Stryker mutation testing output
 StrykerOutput/
+
+# Lunet docs site output and downloaded themes
+docs/.lunet/build/
+docs/.lunet/extends/

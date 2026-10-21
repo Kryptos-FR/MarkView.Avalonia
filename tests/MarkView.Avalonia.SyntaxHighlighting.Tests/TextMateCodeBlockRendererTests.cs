@@ -23,7 +23,7 @@ public class TextMateCodeBlockRendererTests
     {
         var pipeline = new MarkdownPipelineBuilder().Build();
         var document = Markdown.Parse(markdown, pipeline);
-        var renderer = new AvaloniaRenderer();
+        var renderer = new AvaloniaRenderer { ShowCodeBlockLanguage = true };
         var extension = new TextMateExtension(ThemeName.DarkPlus);
         extension.Register(renderer);
         pipeline.Setup(renderer);
@@ -205,7 +205,7 @@ public class TextMateCodeBlockRendererTests
     }
 
     [AvaloniaFact]
-    public void Lines_are_separated_by_exactly_one_line_break()
+    public void Lines_are_separated_by_exactly_one_line_end()
     {
         var (_, text) = SingleCodeBlock(Render("""
         ```csharp
@@ -214,10 +214,31 @@ public class TextMateCodeBlockRendererTests
         ```
         """));
 
-        var inlines = text.Inlines!.ToList();
-        Assert.IsNotType<LineBreak>(inlines[0]);
-        Assert.Single(inlines.OfType<LineBreak>());
-        Assert.IsNotType<LineBreak>(inlines[^1]);
+        Assert.Empty(text.Inlines!.OfType<LineBreak>());
+        Assert.Equal("int a;\nint b;", string.Concat(text.Inlines!.OfType<Run>().Select(r => r.Text)));
+    }
+
+    [AvaloniaFact]
+    public void A_block_comment_over_several_lines_is_coloured_as_a_comment_throughout()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Dark);
+        var (_, text) = SingleCodeBlock(Render("""
+        ```csharp
+        /* opens
+        int inside;
+        closes */
+        int after;
+        ```
+        """));
+
+        var runs = text.Inlines!.OfType<Run>().ToList();
+        Color ColourOf(string part) =>
+            ((ISolidColorBrush)runs.First(r => r.Text!.Contains(part, StringComparison.Ordinal)).Foreground!).Color;
+        var comment = ColourOf("opens");
+        Assert.Equal(comment, ColourOf("inside"));
+        Assert.Equal(comment, ColourOf("closes"));
+        var after = runs.Last(r => r.Text!.Contains("int", StringComparison.Ordinal));
+        Assert.NotEqual(comment, ((ISolidColorBrush)after.Foreground!).Color);
     }
 
     [AvaloniaFact]

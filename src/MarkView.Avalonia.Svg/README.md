@@ -3,10 +3,10 @@
 [![NuGet Version](https://img.shields.io/nuget/v/MarkView.Avalonia.Svg)](https://www.nuget.org/packages/MarkView.Avalonia.Svg)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MarkView.Avalonia.Svg)](https://www.nuget.org/packages/MarkView.Avalonia.Svg)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12-blue)](https://avaloniaui.net)
-[![CI](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml/badge.svg)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](../../LICENSE.md)
+[![CI](https://img.shields.io/github/actions/workflow/status/Kryptos-FR/MarkView.Avalonia/ci.yml?branch=main&label=CI)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md)
 
-SVG image rendering extension for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia). Renders SVG files referenced in markdown images using [Svg.Skia](https://github.com/wieslawsoltes/Svg.Skia) — the same backend that Avalonia itself uses for vector icons.
+SVG images for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia), rendered with [Svg.Skia](https://github.com/wieslawsoltes/Svg.Skia), the vector library Avalonia uses itself.
 
 ## Installation
 
@@ -14,93 +14,33 @@ SVG image rendering extension for [MarkView.Avalonia](https://www.nuget.org/pack
 dotnet add package MarkView.Avalonia.Svg
 ```
 
-## Quick Start
-
-Call `UseSvg()` before setting `Markdown`:
+## Usage
 
 ```csharp
-var viewer = new MarkdownViewer();
 viewer.UseSvg();
-viewer.Markdown = markdownText;
-```
 
-Or activate globally at application startup:
-
-```csharp
-// App.axaml.cs
+// every viewer of the application, at startup
 MarkdownViewerDefaults.Extensions.AddSvg();
 ```
 
-Markdown syntax is unchanged — standard image syntax with an `.svg` URL:
+Images keep the standard Markdown syntax:
 
 ```markdown
 ![Logo](https://example.com/logo.svg)
-![Badge](https://shields.io/badge/build-passing-green)
+![Build](https://img.shields.io/badge/build-passing-green)
 ![Inline](data:image/svg+xml;base64,PHN2Zy8+)
 ```
 
-## Supported URL Formats
+Addresses ending in `.svg`, `data:image/svg+xml` URIs and badge services that serve SVG without an `.svg` address all work; anything that is not SVG is left to the bitmap loader. An SVG image can be saved as SVG or PNG from the lightbox or the context menu.
 
-| URL form | Handled by |
-|----------|-----------|
-| `https://example.com/icon.svg` | HTTP download, SVG parse |
-| `relative/path/icon.svg` (with `BaseUri` set) | Resolved first; handled if the resolved URL is supported by `SvgImageLoader` |
-| Any `https://` / `http://` URL | Attempted speculatively; returns `null` if response is not valid SVG, letting the bitmap fallback load it |
-| `data:image/svg+xml;base64,…` | Base64 decode, SVG parse |
-| `data:image/svg+xml,…` | URL-decode, SVG parse |
-| `data:image/png;base64,…` | Not handled — passed to the next loader |
+## Documentation
 
-The speculative HTTP/HTTPS rule means badge services like `shields.io` that return SVG without a `.svg` extension are handled transparently.
+- [SVG images](https://kryptos-fr.github.io/MarkView.Avalonia/guides/images/#svg-images): which addresses are read as SVG.
+- [Saving images and diagrams](https://kryptos-fr.github.io/MarkView.Avalonia/guides/images/#saving-images-and-diagrams).
+- [Writing a custom image loader](https://kryptos-fr.github.io/MarkView.Avalonia/guides/custom-extensions/#writing-a-custom-image-loader).
 
-When using relative image paths, set `MarkdownViewer.BaseUri` to an HTTP/HTTPS base URL if you want this extension to fetch and parse those images as SVG.
-
-## Saving
-
-An SVG image loaded by this extension can be saved as its own SVG file, or as PNG (rendered at twice its
-size), from the viewer's lightbox or context menu. See
-[Saving images and diagrams](../../docs/configuration.md#saving-images-and-diagrams).
-
-## How It Works
-
-`UseSvg()` registers a `SvgExtension` which inserts `SvgImageLoader` at index 0 of `renderer.ImageLoaders`. Being first in the chain, it gets first pick on every image URL. If `CanLoad` returns `false` (e.g. a `data:image/png` URI), or if `LoadAsync` returns `null` (e.g. the HTTP response is not valid SVG), the next loader in the chain is tried.
-
-Loading is asynchronous. The `Image` control is placed in the visual tree immediately; the SVG source is set once the download and parse complete. `SvgImage` is an `AvaloniaObject` and is created on the UI thread via `Dispatcher.UIThread`.
-
-## Writing a Custom Image Loader
-
-Implement `IImageLoader` from the core package to handle any image source:
-
-```csharp
-using MarkView.Avalonia.Extensions;
-
-public class MyLoader : IImageLoader
-{
-    public bool CanLoad(string url) => url.StartsWith("myscheme://");
-
-    public async Task<IImage?> LoadAsync(string url, CancellationToken ct = default)
-    {
-        // Return null to fall through to the next loader
-        var bitmap = await FetchBitmapAsync(url, ct);
-        return bitmap;
-    }
-}
-
-// Insert at 0 to take priority, or Add() to run after built-in loaders
-renderer.ImageLoaders.Insert(0, new MyLoader());
-```
-
-Or register via a `IMarkViewExtension`:
-
-```csharp
-public class MyExtension : IMarkViewExtension
-{
-    public void Register(AvaloniaRenderer renderer)
-        => renderer.ImageLoaders.Insert(0, new MyLoader());
-}
-
-viewer.Extensions.Add(new MyExtension());
-```
+The [documentation site](https://kryptos-fr.github.io/MarkView.Avalonia/) covers the whole library, and the [demo](https://kryptos-fr.github.io/MarkView.Avalonia/demo/) shows every feature in the browser.
 
 ## License
 
-[MIT](../../LICENSE.md) © Nicolas Musset
+[MIT](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md) © Nicolas Musset

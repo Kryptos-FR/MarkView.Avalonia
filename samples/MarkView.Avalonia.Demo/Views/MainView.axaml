@@ -166,9 +166,15 @@
               <MenuItem Header="Detect text direction" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.DetectTextDirection, Mode=TwoWay}"
                         ToolTip.Tip="Lay out each block right to left or left to right from its first letter, like dir=&quot;auto&quot; in HTML" />
+              <MenuItem Header="Image zoom" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.IsImageZoomEnabled, Mode=TwoWay}"
+                        ToolTip.Tip="Open a clicked image or diagram in a lightbox, where it can be zoomed and panned" />
               <MenuItem Header="Smooth scrolling" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.IsSmoothScrollingEnabled, Mode=TwoWay}"
                         ToolTip.Tip="Animate the jumps to headings, from the outline or from links to them" />
+              <MenuItem Header="Lazy rendering" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.IsLazyRenderingEnabled, Mode=TwoWay}"
+                        ToolTip.Tip="Load images, typeset formulas and colour code only when they come within a screen of the visible area" />
               <Separator />
               <MenuItem Header="Code line numbers" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.ShowCodeBlockLineNumbers, Mode=TwoWay}"
@@ -179,6 +185,9 @@
               <MenuItem Header="Short code blocks" ToggleType="CheckBox"
                         IsChecked="{Binding IsCodeHeightLimited, Mode=TwoWay}"
                         ToolTip.Tip="Cap code blocks at 160 pixels; taller blocks scroll inside themselves" />
+              <MenuItem Header="Code language labels" ToggleType="CheckBox"
+                        IsChecked="{Binding #MarkdownView.ShowCodeBlockLanguage, Mode=TwoWay}"
+                        ToolTip.Tip="Show the language of each code block next to its copy button" />
               <MenuItem Header="Copy buttons on hover" ToggleType="CheckBox"
                         IsChecked="{Binding #MarkdownView.ShowCodeBlockCopyButtonOnHover, Mode=TwoWay}"
                         ToolTip.Tip="Show the copy buttons of code blocks and formulas only while the pointer is over them" />
@@ -223,6 +232,8 @@
                          Source="{Binding Source}" Markdown="{Binding Markdown}" BaseUri="{Binding BaseUri}"
                          AutoScrollToEnd="True"
                          IsSmoothScrollingEnabled="True"
+                         ShowCodeBlockLanguage="True"
+                         IsImageZoomEnabled="True"
                          Classes.custom-styled="{Binding IsCustomStyled}"
                          CodeBlockMaxHeight="{Binding CodeBlockMaxHeight}"
                          IsVisible="{Binding !IsColorExtensionSelected}"

@@ -16,7 +16,8 @@ namespace MarkView.Avalonia.Math;
 /// <summary>
 /// Renders Markdig <see cref="MathInline"/> nodes (<c>$...$</c>, and <c>\(...\)</c> or an in-line
 /// <c>\[...\]</c> once <c>UseMathBracketDelimiters()</c> is enabled) as an inline image
-/// produced by CSharpMath.SkiaSharp.
+/// produced by CSharpMath.SkiaSharp, once it comes near the viewport when
+/// <see cref="AvaloniaRenderer.IsLazyRenderingEnabled"/> is set.
 /// </summary>
 public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
 {
@@ -34,6 +35,31 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
             BracketMathInline => $"\\({source}\\)",
             _ => $"${source}$",
         });
+
+        if (renderer.IsLazyRenderingEnabled)
+        {
+            // Only the bitmap waits until the formula comes within a screen of the viewport. A formula
+            // over CSharpMath's safety limits still becomes plain text now, while it can be written.
+            if (!IsSafeToRender(source))
+            {
+                renderer.WriteInline(new Run(source));
+                return;
+            }
+
+            var rendered = false;
+            ThemeTracking.ReapplyOnThemeChange(image, () =>
+            {
+                if (rendered) TryApplyTheme();
+            });
+            // Past the safety limits, CSharpMath draws bad LaTeX as its own error text instead of throwing.
+            ViewportTracking.RunWhenNearViewport(image, () =>
+            {
+                rendered = true;
+                TryApplyTheme();
+            });
+            renderer.WriteInline(image);
+            return;
+        }
 
         if (!TryApplyTheme())
         {
@@ -66,6 +92,19 @@ public sealed class MathInlineRenderer : AvaloniaObjectRenderer<MathInline>
                 // collection is active at callback time.
                 return false;
             }
+        }
+    }
+
+    private static bool IsSafeToRender(string source)
+    {
+        try
+        {
+            MathFormulaRenderer.EnsureSafeToRender(source);
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
         }
     }
 }

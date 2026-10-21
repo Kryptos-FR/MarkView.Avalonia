@@ -11,9 +11,22 @@ namespace MarkView.Avalonia.Rendering.Containers;
 /// </summary>
 internal sealed class InlineContainer(InlineCollection inlines) : IContainer
 {
+    // The Run the last plain text went into, which plain text written right after extends.
+    private Run? _text;
+
     public void Add(Inline inline) => inlines.Add(inline);
 
-    public void Add(string text) => inlines.Add(new Run(text));
+    /// <summary>
+    /// Adds plain text: to the Run of the plain text added just before, if nothing came in between, or
+    /// as a new Run.
+    /// </summary>
+    public void AddText(ReadOnlySpan<char> text)
+    {
+        if (_text is { } run && inlines.Count > 0 && ReferenceEquals(inlines[^1], run))
+            run.Text = string.Concat(run.Text, text);
+        else
+            inlines.Add(_text = new Run(text.ToString()));
+    }
 
     public void Add(Control control) => inlines.Add(new InlineUIContainer { Child = control });
 }

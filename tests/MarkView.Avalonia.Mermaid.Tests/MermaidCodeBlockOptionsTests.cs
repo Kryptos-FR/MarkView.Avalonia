@@ -66,7 +66,7 @@ public class MermaidCodeBlockOptionsTests
         Assert.Equal(maxHeight, border.MaxHeight);
         Assert.Equal(lineNumbers ? "1\n2" : null, numbers?.Text);
         Assert.Equal(wrap ? TextWrapping.Wrap : TextWrapping.NoWrap, code.TextWrapping);
-        Assert.Equal(["first", "second"], code.Inlines!.OfType<Run>().Select(r => r.Text));
+        Assert.Equal(["first\nsecond"], code.Inlines!.OfType<Run>().Select(r => r.Text));
     }
 
     [AvaloniaFact]
@@ -95,7 +95,7 @@ public class MermaidCodeBlockOptionsTests
 
             theme.Switch(ThemeVariant.Dark);
 
-            Assert.Equal(3, code.Inlines!.Count);
+            Assert.Single(code.Inlines!);
             Assert.All(code.Inlines!.OfType<Run>(), r => Assert.Same(Brushes.White, r.Foreground));
             Assert.Equal("1\n2", numbers!.Text);
             Assert.Same(code, CodeBlockAssert.Layout(border).Code);

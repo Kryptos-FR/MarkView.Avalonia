@@ -1,4 +1,8 @@
-# Writing Custom Extensions
+---
+title: "Custom extensions"
+---
+
+# Custom extensions
 
 MarkView.Avalonia is designed to be extended. The three main extension points are:
 
@@ -37,7 +41,7 @@ The factory is a `FenceRendererFactory`, `Control? (string code, string info)`:
 - `info` is the whole info string after the opening fence: the language, then anything after it
   (`chart {height=200}` above), for the factory to parse as it likes. With Markdig's
   `UseGenericAttributes()` in the pipeline, a trailing `{...}` is parsed as
-  [attributes](theming.md#classes-from-generic-attributes) instead, and is not part of `info`.
+  [attributes](../reference/style-classes.md#classes-from-generic-attributes) instead, and is not part of `info`.
 - Return a **new** control on every call. Return `null` to render that block as an ordinary code
   block, e.g. when its content isn't valid for your control.
 
@@ -59,7 +63,7 @@ Behaviour:
   logger (area `Control`), so one faulty block never takes the rest of the document down.
 - **Styling.** The control is written inside a `Border` with the `markdown-custom-fence` and
   `markdown-fence-<language>` classes (the language in lower case, e.g. `markdown-fence-chart`);
-  see [Theming](theming.md#core).
+  see [Theming](../reference/style-classes.md#core).
 - **Selection.** The `Border` is selected as a whole and copied as the block's fenced source
   (```` ```chart {height=200} ```` … ```` ``` ````), as Mermaid diagrams are. To copy something
   else, set [`MarkdownSelection.CopyText`](#content-that-is-not-text) on the control the factory
@@ -153,13 +157,13 @@ public class MyCodeBlockRenderer : AvaloniaObjectRenderer<FencedCodeBlock>
 }
 ```
 
-The built-in look comes from [control themes](theming.md#sizes-spacing-and-control-themes), not from
+The built-in look comes from [control themes](themes.md#sizes-spacing-and-control-themes), not from
 the `markdown-*` classes: `renderer.ApplyTheme(control, key)` gives a control the theme with that
 resource key, found from the viewer, so it follows presets and is swapped when a preset is added or
 removed. A class alone only matches the application's own styles. Set the class too, so those
-styles and the [style class reference](theming.md#style-class-reference) still apply.
+styles and the [style class reference](../reference/style-classes.md) still apply.
 
-A custom code block renderer does not get the built-in [code block toolbar](configuration.md#code-block-toolbar), nor its line numbers, wrapping and maximum height; add your own controls if you want them.
+A custom code block renderer does not get the built-in [code block toolbar](code-blocks.md#toolbar-and-copy-button), nor its line numbers, wrapping and maximum height; add your own controls if you want them.
 
 `renderer.WriteBlock(control)` adds the control to the current `Panel` container.  
 `renderer.WriteInline(inline)` adds an inline to the current `InlineCollection`.  
@@ -212,6 +216,33 @@ directly instead keeps every rendered document alive for the lifetime of the app
 Pass an element that stays in the document for as long as the content should follow the theme —
 here the `Border`, not the `Image`, so that a renderer swapping the image for an error fallback
 keeps tracking the theme.
+
+### Content that is costly to build
+
+When the viewer's [lazy rendering](displaying-documents.md#lazy-rendering) is on, its own renderers build
+images, formulas, diagrams and syntax colours only once they are about to scroll into view. A custom
+renderer can do the same with `ViewportTracking.RunWhenNearViewport`, when
+`renderer.IsLazyRenderingEnabled` is set:
+
+```csharp
+var built = false;
+ThemeTracking.ReapplyOnThemeChange(border, () => { if (built) Bake(); });
+
+if (renderer.IsLazyRenderingEnabled)
+    ViewportTracking.RunWhenNearViewport(border, () => { built = true; Bake(); });
+else
+{
+    built = true;
+    Bake();
+}
+renderer.WriteBlock(border);
+```
+
+The callback runs once, the first time the element is laid out within one viewport height of the
+visible area, during that layout pass and before it is drawn: content it builds is laid out before
+it is ever seen. An element that is never shown never runs it, and is garbage-collected normally.
+A bare `AvaloniaRenderer` has the switch off by default, since nothing guarantees that its output will
+be laid out in a viewport; `MarkdownViewer` turns it on from its `IsLazyRenderingEnabled` property.
 
 ### Content that is not text
 
@@ -276,8 +307,8 @@ The loader chain is tried in order. The first loader whose `CanLoad` returns `tr
 
 When no loader returns an image, or a loader throws (other than for the cancellation it was given,
 which comes when the image is removed while it loads), the viewer shows a
-[placeholder](configuration.md#images-that-fail-to-load) instead. A loaded image is kept in the
-[image cache](configuration.md#image-cache) under its URL and the types of the loaders in the chain,
+[placeholder](images.md#images-that-fail-to-load) instead. A loaded image is kept in the
+[image cache](images.md#image-cache) under its URL and the types of the loaders in the chain,
 so a loader is not asked again for an image it already returned. Its result should therefore depend
 only on the URL. The viewer may show the image a loader returns in several places at once, and never
 disposes it.
@@ -306,6 +337,8 @@ public class MyHighlighter : ICodeHighlighter
 `IThemeAwareCodeHighlighter` adds `HighlightVariant(line, language, isDark)` — called in-place when the user switches themes, allowing code blocks to update colours without a full document re-render.
 
 `IDualThemeCodeHighlighter` goes further: `HighlightBoth(line, language)` tokenises a line once and returns each token's colour for both variants, so a theme switch only recolours the existing text instead of highlighting it again and rebuilding it.
+
+Each of these methods also has an overload with a `ref object? state` parameter. A code block calls it for its lines in turn, from a `null` state for the first line, each time passing on the state the previous call set, so a highlighter can carry a construct that spans lines (a block comment, a multi-line string) on to the next line. By default the overload ignores the state and calls the one without it.
 
 Register on the renderer:
 
@@ -416,7 +449,7 @@ public sealed class ColorSpanParser : InlineParser
 
 Setting `Span`/`Line`/`Column` via `InlineProcessor.GetSourcePosition` matters beyond
 bookkeeping — `MarkView.Avalonia`'s cross-block text selection (see
-[docs/text-selection.md](text-selection.md)) relies on accurate source spans to map screen
+[Selection and copy](text-selection.md)) relies on accurate source spans to map screen
 selections back to document positions.
 
 ### 3. Registering the parser — a Markdig `IMarkdownExtension`
@@ -483,4 +516,4 @@ addition to) `MarkdownViewerDefaults.Pipeline`: an instance `Pipeline` fully **r
 the global default — none of `MarkdownViewerDefaults.Pipeline`'s extensions apply unless
 you add them again yourself. `Extensions`, by contrast, is **additive** — an instance's
 `Extensions` list is combined with `MarkdownViewerDefaults.Extensions`, not a replacement
-for it. See [docs/configuration.md](configuration.md) for the full precedence rules.
+for it. See [Settings for every viewer](displaying-documents.md#settings-for-every-viewer) for the full precedence rules.

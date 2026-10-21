@@ -4,6 +4,8 @@
 using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
 
+using CSharpMath.SkiaSharp;
+
 using MarkView.Avalonia.Tests.Shared;
 
 using SkiaSharp;
@@ -51,6 +53,82 @@ public class MathFormulaRendererTests
         var bitmap = MathFormulaRenderer.Render(@"\frac{", SKColors.Black);
 
         Assert.NotNull(bitmap);
+    }
+
+    [AvaloniaFact]
+    public void Render_returns_the_same_bitmap_for_the_same_formula()
+    {
+        // A formula no other test renders, so that the shared cache cannot already hold it.
+        var latex = $@"\frac{{a}}{{b}} + \text{{{Guid.NewGuid():N}}}";
+
+        var first = MathFormulaRenderer.Render(latex, SKColors.Black);
+
+        Assert.NotNull(first);
+        Assert.Same(first, MathFormulaRenderer.Render(latex, SKColors.Black));
+        Assert.NotSame(first, MathFormulaRenderer.Render(latex, SKColors.White));
+    }
+
+    [AvaloniaFact]
+    public void Render_rejects_unsafe_source_before_the_cache()
+    {
+        var latex = new string('{', 51) + "x" + new string('}', 51);
+
+        Assert.Throws<InvalidOperationException>(() => MathFormulaRenderer.Render(latex, SKColors.Black));
+    }
+
+    // One test over every formula rather than a theory: mutation testing does not map theory cases
+    // whose data holds backslashes back to their test. On the UI thread, like every other render, since
+    // CSharpMath is not known to be thread-safe.
+    [AvaloniaFact]
+    public void Draw_draws_what_CSharpMaths_own_png_shows()
+    {
+        string[] formulas =
+        [
+            @"x^2",
+            @"\sum_{i=0}^{n} i^2 = \frac{n(n+1)(2n+1)}{6}",
+            @"\begin{pmatrix} a & b \\ c & d \end{pmatrix}",
+            @"\frac{",
+            "",
+        ];
+        var color = SKColor.Parse("#27272A");
+        foreach (var latex in formulas)
+        {
+            var painter = new MathPainter { LaTeX = latex, FontSize = 16f, TextColor = color, DisplayErrorInline = true };
+            using var stream = painter.DrawAsStream()!;
+            using var codec = SKCodec.Create(stream);
+            using var png = SKBitmap.Decode(codec, codec.Info with { ColorType = SKColorType.Bgra8888, AlphaType = SKAlphaType.Premul });
+
+            using var drawn = MathFormulaRenderer.Draw(latex, color, 16f);
+
+            Assert.Equal((png.Width, png.Height), (drawn.Width, drawn.Height));
+            Assert.Equal(SKColorType.Bgra8888, drawn.ColorType);
+            Assert.Equal(SKAlphaType.Premul, drawn.AlphaType);
+            var delta = MaxDelta(png.GetPixelSpan(), drawn.GetPixelSpan());
+            Assert.True(delta <= 8, $"Pixels differ by up to {delta} for {latex}");
+        }
+    }
+
+    // The PNG round trip unpremultiplies and premultiplies again, which on ARM (macOS CI) moves the
+    // edge pixels of a glyph by a few levels out of 255; a missing or miscoloured formula is off by far more.
+    private static int MaxDelta(ReadOnlySpan<byte> expected, ReadOnlySpan<byte> actual)
+    {
+        Assert.Equal(expected.Length, actual.Length);
+        var max = 0;
+        for (var i = 0; i < expected.Length; i++)
+            max = System.Math.Max(max, System.Math.Abs(expected[i] - actual[i]));
+        return max;
+    }
+
+    [AvaloniaFact]
+    public void Draw_draws_formulas_in_their_colour_and_size()
+    {
+        using var dark = MathFormulaRenderer.Draw("x", SKColors.Black, 16f);
+        using var light = MathFormulaRenderer.Draw("x", SKColors.White, 16f);
+        using var large = MathFormulaRenderer.Draw("x", SKColors.Black, 32f);
+
+        Assert.Contains(dark.GetPixelSpan().ToArray(), b => b != 0);
+        Assert.False(dark.GetPixelSpan().SequenceEqual(light.GetPixelSpan()));
+        Assert.True(large.Width > dark.Width);
     }
 
     [AvaloniaTheory]

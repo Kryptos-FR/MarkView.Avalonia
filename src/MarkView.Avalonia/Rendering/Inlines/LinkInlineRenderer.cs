@@ -23,7 +23,8 @@ namespace MarkView.Avalonia.Rendering.Inlines;
 /// <summary>
 /// Renders a Markdig <see cref="LinkInline"/> as a <see cref="MarkdownHyperlink"/> span or image.
 /// YouTube video links (produced by UseMediaLinks) are rendered as clickable thumbnails.
-/// An image that cannot be loaded is replaced by a <c>markdown-image-failed</c> placeholder.
+/// An image that cannot be loaded is replaced by a <c>markdown-image-failed</c> placeholder. With
+/// <see cref="AvaloniaRenderer.IsLazyRenderingEnabled"/>, an image not cached yet starts loading once it nears the viewport.
 /// While <see cref="AvaloniaRenderer.IsProvisional"/> holds for a link or image (its address may still be
 /// growing), a link keeps its text, class and title but gets no <see cref="MarkdownHyperlink.NavigateUri"/>,
 /// and an image (a YouTube one included) is written as its alt text in a plain <see cref="Run"/>, nothing being loaded.
@@ -127,21 +128,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         // Can be saved, under the name its address gives it.
         ImageExport.SetFileName(image, ImageExport.FileNameFromUrl(url));
 
-        // Start loading on first attach; cancel on detach.
-        // Deferring to AttachedToVisualTree avoids spurious cancellations from
-        // Avalonia's layout passes that detach/reattach controls during initialisation.
-        CancellationTokenSource? cts = null;
-        image.AttachedToVisualTree += (_, _) =>
-        {
-            // Guard against both "already loaded" and "load already in flight".
-            // AttachedToVisualTree can fire multiple times during layout passes; without
-            // the second guard the first in-flight task would be cancelled and a new one
-            // started, causing the image to never load.
-            if (image.Source != null || cts != null) return;
-            cts = new CancellationTokenSource();
-            _ = LoadImageAsync(renderer, image, url, cts.Token, () => ShowFailurePlaceholder(renderer, image, altText));
-        };
-        image.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
+        StartLoading(renderer, image, url, () => ShowFailurePlaceholder(renderer, image, altText));
 
         // An image inside a link opens the link instead.
         if (renderer.IsImageZoomEnabled && !IsInsideLink(obj))
@@ -253,6 +240,57 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
     }
 
     /// <summary>
+    /// Arranges for <paramref name="url"/> to be loaded into <paramref name="image"/>. With
+    /// <see cref="AvaloniaRenderer.IsLazyRenderingEnabled"/>, an image already in the shared
+    /// <see cref="ImageCache"/> is shown at once and any other starts loading once
+    /// <paramref name="image"/> comes within a screen of the viewport; otherwise loading starts once it
+    /// is attached. Removing the image from the document cancels its load.
+    /// </summary>
+    private static void StartLoading(AvaloniaRenderer renderer, Image image, string url, Action? failed = null)
+    {
+        CancellationTokenSource? cts = null;
+        if (renderer.IsLazyRenderingEnabled)
+        {
+            if (ImageCache.Shared.TryGet(url, renderer.ImageLoaders) is { } cached)
+            {
+                image.Source = cached;
+                return;
+            }
+            ViewportTracking.RunWhenNearViewport(image, Start);
+        }
+        else
+        {
+            // Deferring to AttachedToVisualTree avoids spurious cancellations from
+            // Avalonia's layout passes that detach/reattach controls during initialisation.
+            image.AttachedToVisualTree += (_, _) => Start();
+        }
+        // DetachedFromLogicalTree fires on genuine content replacement (e.g. Markdown property
+        // change), unlike DetachedFromVisualTree which also fires during layout passes. Forgetting
+        // the cancelled load lets the image load again if it is put back.
+        image.DetachedFromLogicalTree += (_, _) =>
+        {
+            if (cts is null) return;
+            cts.Cancel();
+            cts = null;
+            // Tracking ended when the cancelled load started: it starts again where the image lands.
+            if (renderer.IsLazyRenderingEnabled && image.Source is null)
+                ViewportTracking.RunWhenNearViewport(image, Start);
+        };
+
+        void Start()
+        {
+            // Guard against both "already loaded" and "load already in flight".
+            // AttachedToVisualTree can fire multiple times during layout passes (a YouTube
+            // thumbnail's Button > Grid > Image nesting amplifies this); without the second guard
+            // the first in-flight task would be cancelled and a new one started, causing the image
+            // to never load.
+            if (image.Source != null || cts != null) return;
+            cts = new CancellationTokenSource();
+            _ = LoadImageAsync(renderer, image, url, cts.Token, failed);
+        }
+    }
+
+    /// <summary>
     /// Loads <paramref name="url"/> into <paramref name="image"/> through the renderer's image loaders
     /// (index 0 first) and the shared <see cref="ImageCache"/>. Calls <paramref name="failed"/> when no
     /// loader returns an image or a loader throws, but not when the load is cancelled.
@@ -334,20 +372,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         AutomationProperties.SetControlTypeOverride(button, AutomationControlType.Hyperlink);
         AutomationProperties.SetName(button, string.IsNullOrEmpty(altText) ? videoUri.ToString() : altText);
 
-        CancellationTokenSource? cts = null;
-        thumbnail.AttachedToVisualTree += (_, _) =>
-        {
-            // Guard against both "already loaded" and "load already in flight".
-            // AttachedToVisualTree fires multiple times during Avalonia's layout passes
-            // (Button > Grid > Image nesting amplifies this). Without the second guard
-            // each re-attach would cancel the previous in-flight fetch and restart it.
-            if (thumbnail.Source != null || cts != null) return;
-            cts = new CancellationTokenSource();
-            _ = LoadImageAsync(renderer, thumbnail, thumbnailUrl, cts.Token);
-        };
-        // DetachedFromLogicalTree fires on genuine content replacement (e.g. Markdown property
-        // change), unlike DetachedFromVisualTree which also fires during layout passes.
-        thumbnail.DetachedFromLogicalTree += (_, _) => cts?.Cancel();
+        StartLoading(renderer, thumbnail, thumbnailUrl);
 
         overlayGrid.Children.Add(thumbnail);
         overlayGrid.Children.Add(playOverlay);

@@ -1,25 +1,22 @@
-# Getting Started
+---
+title: "Getting started"
+---
 
-## Installation
+# Getting started
 
-Install the core package:
+MarkView.Avalonia renders Markdown with native Avalonia controls. Install the package, include its theme, and put a `MarkdownViewer` in a window.
+
+## Install
 
 ```bash
 dotnet add package MarkView.Avalonia
 ```
 
-Optionally add extension packages for richer rendering:
+The package targets .NET 10 and Avalonia 12. Code highlighting, SVG images, Mermaid diagrams and math come in their own packages; see [Choosing packages](packages.md).
 
-```bash
-dotnet add package MarkView.Avalonia.SyntaxHighlighting  # TextMate code highlighting
-dotnet add package MarkView.Avalonia.Svg                 # SVG image rendering
-dotnet add package MarkView.Avalonia.Mermaid             # Mermaid diagram rendering
-dotnet add package MarkView.Avalonia.Math                # LaTeX math rendering
-```
+## Include the theme
 
-## 1. Include the default theme
-
-Add the built-in stylesheet to your application. The standard place is `App.axaml`:
+Add the theme to `App.axaml`, after Avalonia's own theme:
 
 ```xml
 <Application xmlns="https://github.com/avaloniaui"
@@ -32,7 +29,9 @@ Add the built-in stylesheet to your application. The standard place is `App.axam
 </Application>
 ```
 
-## 2. Add MarkdownViewer to a window
+The theme is not only colours: it holds the viewer's template, which makes the document scroll. Without it the document renders but cannot scroll. To make the document look like GitHub, a chat message or a documentation site, add a [theme preset](guides/themes.md#presets) after it.
+
+## Show a document
 
 ```xml
 <Window xmlns="https://github.com/avaloniaui"
@@ -44,66 +43,38 @@ Add the built-in stylesheet to your application. The standard place is `App.axam
 </Window>
 ```
 
-## 3. Bind to a view model
-
-Bind the `Markdown` property to a string on your view model:
+Bind `Markdown` to a string of your view model, or point `Source` at a file:
 
 ```xml
 <mv:MarkdownViewer Markdown="{Binding DocumentText}" />
-```
 
-```csharp
-public class MainViewModel : INotifyPropertyChanged
-{
-    private string _documentText = "# My Document";
-
-    public string DocumentText
-    {
-        get => _documentText;
-        set { _documentText = value; OnPropertyChanged(); }
-    }
-}
-```
-
-Alternatively, use the `Source` property to point directly at a file:
-
-```xml
-<!-- Embedded Avalonia resource -->
+<!-- An embedded resource, a file or a URL -->
 <mv:MarkdownViewer Source="avares://MyApp/Docs/readme.md" />
-
-<!-- Or bind to a Uri on the view model -->
-<mv:MarkdownViewer Source="{Binding DocumentSource}" />
 ```
 
-When `Source` is set it takes precedence over `Markdown`. The viewer supports
-`avares://` (embedded resources), `file://` (local files), and `http/https` URIs.
-The base URI for relative image links is inferred automatically from the source location.
+The viewer renders the document as GitHub does: tables, task lists, alerts, footnotes and the HTML that READMEs use. Links open in the system's browser, and relative links and images resolve against the location of `Source`. Users can select and copy text, and right-click for a context menu.
 
-See [configuration.md](configuration.md) for the full list of properties.
+## Configure every viewer at once
 
-## 4. Enable extension packages (optional)
-
-Configure globally at startup so all `MarkdownViewer` instances share the same settings:
+Set the pipeline and extensions once at startup, and every viewer of the application uses them:
 
 ```csharp
 // App.axaml.cs
 public override void OnFrameworkInitializationCompleted()
 {
-    MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder()
-        .UseGitHubExtensions()
-        .UseExtendedAlertBlocks()
-        .Build();
-
-    MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
-    MarkdownViewerDefaults.Extensions.AddSvg();
-    MarkdownViewerDefaults.Extensions.AddMermaid();
+    MarkdownViewerDefaults.Extensions.AddTextMateHighlighting(); // MarkView.Avalonia.SyntaxHighlighting
+    MarkdownViewerDefaults.Extensions.AddSvg();                  // MarkView.Avalonia.Svg
+    MarkdownViewerDefaults.Extensions.AddMermaid();              // MarkView.Avalonia.Mermaid
 
     // ...
     base.OnFrameworkInitializationCompleted();
 }
 ```
 
-External links open automatically via the platform launcher — no extra code needed.
-See [configuration.md](configuration.md) for the full set of options, including how
-to intercept `LinkClicked` to override that behavior (e.g. rendering a linked `.md`
-file in-place instead of opening it externally).
+## Next steps
+
+- [Displaying documents](guides/displaying-documents.md): `Source`, links, anchors and the table of contents.
+- [Chat and AI answers](guides/chat.md): streaming an answer as it arrives.
+- [Themes and presets](guides/themes.md): changing the look of the document.
+- [MarkdownViewer reference](reference/markdown-viewer.md): every property, event and method.
+- The [demo](https://kryptos-fr.github.io/MarkView.Avalonia/demo/) shows every feature in the browser; its source is in [`samples/`](https://github.com/Kryptos-FR/MarkView.Avalonia/tree/main/samples).

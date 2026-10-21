@@ -33,7 +33,7 @@ public class MermaidLightboxTests
 
     private static async Task<Fixture> ShowAsync(Action<MarkdownViewer>? configure = null)
     {
-        var viewer = new MarkdownViewer().UseMermaid();
+        var viewer = new MarkdownViewer { IsImageZoomEnabled = true }.UseMermaid();
         configure?.Invoke(viewer);
         viewer.Markdown = Diagram;
         var window = new Window { Width = 800, Height = 600, Content = viewer };
@@ -107,7 +107,7 @@ public class MermaidLightboxTests
     [AvaloniaFact]
     public void A_diagram_not_rendered_yet_does_not_open()
     {
-        var viewer = new MarkdownViewer().UseMermaid();
+        var viewer = new MarkdownViewer { IsImageZoomEnabled = true }.UseMermaid();
         viewer.Markdown = Diagram;
         var image = viewer.GetLogicalDescendants().OfType<Image>().Single();
 

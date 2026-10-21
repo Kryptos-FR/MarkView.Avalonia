@@ -38,14 +38,16 @@ public static class MarkdownViewerDefaults
     public static IList<IMarkViewExtension> Extensions { get; } = [];
 
     /// <summary>
-    /// The maximum number of loaded images kept in memory and shared by every
+    /// The memory, in bytes, of the loaded images kept in memory and shared by every
     /// <see cref="MarkdownViewer"/>, so that rendering an image again (a document edited and
-    /// re-rendered, a viewer recreated) neither downloads nor decodes it again. Images are keyed by
-    /// their resolved URL and the image loaders in use; the least recently used one is evicted first.
-    /// <c>0</c> disables the cache. Defaults to 100. Lowering it evicts the images beyond the new size.
+    /// re-rendered, a viewer recreated) neither downloads nor decodes it again. A bitmap counts 4 bytes
+    /// per pixel, and any other image as much as a bitmap of its size. Images are keyed by their resolved
+    /// URL and the image loaders in use; the least recently used one is evicted first. An image heavier
+    /// than a tenth of the size is not cached, so the cache always has room for ten images. <c>0</c>
+    /// disables the cache. Defaults to 100 MB. Lowering it evicts the images beyond the new size.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The value is negative.</exception>
-    public static int ImageCacheSize
+    public static long ImageCacheSize
     {
         get => ImageCache.Shared.Capacity;
         set => ImageCache.Shared.Capacity = value;

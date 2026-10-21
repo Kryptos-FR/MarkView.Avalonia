@@ -111,8 +111,8 @@ public class MarkdownExtensionsTests : RenderTestBase
     {
         var result = Render("Launch :rocket: now", _pipeline);
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
-        var runs = textBlock.Inlines!.OfType<Run>().ToList();
-        Assert.Contains(runs, r => r.Text == "\U0001F680"); // 🚀
+        var run = Assert.IsType<Run>(Assert.Single(textBlock.Inlines!));
+        Assert.Equal("Launch \U0001F680 now", run.Text); // 🚀
     }
 
     [AvaloniaFact]

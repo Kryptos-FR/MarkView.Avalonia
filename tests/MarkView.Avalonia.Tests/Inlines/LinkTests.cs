@@ -143,11 +143,38 @@ public class LinkTests : RenderTestBase
         try
         {
             window.Show();
-            window.Content = null;
-            window.Content = root;
+            // A new text layout takes the image out of the visual tree and puts it back.
+            ((TextBlock)root.Children[0]).FontSize = 30;
             await AsyncTestHelpers.PumpAsync();
 
             Assert.Single(loader.Requests);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task An_image_put_back_after_its_load_was_cancelled_loads_again()
+    {
+        var loader = new ControlledLoader("test://");
+        var (root, image) = RenderImage("![a](test://put-back.png)", loader);
+        var window = new Window { Content = root };
+        try
+        {
+            window.Show();
+            window.Content = null;
+            window.Content = root;
+            var expected = new FixedImage();
+            loader.Result.SetResult(expected);
+
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+
+            Assert.Same(expected, image.Source);
+            Assert.Equal(2, loader.Requests.Count);
+            Assert.True(loader.Tokens[0].IsCancellationRequested);
+            Assert.False(loader.Tokens[1].IsCancellationRequested);
         }
         finally
         {

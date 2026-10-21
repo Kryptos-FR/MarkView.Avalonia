@@ -27,16 +27,12 @@ public class LineBreakTests : RenderTestBase
     }
 
     [AvaloniaFact]
-    public void Soft_break_renders_as_space_Run()
+    public void Soft_break_renders_as_a_space_in_the_run_of_its_text()
     {
         // A single newline inside a paragraph is a soft break
         var result = Render("line one\nline two");
         var textBlock = Assert.IsType<MarkdownSelectableTextBlock>(Assert.Single(result.Children));
-        var inlines = textBlock.Inlines!.ToList();
-        // Run("line one") + Run(" ") + Run("line two")
-        Assert.Equal(3, inlines.Count);
-        var space = Assert.IsType<Run>(inlines[1]);
-        Assert.Equal(" ", space.Text);
+        Assert.Equal("line one line two", Assert.IsType<Run>(Assert.Single(textBlock.Inlines!)).Text);
     }
 
     [AvaloniaFact]

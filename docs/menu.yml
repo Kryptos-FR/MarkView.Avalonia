@@ -1,0 +1,15 @@
+home:
+  - {path: readme.md, title: "<i class='bi bi-house-door' aria-hidden='true'></i> Home", self: true}
+  - {url: "https://kryptos-fr.github.io/MarkView.Avalonia/getting-started/", title: "<i class='bi bi-book' aria-hidden='true'></i> Docs"}
+  - {path: api/readme.md, title: "<i class='bi bi-braces' aria-hidden='true'></i> API", folder: true}
+
+home2:
+  - {url: "https://kryptos-fr.github.io/MarkView.Avalonia/demo/", title: '<i class="bi bi-play-circle"></i> Demo', link_class: btn btn-outline-secondary}
+  - {url: "https://github.com/Kryptos-FR/MarkView.Avalonia/", title: '<i class="bi bi-github"></i> GitHub', link_class: btn btn-info}
+
+docs:
+  - {path: getting-started.md, title: "Getting started"}
+  - {path: packages.md, title: "Choosing packages"}
+  - {path: upgrading.md, title: "Upgrading to 12.4"}
+  - {path: guides/readme.md, title: "Guides", folder: true}
+  - {path: reference/readme.md, title: "Reference", folder: true}

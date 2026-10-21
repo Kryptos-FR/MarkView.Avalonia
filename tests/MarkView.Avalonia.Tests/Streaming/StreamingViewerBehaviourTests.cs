@@ -111,6 +111,40 @@ public class StreamingViewerBehaviourTests
     }
 
     [AvaloniaFact]
+    public async Task AutoScrollToEnd_keeps_following_when_the_end_is_briefly_shorter_while_it_is_laid_out()
+    {
+        // Each update rebuilds the open block at the end, empty until it comes near the viewport, as lazy
+        // content is: the scroll viewer pulls the offset in while it lays out the shorter document, and the
+        // block grows back in the same layout pass.
+        using var f = Show("", v =>
+        {
+            v.AutoScrollToEnd = true;
+            v.UseFenceRenderer("grow", (_, _) =>
+            {
+                var block = new Border();
+                ViewportTracking.RunWhenNearViewport(block, () => block.Height = 100);
+                return block;
+            });
+        });
+        var session = f.Viewer.BeginStreaming();
+        session.Append(Paragraphs("Paragraph", 40) + "\n\n```grow\n");
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+
+        for (var i = 0; i < 3; i++)
+        {
+            session.Append("line\n");
+            session.ApplyPendingUpdate();
+            await AsyncTestHelpers.PumpAsync();
+        }
+        session.Append("```\n\n" + Paragraphs("More", 10));
+        session.ApplyPendingUpdate();
+        await AsyncTestHelpers.PumpAsync();
+
+        AssertAtBottom(f);
+    }
+
+    [AvaloniaFact]
     public void AutoScrollToEnd_defaults_to_false()
     {
         Assert.False(new MarkdownViewer().AutoScrollToEnd);
@@ -557,7 +591,11 @@ public class StreamingViewerBehaviourTests
     [AvaloniaFact]
     public async Task Lightbox_stays_open_across_an_update()
     {
-        using var f = Show("", v => v.Extensions.Add(new LoaderExtension(new FakeLoader(new FakeImage(200, 100)))));
+        using var f = Show("", v =>
+        {
+            v.IsImageZoomEnabled = true;
+            v.Extensions.Add(new LoaderExtension(new FakeLoader(new FakeImage(200, 100))));
+        });
         // The headless text drawing contributes no hit-testable glyph geometry; a transparent
         // background makes each paragraph's whole row hit-testable instead.
         f.Window.Styles.Add(new Style(x => x.OfType<MarkdownSelectableTextBlock>())

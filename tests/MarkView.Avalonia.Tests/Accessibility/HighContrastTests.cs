@@ -129,6 +129,7 @@ public class HighContrastTests
         var viewer = new MarkdownViewer
         {
             HighContrastMode = HighContrastMode.Enabled,
+            ShowCodeBlockLanguage = true,
             ShowCodeBlockLineNumbers = true,
             CodeBlockMaxHeight = 100,
             Markdown = "```csharp\nvar x = 1;\nvar y = 2;\n```",

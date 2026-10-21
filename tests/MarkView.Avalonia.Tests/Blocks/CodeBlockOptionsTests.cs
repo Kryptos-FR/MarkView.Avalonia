@@ -135,9 +135,8 @@ public class CodeBlockOptionsTests
 
         var (_, numbers, code) = LineNumbered(border.Child!);
         Assert.Equal("1\n2\n3", numbers.Text);
-        // A code block's lines are LineBreak inlines, which plain text writes as the platform's line ending.
-        var nl = Environment.NewLine;
-        Assert.Equal($"var x = 1;{nl}var y = 2;{nl}var z = 3;", CodeText(code));
+        // A code block's line ends are '\n' in its text, on every platform.
+        Assert.Equal("var x = 1;\nvar y = 2;\nvar z = 3;", CodeText(code));
         Assert.Equal(TextWrapping.NoWrap, code.TextWrapping);
         Assert.Equal(double.PositiveInfinity, border.MaxHeight);
         Assert.Same(code, CodeBlockToolbar.FindCode(border));

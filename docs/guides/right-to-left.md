@@ -1,3 +1,7 @@
+---
+title: "Right-to-left text"
+---
+
 # Right-to-left text
 
 Hebrew, Arabic and other right-to-left documents render the way they read: each block of the
@@ -37,7 +41,7 @@ characters out.
 
 ## The HTML `dir` attribute
 
-With the [HTML subset](configuration.md#html-subset), `dir="rtl"` and `dir="ltr"` set a direction
+With the [HTML subset](markdown.md#html-subset), `dir="rtl"` and `dir="ltr"` set a direction
 whatever the text says:
 
 - On `<p>` and `<h1>`…`<h6>`, the direction of that paragraph or heading.

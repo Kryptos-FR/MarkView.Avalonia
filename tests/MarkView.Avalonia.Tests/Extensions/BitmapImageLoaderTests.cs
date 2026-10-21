@@ -86,27 +86,62 @@ public class BitmapImageLoaderTests
 
     [Fact]
     public void DecodeDataUri_decodes_base64_payload() =>
-        Assert.Equal(new byte[] { 1, 2, 3 }, BitmapImageLoader.DecodeDataUri("data:image/png;base64,AQID"));
+        Assert.Equal(new byte[] { 1, 2, 3 }, DataUri.Decode("data:image/png;base64,AQID"));
 
     [Fact]
     public void DecodeDataUri_base64_marker_is_case_insensitive() =>
-        Assert.Equal(new byte[] { 1, 2, 3 }, BitmapImageLoader.DecodeDataUri("data:image/png;BASE64,AQID"));
+        Assert.Equal(new byte[] { 1, 2, 3 }, DataUri.Decode("data:image/png;BASE64,AQID"));
 
     [Fact]
     public void DecodeDataUri_decodes_url_encoded_ascii_payload() =>
-        Assert.Equal("<svg/>"u8.ToArray(), BitmapImageLoader.DecodeDataUri("data:image/svg+xml,%3Csvg%2F%3E"));
+        Assert.Equal("<svg/>"u8.ToArray(), DataUri.Decode("data:image/svg+xml,%3Csvg%2F%3E"));
 
     [Fact]
     public void DecodeDataUri_decodes_url_encoded_payload_as_utf8() =>
-        Assert.Equal(new byte[] { 0xC3, 0xA9 }, BitmapImageLoader.DecodeDataUri("data:text/plain,%C3%A9"));
+        Assert.Equal(new byte[] { 0xC3, 0xA9 }, DataUri.Decode("data:text/plain,%C3%A9"));
 
     [Fact]
     public void DecodeDataUri_without_comma_returns_empty() =>
-        Assert.Empty(BitmapImageLoader.DecodeDataUri("data:image/png;base64"));
+        Assert.Empty(DataUri.Decode("data:image/png;base64"));
+
+    [Theory]
+    [InlineData("data:image/png;base64,AQIDBA==", new byte[] { 1, 2, 3, 4 })]
+    [InlineData("data:image/png;base64,AQIDBAU=", new byte[] { 1, 2, 3, 4, 5 })]
+    [InlineData("data:image/png;base64,AQ ID", new byte[] { 1, 2, 3 })]
+    [InlineData("data:image/png;base64,AQID    ", new byte[] { 1, 2, 3 })]
+    [InlineData("data:image/png;base64,", new byte[0])]
+    public void DecodeDataUri_decodes_padded_and_spaced_base64(string uri, byte[] expected) =>
+        Assert.Equal(expected, DataUri.Decode(uri));
+
+    [Theory]
+    [InlineData(300_000)]
+    [InlineData(300_001)]
+    [InlineData(300_002)]
+    public void DecodeDataUri_decodes_base64_without_copying_the_payload(int length)
+    {
+        var expected = new byte[length];
+        new Random(length).NextBytes(expected);
+        var uri = "data:image/png;base64," + Convert.ToBase64String(expected);
+        DataUri.Decode("data:image/png;base64,AQID");
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        var bytes = DataUri.Decode(uri);
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.Equal(expected, bytes);
+        // Only the decoded bytes: a copy of the payload alone would take two bytes per character.
+        Assert.InRange(allocated, length, length + 1024);
+    }
+
+    [Theory]
+    [InlineData("data:image/png;base64,AQI*")]
+    [InlineData("data:image/png;base64,A")]
+    public void DecodeDataUri_rejects_invalid_base64(string uri) =>
+        Assert.Throws<FormatException>(() => DataUri.Decode(uri));
 
     [Fact]
     public void DecodeDataUri_with_comma_at_start_decodes_the_payload() =>
-        Assert.Equal("abc"u8.ToArray(), BitmapImageLoader.DecodeDataUri(",abc"));
+        Assert.Equal("abc"u8.ToArray(), DataUri.Decode(",abc"));
 
     // LoadAsync — avares resource
 

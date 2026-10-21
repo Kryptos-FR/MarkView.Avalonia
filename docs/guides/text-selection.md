@@ -1,4 +1,8 @@
-# Text Selection
+---
+title: "Selection and copy"
+---
+
+# Selection and copy
 
 `MarkdownViewer` supports document-wide text selection via a transparent `DocumentSelectionLayer` overlay. The layer covers the entire rendered document and uses `TextBlock.TextLayout` hit-testing to map pointer positions to character offsets.
 
@@ -63,7 +67,7 @@ The viewer has a context menu, opened by a right-click or, when the viewer or a 
 | Copy link to heading | Copies a [link to the heading](#copying-a-link-to-a-heading) the menu was opened on. Shown only on a heading, under the pointer. |
 | Copy table | Copies the whole table the menu was opened on, whatever is selected, as [tab-separated values](#copying-a-table) and an HTML table. Shown only on a table, under the pointer or holding the focused link. |
 | Copy table as Markdown | Copies that table as [Markdown](#copying-a-table). Shown with Copy table. |
-| Save image as… | Saves the image or Mermaid diagram the menu was opened on to a file, see [Saving images and diagrams](configuration.md#saving-images-and-diagrams). Shown only on one, under the pointer or focused with `Tab`, while `IsImageSaveEnabled` is set. |
+| Save image as… | Saves the image or Mermaid diagram the menu was opened on to a file, see [Saving images and diagrams](images.md#saving-images-and-diagrams). Shown only on one, under the pointer or focused with `Tab`, while `IsImageSaveEnabled` is set. |
 | Select all | Selects the whole document, as `Ctrl+A` does. |
 
 A right-click on text outside the selection clears it first, as in a text editor; a right-click inside it keeps it, so it can be copied.
@@ -110,7 +114,7 @@ Each item has a style class (`markdown-context-copy`, `markdown-context-copy-mar
 
 ### Copying a link to a heading
 
-Copy link to heading writes the address of the document with the heading's [anchor](configuration.md#anchor-navigation) as its fragment, such as `https://example.com/guide.md#installation`, when the document was loaded through `Source` from the web or a file: the link opens the document at that heading in a viewer given it as its `Source`, and on a site that makes the same GitHub-style anchors. Any fragment `Source` had is replaced, and its query is kept. A document set through `Markdown`, or loaded from the application's resources (`avares://`), gives the anchor alone, such as `#installation`, which links to the heading from the same document.
+Copy link to heading writes the address of the document with the heading's [anchor](displaying-documents.md#anchors) as its fragment, such as `https://example.com/guide.md#installation`, when the document was loaded through `Source` from the web or a file: the link opens the document at that heading in a viewer given it as its `Source`, and on a site that makes the same GitHub-style anchors. Any fragment `Source` had is replaced, and its query is kept. A document set through `Markdown`, or loaded from the application's resources (`avares://`), gives the anchor alone, such as `#installation`, which links to the heading from the same document.
 
 ### Copying a table
 
@@ -149,7 +153,7 @@ The event args carry no text, so raising the event allocates no string. `Selecte
 
 ## Changing what is copied
 
-`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C`, `CopyToClipboardAsync()` or `CopyAsMarkdownAsync()`), when the [copy button](configuration.md#code-block-toolbar) of a code block or a [display formula](configuration.md#copying-a-formula) is clicked, and when the [context menu](#context-menu) copies a link or a table. It is not raised when there is nothing to copy.
+`CopyingToClipboard` is raised before the viewer writes anything to the clipboard, when the selection is copied (`Ctrl+C`, `CopyToClipboardAsync()` or `CopyAsMarkdownAsync()`), when the [copy button](code-blocks.md#toolbar-and-copy-button) of a code block or a [display formula](math.md#copy-button) is clicked, and when the [context menu](#context-menu) copies a link or a table. It is not raised when there is nothing to copy.
 
 | Property | Meaning |
 |----------|---------|
@@ -174,27 +178,27 @@ All text-bearing block types are registered with the selection layer:
 
 - Paragraphs
 - Headings
-- Code blocks (the code only: never their toolbar or [line numbers](configuration.md#line-numbers-wrapping-and-height))
+- Code blocks (the code only: never their toolbar or [line numbers](code-blocks.md#line-numbers-wrapping-and-height))
 - Blockquotes
 - List items, including their markers (`•`, `1.`, or the `☑`/`☐` task-list glyph — for a clickable task-list checkbox, its current state) and any code blocks or tables nested inside them
 - Table cells (tab-separated when copying)
 - Footnote definitions
-- The paragraphs and headings of [HTML blocks](configuration.md#html-subset), and the blocks of an aligned `<div>`
+- The paragraphs and headings of [HTML blocks](markdown.md#html-subset), and the blocks of an aligned `<div>`
 
 Non-text content is copied as a text equivalent:
 
 | Content | Highlighted | Copied as |
 |---------|-------------|-----------|
 | Image (including linked images, HTML `<img>` and YouTube thumbnails) | With the surrounding text | Its alt text; nothing when it has none |
-| HTML `<kbd>` key ([HTML subset](configuration.md#html-subset)) | As a whole, with the surrounding text | Its text |
+| HTML `<kbd>` key ([HTML subset](markdown.md#html-subset)) | As a whole, with the surrounding text | Its text |
 | Inline math (`MarkView.Avalonia.Math`) | With the surrounding text | Its source between its own delimiters: `$...$`, `\(...\)`, or `\[...\]` within a line |
 | Display math (`MarkView.Avalonia.Math`) | As a whole block | Its source between `$$` lines, or `\[` and `\]` lines |
 | Mermaid diagram (`MarkView.Avalonia.Mermaid`) | As a whole block | Its source in a ```` ```mermaid ```` fence |
 | Control of a [fence renderer](custom-extensions.md#rendering-a-fence-language-as-your-own-control) | As a whole block | Its source in its fence, or the control's own `MarkdownSelection.CopyText` |
 
-Hidden content is not selectable: the body of a collapsed [foldable alert](configuration.md#alert-blocks) (`> [!NOTE]-`) [details block](configuration.md#html-details-blocks) (`<details>`) or [heading section](configuration.md#foldable-headings) is skipped by hit-testing, highlighting and copy (`Ctrl+A` then `Ctrl+C` copies the text around it) until it is expanded. The same applies to any block a custom renderer hides with `IsVisible`. An alert's header and a details block's summary are not selectable; clicking one toggles its block instead of starting a selection.
+Hidden content is not selectable: the body of a collapsed [foldable alert](markdown.md#alerts) (`> [!NOTE]-`) [details block](markdown.md#details-blocks) (`<details>`) or [heading section](folding.md#foldable-headings) is skipped by hit-testing, highlighting and copy (`Ctrl+A` then `Ctrl+C` copies the text around it) until it is expanded. The same applies to any block a custom renderer hides with `IsVisible`. An alert's header and a details block's summary are not selectable; clicking one toggles its block instead of starting a selection.
 
-Content scrolled out of view inside the document is treated the same way while it is out of view: the lines of a code block taller than [`CodeBlockMaxHeight`](configuration.md#line-numbers-wrapping-and-height) that lie above or below its scroll viewport are neither hit-tested nor highlighted, so pointing at the text right below such a block selects that text, not the block's hidden lines. They are still copied when the selection spans them.
+Content scrolled out of view inside the document is treated the same way while it is out of view: the lines of a code block taller than [`CodeBlockMaxHeight`](code-blocks.md#line-numbers-wrapping-and-height) that lie above or below its scroll viewport are neither hit-tested nor highlighted, so pointing at the text right below such a block selects that text, not the block's hidden lines. They are still copied when the selection spans them.
 
 Custom renderers opt their own non-text controls in through the `MarkdownSelection.CopyText` attached property — see [Content that is not text](custom-extensions.md#content-that-is-not-text).
 

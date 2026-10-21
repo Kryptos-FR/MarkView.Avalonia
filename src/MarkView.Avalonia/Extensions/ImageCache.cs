@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 
 namespace MarkView.Avalonia.Extensions;
 
@@ -12,28 +13,37 @@ namespace MarkView.Avalonia.Extensions;
 /// chain (e.g. one with the SVG loader) can load the same URL differently.
 /// </summary>
 /// <remarks>
-/// Holds at most <see cref="Capacity"/> images and evicts the least recently used one first. An evicted
-/// image is never disposed, since it may still be displayed: it is collected once nothing shows it.
+/// Holds at most <see cref="Capacity"/> bytes of images, weighed by <see cref="CostOf"/>, and evicts the
+/// least recently used one first. An image heavier than a tenth of the capacity is not cached, so the cache
+/// always has room for <see cref="MinimumImages"/> images. An evicted image is never disposed, since it may
+/// still be displayed: it is collected once nothing shows it.
 /// Failed loads are never cached, so the next render tries again. Concurrent loads of the same entry
 /// share a single load, which is cancelled only once every one of them has been cancelled.
 /// Thread-safe.
 /// </remarks>
-internal sealed class ImageCache(int capacity)
+internal sealed class ImageCache(long capacity)
 {
+    /// <summary>The capacity of <see cref="Shared"/> unless the application changes it: 100 MB.</summary>
+    public const long DefaultCapacity = 100L * 1024 * 1024;
+
+    /// <summary>The number of images of the largest size it caches that the cache has room for.</summary>
+    public const int MinimumImages = 10;
+
     /// <summary>The cache every render uses; its capacity is <see cref="MarkdownViewerDefaults.ImageCacheSize"/>.</summary>
-    public static ImageCache Shared { get; } = new(100);
+    public static ImageCache Shared { get; } = new(DefaultCapacity);
 
     private readonly Lock _gate = new();
     // Most recently used first.
-    private readonly LinkedList<(Key Key, IImage Image)> _recency = new();
-    private readonly Dictionary<Key, LinkedListNode<(Key Key, IImage Image)>> _entries = [];
+    private readonly LinkedList<(Key Key, IImage Image, long Cost)> _recency = new();
+    private readonly Dictionary<Key, LinkedListNode<(Key Key, IImage Image, long Cost)>> _entries = [];
     private readonly Dictionary<Key, SharedLoad> _loads = [];
+    private long _bytes;
 
     /// <summary>
-    /// The maximum number of cached images; <c>0</c> disables the cache (each load then runs on its own).
-    /// Lowering it evicts the least recently used images beyond the new capacity.
+    /// The maximum number of bytes of cached images; <c>0</c> disables the cache (each load then runs on
+    /// its own). Lowering it evicts the least recently used images beyond the new capacity.
     /// </summary>
-    public int Capacity
+    public long Capacity
     {
         get { lock (_gate) return capacity; }
         set
@@ -53,6 +63,12 @@ internal sealed class ImageCache(int capacity)
         get { lock (_gate) return _entries.Count; }
     }
 
+    /// <summary>The number of bytes of the cached images (see <see cref="CostOf"/>).</summary>
+    public long Bytes
+    {
+        get { lock (_gate) return _bytes; }
+    }
+
     /// <summary>Removes every cached image. Loads in flight are not affected, but their results are cached.</summary>
     public void Clear()
     {
@@ -60,6 +76,24 @@ internal sealed class ImageCache(int capacity)
         {
             _entries.Clear();
             _recency.Clear();
+            _bytes = 0;
+        }
+    }
+
+    /// <summary>
+    /// Returns the image cached for <paramref name="url"/> and <paramref name="loaders"/>, if any, marking
+    /// it as the most recently used, without loading anything.
+    /// </summary>
+    public IImage? TryGet(string url, IList<IImageLoader> loaders)
+    {
+        var key = KeyOf(url, loaders);
+        lock (_gate)
+        {
+            if (!_entries.TryGetValue(key, out var node))
+                return null;
+            _recency.Remove(node);
+            _recency.AddFirst(node);
+            return node.Value.Image;
         }
     }
 
@@ -73,7 +107,7 @@ internal sealed class ImageCache(int capacity)
         if (Capacity == 0)
             return await LoadAsync(url, loaders, cancellationToken);
 
-        var key = new Key(url, string.Join('|', loaders.Select(l => l.GetType().FullName)));
+        var key = KeyOf(url, loaders);
         SharedLoad? load;
         bool start;
         lock (_gate)
@@ -113,6 +147,9 @@ internal sealed class ImageCache(int capacity)
         }
     }
 
+    private static Key KeyOf(string url, IList<IImageLoader> loaders) =>
+        new(url, string.Join('|', loaders.Select(l => l.GetType().FullName)));
+
     private async Task RunAsync(Key key, SharedLoad load, string url, IList<IImageLoader> loaders)
     {
         IImage? image;
@@ -142,18 +179,36 @@ internal sealed class ImageCache(int capacity)
             _loads.Remove(key);
             if (image is null)
                 return;
-            _entries[key] = _recency.AddFirst((key, image));
+            var cost = CostOf(image);
+            if (capacity == 0 || cost > capacity / MinimumImages)
+                return;
+            _entries[key] = _recency.AddFirst((key, image, cost));
+            _bytes += cost;
             Trim();
         }
     }
 
     private void Trim()
     {
-        while (_entries.Count > capacity)
+        while (_bytes > capacity)
         {
-            _entries.Remove(_recency.Last!.Value.Key);
+            var (key, _, cost) = _recency.Last!.Value;
+            _entries.Remove(key);
             _recency.RemoveLast();
+            _bytes -= cost;
         }
+    }
+
+    /// <summary>
+    /// The memory <paramref name="image"/> takes, as counted by the cache: 4 bytes per pixel of a bitmap, and
+    /// for any other image (an SVG drawing, say) as much as a bitmap of its size.
+    /// </summary>
+    internal static long CostOf(IImage image)
+    {
+        if (image is Bitmap bitmap)
+            return 4L * bitmap.PixelSize.Width * bitmap.PixelSize.Height;
+        var size = image.Size;
+        return 4L * (long)Math.Ceiling(size.Width) * (long)Math.Ceiling(size.Height);
     }
 
     /// <summary>

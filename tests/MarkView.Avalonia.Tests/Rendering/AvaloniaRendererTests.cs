@@ -116,7 +116,7 @@ public class AvaloniaRendererTests
     }
 
     [AvaloniaFact]
-    public void Indented_code_lines_are_separated_by_line_breaks()
+    public void Indented_code_lines_are_one_run_separated_by_line_ends()
     {
         var root = RenderMarkdown("""
                 one
@@ -124,11 +124,7 @@ public class AvaloniaRendererTests
             """);
         var text = Assert.IsType<TextBlock>(CodeBlockAssert.CodeBorder(Assert.Single(root.Children)).Child);
 
-        var inlines = text.Inlines!.ToList();
-        Assert.Equal(3, inlines.Count);
-        Assert.Equal("one", Assert.IsType<Run>(inlines[0]).Text);
-        Assert.IsType<LineBreak>(inlines[1]);
-        Assert.Equal("two", Assert.IsType<Run>(inlines[2]).Text);
+        Assert.Equal("one\ntwo", Assert.IsType<Run>(Assert.Single(text.Inlines!)).Text);
     }
 
     [AvaloniaFact]

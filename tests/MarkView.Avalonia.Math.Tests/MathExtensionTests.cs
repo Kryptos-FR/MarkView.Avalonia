@@ -94,7 +94,7 @@ public class MathExtensionTests
         // pipeline extension nor MathExtension's renderer registered. UseMath() must still end
         // up rendering the formula correctly once it runs — this ordering bug would not be
         // caught by tests that only inspect viewer.Pipeline/viewer.Extensions state.
-        var viewer = new MarkdownViewer();
+        var viewer = new MarkdownViewer { IsLazyRenderingEnabled = false }; // formulas baked during the render
         viewer.Markdown = "$$\nx^2\n$$";
         viewer.UseMath();
 
@@ -111,7 +111,7 @@ public class MathExtensionTests
     [InlineData(false)]
     public void UseMath_and_UseMermaid_together_render_both_correctly_regardless_of_order(bool mathFirst)
     {
-        var viewer = new MarkdownViewer();
+        var viewer = new MarkdownViewer { IsLazyRenderingEnabled = false }; // formulas baked during the render
         if (mathFirst)
         {
             viewer.UseMath();

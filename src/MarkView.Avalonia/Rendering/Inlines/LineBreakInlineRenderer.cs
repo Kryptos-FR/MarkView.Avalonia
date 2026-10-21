@@ -14,6 +14,6 @@ public sealed class LineBreakInlineRenderer : AvaloniaObjectRenderer<LineBreakIn
         if (obj.IsHard)
             renderer.WriteInline(new LineBreak());
         else
-            renderer.WriteInline(new Run(" "));
+            renderer.WriteText(" ");
     }
 }

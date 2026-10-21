@@ -44,9 +44,9 @@ public class AvaloniaRenderer : RendererBase
 
     /// <summary>
     /// Whether code blocks show their language (the info string of a fenced code block) in a
-    /// toolbar above the code. Defaults to <c>true</c>.
+    /// toolbar above the code. Defaults to <c>false</c>.
     /// </summary>
-    public bool ShowCodeBlockLanguage { get; set; } = true;
+    public bool ShowCodeBlockLanguage { get; set; }
 
     /// <summary>
     /// Whether code blocks show a button in a toolbar above the code that copies the code to the
@@ -172,6 +172,18 @@ public class AvaloniaRenderer : RendererBase
     /// When <c>false</c>, blocks keep the direction of the control that shows the document. Defaults to <c>true</c>.
     /// </summary>
     public bool DetectTextDirection { get; set; } = true;
+
+    /// <summary>
+    /// When <c>true</c>, costly content waits until its element first comes within one viewport height
+    /// of the visible area (see <see cref="ViewportTracking.RunWhenNearViewport"/>): images start
+    /// loading (unless already cached), formulas and Mermaid diagrams render, and code blocks, shown as
+    /// plain text until then, get their colours. When <c>false</c>, formulas and colours are built during
+    /// <see cref="RendererBase.Render"/>, and images and diagrams start as soon as their element is
+    /// attached to a visual tree. Defaults to <c>false</c>, since the output of a renderer may never be
+    /// laid out in a viewport; <see cref="MarkdownViewer"/> turns it on from its
+    /// <see cref="MarkdownViewer.IsLazyRenderingEnabled"/>.
+    /// </summary>
+    public bool IsLazyRenderingEnabled { get; set; }
 
     /// <summary>Raised with the clicked image when <see cref="IsImageZoomEnabled"/> is set.</summary>
     internal event Action<Image>? ImageZoomRequested;
@@ -637,6 +649,26 @@ public class AvaloniaRenderer : RendererBase
     }
 
     /// <summary>
+    /// Adds plain text to the current inline container. Text written right after other plain text goes into
+    /// the same <see cref="Run"/>: Markdig splits prose into several literals (at each line break, escape,
+    /// entity or unmatched delimiter), and a Run each would multiply what every paragraph costs to attach,
+    /// style and lay out. Text that takes attribute classes gets a Run of its own.
+    /// </summary>
+    internal void WriteText(ReadOnlySpan<char> text)
+    {
+        if (_stack.Peek() is not InlineContainer container)
+            return;
+        if (_writing.TryPeek(out var entry) && entry.IsInline && entry.Classes is not null)
+        {
+            var run = new Run(text.ToString());
+            AddAttributeClasses(run, isInline: true);
+            container.Add(run);
+            return;
+        }
+        container.AddText(text);
+    }
+
+    /// <summary>
     /// Adds a control wrapped in InlineUIContainer to the current inline container.
     /// </summary>
     public void WriteInline(Control control)
@@ -662,7 +694,7 @@ public class AvaloniaRenderer : RendererBase
     }
 
     /// <summary>
-    /// Writes the raw text lines of a leaf block (code blocks).
+    /// Writes the raw text lines of a leaf block (code blocks), as one Run.
     /// </summary>
     public void WriteLeafRawLines(LeafBlock leafBlock)
     {
@@ -670,13 +702,14 @@ public class AvaloniaRenderer : RendererBase
             // Stryker disable once Statement : a group without line storage has Count 0, so the loop below is a no-op as well
             return;
 
+        // One Run for the whole block, each line end a '\n' in its text: a Run and a LineBreak per line
+        // cost far more to create and lay out.
         var lines = leafBlock.Lines;
         for (int i = 0; i < lines.Count; i++)
         {
-            var line = lines.Lines[i];
             if (i > 0)
-                WriteInline(new LineBreak());
-            WriteInline(new Run(line.Slice.ToString()));
+                WriteText("\n");
+            WriteText(lines.Lines[i].Slice.AsSpan());
         }
     }
 

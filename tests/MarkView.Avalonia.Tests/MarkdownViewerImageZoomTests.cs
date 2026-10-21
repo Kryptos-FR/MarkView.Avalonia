@@ -66,7 +66,7 @@ public class MarkdownViewerImageZoomTests
         bool theme = false, Action<MarkdownViewer>? configure = null, IImageLoader? loader = null)
     {
         var picture = new FakeImage(width, height);
-        var viewer = new MarkdownViewer();
+        var viewer = new MarkdownViewer { IsImageZoomEnabled = true };
         viewer.Extensions.Add(new LoaderExtension(loader ?? new FakeLoader(picture)));
         if (theme)
             viewer.Styles.Add(new StyleInclude((Uri?)null) { Source = new Uri("avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml") });
@@ -104,9 +104,9 @@ public class MarkdownViewerImageZoomTests
         element.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = key });
 
     [AvaloniaFact]
-    public void IsImageZoomEnabled_defaults_to_true()
+    public void IsImageZoomEnabled_defaults_to_false()
     {
-        Assert.True(new MarkdownViewer().IsImageZoomEnabled);
+        Assert.False(new MarkdownViewer().IsImageZoomEnabled);
     }
 
     [AvaloniaFact]
@@ -129,6 +129,21 @@ public class MarkdownViewerImageZoomTests
 
         f.Window.UpdateLayout();
         Assert.Equal(new Rect(f.Viewer.Bounds.Size), lightbox.Bounds);
+    }
+
+    [AvaloniaFact]
+    public async Task The_lightbox_takes_its_themes_from_the_viewer()
+    {
+        var themes = new Rendering.ThemeKeyTests.TaggedThemes();
+        using var f = await ShowAsync($"![A diagram]({FakeUrl()})", configure: v => themes.AddTo(v.Resources,
+            "MarkdownImageLightboxBackingTheme", "MarkdownImageLightboxToolbarTheme", "MarkdownImageLightboxZoomLevelTheme"));
+
+        Click(f.Window, f.Center(f.Image));
+
+        var lightbox = Assert.IsType<ImageLightbox>(f.Lightbox);
+        Assert.Equal("MarkdownImageLightboxBackingTheme", themes.KeyOf(lightbox.Backing));
+        Assert.Equal("MarkdownImageLightboxToolbarTheme", themes.KeyOf(lightbox.Toolbar));
+        Assert.Equal("MarkdownImageLightboxZoomLevelTheme", themes.KeyOf(lightbox.ZoomLevel));
     }
 
     [AvaloniaFact]
@@ -162,7 +177,7 @@ public class MarkdownViewerImageZoomTests
     public async Task An_open_lightbox_does_not_make_the_viewer_larger()
     {
         var picture = new FakeImage(1600, 1200);
-        var viewer = new MarkdownViewer { Template = ScrollingViewerTemplate.Create() };
+        var viewer = new MarkdownViewer { IsImageZoomEnabled = true, Template = ScrollingViewerTemplate.Create() };
         viewer.Extensions.Add(new LoaderExtension(new FakeLoader(picture)));
         viewer.Markdown = $"![large]({FakeUrl()} =100x50)";
         var window = new Window { Width = 400, Height = 300, Content = new StackPanel { Children = { viewer } } };

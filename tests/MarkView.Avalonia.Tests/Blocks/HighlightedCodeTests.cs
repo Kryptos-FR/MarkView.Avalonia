@@ -5,12 +5,14 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 
 using Markdig;
 using Markdig.Syntax;
 
 using MarkView.Avalonia.Extensions;
+using MarkView.Avalonia.Rendering;
 using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Tests.Shared;
 
@@ -74,12 +76,120 @@ public class HighlightedCodeTests
             throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
     }
 
-    private static (Border Border, TextBlock Text) Write(ICodeHighlighter? highlighter, string language = "fake")
+    // Neighbouring tokens that share a colour, as TextMate splits a line by scope: "a" and "b" coloured alike,
+    // "b" with another brush of the same colour, "c" and "d" uncoloured, "e" with the dark colour of "a" but
+    // another light one, and "f" with the colour of "a" at half opacity.
+    private sealed class SplitDualHighlighter : IDualThemeCodeHighlighter
     {
-        var block = Assert.IsType<FencedCodeBlock>(Assert.Single(Markdown.Parse($"```{language}\nfirst\nsecond\n```")));
+        public IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language) =>
+        [
+            ("a", DarkKeyword, LightKeyword),
+            ("b", new SolidColorBrush(Colors.LightBlue).ToImmutable(), new SolidColorBrush(Colors.DarkBlue).ToImmutable()),
+            ("c", null, null),
+            ("d", null, null),
+            ("e", DarkKeyword, LightOnly),
+            ("f", new ImmutableSolidColorBrush(Colors.LightBlue, 0.5), LightOnly),
+        ];
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+    }
+
+    // The same split for a single variant: "a" and "b" coloured alike, "c" and "d" uncoloured, then "e" in
+    // another colour.
+    private sealed class SplitHighlighter : ICodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            [("a", LightKeyword), ("b", new SolidColorBrush(Colors.DarkBlue).ToImmutable()), ("c", null), ("d", null), ("e", LightOnly)];
+    }
+
+    // Colours each non-empty line as one token coloured in both variants, and an empty line not at all.
+    private sealed class EmptyLinesDualHighlighter : IDualThemeCodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language) =>
+            line.IsEmpty ? [] : [(line.ToString(), DarkKeyword, LightKeyword)];
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+    }
+
+    // Colours the line "kw" in both variants and leaves every other line to the plain text.
+    private sealed class SomeLinesDualHighlighter : IDualThemeCodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language) =>
+            line.Span.SequenceEqual("kw") ? [("kw", DarkKeyword, LightKeyword)] : null;
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+    }
+
+    // Each line is one token naming the line before it ("start" for the first line), as the state the line
+    // starts from; only the overloads that carry the state on are expected.
+    private sealed class StatefulDualHighlighter : IDualThemeCodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language, ref object? state)
+        {
+            var token = (string?)state ?? "start";
+            state = line.ToString();
+            return [(token, DarkKeyword, LightKeyword)];
+        }
+
+        public IReadOnlyList<(string Text, IBrush? Dark, IBrush? Light)>? HighlightBoth(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("Each line is highlighted from the state the line before ended in.");
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("A dual-theme highlighter is only asked for both variants at once.");
+    }
+
+    private sealed class StatefulThemeAwareHighlighter : IThemeAwareCodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark, ref object? state)
+        {
+            var token = (string?)state ?? "start";
+            state = line.ToString();
+            return [(token, isDark ? DarkKeyword : LightKeyword)];
+        }
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? HighlightVariant(ReadOnlyMemory<char> line, string? language, bool isDark) =>
+            throw new InvalidOperationException("Each line is highlighted from the state the line before ended in.");
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("A theme-aware highlighter is asked for the current variant.");
+    }
+
+    private sealed class StatefulHighlighter : ICodeHighlighter
+    {
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language, ref object? state)
+        {
+            var token = (string?)state ?? "start";
+            state = line.ToString();
+            return [(token, LightKeyword)];
+        }
+
+        public IReadOnlyList<(string Text, IBrush? Foreground)>? Highlight(ReadOnlyMemory<char> line, string? language) =>
+            throw new InvalidOperationException("Each line is highlighted from the state the line before ended in.");
+    }
+
+    private static (Border Border, TextBlock Text) Write(ICodeHighlighter? highlighter, string language = "fake", bool lazy = false,
+        string code = "first\nsecond")
+    {
+        var block = Assert.IsType<FencedCodeBlock>(Assert.Single(Markdown.Parse($"```{language}\n{code}\n```")));
         var text = new TextBlock();
         var border = new Border { Child = text };
-        HighlightedCode.Write(border, text, block, language, highlighter);
+        var renderer = new AvaloniaRenderer { CodeHighlighter = highlighter, IsLazyRenderingEnabled = lazy };
+        HighlightedCode.Write(renderer, border, text, block, language);
         return (border, text);
     }
 
@@ -92,10 +202,9 @@ public class HighlightedCodeTests
         using var theme = new ThemeScope(ThemeVariant.Light);
         var (_, text) = Write(new FakeDualHighlighter());
 
-        Assert.IsType<Run>(text.Inlines![0]);
-        Assert.Single(text.Inlines!.OfType<LineBreak>());
-        var runs = text.Inlines!.OfType<Run>().ToList();
-        Assert.Equal(["kw", "dark", "light", "first", "kw", "dark", "light", "second"], runs.Select(r => r.Text));
+        // A line end goes into the Run open at the end of its line.
+        var runs = text.Inlines!.Select(Assert.IsType<Run>).ToList();
+        Assert.Equal(["kw", "dark", "light", "first\n", "kw", "dark", "light", "second"], runs.Select(r => r.Text));
         Assert.Equal(Colors.DarkBlue, ColourOf(runs[0]));
         Assert.Null(ColourOf(runs[1]));
         Assert.Equal(Colors.Purple, ColourOf(runs[2]));
@@ -166,10 +275,9 @@ public class HighlightedCodeTests
         using var theme = new ThemeScope(ThemeVariant.Light);
         var (_, text) = Write(new FakeDualHighlighter(), "other");
 
-        var runs = text.Inlines!.OfType<Run>().ToList();
-        Assert.Equal(["first", "second"], runs.Select(r => r.Text));
-        Assert.All(runs, r => Assert.False(r.IsSet(TextElement.ForegroundProperty)));
-        Assert.Single(text.Inlines!.OfType<LineBreak>());
+        var run = Assert.IsType<Run>(Assert.Single(text.Inlines!));
+        Assert.Equal("first\nsecond", run.Text);
+        Assert.False(run.IsSet(TextElement.ForegroundProperty));
     }
 
     [AvaloniaFact]
@@ -207,11 +315,10 @@ public class HighlightedCodeTests
 
             theme.Switch(ThemeVariant.Dark);
 
-            var runs = text.Inlines!.OfType<Run>().ToList();
-            Assert.Equal(["kw", "first", "kw", "second"], runs.Select(r => r.Text));
+            var runs = text.Inlines!.Select(Assert.IsType<Run>).ToList();
+            Assert.Equal(["kw", "first\n", "kw", "second"], runs.Select(r => r.Text));
             Assert.Equal(Colors.LightBlue, ColourOf(runs[0]));
             Assert.Null(ColourOf(runs[1]));
-            Assert.Single(text.Inlines!.OfType<LineBreak>());
         }
         finally
         {
@@ -225,24 +332,243 @@ public class HighlightedCodeTests
         using var theme = new ThemeScope(ThemeVariant.Light);
         var (_, text) = Write(new FakeHighlighter());
 
-        Assert.IsType<Run>(text.Inlines![0]);
-        var runs = text.Inlines!.OfType<Run>().ToList();
-        Assert.Equal(["kw", "first", "kw", "second"], runs.Select(r => r.Text));
+        var runs = text.Inlines!.Select(Assert.IsType<Run>).ToList();
+        Assert.Equal(["kw", "first\n", "kw", "second"], runs.Select(r => r.Text));
         Assert.Equal(Colors.DarkBlue, ColourOf(runs[0]));
         Assert.Null(ColourOf(runs[1]));
-        Assert.Single(text.Inlines!.OfType<LineBreak>());
     }
 
     [AvaloniaFact]
-    public void No_highlighter_writes_plain_lines()
+    public void No_highlighter_writes_plain_lines_as_one_run()
     {
         using var theme = new ThemeScope(ThemeVariant.Light);
         var (_, text) = Write(null);
 
-        Assert.IsType<Run>(text.Inlines![0]);
+        var run = Assert.IsType<Run>(Assert.Single(text.Inlines!));
+        Assert.Equal("first\nsecond", run.Text);
+        Assert.False(run.IsSet(TextElement.ForegroundProperty));
+    }
+
+    [AvaloniaFact]
+    public void Tokens_of_one_colour_on_neighbouring_lines_share_one_run()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, text) = Write(new FullyColouredDualHighlighter());
+
+        var run = Assert.IsType<Run>(Assert.Single(text.Inlines!));
+        Assert.Equal("kw\nkw", run.Text);
+        Assert.Equal(Colors.DarkBlue, ColourOf(run));
+    }
+
+    [AvaloniaFact]
+    public void A_line_left_uncoloured_does_not_take_the_colour_of_the_line_before()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, text) = Write(new SomeLinesDualHighlighter(), code: "kw\nplain");
+
+        var runs = text.Inlines!.Select(Assert.IsType<Run>).ToList();
+        Assert.Equal(["kw\n", "plain"], runs.Select(r => r.Text));
+        Assert.Equal(Colors.DarkBlue, ColourOf(runs[0]));
+        Assert.Null(ColourOf(runs[1]));
+    }
+
+    [AvaloniaFact]
+    public void A_block_whose_only_line_has_no_token_has_no_inlines()
+    {
+        var (_, text) = Write(new EmptyLinesDualHighlighter(), code: "");
+
+        Assert.Empty(text.Inlines!);
+    }
+
+    [AvaloniaFact]
+    public void Empty_lines_take_the_colour_of_the_text_that_follows()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, text) = Write(new EmptyLinesDualHighlighter(), code: "\n\nx\n\ny");
+
+        var run = Assert.IsType<Run>(Assert.Single(text.Inlines!));
+        Assert.Equal("\n\nx\n\ny", run.Text);
+        Assert.Equal(Colors.DarkBlue, ColourOf(run));
+    }
+
+    [AvaloniaFact]
+    public void Dual_highlighter_writes_neighbouring_tokens_of_one_colour_as_one_run()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, text) = Write(new SplitDualHighlighter());
+
         var runs = text.Inlines!.OfType<Run>().ToList();
-        Assert.Equal(["first", "second"], runs.Select(r => r.Text));
-        Assert.All(runs, r => Assert.False(r.IsSet(TextElement.ForegroundProperty)));
-        Assert.Single(text.Inlines!.OfType<LineBreak>());
+        Assert.Equal(["ab", "cd", "e", "f\n", "ab", "cd", "e", "f"], runs.Select(r => r.Text));
+        Assert.Equal(Colors.DarkBlue, ColourOf(runs[0]));
+        Assert.Null(ColourOf(runs[1]));
+        Assert.Equal(Colors.Purple, ColourOf(runs[2]));
+    }
+
+    [AvaloniaFact]
+    public void Merged_tokens_follow_the_theme()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (border, text) = Write(new SplitDualHighlighter());
+        var window = new Window { Content = border };
+        try
+        {
+            window.Show();
+
+            theme.Switch(ThemeVariant.Dark);
+
+            var runs = text.Inlines!.OfType<Run>().ToList();
+            Assert.Equal(Colors.LightBlue, ColourOf(runs[0]));
+            Assert.Null(ColourOf(runs[1]));
+            Assert.Equal(Colors.LightBlue, ColourOf(runs[2]));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Plain_highlighter_writes_neighbouring_tokens_of_one_colour_as_one_run()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, text) = Write(new SplitHighlighter());
+
+        var runs = text.Inlines!.OfType<Run>().ToList();
+        Assert.Equal(["ab", "cd", "e\n", "ab", "cd", "e"], runs.Select(r => r.Text));
+        Assert.Equal(Colors.DarkBlue, ColourOf(runs[0]));
+        Assert.Null(ColourOf(runs[1]));
+        Assert.Equal(Colors.Purple, ColourOf(runs[2]));
+    }
+
+    // A code block 1000 px below the top of a 300 px window, so more than a viewport height away
+    // until the window scrolls.
+    private sealed class FarBelow : IDisposable
+    {
+        private readonly ScrollViewer _scrollViewer;
+
+        public Window Window { get; }
+
+        public FarBelow(Control block)
+        {
+            _scrollViewer = new ScrollViewer { Content = new StackPanel { Children = { new Border { Height = 1000 }, block } } };
+            Window = new Window { Width = 400, Height = 300, Content = _scrollViewer };
+            Window.Show();
+        }
+
+        public void ScrollToEnd()
+        {
+            _scrollViewer.ScrollToEnd();
+            Window.UpdateLayout();
+        }
+
+        public void Dispose() => Window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Lazy_block_far_from_the_viewport_keeps_plain_lines_without_highlighting()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var highlighter = new FakeDualHighlighter();
+        var (border, text) = Write(highlighter, lazy: true);
+        using var shown = new FarBelow(border);
+
+        Assert.Equal(0, highlighter.Calls);
+        var run = Assert.IsType<Run>(Assert.Single(text.Inlines!));
+        Assert.Equal("first\nsecond", run.Text);
+        Assert.False(run.IsSet(TextElement.ForegroundProperty));
+    }
+
+    [AvaloniaFact]
+    public void Lazy_block_is_highlighted_once_scrolled_near()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var highlighter = new FakeDualHighlighter();
+        var (border, text) = Write(highlighter, lazy: true);
+        using var shown = new FarBelow(border);
+
+        shown.ScrollToEnd();
+
+        Assert.Equal(2, highlighter.Calls);
+        var runs = text.Inlines!.Select(Assert.IsType<Run>).ToList();
+        Assert.Equal(["kw", "dark", "light", "first\n", "kw", "dark", "light", "second"], runs.Select(r => r.Text));
+        Assert.Equal(Colors.DarkBlue, ColourOf(runs[0]));
+    }
+
+    [AvaloniaFact]
+    public void Lazy_block_highlighted_after_a_theme_switch_uses_the_new_theme_and_keeps_following_it()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (border, text) = Write(new FakeDualHighlighter(), lazy: true);
+        using var shown = new FarBelow(border);
+
+        theme.Switch(ThemeVariant.Dark);
+        Assert.All(text.Inlines!.OfType<Run>(), r => Assert.False(r.IsSet(TextElement.ForegroundProperty)));
+        shown.ScrollToEnd();
+        Assert.Equal(Colors.LightBlue, ColourOf(text.Inlines!.OfType<Run>().First()));
+
+        theme.Switch(ThemeVariant.Light);
+        Assert.Equal(Colors.DarkBlue, ColourOf(text.Inlines!.OfType<Run>().First()));
+    }
+
+    [AvaloniaFact]
+    public void Lazy_block_in_view_is_highlighted_before_it_is_first_rendered()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (border, text) = Write(new FakeHighlighter(), lazy: true);
+        var window = new Window { Width = 400, Height = 300, Content = border };
+        try
+        {
+            window.Show();
+
+            Assert.Equal(["kw", "first\n", "kw", "second"], text.Inlines!.OfType<Run>().Select(r => r.Text));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Dual_highlighter_highlights_each_line_from_the_state_the_line_before_ended_in()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var highlighter = new StatefulDualHighlighter();
+        var (_, text) = Write(highlighter);
+        var (_, again) = Write(highlighter);
+
+        Assert.Equal("start\nfirst", string.Concat(text.Inlines!.OfType<Run>().Select(r => r.Text)));
+        Assert.Equal("start\nfirst", string.Concat(again.Inlines!.OfType<Run>().Select(r => r.Text)));
+    }
+
+    [AvaloniaFact]
+    public void Theme_aware_highlighter_highlights_each_line_from_the_state_the_line_before_ended_in()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (border, text) = Write(new StatefulThemeAwareHighlighter());
+        var window = new Window { Content = border };
+        try
+        {
+            window.Show();
+            Assert.Equal("start\nfirst", string.Concat(text.Inlines!.OfType<Run>().Select(r => r.Text)));
+
+            theme.Switch(ThemeVariant.Dark);
+
+            var runs = text.Inlines!.OfType<Run>().ToList();
+            Assert.Equal("start\nfirst", string.Concat(runs.Select(r => r.Text)));
+            Assert.All(runs, r => Assert.Equal(Colors.LightBlue, ColourOf(r)));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Plain_highlighter_highlights_each_line_from_the_state_the_line_before_ended_in()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var (_, text) = Write(new StatefulHighlighter());
+
+        Assert.Equal("start\nfirst", string.Concat(text.Inlines!.OfType<Run>().Select(r => r.Text)));
     }
 }

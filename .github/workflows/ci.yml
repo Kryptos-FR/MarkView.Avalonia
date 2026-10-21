@@ -24,10 +24,12 @@ concurrency:
 
 jobs:
   # Decides what the rest of the run does. Pull requests only run what their changes need:
-  # - docs-only changes run nothing (Gate still reports);
+  # - docs-only changes run nothing (Gate still reports): Markdown files never count as code,
+  #   wherever they are, except the test projects' own test documents;
   # - drafts only build and test on Ubuntu, unless labelled `ci-run-on-draft`;
-  # - mutation testing only covers the packages the pull request touches, and within them only
-  #   the code it changes (Stryker's `--since`), unless labelled `ci-full`;
+  # - mutation testing only runs when labelled `ci-mutation-testing` (drafts included) or
+  #   `ci-full`. With `ci-mutation-testing` it only covers the packages the pull request touches,
+  #   and within them only the code it changes (Stryker's `--since`); `ci-full` runs it in full;
   # - the AOT publish runs on Ubuntu only, unless labelled `ci-full`.
   # Pushes to main run everything, but mutation testing only covers the code changed since the
   # previous main commit (in full when that commit is not an ancestor, e.g. after a force push).
@@ -47,6 +49,8 @@ jobs:
         id: filter
         if: github.event_name == 'pull_request'
         with:
+          # A file counts when it matches one of a filter's patterns and none of its '!' ones.
+          predicate-quantifier: some-with-excludes
           filters: |
             shared:
               - 'Directory.Build.props'
@@ -59,23 +63,30 @@ jobs:
               - 'tests/Shared/**'
               - '.github/workflows/**'
               - '.github/scripts/**'
+              - '!**/*.md'
             core:
               - 'src/MarkView.Avalonia/**'
               - 'tests/MarkView.Avalonia.Tests/**'
+              - '!src/**/*.md'
             math:
               - 'src/MarkView.Avalonia.Math/**'
               - 'tests/MarkView.Avalonia.Math.Tests/**'
+              - '!src/**/*.md'
             mermaid:
               - 'src/MarkView.Avalonia.Mermaid/**'
               - 'tests/MarkView.Avalonia.Mermaid.Tests/**'
+              - '!src/**/*.md'
             svg:
               - 'src/MarkView.Avalonia.Svg/**'
               - 'tests/MarkView.Avalonia.Svg.Tests/**'
+              - '!src/**/*.md'
             syntax:
               - 'src/MarkView.Avalonia.SyntaxHighlighting/**'
               - 'tests/MarkView.Avalonia.SyntaxHighlighting.Tests/**'
+              - '!src/**/*.md'
             samples:
               - 'samples/**'
+              - '!**/*.md'
 
       - name: Plan the run
         id: plan
@@ -134,9 +145,11 @@ jobs:
               if [ "$full" = true ]; then aot_os=$all_os; else aot_os='["ubuntu-latest"]'; fi
             fi
 
+            # Mutation testing is the slowest suite, so pull requests only run it on request. The
+            # label asks for it explicitly, so it runs on a draft too.
             mutation_projects='[]'
             since=''
-            if [ "$heavy" = true ]; then
+            if [ "$full" = true ] || has_label ci-mutation-testing; then
               if [ "$full" = true ] || [ "$SHARED" = "true" ]; then
                 mutation_projects=$all_projects
               else

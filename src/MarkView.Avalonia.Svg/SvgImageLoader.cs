@@ -49,7 +49,7 @@ public sealed class SvgImageLoader : IImageLoader
 
             if (url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
             {
-                bytes = DecodeDataUri(url);
+                bytes = DataUri.Decode(url);
                 source = await Task.Run(() =>
                 {
                     using var ms = new MemoryStream(bytes);
@@ -60,11 +60,8 @@ public sealed class SvgImageLoader : IImageLoader
             {
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                     return null;
-                using var responseStream = await SharedHttpClient.Instance.GetStreamAsync(uri, cancellationToken);
-                using var buffer = new MemoryStream();
-                await responseStream.CopyToAsync(buffer, cancellationToken);
+                using var buffer = await SharedHttpClient.DownloadAsync(uri, cancellationToken);
                 bytes = buffer.ToArray();
-                buffer.Position = 0;
                 source = await Task.Run(() => SvgSource.LoadFromStream(buffer), cancellationToken);
             }
 
@@ -82,21 +79,5 @@ public sealed class SvgImageLoader : IImageLoader
         }
         // Stryker disable once Block : removing the body leaves an empty catch, and Stryker substitutes the default return value (null) for the missing return, which is exactly what the body returns
         catch (Exception e) when (e is HttpRequestException or IOException or XmlException) { return null; }
-    }
-
-    private static byte[] DecodeDataUri(string dataUri)
-    {
-        // Format: data:[<mediatype>][;base64],<data>
-        var commaIndex = dataUri.IndexOf(',');
-        if (commaIndex == -1)
-            return [];
-
-        // Use AsSpan to test the header without allocating a substring
-        if (dataUri.AsSpan(0, commaIndex).EndsWith(";base64", StringComparison.OrdinalIgnoreCase))
-            return Convert.FromBase64String(dataUri[(commaIndex + 1)..]);
-
-        // URL-encoded text
-        var decoded = Uri.UnescapeDataString(dataUri[(commaIndex + 1)..]);
-        return System.Text.Encoding.UTF8.GetBytes(decoded);
     }
 }

@@ -50,9 +50,15 @@ public class TextMateThemeSwitchTests
     public void Initial_render_uses_the_current_theme_variant(bool dark)
     {
         using var theme = new ThemeScope(dark ? ThemeVariant.Dark : ThemeVariant.Light);
-        var expected = new TextMateHighlighter(dark ? ThemeName.DarkPlus : ThemeName.LightPlus)
-            .Highlight("public class Foo { }".AsMemory(), "csharp")!
-            .Select(t => t.Foreground?.ToString() ?? "");
+        // Neighbouring tokens of one colour are written as one run.
+        var expected = new List<string>();
+        foreach (var token in new TextMateHighlighter(dark ? ThemeName.DarkPlus : ThemeName.LightPlus)
+                     .Highlight("public class Foo { }".AsMemory(), "csharp")!)
+        {
+            var colour = token.Foreground?.ToString() ?? "";
+            if (expected.Count == 0 || expected[^1] != colour)
+                expected.Add(colour);
+        }
 
         Assert.Equal(expected, Colours(Render().Text));
     }

@@ -28,6 +28,6 @@ public sealed class SmartyPantInlineRenderer : AvaloniaObjectRenderer<SmartyPant
         var text = Options.Mapping.TryGetValue(obj.Type, out var replacement)
             ? WebUtility.HtmlDecode(replacement)
             : obj.ToString();
-        renderer.WriteInline(new Run(text));
+        renderer.WriteText(text);
     }
 }

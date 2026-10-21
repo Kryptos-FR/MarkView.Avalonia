@@ -39,6 +39,37 @@ public class SlugGeneratorTests
         Assert.Equal("hello-2", gen.GenerateSlug("Hello"));
     }
 
+    [Theory]
+    // A suffixed slug can be another heading's own slug: suffixes are tried until one is unused.
+    [InlineData(new[] { "A", "A", "A-1" }, new[] { "a", "a-1", "a-1-1" })]
+    [InlineData(new[] { "A-1", "A", "A" }, new[] { "a-1", "a", "a-2" })]
+    [InlineData(new[] { "A", "A-1", "A", "A" }, new[] { "a", "a-1", "a-2", "a-3" })]
+    [InlineData(new[] { "A", "A", "A-1", "A-1" }, new[] { "a", "a-1", "a-1-1", "a-1-2" })]
+    // The anchors github.com gives these headings.
+    [InlineData(new[] { "A", "A", "A-1", "A-1", "A-2" }, new[] { "a", "a-1", "a-1-1", "a-1-2", "a-2" })]
+    public void GenerateSlug_never_repeats_a_slug(string[] headings, string[] expected)
+    {
+        var gen = new SlugGenerator();
+
+        Assert.Equal(expected, headings.Select(gen.GenerateSlug));
+    }
+
+    [Fact]
+    public void TruncateTo_forgets_the_suffixes_tried_after_the_cut()
+    {
+        var gen = new SlugGenerator();
+        gen.GenerateSlug("A-1");
+        gen.GenerateSlug("A");
+        gen.GenerateSlug("A"); // a-1 is taken: a-2
+        gen.GenerateSlug("A-1"); // a-1-1
+
+        gen.TruncateTo(2);
+
+        Assert.Equal(["a-2", "a-1-1"], new[] { "A", "A-1" }.Select(gen.GenerateSlug));
+        gen.TruncateTo(1);
+        Assert.Equal(["a", "a-1-1"], new[] { "A", "A-1" }.Select(gen.GenerateSlug));
+    }
+
     [Fact]
     public void Reset_clears_seen_slugs()
     {

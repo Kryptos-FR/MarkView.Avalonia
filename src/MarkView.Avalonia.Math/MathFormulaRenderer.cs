@@ -3,8 +3,10 @@
 
 using Avalonia;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Styling;
 
+using CSharpMath.Rendering.FrontEnd;
 using CSharpMath.SkiaSharp;
 
 using SkiaSharp;
@@ -20,10 +22,30 @@ internal static class MathFormulaRenderer
     private const int MaxLatexLength = 10_000;
     private const int MaxBraceNestingDepth = 50;
 
+    /// <summary>
+    /// Returns the bitmap of <paramref name="latex"/> in <paramref name="textColor"/>, from
+    /// <see cref="FormulaCache.Shared"/> when it was rendered recently.
+    /// </summary>
     public static Bitmap Render(string latex, SKColor textColor, float fontSize = 16f)
     {
         EnsureSafeToRender(latex);
+        return FormulaCache.Shared.GetOrAdd(latex, textColor, fontSize, () => Bake(latex, textColor, fontSize));
+    }
 
+    /// <summary>Typesets <paramref name="latex"/> and draws it into a new bitmap.</summary>
+    internal static Bitmap Bake(string latex, SKColor textColor, float fontSize)
+    {
+        using var pixels = Draw(latex, textColor, fontSize);
+        return new Bitmap(PixelFormat.Bgra8888, AlphaFormat.Premul, pixels.GetPixels(),
+            new PixelSize(pixels.Width, pixels.Height), new Vector(96, 96), pixels.RowBytes);
+    }
+
+    /// <summary>
+    /// Typesets <paramref name="latex"/> and draws it into BGRA premultiplied pixels, sized as CSharpMath's
+    /// own <c>DrawAsStream()</c> sizes its surface, so that <see cref="Bake"/> needs no PNG encoding and decoding.
+    /// </summary>
+    internal static SKBitmap Draw(string latex, SKColor textColor, float fontSize)
+    {
         var painter = new MathPainter
         {
             LaTeX = latex,
@@ -32,12 +54,14 @@ internal static class MathFormulaRenderer
             DisplayErrorInline = true, // bad LaTeX renders its own error text instead of throwing
         };
 
-        // NOTE: DrawAsStream() has never returned null in empirical testing (even for "" or
-        // whitespace-only input) — this is defensive against a future CSharpMath behavior change,
-        // not a currently-reachable path.
-        using var stream = painter.DrawAsStream()
-            ?? throw new InvalidOperationException("CSharpMath failed to render the formula to a stream.");
-        return new Bitmap(stream);
+        var size = painter.Measure().Size;
+        var pixels = new SKBitmap(new SKImageInfo(
+            System.Math.Max((int)size.Width, 1), System.Math.Max((int)size.Height, 1), SKColorType.Bgra8888, SKAlphaType.Premul));
+        using var canvas = new SKCanvas(pixels);
+        // Stryker disable once Statement: a new SKBitmap is already zeroed; cleared in case that changes
+        canvas.Clear(SKColors.Transparent);
+        painter.Draw(canvas, TextAlignment.TopLeft);
+        return pixels;
     }
 
     /// <summary>

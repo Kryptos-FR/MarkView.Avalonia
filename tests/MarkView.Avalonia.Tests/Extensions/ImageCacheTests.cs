@@ -18,11 +18,17 @@ public class ImageCacheTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    private sealed class FakeImage : IImage
+    // 1×1 by default, so 4 bytes to the cache.
+    private sealed class FakeImage(double width = 1, double height = 1) : IImage
     {
-        public Size Size => new(1, 1);
+        public Size Size => new(width, height);
         public void Draw(DrawingContext context, Rect sourceRect, Rect destRect) { }
     }
+
+    // Room for ten 1×1 images, the fewest a cache has room for.
+    private const long Ten = ImageCache.MinimumImages * 4;
+
+    private static IEnumerable<string> Urls(int count) => Enumerable.Range(0, count).Select(i => $"u{i}");
 
     /// <summary>Loads every URL it is given as a new image, or with <see cref="Load"/> when set; counts its loads.</summary>
     private sealed class CountingLoader : IImageLoader
@@ -58,7 +64,7 @@ public class ImageCacheTests
     [Fact]
     public async Task A_cached_image_is_returned_without_loading_it_again()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader();
 
         var first = await cache.GetOrLoadAsync("a", [loader], Token);
@@ -73,7 +79,7 @@ public class ImageCacheTests
     [Fact]
     public async Task A_cache_hit_completes_synchronously()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader();
         await cache.GetOrLoadAsync("a", [loader], Token);
 
@@ -83,7 +89,7 @@ public class ImageCacheTests
     [Fact]
     public async Task Each_url_is_cached_on_its_own()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader();
 
         var a = await cache.GetOrLoadAsync("a", [loader], Token);
@@ -96,7 +102,7 @@ public class ImageCacheTests
     [Fact]
     public async Task Another_loader_chain_loads_the_same_url_again()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader();
         await cache.GetOrLoadAsync("a", [loader], Token);
 
@@ -113,7 +119,7 @@ public class ImageCacheTests
     [Fact]
     public async Task Another_chain_of_the_same_loader_types_shares_the_cached_image()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var image = await cache.GetOrLoadAsync("a", [new CountingLoader()], Token);
         var loader = new CountingLoader();
 
@@ -124,32 +130,116 @@ public class ImageCacheTests
     [Fact]
     public async Task The_least_recently_used_image_is_evicted_first()
     {
-        var cache = new ImageCache(2);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader();
-        await cache.GetOrLoadAsync("a", [loader], Token);
-        await cache.GetOrLoadAsync("b", [loader], Token);
-        await cache.GetOrLoadAsync("a", [loader], Token); // "b" is now the least recently used
+        foreach (var url in Urls(10))
+            await cache.GetOrLoadAsync(url, [loader], Token);
+        await cache.GetOrLoadAsync("u0", [loader], Token); // "u1" is now the least recently used
 
         await cache.GetOrLoadAsync("c", [loader], Token);
-        await cache.GetOrLoadAsync("a", [loader], Token);
+        await cache.GetOrLoadAsync("u0", [loader], Token);
         await cache.GetOrLoadAsync("c", [loader], Token);
-        Assert.Equal(["a", "b", "c"], loader.Urls);
+        Assert.Equal([.. Urls(10), "c"], loader.Urls);
 
+        await cache.GetOrLoadAsync("u1", [loader], Token);
+        Assert.Equal([.. Urls(10), "c", "u1"], loader.Urls);
+        Assert.Equal(10, cache.Count);
+        Assert.Equal(Ten, cache.Bytes);
+    }
+
+    [Fact]
+    public async Task Images_are_evicted_until_the_new_one_fits()
+    {
+        var cache = new ImageCache(2 * Ten);
+        var loader = new CountingLoader();
+        foreach (var url in Urls(20))
+            await cache.GetOrLoadAsync(url, [loader], Token);
+
+        // 8 bytes over: the two least recently used images go.
+        await cache.GetOrLoadAsync("big", [new CountingLoader { Load = (_, _) => Task.FromResult<IImage?>(new FakeImage(2, 1)) }], Token);
+
+        Assert.Equal(19, cache.Count);
+        Assert.Equal(2 * Ten, cache.Bytes);
+        await cache.GetOrLoadAsync("u2", [loader], Token);
+        Assert.Equal(20, loader.Loads);
+        await cache.GetOrLoadAsync("u1", [loader], Token);
+        Assert.Equal(21, loader.Loads);
+    }
+
+    [Fact]
+    public async Task An_image_heavier_than_a_tenth_of_the_capacity_is_not_cached()
+    {
+        var cache = new ImageCache(10 * 400);
+        var image = new FakeImage(10, 10); // 400 bytes: cached
+        var heavier = new FakeImage(10, 10.5); // 440 bytes
+        var loader = new CountingLoader { Load = (url, _) => Task.FromResult<IImage?>(url == "a" ? image : heavier) };
+
+        Assert.Same(image, await cache.GetOrLoadAsync("a", [loader], Token));
+        Assert.Same(heavier, await cache.GetOrLoadAsync("b", [loader], Token));
+        await cache.GetOrLoadAsync("a", [loader], Token);
         await cache.GetOrLoadAsync("b", [loader], Token);
-        Assert.Equal(["a", "b", "c", "b"], loader.Urls);
-        Assert.Equal(2, cache.Count);
+
+        Assert.Equal(["a", "b", "b"], loader.Urls);
+        Assert.Equal(1, cache.Count);
+        Assert.Equal(400, cache.Bytes);
+    }
+
+    [Fact]
+    public void A_bitmap_costs_four_bytes_per_pixel_and_another_image_as_much_as_a_bitmap_of_its_size()
+    {
+        Assert.Equal(4, ImageCache.CostOf(new FakeImage()));
+        Assert.Equal(4 * 3 * 2, ImageCache.CostOf(new FakeImage(2.5, 1.2)));
+        Assert.Equal(0, ImageCache.CostOf(new FakeImage(0, 0)));
+    }
+
+    [Fact]
+    public async Task TryGet_returns_the_cached_image_of_the_same_url_and_loader_types()
+    {
+        var cache = new ImageCache(Ten);
+        var image = await cache.GetOrLoadAsync("a", [new CountingLoader()], Token);
+
+        Assert.Same(image, cache.TryGet("a", [new CountingLoader()]));
+        Assert.Null(cache.TryGet("b", [new CountingLoader()]));
+        Assert.Null(cache.TryGet("a", [new OtherLoader()]));
+    }
+
+    [Fact]
+    public void TryGet_loads_nothing()
+    {
+        var cache = new ImageCache(Ten);
+        var loader = new CountingLoader();
+
+        Assert.Null(cache.TryGet("a", [loader]));
+        Assert.Equal(0, loader.Loads);
+        Assert.Equal(0, cache.Count);
+    }
+
+    [Fact]
+    public async Task TryGet_marks_the_image_as_the_most_recently_used()
+    {
+        var cache = new ImageCache(Ten);
+        var loader = new CountingLoader();
+        foreach (var url in Urls(10))
+            await cache.GetOrLoadAsync(url, [loader], Token);
+        cache.TryGet("u0", [loader]); // "u1" is now the least recently used
+
+        await cache.GetOrLoadAsync("c", [loader], Token);
+
+        Assert.NotNull(cache.TryGet("u0", [loader]));
+        Assert.Null(cache.TryGet("u1", [loader]));
     }
 
     [Fact]
     public async Task An_evicted_image_is_not_disposed()
     {
-        var cache = new ImageCache(1);
+        var cache = new ImageCache(Ten);
         var bitmap = new DisposableImage();
         await cache.GetOrLoadAsync("a", [new CountingLoader { Load = (_, _) => Task.FromResult<IImage?>(bitmap) }], Token);
 
-        await cache.GetOrLoadAsync("b", [new CountingLoader()], Token);
+        foreach (var url in Urls(10))
+            await cache.GetOrLoadAsync(url, [new CountingLoader()], Token);
 
-        Assert.Equal(1, cache.Count);
+        Assert.Equal(10, cache.Count);
         Assert.False(bitmap.IsDisposed);
     }
 
@@ -182,56 +272,62 @@ public class ImageCacheTests
     [Fact]
     public async Task Lowering_the_capacity_evicts_the_least_recently_used_images()
     {
-        var cache = new ImageCache(3);
+        var cache = new ImageCache(2 * Ten);
         var loader = new CountingLoader();
-        foreach (var url in new[] { "a", "b", "c" })
+        foreach (var url in Urls(12))
             await cache.GetOrLoadAsync(url, [loader], Token);
 
-        cache.Capacity = 1;
+        cache.Capacity = Ten;
 
-        Assert.Equal(1, cache.Capacity);
-        Assert.Equal(1, cache.Count);
-        await cache.GetOrLoadAsync("c", [loader], Token);
-        Assert.Equal(3, loader.Loads);
+        Assert.Equal(Ten, cache.Capacity);
+        Assert.Equal(10, cache.Count);
+        Assert.Equal(Ten, cache.Bytes);
+        await cache.GetOrLoadAsync("u11", [loader], Token);
+        await cache.GetOrLoadAsync("u2", [loader], Token);
+        Assert.Equal(12, loader.Loads);
+        await cache.GetOrLoadAsync("u1", [loader], Token);
+        Assert.Equal(13, loader.Loads);
     }
 
     [Fact]
     public async Task Raising_the_capacity_keeps_every_image()
     {
-        var cache = new ImageCache(1);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader();
-        await cache.GetOrLoadAsync("a", [loader], Token);
+        foreach (var url in Urls(10))
+            await cache.GetOrLoadAsync(url, [loader], Token);
 
-        cache.Capacity = 2;
+        cache.Capacity = 2 * Ten;
         await cache.GetOrLoadAsync("b", [loader], Token);
 
-        Assert.Equal(2, cache.Count);
+        Assert.Equal(11, cache.Count);
     }
 
     [Fact]
     public async Task Setting_the_capacity_to_zero_empties_the_cache()
     {
-        var cache = new ImageCache(2);
+        var cache = new ImageCache(Ten);
         await cache.GetOrLoadAsync("a", [new CountingLoader()], Token);
 
         cache.Capacity = 0;
 
         Assert.Equal(0, cache.Count);
+        Assert.Equal(0, cache.Bytes);
     }
 
     [Fact]
     public void A_negative_capacity_is_rejected()
     {
-        var cache = new ImageCache(2);
+        var cache = new ImageCache(Ten);
 
         Assert.Throws<ArgumentOutOfRangeException>(() => cache.Capacity = -1);
-        Assert.Equal(2, cache.Capacity);
+        Assert.Equal(Ten, cache.Capacity);
     }
 
     [Fact]
     public async Task Clear_removes_every_image()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader();
         await cache.GetOrLoadAsync("a", [loader], Token);
         await cache.GetOrLoadAsync("b", [loader], Token);
@@ -239,6 +335,7 @@ public class ImageCacheTests
         cache.Clear();
 
         Assert.Equal(0, cache.Count);
+        Assert.Equal(0, cache.Bytes);
         await cache.GetOrLoadAsync("a", [loader], Token);
         await cache.GetOrLoadAsync("a", [loader], Token);
         Assert.Equal(3, loader.Loads);
@@ -248,25 +345,26 @@ public class ImageCacheTests
     [Fact]
     public async Task Images_cached_after_a_clear_are_evicted_least_recently_used_first()
     {
-        var cache = new ImageCache(2);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader();
-        await cache.GetOrLoadAsync("a", [loader], Token);
-        await cache.GetOrLoadAsync("b", [loader], Token);
+        foreach (var url in Urls(10))
+            await cache.GetOrLoadAsync(url, [loader], Token);
         cache.Clear();
 
-        await cache.GetOrLoadAsync("a", [loader], Token);
-        await cache.GetOrLoadAsync("c", [loader], Token);
-        await cache.GetOrLoadAsync("a", [loader], Token); // "c" is now the least recently used
+        foreach (var url in Urls(10))
+            await cache.GetOrLoadAsync(url, [loader], Token);
+        await cache.GetOrLoadAsync("u0", [loader], Token); // "u1" is now the least recently used
         await cache.GetOrLoadAsync("d", [loader], Token);
-        await cache.GetOrLoadAsync("a", [loader], Token);
+        await cache.GetOrLoadAsync("u0", [loader], Token);
 
-        Assert.Equal(["a", "b", "a", "c", "d"], loader.Urls);
+        Assert.Equal([.. Urls(10), .. Urls(10), "d"], loader.Urls);
+        Assert.Equal(Ten, cache.Bytes);
     }
 
     [Fact]
     public async Task A_load_that_returns_nothing_is_not_cached()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader { Load = (_, _) => Task.FromResult<IImage?>(null) };
 
         Assert.Null(await cache.GetOrLoadAsync("a", [loader], Token));
@@ -279,7 +377,7 @@ public class ImageCacheTests
     [Fact]
     public async Task A_load_that_throws_is_not_cached()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader { Load = (_, _) => throw new HttpRequestException("404") };
 
         await Assert.ThrowsAsync<HttpRequestException>(() => cache.GetOrLoadAsync("a", [loader], Token));
@@ -292,7 +390,7 @@ public class ImageCacheTests
     [Fact]
     public async Task A_load_that_throws_asynchronously_is_not_cached()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var loader = new CountingLoader
         {
             Load = async (_, _) =>
@@ -311,7 +409,7 @@ public class ImageCacheTests
     [Fact]
     public async Task Concurrent_loads_of_the_same_image_share_one_load()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var gate = new TaskCompletionSource<IImage?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var loader = new CountingLoader { Load = (_, _) => gate.Task };
 
@@ -330,7 +428,7 @@ public class ImageCacheTests
     [Fact]
     public async Task Concurrent_loads_share_a_failure_and_a_later_load_tries_again()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var gate = new TaskCompletionSource<IImage?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var loader = new CountingLoader { Load = (_, _) => gate.Task };
 
@@ -351,7 +449,7 @@ public class ImageCacheTests
     [Fact]
     public async Task Cancelling_one_of_two_concurrent_loads_lets_the_other_finish()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var gate = new TaskCompletionSource<IImage?>(TaskCreationOptions.RunContinuationsAsynchronously);
         CancellationToken loadToken = default;
         var loader = new CountingLoader { Load = (_, ct) => { loadToken = ct; return gate.Task; } };
@@ -372,7 +470,7 @@ public class ImageCacheTests
     [Fact]
     public async Task Cancelling_every_concurrent_load_cancels_the_shared_load()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         CancellationToken loadToken = default;
         var loader = new CountingLoader
         {
@@ -400,7 +498,7 @@ public class ImageCacheTests
     [Fact]
     public async Task A_load_every_waiter_gave_up_on_is_not_cached_and_does_not_end_a_newer_load()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var gates = new List<TaskCompletionSource<IImage?>>();
         // Ignores cancellation, so the abandoned load still completes.
         var loader = new CountingLoader
@@ -435,7 +533,7 @@ public class ImageCacheTests
     [Fact]
     public async Task A_failed_load_every_waiter_gave_up_on_does_not_end_a_newer_load()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var gates = new List<TaskCompletionSource<IImage?>>();
         var loader = new CountingLoader
         {
@@ -464,7 +562,7 @@ public class ImageCacheTests
     [Fact]
     public async Task Results_of_loads_in_flight_are_cached_after_a_clear()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var gate = new TaskCompletionSource<IImage?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var load = cache.GetOrLoadAsync("a", [new CountingLoader { Load = (_, _) => gate.Task }], Token);
 
@@ -478,7 +576,7 @@ public class ImageCacheTests
     [Fact]
     public async Task A_load_finishing_after_the_cache_was_disabled_is_not_cached()
     {
-        var cache = new ImageCache(10);
+        var cache = new ImageCache(Ten);
         var gate = new TaskCompletionSource<IImage?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var load = cache.GetOrLoadAsync("a", [new CountingLoader { Load = (_, _) => gate.Task }], Token);
 

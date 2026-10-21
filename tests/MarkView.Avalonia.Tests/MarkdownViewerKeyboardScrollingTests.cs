@@ -230,7 +230,7 @@ public class MarkdownViewerKeyboardScrollingTests
     [AvaloniaFact]
     public async Task The_keys_do_not_scroll_the_document_behind_the_lightbox()
     {
-        var viewer = new MarkdownViewer { Template = ScrollingViewerTemplate.Create() };
+        var viewer = new MarkdownViewer { IsImageZoomEnabled = true, Template = ScrollingViewerTemplate.Create() };
         viewer.Extensions.Add(new FakeLoader());
         viewer.Markdown = $"![logo](fake://{Guid.NewGuid()}.png)\n\n" + LongMarkdown;
         var window = new Window { Width = 400, Height = 200, Content = viewer };

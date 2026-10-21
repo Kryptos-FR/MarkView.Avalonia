@@ -33,13 +33,19 @@ internal sealed class BitmapImageLoader : IImageLoader
 
     public async Task<IImage?> LoadAsync(string url, CancellationToken cancellationToken = default)
     {
+        // Every image is decoded on the thread pool: a large one would otherwise stall the layout pass
+        // that attaches it (data: and avares: images load synchronously up to here). Bitmap is not an
+        // AvaloniaObject, so it can be created on any thread.
+        // Stryker disable Boolean : ConfigureAwait(true) only resumes on the caller's thread, which changes no result a test can see
         try
         {
             if (url.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
             {
-                var bytes = DecodeDataUri(url);
-                using var ms = new MemoryStream(bytes);
-                return new Bitmap(ms);
+                return await Task.Run(() =>
+                {
+                    using var ms = new MemoryStream(DataUri.Decode(url));
+                    return new Bitmap(ms);
+                }, cancellationToken).ConfigureAwait(false);
             }
 
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
@@ -47,30 +53,19 @@ internal sealed class BitmapImageLoader : IImageLoader
 
             if (uri.Scheme == "avares")
             {
-                using var stream = AssetLoader.Open(uri);
-                return new Bitmap(stream);
+                return await Task.Run(() =>
+                {
+                    using var stream = AssetLoader.Open(uri);
+                    return new Bitmap(stream);
+                }, cancellationToken).ConfigureAwait(false);
             }
 
-            using var responseStream = await SharedHttpClient.Instance.GetStreamAsync(uri, cancellationToken);
-            using var buffer = new MemoryStream();
-            await responseStream.CopyToAsync(buffer, cancellationToken);
-            buffer.Position = 0;
-            return new Bitmap(buffer);
+            using var buffer = await SharedHttpClient.DownloadAsync(uri, cancellationToken).ConfigureAwait(false);
+            return await Task.Run(() => new Bitmap(buffer), cancellationToken).ConfigureAwait(false);
         }
+        // Stryker restore Boolean
         catch (OperationCanceledException) { throw; }
         // Stryker disable once Block : removing the body leaves an empty catch, and Stryker substitutes the default return value (null) for the missing return, which is exactly what the body returns
         catch (Exception e) when (e is HttpRequestException or IOException) { return null; }
-    }
-
-    internal static byte[] DecodeDataUri(string dataUri)
-    {
-        var commaIndex = dataUri.IndexOf(',');
-        if (commaIndex < 0) return [];
-
-        if (dataUri.AsSpan(0, commaIndex).EndsWith(";base64", StringComparison.OrdinalIgnoreCase))
-            return Convert.FromBase64String(dataUri[(commaIndex + 1)..]);
-
-        var decoded = Uri.UnescapeDataString(dataUri[(commaIndex + 1)..]);
-        return System.Text.Encoding.UTF8.GetBytes(decoded);
     }
 }

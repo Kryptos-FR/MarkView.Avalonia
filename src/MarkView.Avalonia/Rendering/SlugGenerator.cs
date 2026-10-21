@@ -7,19 +7,20 @@ namespace MarkView.Avalonia.Rendering;
 
 /// <summary>
 /// Generates GitHub-style kebab-case anchor IDs from heading text.
-/// Tracks duplicates and appends -1, -2, etc. as needed.
+/// Tracks duplicates and appends -1, -2, etc. until the ID is unused, as GitHub does.
 /// </summary>
 /// <remarks>
 /// TODO: expose ISlugGenerator interface and allow injection via AvaloniaRenderer
 /// to support alternative anchor schemes (e.g. GitLab, Gitea, or user-defined).
 /// </remarks>
-public class SlugGenerator
+public sealed class SlugGenerator
 {
+    // Every slug in use, with the last -N suffix tried on it as a base.
     private readonly Dictionary<string, int> _seen = new(StringComparer.Ordinal);
 
-    // The normalized base slug (before any -N suffix) of every slug generated, in generation order,
-    // so TruncateTo can unwind _seen.
-    private readonly List<string> _generated = [];
+    // Every slug generated, in generation order, with its base (before any -N suffix) and the number of
+    // suffixes tried on that base for it, so TruncateTo can unwind _seen.
+    private readonly List<(string Base, string Slug, int Suffixes)> _generated = [];
 
     /// <summary>
     /// The number of slugs generated since the last <see cref="Reset"/>, less those
@@ -28,22 +29,23 @@ public class SlugGenerator
     public int Count => _generated.Count;
 
     /// <summary>
-    /// Generates the slug for a heading, appending <c>-1</c>, <c>-2</c>, ... when the same text was
-    /// seen before.
+    /// Generates the slug for a heading, appending <c>-1</c>, <c>-2</c>, ... when it is already in use,
+    /// until it is not: headings "A", "A" and "A-1" get <c>a</c>, <c>a-1</c> and <c>a-1-1</c>.
     /// </summary>
     public string GenerateSlug(string headingText)
     {
-        var slug = Normalize(headingText);
-        _generated.Add(slug);
-        if (_seen.TryGetValue(slug, out int count))
+        var baseSlug = Normalize(headingText);
+        var slug = baseSlug;
+        var suffixes = 0;
+        while (_seen.ContainsKey(slug))
         {
-            _seen[slug] = count + 1;
-            slug = $"{slug}-{count + 1}";
+            var suffix = _seen[baseSlug] + 1;
+            _seen[baseSlug] = suffix;
+            suffixes++;
+            slug = $"{baseSlug}-{suffix}";
         }
-        else
-        {
-            _seen[slug] = 0;
-        }
+        _seen[slug] = 0;
+        _generated.Add((baseSlug, slug, suffixes));
         return slug;
     }
 
@@ -59,11 +61,10 @@ public class SlugGenerator
 
         for (var i = _generated.Count - 1; i >= count; i--)
         {
-            var slug = _generated[i];
-            if (_seen[slug] == 0)
-                _seen.Remove(slug);
-            else
-                _seen[slug]--;
+            var (baseSlug, slug, suffixes) = _generated[i];
+            _seen.Remove(slug);
+            if (suffixes > 0)
+                _seen[baseSlug] -= suffixes;
         }
         _generated.RemoveRange(count, _generated.Count - count);
     }

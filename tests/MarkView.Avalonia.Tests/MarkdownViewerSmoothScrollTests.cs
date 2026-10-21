@@ -10,6 +10,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Tests.Shared;
 
 using Xunit;
 
@@ -112,19 +113,21 @@ public class MarkdownViewerSmoothScrollTests
     }
 
     [AvaloniaFact]
-    public void Smooth_scroll_runs_on_the_rendered_frames()
+    public async Task Smooth_scroll_runs_on_the_rendered_frames()
     {
         var (window, scrollViewer, viewer) = Show();
         var expected = TargetOffset(viewer, scrollViewer, "Target Heading");
+        // The window's first render is committed before the animation starts, so its first frame, which moves
+        // nothing, has nothing to commit: the next frame then waits for a dispatcher timer, which only the
+        // dispatcher's loop fires, not RunJobs.
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Dispatcher.UIThread.RunJobs();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Dispatcher.UIThread.RunJobs();
 
         viewer.ScrollToAnchor("target-heading");
         // The frames' times are the clock's.
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        while (viewer.ActiveSmoothScroll is not null && stopwatch.Elapsed < TimeSpan.FromSeconds(10))
-        {
-            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-            Dispatcher.UIThread.RunJobs();
-        }
+        await AsyncTestHelpers.WaitUntilAsync(() => viewer.ActiveSmoothScroll is null, timeoutMs: 10_000);
 
         Assert.Null(viewer.ActiveSmoothScroll);
         // Laid out between frames at fractional offsets, the heading's position is rounded to device pixels.

@@ -3,10 +3,10 @@
 [![NuGet Version](https://img.shields.io/nuget/v/MarkView.Avalonia.Mermaid)](https://www.nuget.org/packages/MarkView.Avalonia.Mermaid)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MarkView.Avalonia.Mermaid)](https://www.nuget.org/packages/MarkView.Avalonia.Mermaid)
 [![Avalonia](https://img.shields.io/badge/Avalonia-12-blue)](https://avaloniaui.net)
-[![CI](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml/badge.svg)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](../../LICENSE.md)
+[![CI](https://img.shields.io/github/actions/workflow/status/Kryptos-FR/MarkView.Avalonia/ci.yml?branch=main&label=CI)](https://github.com/Kryptos-FR/MarkView.Avalonia/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/Kryptos-FR/MarkView.Avalonia)](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md)
 
-Mermaid diagram rendering extension for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia). Renders fenced `mermaid` code blocks as vector diagrams using [Mermaider](https://github.com/nullean/mermaider) — a pure managed .NET parser and renderer. No browser, no WebView, and no JavaScript runtime required.
+[Mermaid](https://mermaid.js.org) diagrams for [MarkView.Avalonia](https://www.nuget.org/packages/MarkView.Avalonia), drawn with [Mermaider](https://github.com/nullean/mermaider) in .NET: no browser, WebView or JavaScript.
 
 ## Installation
 
@@ -14,135 +14,42 @@ Mermaid diagram rendering extension for [MarkView.Avalonia](https://www.nuget.or
 dotnet add package MarkView.Avalonia.Mermaid
 ```
 
-## Quick Start
-
-Call `UseMermaid()` before setting `Markdown`:
+## Usage
 
 ```csharp
-var viewer = new MarkdownViewer();
-viewer.UseMermaid();
-viewer.Markdown = markdownText;
-```
+viewer.UseMermaid();                          // MermaidStyle.Quiet
+viewer.UseMermaid(MermaidStyle.Blueprint);    // or Tonal
 
-Or activate globally at application startup:
-
-```csharp
-// App.axaml.cs
+// every viewer of the application, at startup
 MarkdownViewerDefaults.Extensions.AddMermaid();
 ```
 
-Diagrams are written in standard [Mermaid](https://mermaid.js.org) syntax inside a fenced code block:
-
-````markdown
-```mermaid
-graph TD
-  A[Start] --> B{Decision}
-  B -- Yes --> C[End]
-  B -- No  --> A
-```
-````
-
-## Supported Diagram Types
-
-The extension targets the diagram types supported by the version of Mermaider this package depends on, including common diagrams such as:
-
-- Flowcharts (`graph TD`, `flowchart LR`)
-- Sequence diagrams (`sequenceDiagram`)
-- Class diagrams (`classDiagram`)
-- State diagrams (`stateDiagram-v2`)
-- Entity-relationship diagrams (`erDiagram`)
-- Gantt charts (`gantt`)
-- Pie charts (`pie`)
-- Git graphs (`gitGraph`)
-- Mind maps (`mindmap`)
-- Timeline (`timeline`)
-
-See the [Mermaid documentation](https://mermaid.js.org/intro/) for syntax reference. If a diagram fails to render, the extension falls back to a plain-text block containing the original source. While a document is streaming, a `mermaid` fence at the end of the text is shown as a `mermaid` code block and becomes a diagram once a blank line or another block follows it.
-
-## Fullscreen, Zoom and Pan
-
-Clicking a diagram, or pressing Enter or Space when it has focus, opens it in the viewer's lightbox, as
-an image: fitted to the viewer (enlarged up to twice its natural size, since it is drawn as vectors),
-with zoom (mouse wheel, pinch, + and − keys, toolbar buttons) and pan (drag, arrow keys). It follows the
-viewer's `IsImageZoomEnabled` (on by default). See
-[Image zoom](../../docs/configuration.md#image-zoom).
-
-## Saving a Diagram
-
-A rendered diagram can be saved as SVG or PNG, in the colours it is shown in and on its background
-colour: from the lightbox's save button, `Ctrl+S` in the lightbox, or **Save image as…** in the viewer's
-context menu. The SVG is self-contained (its CSS variables are resolved), so it shows the same in a
-browser or a vector editor; the PNG is rendered at twice the diagram's size. It follows the viewer's
-`IsImageSaveEnabled` (on by default). See
-[Saving images and diagrams](../../docs/configuration.md#saving-images-and-diagrams).
-
-## Diagram Style
-
-Diagrams are painted in one of Mermaider's three style presets, chosen when the extension is added (`MermaidStyle.Quiet` by default):
-
-```csharp
-viewer.UseMermaid(MermaidStyle.Blueprint);
-// or globally:
-MarkdownViewerDefaults.Extensions.AddMermaid(MermaidStyle.Tonal);
-```
-
-- `Quiet`: tinted boxes with a soft gradient and a light shadow, the accent marking what to look at.
-- `Blueprint`: a technical drawing, with outlines first, square corners, monospace captions, accent heads and rules.
-- `Tonal`: filled tonal blocks without outlines, with generous corner radii and a soft shadow.
-
-Every style uses the same layout and the colours of the theme below; only the paint changes.
-
-## Theme Awareness
-
-Diagram colours come from `MermaidTheme.axaml`, included the same way as the core package's theme:
+Include the package's theme in `App.axaml` to give diagrams the colours you choose (without it, the default colours are used):
 
 ```xml
-<!-- App.axaml -->
 <StyleInclude Source="avares://MarkView.Avalonia.Mermaid/Themes/MermaidTheme.axaml" />
 ```
 
-It defines Dark/Light `SolidColorBrush` resources you can override in your own styles:
+Write diagrams in fenced `mermaid` blocks:
 
-| Resource key | Dark | Light |
-|---|---|---|
-| `MarkdownMermaidBackground` | `#18181B` | `#FFFFFF` |
-| `MarkdownMermaidForeground` | `#FAFAFA` | `#27272A` |
-| `MarkdownMermaidAccent` | `#60A5FA` | `#3B82F6` |
-
-If the theme isn't included, the same values are used as a built-in fallback — the extension works standalone.
-
-When the user switches between light and dark, the diagram is automatically re-rendered. The `Border` container stays in place — scroll position is preserved and other document elements are not affected.
-
-## Combining with Syntax Highlighting
-
-When `MarkView.Avalonia.SyntaxHighlighting` is also registered, non-mermaid fenced code blocks in the same document get full syntax highlighting. Registration order does not matter:
-
-```csharp
-// Per-instance
-viewer
-    .UseTextMateHighlighting()
-    .UseMermaid();
-
-// Or globally
-MarkdownViewerDefaults.Extensions.AddTextMateHighlighting();
-MarkdownViewerDefaults.Extensions.AddMermaid();
+````markdown
+```mermaid
+flowchart LR
+    A[Input] --> B[MarkdownViewer]
+    B --> C[Avalonia UI]
 ```
+````
 
-`MermaidBlockRenderer` handles all `FencedCodeBlock` nodes. Mermaid blocks are rendered as diagrams; all other fenced blocks are rendered as styled code blocks using any `ICodeHighlighter` registered by the SyntaxHighlighting extension.
+Flowcharts, sequence, class, state and entity-relationship diagrams, Gantt and pie charts, git graphs, mind maps and timelines are supported. Diagrams are drawn again in place when the theme switches between light and dark, open in the viewer's lightbox when `IsImageZoomEnabled` is on, and can be saved as SVG or PNG.
 
-## How It Works
+## Documentation
 
-`UseMermaid()` registers a `MermaidExtension` which inserts `MermaidBlockRenderer` immediately before the first renderer that already accepts a `FencedCodeBlock` (not always at index 0 — this keeps registration order-independent when a sibling extension such as `MarkView.Avalonia.Math` is also registered), so it intercepts every `FencedCodeBlock` before the default `CodeBlockRenderer`.
+- [Mermaid diagrams](https://kryptos-fr.github.io/MarkView.Avalonia/guides/images/#mermaid-diagrams): styles, colours, fonts and when diagrams render.
+- [Lightbox](https://kryptos-fr.github.io/MarkView.Avalonia/guides/images/#lightbox) and [Saving images and diagrams](https://kryptos-fr.github.io/MarkView.Avalonia/guides/images/#saving-images-and-diagrams).
+- [Resource keys](https://kryptos-fr.github.io/MarkView.Avalonia/reference/resource-keys/): the diagram colours you can redefine.
 
-For mermaid blocks:
-1. Source lines are extracted from the fenced block. The diagram itself is rendered the first time it comes within a screen of the viewport, so diagrams further down a long document cost nothing while it loads.
-2. `MermaidRenderer.RenderSvg` produces an SVG string whose colours and font sizes use CSS custom properties and `color-mix()`.
-3. These expressions (`var(--_text)`, `color-mix(in srgb, var(--fg) 10%, var(--bg))`, `var(--fs-s)` etc.) are resolved from the properties the SVG declares and replaced with hex colours and pixel sizes, so SkiaSharp, which ignores them, can render the diagram.
-4. The SVG is loaded into an `SvgImage` and displayed in an `Image` control. Labels are drawn in the document's font as Avalonia resolves it (the viewer's inherited `FontFamily`, e.g. Inter with `WithInterFont()`), wherever the SVG asks for that font by name. In the browser, where SkiaSharp itself only has a monospace fallback font, every label uses the document's font.
-5. `MaxWidth` is constrained to the `ScrollViewer` viewport and updated on resize.
-
-For non-mermaid blocks, rendering is delegated to the standard code block path (colours are updated in place on a theme switch when the registered highlighter is an `IThemeAwareCodeHighlighter` or `IDualThemeCodeHighlighter`).
+The [documentation site](https://kryptos-fr.github.io/MarkView.Avalonia/) covers the whole library, and the [demo](https://kryptos-fr.github.io/MarkView.Avalonia/demo/) shows every feature in the browser.
 
 ## License
 
-[MIT](../../LICENSE.md) © Nicolas Musset
+[MIT](https://github.com/Kryptos-FR/MarkView.Avalonia/blob/main/LICENSE.md) © Nicolas Musset
