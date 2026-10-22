@@ -31,7 +31,7 @@ The switch at the right of the page tabs shows the rendered page (**Preview**), 
 
 The find box searches the Markdown when it is shown alone, and the rendered page otherwise. Picking a heading in the outline while the Markdown is shown alone switches back to the preview.
 
-**Stream the document** streams the raw text into the Markdown view too, through a session of its own with healing off, and both follow the end. Its session updates every 250 ms instead of every 32 ms, since its single code block is rendered again whole at each update.
+**Stream the document** streams the raw text into the Markdown view too, through a session of its own with healing off, and both follow the end. Its session updates every 200 ms instead of every 32 ms, since its single code block is rendered again whole at each update.
 
 
 - **← / →** buttons navigate backward and forward through the history stack (loaded files and in-app anchor jumps).

@@ -18,7 +18,7 @@ public partial class MainView : UserControl
     private Task? _streamTask;
 
     // How often the source view renders during a replay; see ReplayAsync.
-    private static readonly TimeSpan SourceUpdateInterval = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan SourceUpdateInterval = TimeSpan.FromMilliseconds(200);
 
     // Bumped by each change to the source view, so a read that finishes after a later one is dropped.
     private int _sourceVersion;
