@@ -11,7 +11,7 @@ dotnet run
 
 ## What the Demo Shows
 
-The demo window contains a page tab strip, a toolbar, and a full-screen content area. Use the **tabs** to switch between five built-in pages; use **Open file…** to load any local `.md` file.
+The demo window contains a page tab strip, a toolbar, and a full-screen content area. Use the **tabs** to switch between the built-in pages; use **Open…** to load any local `.md` file. The **Preview | Markdown | Side by side** switch at the right of the tabs shows the rendered page, the Markdown it is rendered from, or both.
 
 The toolbar has three groups: the outline, history and **Open…** buttons on the left; the find box in the middle (Ctrl+F, with the match count and the previous and next buttons inside it); and the appearance controls on the right: the light and dark switch, the theme preset and the **View options** menu.
 
@@ -25,7 +25,14 @@ The toolbar has three groups: the outline, history and **Open…** buttons on th
 | **Color Extension** | A dedicated `ColorExtensionView` control hosting its own `MarkdownViewer`, configured with its own `Pipeline`/`Extensions` instead of `MarkdownViewerDefaults`. Demonstrates writing a complete custom Markdig + MarkView extension (`%[color:red]text%` colour spans) — see `ColorExtension/` and [Custom extensions](../../docs/guides/custom-extensions.md) |
 | **README** | The project's own `README.md` loaded from disk (relative to the solution root) |
 
-### Navigation and History
+### Preview and Markdown
+
+The switch at the right of the page tabs shows the rendered page (**Preview**), its Markdown (**Markdown**), or the Markdown on the left of the page (**Side by side**, with a splitter between them). It works for every page, opened files included. The Markdown is shown by a second `MarkdownViewer` as one fenced `markdown` code block, highlighted by the TextMate package, with line numbers and wrapped lines; its fence is longer than any run of backticks in the page, so code blocks in the page don't close it.
+
+The find box searches the Markdown when it is shown alone, and the rendered page otherwise. Picking a heading in the outline while the Markdown is shown alone switches back to the preview.
+
+**Stream the document** streams the raw text into the Markdown view too, through a session of its own with healing off, and both follow the end. Its session updates every 250 ms instead of every 32 ms, since its single code block is rendered again whole at each update.
+
 
 - **← / →** buttons navigate backward and forward through the history stack (loaded files and in-app anchor jumps).
 - **Open file…** opens a file picker to load any local Markdown file. Once loaded, in-document relative links (`[text](./other.md)`) open further files in the same viewer.

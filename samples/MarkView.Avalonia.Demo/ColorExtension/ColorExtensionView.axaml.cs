@@ -14,7 +14,7 @@ namespace MarkView.Avalonia.Demo.ColorExtension;
 /// </summary>
 public partial class ColorExtensionView : UserControl
 {
-    private static readonly Uri TutorialSource =
+    internal static readonly Uri TutorialSource =
         new("avares://MarkView.Avalonia.Demo/Assets/color-extension.md");
 
     public ColorExtensionView()

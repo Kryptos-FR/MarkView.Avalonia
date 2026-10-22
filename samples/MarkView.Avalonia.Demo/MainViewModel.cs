@@ -267,6 +267,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private int _replayInterval = 20;
     private bool _isCodeHeightLimited;
     private int _themePresetIndex;
+    private PageView _pageView;
     // The presets of the drop-down after the default theme (index 0), each created when first picked
     private readonly Styles?[] _themePresets = new Styles?[4];
 
@@ -380,6 +381,44 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public double CodeBlockMaxHeight => _isCodeHeightLimited ? LimitedCodeBlockHeight : double.PositiveInfinity;
 
+    /// <summary>Whether the page area shows the rendered page, its markdown, or both side by side.</summary>
+    public PageView PageView
+    {
+        get => _pageView;
+        set
+        {
+            if (!SetField(ref _pageView, value)) return;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsPreviewShown)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSourceShown)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsPreviewSelected)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSourceSelected)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSideBySideSelected)));
+        }
+    }
+
+    public bool IsPreviewShown => _pageView != PageView.Source;
+
+    public bool IsSourceShown => _pageView != PageView.Preview;
+
+    // One per button of the switch; a radio button only ever sets its own to true.
+    public bool IsPreviewSelected
+    {
+        get => _pageView == PageView.Preview;
+        set { if (value) PageView = PageView.Preview; }
+    }
+
+    public bool IsSourceSelected
+    {
+        get => _pageView == PageView.Source;
+        set { if (value) PageView = PageView.Source; }
+    }
+
+    public bool IsSideBySideSelected
+    {
+        get => _pageView == PageView.SideBySide;
+        set { if (value) PageView = PageView.SideBySide; }
+    }
+
     public bool IsCustomStyled
     {
         get => _isCustomStyled;
@@ -423,6 +462,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
             SetField(ref _markdown, value);
         }
     }
+
+    /// <summary>Whether a replay has emptied the page to stream it back in; see <see cref="BeginReplay"/>.</summary>
+    public bool IsReplaying => _isReplaying;
 
     public bool CanGoBack => _historyIndex > 0;
     public bool CanGoForward => _historyIndex < _history.Count - 1;
@@ -546,11 +588,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         switch (Source)
         {
             case { Scheme: "avares" } resource:
-            {
-                await using var stream = AssetLoader.Open(new Uri(resource.GetLeftPart(UriPartial.Path)));
-                using var reader = new StreamReader(stream);
-                return await reader.ReadToEndAsync();
-            }
+                return await ReadAssetAsync(resource);
             case { IsFile: true } file:
                 try
                 {
@@ -564,6 +602,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
             default:
                 return null;
         }
+    }
+
+    /// <summary>
+    /// Reads the markdown behind the page shown, for the source view: <see cref="ReadCurrentMarkdownAsync"/>,
+    /// or the tutorial the Color Extension page renders with its own viewer.
+    /// </summary>
+    public Task<string?> ReadPageMarkdownAsync() =>
+        IsColorExtensionSelected ? ReadAssetAsync(ColorExtension.ColorExtensionView.TutorialSource) : ReadCurrentMarkdownAsync();
+
+    private static async Task<string?> ReadAssetAsync(Uri resource)
+    {
+        await using var stream = AssetLoader.Open(new Uri(resource.GetLeftPart(UriPartial.Path)));
+        using var reader = new StreamReader(stream);
+        return await reader.ReadToEndAsync();
     }
 
     /// <summary>
@@ -618,4 +670,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         return true;
     }
+}
+
+/// <summary>What the page area of the demo shows.</summary>
+public enum PageView
+{
+    /// <summary>The rendered page.</summary>
+    Preview,
+
+    /// <summary>The markdown the page is rendered from.</summary>
+    Source,
+
+    /// <summary>The markdown on the left of the rendered page.</summary>
+    SideBySide,
 }
