@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Logging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -1274,8 +1275,8 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
-    /// Opens <paramref name="uri"/> with <paramref name="launcher"/>, ignoring a launcher that throws (no
-    /// application registered for the scheme, a sandbox refusing it): this runs from an <c>async void</c>
+    /// Opens <paramref name="uri"/> with <paramref name="launcher"/>, logging a launcher that throws (a
+    /// platform call that fails, an application's own launcher) as a warning: this runs from an <c>async void</c>
     /// handler, where the exception would otherwise reach the dispatcher and end the application.
     /// </summary>
     internal static async Task LaunchAsync(ILauncher launcher, Uri uri)
@@ -1284,9 +1285,13 @@ public partial class MarkdownViewer : ContentControl
         {
             await launcher.LaunchUriAsync(uri);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Nothing to report it to: a link that cannot open does nothing, as when the launcher returns false.
+            // A link that cannot open does nothing, as when the launcher returns false; Avalonia's own
+            // desktop launcher logs its failures the same way.
+            // Stryker disable once String : the message text is diagnostic output only
+            Logger.TryGet(LogEventLevel.Warning, LogArea.Control)?.Log(null,
+                "The link {Uri} could not be opened: {Exception}", uri, ex);
         }
     }
 

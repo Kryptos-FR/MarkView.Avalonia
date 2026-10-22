@@ -46,7 +46,7 @@ viewer.Markdown = File.ReadAllText("README.md");
 
 ## Links
 
-Clicking a link opens it with the platform's launcher: the default browser on the desktop, an intent on mobile, a new tab in the browser. Links to an anchor of the document (`#heading`) scroll to it. A link the platform cannot open (no application for its scheme) does nothing.
+Clicking a link opens it with the platform's launcher: the default browser on the desktop, an intent on mobile, a new tab in the browser. Links to an anchor of the document (`#heading`) scroll to it. A link the platform cannot open (no application for its scheme) does nothing; if the launcher throws, the viewer logs a warning in Avalonia's `Control` log area instead of letting the exception end the application.
 
 `LinkClicked` is raised first, so an application can handle some links itself. Set `e.Handled` to stop the default launch:
 
