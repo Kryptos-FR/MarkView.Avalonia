@@ -110,9 +110,11 @@ internal sealed class ThinkingBlockParser : BlockParser
         var end = line.End;
         while (end >= line.Start && line.Text[end].IsWhitespace())
             end--;
-        var closing = $"</{block.TagName}>";
-        var start = end - closing.Length + 1;
-        if (start < line.Start || string.Compare(line.Text, start, closing, 0, closing.Length, StringComparison.OrdinalIgnoreCase) != 0)
+        // "</name>", compared in place: this runs on every line of the block, on every parse of a streamed text.
+        var name = block.TagName;
+        var start = end - name.Length - 2;
+        if (start < line.Start || line.Text[start] != '<' || line.Text[start + 1] != '/' || line.Text[end] != '>'
+            || string.Compare(line.Text, start + 2, name, 0, name.Length, StringComparison.OrdinalIgnoreCase) != 0)
             return;
 
         block.HasClosingTag = true;
@@ -144,16 +146,28 @@ internal sealed class ThinkingBlockParser : BlockParser
             position++;
         }
 
-        foreach (var candidate in name is null ? _tagNames : [name])
+        if (name is not null)
+            return MatchName(line, position, name) is var length and >= 0 ? (name, length) : null;
+        foreach (var candidate in _tagNames)
         {
-            var end = position + candidate.Length;
-            if (end > line.End + 1 || string.Compare(text, position, candidate, 0, candidate.Length, StringComparison.OrdinalIgnoreCase) != 0)
-                continue;
-            while (end <= line.End && text[end] is ' ' or '\t')
-                end++;
-            if (end <= line.End && text[end] == '>')
-                return (candidate, end + 1 - line.Start);
+            if (MatchName(line, position, candidate) is var length and >= 0)
+                return (candidate, length);
         }
         return null;
+    }
+
+    /// <summary>
+    /// The length of the tag of <paramref name="line"/> whose name, <paramref name="name"/>, starts at
+    /// <paramref name="position"/>, up to its <c>&gt;</c>; -1 when the tag there is not that one.
+    /// </summary>
+    private static int MatchName(StringSlice line, int position, string name)
+    {
+        var text = line.Text;
+        var end = position + name.Length;
+        if (end > line.End + 1 || string.Compare(text, position, name, 0, name.Length, StringComparison.OrdinalIgnoreCase) != 0)
+            return -1;
+        while (end <= line.End && text[end] is ' ' or '\t')
+            end++;
+        return end <= line.End && text[end] == '>' ? end + 1 - line.Start : -1;
     }
 }
