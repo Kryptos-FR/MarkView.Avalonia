@@ -28,7 +28,7 @@ dotnet add package MarkView.Avalonia
 
 ## Documentation
 
-**Get started**: [Getting started](getting-started.md) · [Choosing packages](packages.md) · [Upgrading to 12.4](upgrading.md)
+**Get started**: [Getting started](getting-started.md) · [Choosing packages](packages.md) · [Upgrading](upgrading.md)
 
 **[Guides](guides/readme.md)**: [Displaying documents](guides/displaying-documents.md) · [Markdown and the pipeline](guides/markdown.md) · [Chat and AI answers](guides/chat.md) · [Streaming](guides/streaming.md) · [Code blocks](guides/code-blocks.md) · [Images and diagrams](guides/images.md) · [Math](guides/math.md) · [Themes and presets](guides/themes.md) · [Selection and copy](guides/text-selection.md) · [Find in document](guides/find-in-document.md) · [Folding](guides/folding.md) · [Task lists](guides/task-lists.md) · [Accessibility](guides/accessibility.md) · [Right-to-left text](guides/right-to-left.md) · [Custom extensions](guides/custom-extensions.md)
 

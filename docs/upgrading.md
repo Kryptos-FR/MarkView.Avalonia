@@ -1,16 +1,26 @@
 ---
-title: "Upgrading to 12.4"
+title: "Upgrading"
 ---
 
-# Upgrading to 12.4
+# Upgrading
+
+Each breaking release (see [Versioning](reference/versioning.md)) lists below the changes that can need work in an application. When skipping versions, check every release in between.
+
+## Upgrading to 12.5
+
+### A `Source` that cannot be loaded keeps the current document
+
+Setting `Source` to an `avares://` asset that does not exist used to throw from the setter. Like a missing file or a failed download, it now leaves the current document on screen. Code that caught the exception to detect a missing asset should check for the asset itself, with `AssetLoader.Exists`.
+
+## Upgrading to 12.4
 
 12.4.0 is a breaking release (see [Versioning](reference/versioning.md)). Most applications only need to update the packages together and recompile; check the changes below that apply to yours.
 
-## Update every package together
+### Update every package together
 
 The extension packages of 12.4.0 (SyntaxHighlighting, Svg, Mermaid, Math) require `MarkView.Avalonia` 12.4.0, and apps built against 12.3.0 must be recompiled: `UseMath()`, `UseMermaid()` and `AddMermaid()` gained optional parameters, which is source compatible but not binary compatible.
 
-## The default pipeline is now GitHub's
+### The default pipeline is now GitHub's
 
 A viewer without a `Pipeline` now uses `UseGitHubExtensions()` instead of `UseSupportedExtensions()`, so documents render as on GitHub:
 
@@ -26,11 +36,11 @@ MarkdownViewerDefaults.Pipeline = new MarkdownPipelineBuilder().UseSupportedExte
 
 See [Markdown and the pipeline](guides/markdown.md) for the differences and how to combine them.
 
-## Removed pipeline methods
+### Removed pipeline methods
 
 `UseAbbreviations()`, `UseCitations()`, `UseFigures()`, `UseFootnotes()`, `UseAlertBlocks()` and `UseMediaLinks()` were removed from `MarkView.Avalonia.MarkdownExtensions`, the extension methods of `MarkdownPipelineBuilder`. They were identical to Markdig's own, and four of them clashed with them (error CS0121) when both namespaces were imported. Code that calls them keeps compiling and now calls Markdig's methods. The `MarkdownViewer` methods of the same names (`viewer.UseFootnotes()`…) are unchanged.
 
-## The viewer has a context menu
+### The viewer has a context menu
 
 A right-click on the viewer opens its new context menu (copy, copy as Markdown, copy a link or a table, save an image, select all). Set your own `ContextFlyout` or `ContextMenu` to replace it, or remove it:
 
@@ -40,15 +50,15 @@ A right-click on the viewer opens its new context menu (copy, copy as Markdown, 
 
 See [Selection and copy](guides/text-selection.md#context-menu).
 
-## Mermaid diagrams render when shown
+### Mermaid diagrams render when shown
 
 A diagram renders once its viewer is attached to a window, in the background on the desktop and, in the browser, once it comes within a screen of the visible area. A diagram that is never shown is never rendered.
 
-## Sealed classes
+### Sealed classes
 
 `MarkdownSelectableTextBlock` and `SlugGenerator` are sealed. Style headings and paragraphs through their [control themes](guides/themes.md#sizes-spacing-and-control-themes) instead of deriving from them.
 
-## New defaults to know
+### New defaults to know
 
 These are not breaking, but change what a document shows:
 
