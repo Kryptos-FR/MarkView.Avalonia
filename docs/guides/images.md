@@ -37,7 +37,7 @@ Relative addresses resolve against `BaseUri` or the folder of `Source` (see [Dis
 </Style>
 ```
 
-`![alt](url =WxH)` caps one image at `W`×`H` pixels, whatever the mode: a larger image is scaled down to fit, a smaller one is never enlarged. The `width` and `height` attributes of an HTML `<img>` act the same way, and either can be given alone.
+`![alt](url =WxH)` caps one image at `W`×`H` pixels, whatever the mode: a larger image is scaled down to fit, a smaller one is never enlarged. The `width` and `height` attributes of an HTML `<img>` act the same way, and either can be given alone. In code (code spans and code blocks), a hint is text and shows as written.
 
 `Fill` and `ScaleDownToFit` need a width to scale to, which the template's `ScrollViewer` gives while its horizontal scroll bar is disabled (the default). With `ScrollViewer.HorizontalScrollBarVisibility="Auto"` on the viewer, or a template without `PART_ScrollViewer`, they may behave like `Natural`.
 

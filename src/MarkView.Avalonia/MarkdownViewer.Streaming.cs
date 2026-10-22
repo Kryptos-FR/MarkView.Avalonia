@@ -112,7 +112,7 @@ public partial class MarkdownViewer
     /// </summary>
     internal void ApplyStreamingUpdate(string text, bool final)
     {
-        var markdownText = PreprocessImageSizes(text, out _sourceShifts);
+        var markdownText = PreprocessImageSizes(text, EffectivePipeline, out _sourceShifts);
         var document = Markdig.Markdown.Parse(markdownText, EffectivePipeline);
         // The tail is taken before the second parse: a closer never moves the tail's start.
         var tail = final ? null : MarkdownHealer.TailBlock(document, markdownText);

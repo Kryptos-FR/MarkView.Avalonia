@@ -18,6 +18,8 @@ using Avalonia.VisualTree;
 using Markdig;
 using Markdig.Extensions.GenericAttributes;
 using Markdig.Extensions.SmartyPants;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
 
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
@@ -31,11 +33,9 @@ namespace MarkView.Avalonia;
 /// </summary>
 public partial class MarkdownViewer : ContentControl
 {
-    // Matches a backtick code span (group 1) or the non-standard "![alt](url =WxH)" size hint
-    // (groups 2-5). Code spans are passed through unchanged so literal syntax examples in
-    // documentation are not mangled.
-    [GeneratedRegex(@"(`+)[\s\S]*?\1|(\!\[[^\]]*\]\()([^\s\)]+)\s+=(\d+x\d+)(\))")]
-    private static partial Regex ImageSizePreprocessorRegex();
+    // Matches the non-standard "![alt](url =WxH)" size hint (groups 1-4).
+    [GeneratedRegex(@"(\!\[[^\]]*\]\()([^\s\)]+)\s+=(\d+x\d+)(\))")]
+    private static partial Regex ImageSizeHintRegex();
 
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
 
@@ -625,7 +625,7 @@ public partial class MarkdownViewer : ContentControl
             return;
         }
 
-        var markdownText = PreprocessImageSizes(markdown, out _sourceShifts);
+        var markdownText = PreprocessImageSizes(markdown, EffectivePipeline, out _sourceShifts);
         var document = Markdig.Markdown.Parse(markdownText, EffectivePipeline);
 
         var renderer = CreateRenderer();
@@ -751,28 +751,53 @@ public partial class MarkdownViewer : ContentControl
     // ── Source positions ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// Rewrites each "![alt](url =WxH)" size hint as a "=WxH" link title Markdig can parse. Each
-    /// rewrite changes the text's length (and can drop line breaks), so <paramref name="shifts"/>
-    /// records, in order, where each rewrite ends in the returned text and how far positions after
-    /// it have moved, for <see cref="ToSourcePosition"/> to map them back.
+    /// Rewrites each "![alt](url =WxH)" size hint as a "=WxH" link title Markdig can parse, except in code
+    /// (code blocks and code spans, as <paramref name="pipeline"/> parses them), where it is text to show
+    /// as written. Each rewrite changes the text's length (and can drop line breaks), so
+    /// <paramref name="shifts"/> records, in order, where each rewrite ends in the returned text and how far
+    /// positions after it have moved, for <see cref="ToSourcePosition"/> to map them back. Text without a
+    /// size hint is returned as is, and only text with one is parsed here to find its code.
     /// </summary>
-    private static string PreprocessImageSizes(string markdown, out List<SourceShift> shifts)
+    internal static string PreprocessImageSizes(string markdown, MarkdownPipeline pipeline, out List<SourceShift> shifts)
     {
         var recorded = new List<SourceShift>();
-        int offset = 0, lines = 0;
-        var text = ImageSizePreprocessorRegex().Replace(markdown, m =>
+        shifts = recorded;
+        if (!ImageSizeHintRegex().IsMatch(markdown))
+            return markdown;
+
+        var code = CodeRanges(Markdig.Markdown.Parse(markdown, pipeline));
+        int offset = 0, lines = 0, next = 0;
+        return ImageSizeHintRegex().Replace(markdown, m =>
         {
-            if (m.Groups[1].Success)
+            // The ranges are in order, and so are the matches.
+            while (next < code.Count && code[next].End < m.Index)
+                next++;
+            if (next < code.Count && code[next].Start <= m.Index)
                 return m.Value;
-            var replacement = $"{m.Groups[2].Value}{m.Groups[3].Value} \"={m.Groups[4].Value}\"{m.Groups[5].Value}";
+            var replacement = $"{m.Groups[1].Value}{m.Groups[2].Value} \"={m.Groups[3].Value}\"{m.Groups[4].Value}";
             offset += replacement.Length - m.Length;
             lines += replacement.AsSpan().Count('\n') - m.ValueSpan.Count('\n');
             // Stryker disable once Arithmetic : only compared against positions outside the image syntax, which any point inside the rewrite tells apart as well as its end
             recorded.Add(new SourceShift(m.Index + m.Length + offset, offset, lines));
             return replacement;
         });
-        shifts = recorded;
-        return text;
+    }
+
+    /// <summary>The source ranges of the code blocks and code spans of <paramref name="document"/>, in order.</summary>
+    private static List<SourceSpan> CodeRanges(MarkdownDocument document)
+    {
+        var ranges = new List<SourceSpan>();
+        foreach (var node in document.Descendants())
+        {
+            if (node is CodeInline)
+                ranges.Add(node.Span);
+            // A fence left open ends at its last line, past the span Markdig gives it.
+            else if (node is CodeBlock block)
+                ranges.Add(block.Lines.Count == 0 ? block.Span
+                    : new SourceSpan(block.Span.Start, Math.Max(block.Span.End, block.Lines.Lines[block.Lines.Count - 1].Slice.End)));
+        }
+        ranges.Sort((a, b) => a.Start.CompareTo(b.Start));
+        return ranges;
     }
 
     /// <summary>
@@ -795,7 +820,7 @@ public partial class MarkdownViewer : ContentControl
     /// <param name="End">Where the rewrite ends in the preprocessed text.</param>
     /// <param name="Offset">Total length change of this and all earlier rewrites.</param>
     /// <param name="Lines">Total line-count change of this and all earlier rewrites.</param>
-    private readonly record struct SourceShift(int End, int Offset, int Lines);
+    internal readonly record struct SourceShift(int End, int Offset, int Lines);
 
     private void OnTaskToggled(TaskToggledEventArgs e)
     {
