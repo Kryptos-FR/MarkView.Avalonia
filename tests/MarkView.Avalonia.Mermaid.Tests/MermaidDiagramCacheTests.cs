@@ -26,7 +26,7 @@ public class MermaidDiagramCacheTests
     private static RenderedDiagram Drawing()
     {
         using var stream = new MemoryStream("""<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>"""u8.ToArray());
-        return new RenderedDiagram(SvgSource.LoadFromStream(stream), new Lazy<byte[]>(() => []));
+        return new RenderedDiagram(SvgSource.LoadFromStream(stream), []);
     }
 
     // A render that counts its runs and, while the gate is closed, waits for it to open.

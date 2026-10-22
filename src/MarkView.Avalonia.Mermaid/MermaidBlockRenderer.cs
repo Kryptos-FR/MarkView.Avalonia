@@ -190,7 +190,7 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
                         // A saved diagram is written on its background colour, which the image shown leaves
                         // to the document.
                         return new RenderedDiagram(AvaloniaTypefaceProvider.WithDocumentFont(font, () => SvgSource.LoadFromStream(stream)),
-                            new Lazy<byte[]>(() => Encoding.UTF8.GetBytes(MermaidSvgTheme.AddBackground(svg, opts.Bg!))));
+                            Encoding.UTF8.GetBytes(MermaidSvgTheme.AddBackground(svg, opts.Bg!)));
                     },
                     token);
 

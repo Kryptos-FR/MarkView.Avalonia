@@ -153,5 +153,5 @@ internal sealed class MermaidDiagramCache(int capacity)
     }
 }
 
-/// <summary>A rendered diagram: its drawing, and the SVG document a saved copy is written from, built when first saved.</summary>
-internal sealed record RenderedDiagram(SvgSource Source, Lazy<byte[]> File);
+/// <summary>A rendered diagram: its drawing, and the SVG document (with its background) a saved copy is written from.</summary>
+internal sealed record RenderedDiagram(SvgSource Source, byte[] File);
