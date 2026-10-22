@@ -51,9 +51,6 @@ internal sealed class GrowingCodeBlock
     /// <summary>The block as of the last update.</summary>
     public CodeBlock Block { get; private set; }
 
-    /// <summary>How many chunks are written.</summary>
-    internal int ChunkCount => _written.Count;
-
     /// <summary>
     /// Writes <paramref name="block"/> as a growing code block, its lines highlighted by <paramref name="highlighter"/>,
     /// when it is the renderer's <see cref="AvaloniaRenderer.GrowingCodeTarget"/>, and records it as the renderer's
