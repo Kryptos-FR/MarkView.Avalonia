@@ -21,10 +21,12 @@ namespace MarkView.Avalonia.Mermaid.Tests;
 
 public class MermaidDiagramRenderingTests
 {
-    private const string Diagram = """
+    // A new source each time, so that no diagram comes from the cache shared by every render.
+    private static string Diagram => $"""
         ```mermaid
         graph TD
           A --> B
+          %% {Guid.NewGuid():N}
         ```
         """;
     private const string InvalidDiagram = """
@@ -49,9 +51,9 @@ public class MermaidDiagramRenderingTests
     private static Border RenderBorder(string markdown) =>
         Assert.IsType<Border>(Assert.Single(Render(markdown).Children));
 
-    private static (Border Border, Image Image) RenderDiagram(string markdown = Diagram)
+    private static (Border Border, Image Image) RenderDiagram(string? markdown = null)
     {
-        var border = RenderBorder(markdown);
+        var border = RenderBorder(markdown ?? Diagram);
         return (border, Assert.IsType<Image>(border.Child));
     }
 
@@ -69,9 +71,9 @@ public class MermaidDiagramRenderingTests
         public void Dispose() => Window.Close();
     }
 
-    private static (Border Border, Image Image, Shown Shown) ShowDiagram(string markdown = Diagram)
+    private static (Border Border, Image Image, Shown Shown) ShowDiagram(string? markdown = null)
     {
-        var root = Render(markdown);
+        var root = Render(markdown ?? Diagram);
         var border = Assert.IsType<Border>(Assert.Single(root.Children));
         return (border, Assert.IsType<Image>(border.Child), new Shown(root));
     }
@@ -565,12 +567,14 @@ public class MermaidDiagramRenderingTests
         try
         {
             // The render completes on a background thread but its result is only applied once the UI
-            // thread yields, so detaching here happens while the render is still in flight.
+            // thread yields, so detaching here happens while the render is still in flight. The detached
+            // diagram gives up on it, and asks again once it is back.
             window.Show();
             scrollViewer.Content = null;
-            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+            await AsyncTestHelpers.PumpAsync();
 
             scrollViewer.Content = root;
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
 
             Assert.IsType<SvgImage>(image.Source);
         }

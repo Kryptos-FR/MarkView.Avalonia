@@ -83,6 +83,7 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
 
         CancellationTokenSource? cts = null;
         var started = false;
+        var abandoned = false;
 
         // Rendered images by the colours baked into them, so switching back to a theme
         // already shown reuses its image instead of rendering and parsing the SVG again.
@@ -95,6 +96,21 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
         {
             if (started) _ = ApplyThemeAsync();
         });
+
+        // A diagram removed from the document (a new render, a streaming update that rebuilds it) gives up
+        // the render it waits for, which still runs if another diagram waits for it too; put back, it asks again.
+        border.DetachedFromLogicalTree += (_, _) =>
+        {
+            if (cts is null) return;
+            abandoned = true;
+            cts.Cancel();
+        };
+        border.AttachedToLogicalTree += (_, _) =>
+        {
+            if (!abandoned) return;
+            abandoned = false;
+            _ = ApplyThemeAsync();
+        };
 
         // A diagram that appears after the document has been laid out moves everything below it, which costs a
         // relayout of the document each. Rendered in the background from the moment the document is attached,
@@ -140,13 +156,12 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
 
         // Heavy work (MermaidRenderer.RenderSvg + SvgSource.LoadFromStream via SkiaSharp)
         // is offloaded to a background thread so the UI thread is not blocked on platforms
-        // with threads; single-threaded WebAssembly still runs it on the UI thread.
+        // with threads; single-threaded WebAssembly still runs it on the UI thread. Diagrams
+        // rendered before, by any document, come from the shared cache.
         // A CancellationTokenSource lets a theme switch supersede an in-flight render.
         async Task ApplyThemeAsync()
         {
             cts?.Cancel();
-            // Stryker disable once Statement : a CancellationTokenSource without timers or linked tokens holds no resources
-            cts?.Dispose();
             var localCts = cts = new CancellationTokenSource();
             var token = localCts.Token;
 
@@ -154,30 +169,36 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
             var colours = (opts.Bg, opts.Fg, opts.Accent);
             if (rendered.TryGetValue(colours, out var cached))
             {
+                cts = null;
                 ShowDiagram(cached);
                 return;
             }
 
             // Diagram text is drawn in the document's font, resolved by Avalonia, rather than with
             // whatever SkiaSharp finds on its own (only a monospace font in the browser).
-            AvaloniaTypefaceProvider.Use(border.GetValue(TextElement.FontFamilyProperty));
+            var font = border.GetValue(TextElement.FontFamilyProperty);
+            AvaloniaTypefaceProvider.Use(font);
 
             try
             {
-                var (svgSource, file) = await Task.Run(() =>
-                {
-                    var svg = MermaidRenderer.RenderSvg(source, opts);
-                    svg = MermaidSvgTheme.InlineCssVariables(svg, opts);
-                    using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
-                    // A saved diagram is written on its background colour, which the image shown leaves
-                    // to the document.
-                    return (SvgSource.LoadFromStream(stream), Encoding.UTF8.GetBytes(MermaidSvgTheme.AddBackground(svg, opts.Bg!)));
-                }, token);
+                var result = await MermaidDiagramCache.Shared.GetOrRenderAsync(
+                    new MermaidDiagramCache.Key(source, opts.Bg, opts.Fg, opts.Accent, style, font),
+                    () =>
+                    {
+                        var svg = MermaidRenderer.RenderSvg(source, opts);
+                        svg = MermaidSvgTheme.InlineCssVariables(svg, opts);
+                        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
+                        // A saved diagram is written on its background colour, which the image shown leaves
+                        // to the document.
+                        return new RenderedDiagram(SvgSource.LoadFromStream(stream),
+                            new Lazy<byte[]>(() => Encoding.UTF8.GetBytes(MermaidSvgTheme.AddBackground(svg, opts.Bg!))));
+                    },
+                    token);
 
                 if (!token.IsCancellationRequested)
                 {
-                    var diagram = new SvgImage { Source = svgSource };
-                    ImageExport.SetSvg(diagram, file);
+                    var diagram = new SvgImage { Source = result.Source };
+                    ImageExport.SetSvg(diagram, result.File);
                     ShowDiagram(rendered[colours] = diagram);
                 }
             }
@@ -194,6 +215,13 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
                     border.Classes.Add("markdown-mermaid-fallback");
                     border.Theme = null;
                 }
+            }
+            finally
+            {
+                // Stryker disable once Statement : a CancellationTokenSource without timers or linked tokens holds no resources
+                localCts.Dispose();
+                if (cts == localCts)
+                    cts = null;
             }
 
             // The diagram is transparent, so the lightbox paints it on its background colour, set

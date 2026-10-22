@@ -29,7 +29,7 @@ internal static class ImageExport
 
     // The SVG documents of pictures, kept as long as the picture itself, which the image cache may share
     // between documents.
-    private static readonly ConditionalWeakTable<IImage, byte[]> SvgDocuments = new();
+    private static readonly ConditionalWeakTable<IImage, Lazy<byte[]>> SvgDocuments = new();
 
     /// <summary>
     /// The name, without an extension, a saved copy of the image is suggested; <c>null</c> (the default)
@@ -43,17 +43,25 @@ internal static class ImageExport
     internal static void SetFileName(Image image, string? value) => image.SetValue(FileNameProperty, value);
 
     /// <summary>Notes <paramref name="svg"/> as the SVG document <paramref name="picture"/> was drawn from.</summary>
-    internal static void SetSvg(IImage picture, byte[] svg) => SvgDocuments.AddOrUpdate(picture, svg);
+    internal static void SetSvg(IImage picture, byte[] svg) => SetSvg(picture, new Lazy<byte[]>(() => svg));
+
+    /// <summary>
+    /// Notes <paramref name="svg"/> as the SVG document <paramref name="picture"/> was drawn from, built the
+    /// first time the picture is saved as SVG.
+    /// </summary>
+    internal static void SetSvg(IImage picture, Lazy<byte[]> svg) => SvgDocuments.AddOrUpdate(picture, svg);
 
     /// <summary>The SVG document <paramref name="picture"/> was drawn from, if one was noted.</summary>
-    internal static byte[]? GetSvg(IImage picture) => SvgDocuments.TryGetValue(picture, out var svg) ? svg : null;
+    internal static byte[]? GetSvg(IImage picture) => SvgDocuments.TryGetValue(picture, out var svg) ? svg.Value : null;
+
+    private static bool HasSvg(IImage picture) => SvgDocuments.TryGetValue(picture, out _);
 
     /// <summary>Whether <paramref name="image"/> shows a picture that can be saved.</summary>
     internal static bool CanSave(Image image) => image.Source is not null && GetFileName(image) is not null;
 
     /// <summary>The formats <paramref name="picture"/> can be saved in, the best first.</summary>
     internal static IReadOnlyList<MarkdownImageFormat> GetFormats(IImage picture) =>
-        GetSvg(picture) is null ? [MarkdownImageFormat.Png] : [MarkdownImageFormat.Svg, MarkdownImageFormat.Png];
+        !HasSvg(picture) ? [MarkdownImageFormat.Png] : [MarkdownImageFormat.Svg, MarkdownImageFormat.Png];
 
     /// <summary>The usual extension of a file in <paramref name="format"/>, without the dot.</summary>
     internal static string GetExtension(MarkdownImageFormat format) =>
