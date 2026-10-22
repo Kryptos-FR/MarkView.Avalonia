@@ -116,6 +116,31 @@ public class MarkdownViewerHeadingLinkTests
     }
 
     [AvaloniaTheory]
+    [InlineData("## \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD", 4)]
+    [InlineData("## \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD", -4)]
+    [InlineData("> ## \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD\n>\n> \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD", 4)]
+    [InlineData("> ## \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD\n>\n> \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD", -4)]
+    [InlineData("- ## \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD\n\n  \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD", 4)]
+    [InlineData("- ## \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD\n\n  \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD", -4)]
+    [InlineData("> Hello\n>\n> > ## \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD\n> >\n> > \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD", 4)]
+    [InlineData("> Hello\n>\n> > ## \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD\n> >\n> > \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD", -4)]
+    [InlineData("- Hello\n\n  - ## \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD\n\n    \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD", 4)]
+    [InlineData("- Hello\n\n  - ## \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD\n\n    \u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD", -4)]
+    public void Right_clicking_a_right_to_left_heading_offers_its_link(string markdown, double x)
+    {
+        // Near either end of the heading, alone or in a block that Avalonia mirrors as a whole (a right-to-left
+        // quote or list), itself inside a left-to-right one or not.
+        using var f = Show("# Title\n\n" + markdown + "\n\nText");
+        var heading = f.Block("\u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05DC\u05DD");
+
+        RightClick(f, heading, x < 0 ? heading.Bounds.Width + x : x);
+        Assert.True(f.Item.IsVisible);
+        Click(f.Item);
+
+        Assert.Equal(MarkdownCopyOrigin.HeadingLink, Assert.Single(f.Copies).Origin);
+    }
+
+    [AvaloniaTheory]
     [InlineData("Intro paragraph")]
     [InlineData("A footnote")]
     public void Right_clicking_something_else_hides_the_item(string text)
