@@ -37,7 +37,7 @@ Enabled by `UseGitHubExtensions()`, the pipeline of a viewer without one.
 | CJK-friendly emphasis | Emphasis next to Chinese, Japanese and Korean punctuation |
 | YAML front matter | A `---` block at the top of the document, hidden |
 | [Details blocks](../guides/markdown.md#details-blocks) | HTML `<details>` and `<summary>`; also `UseHtmlDetails()` on its own |
-| [HTML subset](../guides/markdown.md#html-subset) | `<p align>` and `<div align>` headers, `<a><img></a>` badges, `<kbd>`, `<sub>`, `<sup>`, `<mark>`, `<b>`, `<code>`, `<hr>`…; nothing runs, only `<img>` sources are fetched. Also `UseHtmlSubset()` on its own |
+| [HTML subset](../guides/markdown.md#html-subset) | `<p align>` and `<div align>` headers, `<a><img></a>` badges, `<picture>` light/dark logos, `<kbd>`, `<sub>`, `<sup>`, `<mark>`, `<b>`, `<code>`, `<hr>`…; nothing runs, only `<img>` and `<picture>` sources are fetched. Also `UseHtmlSubset()` on its own |
 
 ## Opt-in syntax
 

@@ -13,7 +13,8 @@ namespace MarkView.Avalonia.Parsing;
 /// Turns the inline HTML tags of the HTML subset into the inlines they stand for: a pair of tags such as
 /// <c>&lt;b&gt;…&lt;/b&gt;</c> into an <see cref="HtmlElementInline"/>, <c>&lt;a href&gt;…&lt;/a&gt;</c> into a
 /// link and <c>&lt;code&gt;…&lt;/code&gt;</c> into a code span, like their markdown counterparts, and
-/// <c>&lt;img&gt;</c> and <c>&lt;br&gt;</c> into an image and a line break.
+/// <c>&lt;img&gt;</c> and <c>&lt;br&gt;</c> into an image and a line break. The <c>&lt;source&gt;</c> tags of a
+/// <c>&lt;picture&gt;</c> go with the image of its <c>&lt;img&gt;</c> (see <see cref="HtmlPicture"/>).
 /// </summary>
 /// <remarks>
 /// Tags are matched among the children of each container inline, like elements: an end tag closes the
@@ -176,7 +177,7 @@ internal static partial class HtmlInlineBuilder
     }
 
     /// <summary>Whether <paramref name="name"/> is an element of the subset with content, between two tags.</summary>
-    private static bool IsElement(string name) => name is "a" or "code" or "script" or "style" || FormattingKind(name) is not null;
+    private static bool IsElement(string name) => name is "a" or "code" or "picture" or "script" or "style" || FormattingKind(name) is not null;
 
     private static HtmlElementKind? FormattingKind(string name) => name switch
     {
@@ -252,7 +253,9 @@ internal static partial class HtmlInlineBuilder
         }
         else if (frame.Target.GetType() == typeof(ContainerInline))
         {
-            // An <a> without a link: only its content shows.
+            if (frame.Tag.Name == "picture")
+                AttachSources(frame.Target);
+            // An <a> without a link, or a <picture>: only its content shows.
             foreach (var child in frame.Target.ToArray())
             {
                 child.Remove();
@@ -263,6 +266,25 @@ internal static partial class HtmlInlineBuilder
         {
             Append(parent, frame.Target);
         }
+    }
+
+    /// <summary>
+    /// Gives the image of the <c>&lt;img&gt;</c> of a <c>&lt;picture&gt;</c>, among <paramref name="content"/>, the
+    /// picture's <c>&lt;source&gt;</c> tags, as an <see cref="HtmlPicture"/>. The source tags themselves show nothing.
+    /// </summary>
+    private static void AttachSources(ContainerInline content)
+    {
+        var picture = new HtmlPicture();
+        LinkInline? image = null;
+        foreach (var inline in content)
+        {
+            if (inline is HtmlInline html && HtmlTag.Parse(html.Tag) is { Name: "source", IsEnd: false } source)
+                picture.Add(source.Attribute("media"), source.Attribute("srcset"));
+            else if (inline is LinkInline { IsImage: true } img)
+                image ??= img;
+        }
+        if (image is not null && !picture.IsEmpty)
+            image.SetData(typeof(HtmlPicture), picture);
     }
 
     private static void Append(Frame frame, Inline? inline)

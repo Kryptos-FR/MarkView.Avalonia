@@ -150,7 +150,7 @@ Shown until the summary is clicked.
 
 ## HTML subset
 
-GitHub READMEs often use a little HTML: a centred logo and title, a row of badges, `<kbd>` keys, `<sub>` and `<sup>`. The default pipeline renders a small, safe subset of HTML with native controls, without a browser: nothing is run, and nothing is fetched but the `src` of an `<img>`, through the viewer's image loaders like a Markdown image. `UseHtmlSubset()` adds it to another pipeline (`UseSupportedExtensions()` includes it).
+GitHub READMEs often use a little HTML: a centred logo and title, a row of badges, `<kbd>` keys, `<sub>` and `<sup>`. The default pipeline renders a small, safe subset of HTML with native controls, without a browser: nothing is run, and nothing is fetched but the `src` of an `<img>` (or the source of a `<picture>` for the theme), through the viewer's image loaders like a Markdown image. `UseHtmlSubset()` adds it to another pipeline (`UseSupportedExtensions()` includes it).
 
 ```markdown
 <p align="center">
@@ -180,6 +180,7 @@ Inline elements, in paragraphs, headings, table cells, list items and details su
 | `<code>` | Inline code, like `` `code` ``, of the element's text |
 | `<a href="…" title="…">` | A link, like `[text](href "title")`: same click handling (`LinkClicked`), address resolution against `BaseUri` and style |
 | `<img src="…" alt="…" title="…" width="…" height="…">` | An image, like `![alt](src)`: same image loaders, address resolution, tooltip and copy text. `width` and `height`, in pixels, cap its size like the `=WxH` [size hint](images.md#sizing), and either can be given alone; other values (`50%`) are ignored |
+| `<picture>` with `<source media="…" srcset="…">` and an `<img>` | The `<img>`, showing the first `<source>` that applies to the application's theme: one without `media`, or one whose `media` is `(prefers-color-scheme: dark)` or `(prefers-color-scheme: light)`. It switches when the theme changes. Only the first address of a `srcset` is read; a source with any other `media` is ignored, and without a source that applies the `<img>` shows its own `src` |
 | `<br>` | A line break |
 
 HTML blocks, HTML that starts a line, which CommonMark does not read Markdown inside:
@@ -204,8 +205,8 @@ A `<div align="center">` and its `</div>`, each separated by blank lines from th
 </div>
 ```
 
-- Only the `href`, `src`, `alt`, `title`, `width`, `height`, `align` and `dir` attributes are read; any other (`style`, `class`, `onclick`…) is ignored.
-- Any other tag (`<span>`, `<table>`, `<iframe>`, `<picture>`…), and a tag without its match (`<b>` never closed, a stray `</i>`), is dropped, and the text around it still shows. The content of `<script>` and `<style>` is dropped with them, as GitHub does. Comments do not show.
+- Only the `href`, `src`, `srcset`, `media`, `alt`, `title`, `width`, `height`, `align` and `dir` attributes are read; any other (`style`, `class`, `onclick`…) is ignored.
+- Any other tag (`<span>`, `<table>`, `<iframe>`…), and a tag without its match (`<b>` never closed, a stray `</i>`), is dropped, and the text around it still shows. The content of `<script>` and `<style>` is dropped with them, as GitHub does. Comments do not show.
 - Tags pair like elements: `<b><i>x</i></b>` nests, and `</b>` in `<b><i>x</b>` also closes the `<i>`. Inline tags pair within the same Markdown inline only: in `*<b>x*</b>`, the `<b>` is inside the emphasis and the `</b>` outside, so both are dropped. A `<div>` pairs with a `</div>` among the blocks of the same container; one without its match is dropped.
 - A `<p>` or heading ends at its end tag, at the next block tag, or at the end of its HTML block. Whitespace collapses as in HTML.
 - HTML blocks that Markdig starts with `<script>`, `<style>`, `<pre>`, `<textarea>`, a comment or a declaration are not rendered.
