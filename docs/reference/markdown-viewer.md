@@ -16,6 +16,7 @@ Styled properties can be set in a style for every viewer of an application. The 
 | `Source` | `Uri?` | `null` | A document to load and render (`avares://`, `file://`, `http`, `https`, and whatever `ResourceResolver` opens); wins over `Markdown`. Re-renders. See [Loading a file or a URL](../guides/displaying-documents.md#loading-a-file-or-a-url). |
 | `ResourceResolver` | `IResourceResolver?` | `null` | Opens the document of `Source` and its images before the viewer's own loading, e.g. from a zip archive or a server that needs credentials; `null` falls back to `MarkdownViewerDefaults.ResourceResolver`. Loads `Source` again and re-renders. See [Reading from your own storage](../guides/displaying-documents.md#reading-from-your-own-storage). |
 | `BaseUri` | `Uri?` | `null` | Base address of relative links and images; the folder of `Source` when not set. Re-renders. |
+| `UrlTransform` | `MarkdownUrlTransform?` | `null` | Rewrites or drops the URL of each link and image; `null` falls back to `MarkdownViewerDefaults.UrlTransform`. Re-renders. See [Filtering links and images](../guides/displaying-documents.md#filtering-links-and-images). |
 | `Pipeline` | `MarkdownPipeline?` | `null` | The Markdig pipeline; `null` falls back to `MarkdownViewerDefaults.Pipeline`, then to `UseGitHubExtensions()`. Re-renders. See [Markdown and the pipeline](../guides/markdown.md). |
 | `Extensions` | `IList<IMarkViewExtension>` | empty | The viewer's extensions, registered after `MarkdownViewerDefaults.Extensions`. Not a styled property. See [Choosing packages](../packages.md). |
 | `ImageResizeMode` | `ImageResizeMode` | `ScaleDownToFit` | How images without a size hint scale to the viewer's width. See [Sizing](../guides/images.md#sizing). |
@@ -52,7 +53,7 @@ Styled properties can be set in a style for every viewer of an application. The 
 
 | Event | Raised when |
 |-------|-------------|
-| `LinkClicked` | A link is clicked, before the viewer opens it; set `Handled` to open it yourself. See [Links](../guides/displaying-documents.md#links). |
+| `LinkClicked` | A link is clicked, before the viewer opens it (when its scheme is in `LaunchableLinkSchemes`); set `Handled` to open it yourself. See [Links](../guides/displaying-documents.md#links). |
 | `TaskToggled` | The reader ticks a task-list checkbox. See [Task lists](../guides/task-lists.md). |
 | `SelectionChanged` | The selection changes. See [Selection changes](../guides/text-selection.md#selection-changes). |
 | `CopyingToClipboard` | The viewer is about to write to the clipboard; the handler can change or cancel the copy. See [Changing what is copied](../guides/text-selection.md#changing-what-is-copied). |
@@ -91,5 +92,7 @@ Static settings for every viewer of the application. See [Settings for every vie
 | `Pipeline` | The pipeline of viewers without their own. |
 | `Extensions` | Extensions registered on every viewer, before its own. The packages add `AddTextMateHighlighting()`, `AddSvg()`, `AddMermaid()`, `AddMath()`, and the core `AddFenceRenderer()`. |
 | `ResourceResolver` | The resource resolver of viewers without their own. |
+| `UrlTransform` | The URL transform of viewers without their own. |
+| `LaunchableLinkSchemes` | The schemes of the links a viewer opens with the platform's launcher when no handler did: `http`, `https` and `mailto` by default. See [Links the viewer opens](../guides/displaying-documents.md#links-the-viewer-opens). |
 | `ImageCacheSize` | Size of the shared image cache, in bytes (100 MB by default; 0 turns it off). See [Image cache](../guides/images.md#image-cache). |
 | `ClearImageCache()` | Empties the image cache. |

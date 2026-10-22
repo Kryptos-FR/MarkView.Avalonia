@@ -14,7 +14,7 @@ Always on, whatever the pipeline.
 |---------|-------|
 | Headings, `#` and underlined | Each gets a GitHub-style anchor and is listed in `TableOfContents`; can [fold](../guides/folding.md) |
 | `**bold**`, `*italic*`, `` `code` `` | |
-| Links and `<https://…>` autolinks | Open with the platform's launcher, or raise [`LinkClicked`](../guides/displaying-documents.md#links) |
+| Links and `<https://…>` autolinks | `http`, `https` and `mailto` open with the platform's launcher; every link raises [`LinkClicked`](../guides/displaying-documents.md#links) |
 | Images | Loaded in the background, [sized](../guides/images.md#sizing) to the viewer; `![alt](url =WxH)` caps the size |
 | Fenced and indented code blocks | Copy button, optional language, line numbers, wrapping; any language can render as [your own control](../guides/code-blocks.md#custom-fenced-blocks) |
 | Block quotes, ordered and unordered lists, thematic breaks | Tight and loose lists |

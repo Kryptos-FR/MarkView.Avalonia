@@ -8,6 +8,14 @@ Each breaking release (see [Versioning](reference/versioning.md)) lists below th
 
 ## Upgrading to 12.5
 
+### Only `http`, `https` and `mailto` links open by themselves
+
+A clicked link that no `LinkClicked` handler handled used to be given to the platform's launcher whatever its scheme. The viewer now launches only the schemes in `MarkdownViewerDefaults.LaunchableLinkSchemes` (`http`, `https` and `mailto` by default), because the operating system can run a program for a `file:` link or an installer protocol. To open other links, handle `LinkClicked`, or add their scheme to the set when the documents are trusted. See [Links the viewer opens](guides/displaying-documents.md#links-the-viewer-opens).
+
+### `AvaloniaRenderer.ResolveUrl` can return `null`
+
+`ResolveUrl(string)` became `string? ResolveUrl(string url, MarkdownUrlKind kind = MarkdownUrlKind.Link)`: it also applies the viewer's [`UrlTransform`](guides/displaying-documents.md#filtering-links-and-images), which returns `null` for a URL it drops. A custom renderer that calls it must be recompiled, should pass `MarkdownUrlKind.Image` for an image, and should render nothing that loads or opens the URL when it gets `null`, as the built-in renderers do (a dropped link renders as its text, a dropped image as its placeholder).
+
 ### A `Source` that cannot be loaded keeps the current document
 
 Setting `Source` to an `avares://` asset that does not exist used to throw from the setter. Like a missing file or a failed download, it now leaves the current document on screen. Code that caught the exception to detect a missing asset should check for the asset itself, with `AssetLoader.Exists`.

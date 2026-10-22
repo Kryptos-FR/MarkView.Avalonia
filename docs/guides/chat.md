@@ -92,6 +92,10 @@ Models write math with `\(…\)` and `\[…\]` as often as with dollars. `UseMat
 
 Code blocks have a copy button; `ShowCodeBlockCopyButtonOnHover` shows it only while the pointer is over the block, as many chat applications do. See [Code blocks](code-blocks.md).
 
+## Links and images in an answer
+
+A model's answer can link anywhere and make the viewer fetch any image, and an image request can carry data out of the conversation. `UrlTransform` drops or rewrites those addresses before anything is loaded, for example to allow images from known hosts only. See [Filtering links and images](displaying-documents.md#filtering-links-and-images).
+
 ## Copying an answer
 
 `CopyAsMarkdownAsync()` copies the selection as Markdown, and **Copy as Markdown** in the context menu does the same; with `SelectAll()` first, it copies the whole answer. On the desktop, `Ctrl+C` also puts the selection on the clipboard as HTML, so pasting into a word processor or another chat keeps the formatting. See [Selection and copy](text-selection.md).
