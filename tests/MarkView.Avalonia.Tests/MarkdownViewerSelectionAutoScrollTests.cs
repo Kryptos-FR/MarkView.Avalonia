@@ -375,8 +375,10 @@ public class MarkdownViewerSelectionAutoScrollTests
 
         f.Window.MouseMove(new Point(300, ViewerBottom + 26), RawInputModifiers.LeftMouseButton);
         await AsyncTestHelpers.WaitUntilAsync(() => f.ScrollViewer.Offset.Y > 100, timeoutMs: 10_000);
-        f.Window.MouseUp(new Point(300, ViewerBottom + 26), MouseButton.Left);
+        // The selection follows in the layout pass after the frame that moved the offset.
+        f.Window.UpdateLayout();
 
         Assert.Contains($"Paragraph {f.ParagraphsInView().Max()}", f.Viewer.SelectedText);
+        f.Window.MouseUp(new Point(300, ViewerBottom + 26), MouseButton.Left);
     }
 }
