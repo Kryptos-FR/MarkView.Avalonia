@@ -190,8 +190,7 @@ public partial class MarkdownViewer
         foreach (var (anchor, control) in _anchors)
         {
             if (control.Classes.Contains("markdown-heading") && control.IsEffectivelyVisible
-                && control.TranslatePoint(default, relativeTo) is { } origin
-                && new Rect(origin, control.Bounds.Size).Contains(position))
+                && control.BoundsIn(relativeTo) is { } bounds && bounds.Contains(position))
                 return anchor;
         }
         return null;
