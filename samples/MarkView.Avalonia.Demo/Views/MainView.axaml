@@ -15,15 +15,36 @@
   </UserControl.Resources>
 
   <DockPanel>
-    <!-- Page tabs -->
-    <TabControl DockPanel.Dock="Top" SelectedIndex="{Binding SelectedIndex}">
-      <TabItem Header="Feature Showcase" />
-      <TabItem Header="Extensions Showcase" />
-      <TabItem Header="Custom Styling" />
-      <TabItem Header="Color Extension" />
-      <TabItem Header="Right to Left" />
-      <TabItem Header="README" />
-    </TabControl>
+    <!-- Page tabs, with the switch between the rendered page and its markdown on their right -->
+    <DockPanel DockPanel.Dock="Top">
+      <Border DockPanel.Dock="Right" VerticalAlignment="Top" Margin="12,10,12,0"
+              BorderBrush="{DynamicResource ButtonBorderBrush}" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
+        <Border.Styles>
+          <Style Selector="RadioButton">
+            <Setter Property="Theme" Value="{StaticResource {x:Type ToggleButton}}" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="12,5" />
+          </Style>
+        </Border.Styles>
+        <StackPanel Orientation="Horizontal">
+          <RadioButton Content="Preview" IsChecked="{Binding IsPreviewSelected}"
+                       ToolTip.Tip="Show the rendered page" />
+          <RadioButton Content="Markdown" IsChecked="{Binding IsSourceSelected}"
+                       ToolTip.Tip="Show the markdown the page is rendered from" />
+          <RadioButton Content="Side by side" IsChecked="{Binding IsSideBySideSelected}"
+                       ToolTip.Tip="Show the markdown on the left of the rendered page" />
+        </StackPanel>
+      </Border>
+      <TabControl SelectedIndex="{Binding SelectedIndex}">
+        <TabItem Header="Feature Showcase" />
+        <TabItem Header="Extensions Showcase" />
+        <TabItem Header="Custom Styling" />
+        <TabItem Header="Color Extension" />
+        <TabItem Header="Right to Left" />
+        <TabItem Header="README" />
+      </TabControl>
+    </DockPanel>
 
     <!-- Top bar: navigation on the left, find in the middle, appearance and view options on the right -->
     <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="12,8">
@@ -226,21 +247,31 @@
       </StackPanel>
     </Grid>
 
-    <!-- Page content -->
-    <Grid>
-      <mv:MarkdownViewer x:Name="MarkdownView"
-                         Source="{Binding Source}" Markdown="{Binding Markdown}" BaseUri="{Binding BaseUri}"
+    <!-- Page content: the rendered page, its markdown, or both side by side -->
+    <Grid x:Name="PageArea" ColumnDefinitions="*,Auto,*">
+      <!-- The markdown, shown as a highlighted code block by a viewer of its own -->
+      <mv:MarkdownViewer x:Name="SourceView" Grid.Column="0"
+                         IsVisible="{Binding IsSourceShown}"
                          AutoScrollToEnd="True"
-                         IsSmoothScrollingEnabled="True"
-                         ShowCodeBlockLanguage="True"
-                         IsImageZoomEnabled="True"
-                         Classes.custom-styled="{Binding IsCustomStyled}"
-                         CodeBlockMaxHeight="{Binding CodeBlockMaxHeight}"
-                         IsVisible="{Binding !IsColorExtensionSelected}"
+                         ShowCodeBlockLineNumbers="True" WrapCodeBlockLines="True"
+                         AutomationProperties.Name="Markdown source"
                          Padding="4" />
-      <ce:ColorExtensionView IsVisible="{Binding IsColorExtensionSelected}" />
+      <GridSplitter x:Name="PageSplitter" Grid.Column="1" Width="4" ResizeDirection="Columns" />
+      <Grid x:Name="PreviewArea" Grid.Column="2" IsVisible="{Binding IsPreviewShown}">
+        <mv:MarkdownViewer x:Name="MarkdownView"
+                           Source="{Binding Source}" Markdown="{Binding Markdown}" BaseUri="{Binding BaseUri}"
+                           AutoScrollToEnd="True"
+                           IsSmoothScrollingEnabled="True"
+                           ShowCodeBlockLanguage="True"
+                           IsImageZoomEnabled="True"
+                           Classes.custom-styled="{Binding IsCustomStyled}"
+                           CodeBlockMaxHeight="{Binding CodeBlockMaxHeight}"
+                           IsVisible="{Binding !IsColorExtensionSelected}"
+                           Padding="4" />
+        <ce:ColorExtensionView IsVisible="{Binding IsColorExtensionSelected}" />
+      </Grid>
       <!-- Opened by the "Styles" button of a Mermaid diagram -->
-      <ms:MermaidStylesDialog x:Name="StylesDialog" />
+      <ms:MermaidStylesDialog x:Name="StylesDialog" Grid.ColumnSpan="3" />
     </Grid>
   </DockPanel>
 
