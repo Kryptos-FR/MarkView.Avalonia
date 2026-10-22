@@ -186,10 +186,36 @@ public class MermaidDiagramCacheTests
         var kept = cache.GetOrRenderAsync(Key("a"), render.Returning(Drawing()), CancellationToken.None);
         cts.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => abandoned);
+
+        // A request made after one gave up still joins the render the others wait for.
+        var joined = cache.GetOrRenderAsync(Key("a"), render.Returning(Drawing()), CancellationToken.None);
         render.Open();
 
         Assert.Same(drawing, await kept);
+        Assert.Same(drawing, await joined);
         Assert.Equal(1, render.Runs);
+    }
+
+    [AvaloniaFact]
+    public async Task A_request_after_every_request_gave_up_starts_a_new_render()
+    {
+        var cache = new MermaidDiagramCache(4);
+        var render = new Render();
+        var drawing = Drawing();
+        render.Close();
+        using var cts = new CancellationTokenSource();
+
+        var abandoned = cache.GetOrRenderAsync(Key("a"), render.Returning(Drawing()), cts.Token);
+        await AsyncTestHelpers.WaitUntilAsync(() => Volatile.Read(ref render.Runs) == 1);
+        cts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => abandoned);
+
+        // The abandoned render is still running: a new request doesn't wait for it, it renders again.
+        var again = cache.GetOrRenderAsync(Key("a"), render.Returning(drawing), CancellationToken.None);
+        await AsyncTestHelpers.WaitUntilAsync(() => Volatile.Read(ref render.Runs) == 2);
+        render.Open();
+
+        Assert.Same(drawing, await again);
     }
 
     [AvaloniaFact]
@@ -201,6 +227,26 @@ public class MermaidDiagramCacheTests
         cache.Clear();
 
         Assert.Equal(0, cache.Count);
+    }
+
+    [AvaloniaFact]
+    public async Task After_Clear_the_least_recently_used_diagram_is_evicted_first()
+    {
+        var cache = new MermaidDiagramCache(2);
+        var a = new Render();
+        var b = new Render();
+        await cache.GetOrRenderAsync(Key("a"), a.Returning(Drawing()), CancellationToken.None);
+        cache.Clear();
+
+        await cache.GetOrRenderAsync(Key("b"), b.Returning(Drawing()), CancellationToken.None);
+        await cache.GetOrRenderAsync(Key("a"), a.Returning(Drawing()), CancellationToken.None);
+        await cache.GetOrRenderAsync(Key("c"), Drawing, CancellationToken.None);
+
+        // "b" is the least recently used: a diagram cached before Clear takes no part in the order.
+        await cache.GetOrRenderAsync(Key("a"), a.Returning(Drawing()), CancellationToken.None);
+        await cache.GetOrRenderAsync(Key("b"), b.Returning(Drawing()), CancellationToken.None);
+        Assert.Equal(2, a.Runs);
+        Assert.Equal(2, b.Runs);
     }
 
     // Rendering diagrams in documents.
