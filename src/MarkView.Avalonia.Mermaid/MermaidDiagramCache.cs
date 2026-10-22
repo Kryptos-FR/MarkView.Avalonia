@@ -22,8 +22,12 @@ namespace MarkView.Avalonia.Mermaid;
 /// </remarks>
 internal sealed class MermaidDiagramCache(int capacity)
 {
-    /// <summary>The capacity of <see cref="Shared"/>: 64 diagrams.</summary>
-    public const int DefaultCapacity = 64;
+    /// <summary>
+    /// The capacity of <see cref="Shared"/>: 16 diagrams, e.g. 8 diagrams in both theme variants. Each entry keeps
+    /// the SVG model it was drawn from, from about 0.3 to over 1 MB for a large diagram, so a diagram no longer shown
+    /// is not cheap to keep.
+    /// </summary>
+    public const int DefaultCapacity = 16;
 
     /// <summary>The cache every render uses.</summary>
     public static MermaidDiagramCache Shared { get; } = new(DefaultCapacity);

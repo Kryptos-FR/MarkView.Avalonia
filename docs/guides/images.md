@@ -150,7 +150,7 @@ viewer.UseMermaid(MermaidStyle.Blueprint);
 - **Colours** come from `MermaidTheme.axaml` (see [Choosing packages](../packages.md#theme-files)); a diagram is drawn again in the new colours when the theme variant changes, in place, so the scroll position is kept.
 - **Fonts**: labels use the document's font (the viewer's `FontFamily`, also when viewers use different ones or it changes), so fonts embedded in the application, such as Inter, work on every platform, including the browser, where SkiaSharp has no fonts of its own.
 - **When it renders**: on the desktop, diagrams render in the background as soon as the viewer is shown; in the browser, when they are about to scroll into view.
-- **Cache**: the last 64 diagrams drawn, by any viewer, are kept with their source, colours, style and font, so rendering the same diagram again (the document re-rendered after an option change, a streamed answer, a new viewer) shows it at once. Diagrams that render at the same time share one render.
+- **Cache**: the last 16 diagrams drawn, by any viewer, are kept with their source, colours, style and font, so rendering the same diagram again (the document re-rendered after an option change, a streamed answer, a new viewer) shows it at once. Diagrams that render at the same time share one render.
 - **Streaming**: a `mermaid` fence at the end of streamed text shows as code until a blank line or another block follows it.
 - Other fenced blocks are still code blocks, highlighted when the SyntaxHighlighting package is registered too, in either order.
 
