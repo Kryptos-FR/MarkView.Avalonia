@@ -79,6 +79,22 @@ public class ThinkingBlockParsingTests
         Assert.Equal("It is 4.", Text(Assert.IsType<ParagraphBlock>(document[1])));
     }
 
+    [Theory]
+    [InlineData("<think>\nIdea</THINK>\nAnswer", true)]
+    [InlineData("<think>\nIdea</Think>\t \nAnswer", true)]
+    [InlineData("<think>\nIdea<think>\nAnswer", false)]
+    [InlineData("<think>\nIdea</thin>\nAnswer", false)]
+    [InlineData("<think>\nIdea/think>\nAnswer", false)]
+    [InlineData("<think>\nIdea</think\nAnswer", false)]
+    [InlineData("<think>\nIdea</thinker>\nAnswer", false)]
+    [InlineData("<think>\nink>\nAnswer", false)]
+    public void Only_the_closing_tag_of_the_block_ends_a_line_of_its_reasoning(string markdown, bool closes)
+    {
+        var thinking = Assert.IsType<ThinkingBlock>(Parse(markdown)[0]);
+
+        Assert.Equal(closes, thinking.HasClosingTag);
+    }
+
     [Fact]
     public void Reasoning_on_a_single_line_between_the_tags()
     {
