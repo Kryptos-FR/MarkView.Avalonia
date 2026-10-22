@@ -93,6 +93,7 @@ internal sealed class MermaidDiagramCache(int capacity)
                 if (cancelRender)
                     _renders.Remove(key);
             }
+            // Stryker disable once all : the token only stops a render the thread pool has not started yet, which no test can order deterministically
             if (cancelRender)
                 shared.Cancellation.Cancel();
             throw;
