@@ -19,6 +19,7 @@ public partial class MainView : UserControl
     public MainView()
     {
         InitializeComponent();
+        ScrollDiagnostics.Attach(MarkdownView);
 
         // Ctrl+F (Cmd+F on macOS) from anywhere in the view, before the focused control sees it.
         AddHandler(KeyDownEvent, OnViewKeyDown, RoutingStrategies.Tunnel);
