@@ -1057,7 +1057,7 @@ public partial class MarkdownViewer : ContentControl
             }
             if (_isDragging)
             {
-                _selectionLayer.OnPointerMoved(pos);
+                DragTo(e);
                 e.Handled = true;
                 return;
             }
@@ -1090,6 +1090,8 @@ public partial class MarkdownViewer : ContentControl
     private void EndDrag()
     {
         _isDragging = false;
+        _selectionAutoScroll?.Stop();
+        _selectionAutoScroll = null;
         _selectionLayer?.EndSelecting();
     }
 
@@ -1338,13 +1340,17 @@ public partial class MarkdownViewer : ContentControl
         {
             _scrollViewer.PropertyChanged -= OnScrollViewerPropertyChanged;
             LayoutUpdated -= OnLayoutUpdatedKeepAnchor;
+            LayoutUpdated -= OnLayoutUpdatedFollowDrag;
         }
         _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
         _scrollAnchor.Reset();
+        _selectionAutoScroll?.Stop();
+        _selectionAutoScroll = null;
         if (_scrollViewer is not null)
         {
             _scrollViewer.PropertyChanged += OnScrollViewerPropertyChanged;
             LayoutUpdated += OnLayoutUpdatedKeepAnchor;
+            LayoutUpdated += OnLayoutUpdatedFollowDrag;
         }
         // Applying a template replaces every visual child, the open lightbox included.
         if (_lightbox is not null)

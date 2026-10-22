@@ -182,7 +182,7 @@ The usual `ScrollViewer` attached properties reach it, as with a `ListBox`:
 
 The horizontal scroll bar is disabled by default, which gives the document the viewer's width: images scale down and code blocks [wrap](code-blocks.md#line-numbers-wrapping-and-height) to it. With `ScrollViewer.HorizontalScrollBarVisibility="Auto"` (or `Visible`), wide content scrolls instead, code does not wrap, and images may no longer scale down to the viewer's width.
 
-A template of your own can leave `PART_ScrollViewer` out. The document still renders, but `ScrollToAnchor()` falls back to `BringIntoView()`, and images no longer scale to the viewer's width unless the template constrains it:
+A template of your own can leave `PART_ScrollViewer` out. The document still renders, but `ScrollToAnchor()` falls back to `BringIntoView()`, a drag that selects text no longer [scrolls](text-selection.md#selecting-more-than-a-screen) at the edges, and images no longer scale to the viewer's width unless the template constrains it:
 
 ```xml
 <Style Selector="mv|MarkdownViewer">
