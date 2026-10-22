@@ -177,7 +177,6 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
             // Diagram text is drawn in the document's font, resolved by Avalonia, rather than with
             // whatever SkiaSharp finds on its own (only a monospace font in the browser).
             var font = border.GetValue(TextElement.FontFamilyProperty);
-            AvaloniaTypefaceProvider.Use(font);
 
             try
             {
@@ -190,7 +189,7 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
                         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(svg));
                         // A saved diagram is written on its background colour, which the image shown leaves
                         // to the document.
-                        return new RenderedDiagram(SvgSource.LoadFromStream(stream),
+                        return new RenderedDiagram(AvaloniaTypefaceProvider.WithDocumentFont(font, () => SvgSource.LoadFromStream(stream)),
                             new Lazy<byte[]>(() => Encoding.UTF8.GetBytes(MermaidSvgTheme.AddBackground(svg, opts.Bg!))));
                     },
                     token);
