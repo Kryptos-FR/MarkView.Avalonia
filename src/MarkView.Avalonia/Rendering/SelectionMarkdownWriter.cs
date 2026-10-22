@@ -382,9 +382,8 @@ internal sealed partial class SelectionMarkdownWriter
             case MarkdownSelectableTextBlock textBlock:
                 return IsSelected(textBlock, out var entry) ? HeadingPrefix(textBlock) + WriteTextBlock(entry) : string.Empty;
             case Border border when border.Classes.Contains("markdown-code-block"):
-                return CodeBlockToolbar.FindCode(border) is { } code && IsSelected(code, out var codeEntry)
-                    ? CodeFence(border, codeEntry)
-                    : string.Empty;
+                return CodeFence(border, (CodeBlockToolbar.FindCode(border) is { } code ? [code] : CodeBlockToolbar.FindCodeChunks(border) ?? [])
+                    .Select(text => IsSelected(text, out var codeEntry) ? codeEntry : null).OfType<IndexEntry>().ToList());
             case Panel list when list.Classes.Contains("markdown-list"):
                 return WriteList(list);
             case Grid table when table.Classes.Contains("markdown-table"):
@@ -420,10 +419,17 @@ internal sealed partial class SelectionMarkdownWriter
         return string.Empty;
     }
 
-    private string CodeFence(Border border, IndexEntry entry)
+    // The entries are those of the code's text block, or of the chunks of a code block a streaming session is growing,
+    // which hold one line each between them; nothing is written when none is selected.
+    private string CodeFence(Border border, List<IndexEntry> entries)
     {
-        var (start, end) = LocalRange(entry);
-        var code = RawText(entry, start, end).ReplaceLineEndings("\n");
+        if (entries.Count == 0)
+            return string.Empty;
+        var code = string.Join('\n', entries.Select(entry =>
+        {
+            var (start, end) = LocalRange(entry);
+            return RawText(entry, start, end);
+        })).ReplaceLineEndings("\n");
         var language = border.Classes.FirstOrDefault(c => c.StartsWith("language-", StringComparison.Ordinal))?["language-".Length..];
         var fence = new string('`', Math.Max(3, LongestRun(code, '`') + 1));
         return $"{fence}{language}\n{code}\n{fence}";

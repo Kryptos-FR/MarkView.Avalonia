@@ -23,6 +23,9 @@ public sealed class TextMateCodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock
 {
     protected override void Write(AvaloniaRenderer renderer, CodeBlock obj)
     {
+        if (GrowingCodeBlock.TryWrite(renderer, obj, renderer.CodeHighlighter))
+            return;
+
         var language = obj is FencedCodeBlock fenced ? fenced.Info : null;
 
         var textBlock = new TextBlock { TextWrapping = TextWrapping.NoWrap };
