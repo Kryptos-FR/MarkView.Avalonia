@@ -25,6 +25,7 @@ internal sealed class AvaloniaTypefaceProvider(
     private static readonly AvaloniaTypefaceProvider s_shared = new(ResolveWithFontManager,
         NeedsDocumentFontForAnyFamily(OperatingSystem.IsBrowser(), SKFontManager.Default.FontFamilyCount));
     private static readonly Lock s_registrationLock = new();
+    private static readonly Lock s_loadLock = new();
     private static bool s_registered;
 
     // Font files by the weight and slant they were resolved for, kept as SKData so each request gets
@@ -51,6 +52,21 @@ internal sealed class AvaloniaTypefaceProvider(
             }
         }
         s_shared.DocumentFont = documentFont;
+    }
+
+    /// <summary>
+    /// Runs <paramref name="load"/> (loading an SVG through <see cref="SvgSource"/>) with diagram text in
+    /// <paramref name="documentFont"/>. The document font is shared by every SVG loaded, and fonts are
+    /// resolved while an SVG loads, so loads for documents in different fonts (or loads queued by one theme
+    /// switch) take turns: each one sees its own font until it is done.
+    /// </summary>
+    internal static T WithDocumentFont<T>(FontFamily documentFont, Func<T> load)
+    {
+        lock (s_loadLock)
+        {
+            Use(documentFont);
+            return load();
+        }
     }
 
     /// <summary>
