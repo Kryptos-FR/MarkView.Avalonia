@@ -9,7 +9,9 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
+using Avalonia.Logging;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -382,5 +384,69 @@ public class MarkdownViewerInteractionTests
         {
             window.Close();
         }
+    }
+
+    private sealed class FakeLauncher(Exception? failure = null) : ILauncher
+    {
+        public List<Uri> Launched { get; } = [];
+
+        public Task<bool> LaunchUriAsync(Uri uri)
+        {
+            Launched.Add(uri);
+            return failure is null ? Task.FromResult(true) : Task.FromException<bool>(failure);
+        }
+
+        public Task<bool> LaunchFileAsync(IStorageItem storageItem) => Task.FromResult(false);
+    }
+
+    [AvaloniaFact]
+    public async Task Launching_a_link_hands_its_address_to_the_launcher()
+    {
+        var launcher = new FakeLauncher();
+        var uri = new Uri("https://example.com/");
+
+        await MarkdownViewer.LaunchAsync(launcher, uri);
+
+        Assert.Equal([uri], launcher.Launched);
+    }
+
+    private sealed class LogSink : ILogSink
+    {
+        public List<(LogEventLevel Level, string Area, object?[] Values)> Events { get; } = [];
+
+        public bool IsEnabled(LogEventLevel level, string area) => true;
+
+        public void Log(LogEventLevel level, string area, object? source, string messageTemplate) =>
+            Events.Add((level, area, []));
+
+        public void Log(LogEventLevel level, string area, object? source, string messageTemplate, params object?[] propertyValues) =>
+            Events.Add((level, area, propertyValues));
+    }
+
+    [AvaloniaFact]
+    public async Task A_launcher_that_throws_does_not_end_the_application_and_logs_a_warning()
+    {
+        // OnLinkClicked is async void: an exception escaping it reaches the dispatcher.
+        var failure = new InvalidOperationException("No application handles this scheme.");
+        var launcher = new FakeLauncher(failure);
+        var uri = new Uri("custom:thing");
+        var sink = new LogSink();
+        var previous = Logger.Sink;
+        Logger.Sink = sink;
+        Exception? exception;
+        try
+        {
+            exception = await Record.ExceptionAsync(() => MarkdownViewer.LaunchAsync(launcher, uri));
+        }
+        finally
+        {
+            Logger.Sink = previous;
+        }
+
+        Assert.Null(exception);
+        Assert.Single(launcher.Launched);
+        var warning = Assert.Single(sink.Events, e => e.Level == LogEventLevel.Warning);
+        Assert.Equal(LogArea.Control, warning.Area);
+        Assert.Equal([uri, failure], warning.Values);
     }
 }

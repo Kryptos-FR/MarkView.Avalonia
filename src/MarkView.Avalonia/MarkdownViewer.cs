@@ -9,7 +9,9 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Logging;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
@@ -1268,9 +1270,29 @@ public partial class MarkdownViewer : ContentControl
         // the platform launcher is the only cross-platform way to open an external URI
         // (desktop shell, mobile intent, or browser new-tab).
         if (!Uri.TryCreate(e.Url, UriKind.Absolute, out var uri)) return;
-        var launcher = TopLevel.GetTopLevel(this)?.Launcher;
-        if (launcher is not null)
+        if (TopLevel.GetTopLevel(this)?.Launcher is { } launcher)
+            await LaunchAsync(launcher, uri);
+    }
+
+    /// <summary>
+    /// Opens <paramref name="uri"/> with <paramref name="launcher"/>, logging a launcher that throws (a
+    /// platform call that fails, an application's own launcher) as a warning: this runs from an <c>async void</c>
+    /// handler, where the exception would otherwise reach the dispatcher and end the application.
+    /// </summary>
+    internal static async Task LaunchAsync(ILauncher launcher, Uri uri)
+    {
+        try
+        {
             await launcher.LaunchUriAsync(uri);
+        }
+        catch (Exception ex)
+        {
+            // A link that cannot open does nothing, as when the launcher returns false; Avalonia's own
+            // desktop launcher logs its failures the same way.
+            // Stryker disable once String : the message text is diagnostic output only
+            Logger.TryGet(LogEventLevel.Warning, LogArea.Control)?.Log(null,
+                "The link {Uri} could not be opened: {Exception}", uri, ex);
+        }
     }
 
     /// <summary>The root panel of the rendered document, or <c>null</c> when nothing is rendered.</summary>
