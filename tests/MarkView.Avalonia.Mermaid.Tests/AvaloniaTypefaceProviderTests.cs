@@ -192,6 +192,34 @@ public class AvaloniaTypefaceProviderTests
         Assert.Contains(providers, p => p is DefaultTypefaceProvider);
     }
 
+    [AvaloniaFact]
+    public void Each_load_sees_its_own_document_font_while_another_load_waits()
+    {
+        var first = new FontFamily("First Font");
+        var second = new FontFamily("Second Font");
+        using var secondStarted = new ManualResetEventSlim();
+        FontFamily? fontSeenBySecond = null;
+        Task? secondLoad = null;
+
+        var fontSeenByFirst = AvaloniaTypefaceProvider.WithDocumentFont(first, () =>
+        {
+            // As when a theme switch queues two diagrams of documents in different fonts: the second load
+            // must not set its font while the first one is still resolving its fonts.
+            secondLoad = Task.Run(() => AvaloniaTypefaceProvider.WithDocumentFont(second, () =>
+            {
+                secondStarted.Set();
+                fontSeenBySecond = AvaloniaTypefaceProvider.Shared.DocumentFont;
+                return 0;
+            }));
+            Assert.False(secondStarted.Wait(TimeSpan.FromMilliseconds(200)));
+            return AvaloniaTypefaceProvider.Shared.DocumentFont;
+        });
+
+        Assert.True(secondLoad!.Wait(TimeSpan.FromSeconds(10)));
+        Assert.Equal(first, fontSeenByFirst);
+        Assert.Equal(second, fontSeenBySecond);
+    }
+
     public static TheoryData<bool> ExistingProviders => [true, false];
 
     [AvaloniaTheory]
