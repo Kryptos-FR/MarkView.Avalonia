@@ -2,7 +2,6 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 
 using Avalonia.Media;
 using Avalonia.Svg.Skia;
@@ -81,13 +80,6 @@ internal sealed class AvaloniaTypefaceProvider(
 
     /// <summary>The font of the document diagrams are drawn for, or <c>null</c> to provide none.</summary>
     public FontFamily? DocumentFont { get; set; }
-
-    /// <summary>
-    /// Changes with <see cref="DocumentFont"/>. The SVG renderer caches the typeface it resolved for each
-    /// family, and clears that cache only when the hash of its typeface providers changes, so a hash that
-    /// ignored the document font would keep drawing every later diagram with the first one.
-    /// </summary>
-    public override int GetHashCode() => HashCode.Combine(RuntimeHelpers.GetHashCode(this), DocumentFont);
 
     /// <summary>
     /// Returns the document font when <paramref name="fontFamily"/> (a single family or a CSS list)

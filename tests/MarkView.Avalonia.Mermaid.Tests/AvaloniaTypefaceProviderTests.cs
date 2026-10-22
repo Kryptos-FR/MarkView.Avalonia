@@ -9,7 +9,6 @@ using Avalonia.Svg.Skia;
 
 using SkiaSharp;
 
-using Svg.Skia;
 using Svg.Skia.TypefaceProviders;
 
 using Xunit;
@@ -141,39 +140,6 @@ public class AvaloniaTypefaceProviderTests
         Request(provider, FontName)?.Dispose();
 
         Assert.Equal([DocumentFont, other], resolver.Calls.Select(c => c.Family));
-    }
-
-    [AvaloniaFact]
-    public void Svg_renderer_asks_again_when_the_document_font_changes()
-    {
-        // The SVG renderer caches the typeface it got for each family until its providers' hash changes:
-        // in the browser, a second viewer's font, or a new FontFamily, was otherwise never asked for (#132).
-        var resolver = new Resolver();
-        var provider = Provider(resolver, anyFamily: true);
-        var model = new SkiaModel(new SKSvgSettings { TypefaceProviders = [provider] });
-        var inter = ShimSkiaSharp.SKTypeface.FromFamilyName("Inter", ShimSkiaSharp.SKFontStyleWeight.Normal,
-            ShimSkiaSharp.SKFontStyleWidth.Normal, ShimSkiaSharp.SKFontStyleSlant.Upright);
-        var other = new FontFamily("Other Font");
-
-        model.ToSKTypeface(inter);
-        model.ToSKTypeface(inter);
-        provider.DocumentFont = other;
-        model.ToSKTypeface(inter);
-
-        Assert.Equal([DocumentFont, other], resolver.Calls.Select(c => c.Family));
-    }
-
-    [AvaloniaFact]
-    public void Hash_changes_with_the_document_font_only()
-    {
-        var provider = Provider(new Resolver());
-        var hash = provider.GetHashCode();
-
-        Assert.Equal(hash, provider.GetHashCode());
-        provider.DocumentFont = new FontFamily("Other Font");
-        Assert.NotEqual(hash, provider.GetHashCode());
-        provider.DocumentFont = DocumentFont;
-        Assert.Equal(hash, provider.GetHashCode());
     }
 
     [AvaloniaFact]
