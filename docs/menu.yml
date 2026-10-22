@@ -10,6 +10,6 @@ home2:
 docs:
   - {path: getting-started.md, title: "Getting started"}
   - {path: packages.md, title: "Choosing packages"}
-  - {path: upgrading.md, title: "Upgrading to 12.4"}
+  - {path: upgrading.md, title: "Upgrading"}
   - {path: guides/readme.md, title: "Guides", folder: true}
   - {path: reference/readme.md, title: "Reference", folder: true}

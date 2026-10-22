@@ -251,7 +251,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         CancellationTokenSource? cts = null;
         if (renderer.IsLazyRenderingEnabled)
         {
-            if (ImageCache.Shared.TryGet(url, renderer.ImageLoaders) is { } cached)
+            if (ImageCache.Shared.TryGet(url, renderer.ImageLoaders, renderer.EffectiveResourceResolver) is { } cached)
             {
                 image.Source = cached;
                 return;
@@ -292,7 +292,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
     /// <summary>
     /// Loads <paramref name="url"/> into <paramref name="image"/> through the renderer's image loaders
-    /// (index 0 first) and the shared <see cref="ImageCache"/>. Calls <paramref name="failed"/> when no
+    /// (index 0 first), reading through its resource resolver, and the shared <see cref="ImageCache"/>. Calls <paramref name="failed"/> when no
     /// loader returns an image or a loader throws, but not when the load is cancelled.
     /// </summary>
     private static async Task LoadImageAsync(
@@ -305,7 +305,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         IImage? loaded = null;
         try
         {
-            loaded = await ImageCache.Shared.GetOrLoadAsync(url, renderer.ImageLoaders, cancellationToken);
+            loaded = await ImageCache.Shared.GetOrLoadAsync(url, renderer.ImageLoaders, cancellationToken, renderer.EffectiveResourceResolver);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
