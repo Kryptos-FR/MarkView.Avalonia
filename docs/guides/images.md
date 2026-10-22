@@ -148,7 +148,7 @@ viewer.UseMermaid(MermaidStyle.Blueprint);
 | `Tonal` | Filled tonal blocks without outlines, with generous corner radii and a soft shadow |
 
 - **Colours** come from `MermaidTheme.axaml` (see [Choosing packages](../packages.md#theme-files)); a diagram is drawn again in the new colours when the theme variant changes, in place, so the scroll position is kept.
-- **Fonts**: labels use the document's font (the viewer's `FontFamily`), so fonts embedded in the application, such as Inter, work on every platform, including the browser, where SkiaSharp has no fonts of its own.
+- **Fonts**: labels use the document's font (the viewer's `FontFamily`, also when viewers use different ones or it changes), so fonts embedded in the application, such as Inter, work on every platform, including the browser, where SkiaSharp has no fonts of its own.
 - **When it renders**: on the desktop, diagrams render in the background as soon as the viewer is shown; in the browser, when they are about to scroll into view.
 - **Streaming**: a `mermaid` fence at the end of streamed text shows as code until a blank line or another block follows it.
 - Other fenced blocks are still code blocks, highlighted when the SyntaxHighlighting package is registered too, in either order.
