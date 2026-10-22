@@ -155,7 +155,9 @@ internal sealed class LinkFocusLayer : Panel
     /// A text block removes and re-adds its embedded controls on every arrange (e.g. once a video
     /// thumbnail has loaded), and Avalonia drops the focus of a control that is removed, which would
     /// leave a keyboard user nowhere. Gives the focus back, the same way it was given, once the
-    /// control is re-added.
+    /// control is re-added, without the scroll viewer around it bringing it into view as it does a
+    /// newly focused control: the arrange may come from a scroll (e.g. on Windows, from each wheel
+    /// notch), which would otherwise be undone as soon as the control starts to leave the view.
     /// </summary>
     private static void KeepFocusAcrossArrange(InputElement control)
     {
@@ -167,9 +169,19 @@ internal sealed class LinkFocusLayer : Panel
         {
             if (refocus is not { } method) return;
             refocus = null;
-            control.Focus(method);
+            control.AddHandler(RequestBringIntoViewEvent, SuppressBringIntoView);
+            try
+            {
+                control.Focus(method);
+            }
+            finally
+            {
+                control.RemoveHandler(RequestBringIntoViewEvent, SuppressBringIntoView);
+            }
         };
     }
+
+    private static void SuppressBringIntoView(object? sender, RequestBringIntoViewEventArgs e) => e.Handled = true;
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
