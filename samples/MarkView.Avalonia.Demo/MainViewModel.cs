@@ -264,7 +264,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isColorExtensionSelected;
     private bool _healIncompleteSyntax = true;
     private int _replayChunkSize = 40;
-    private int _replayInterval = 20;
+    private int _replayInterval = 200;
     private bool _isCodeHeightLimited;
     private int _themePresetIndex;
     private PageView _pageView;
