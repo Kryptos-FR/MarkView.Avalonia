@@ -67,6 +67,15 @@ same loaders as markdown images.
   <sub>with a linked logo, sized by its <code>width</code> attribute</sub>
 </p>
 
+A `<picture>` shows the `<source>` that matches the theme, like a README logo with a dark variant. Switch the
+theme and the sun turns into a moon:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="picture-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="picture-light.png">
+  <img src="avalonia-logo.png" alt="A sun in the light theme, a moon in the dark theme" width="64">
+</picture>
+
 Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy. Water is H<sub>2</sub>O and E = mc<sup>2</sup>.
 <mark>Marked</mark>, <ins>inserted</ins>, <del>deleted</del>, <b>bold</b>, <i>italic</i>,
 <code>code</code> and <a href="#html" title="Back to this section">a link</a>.
