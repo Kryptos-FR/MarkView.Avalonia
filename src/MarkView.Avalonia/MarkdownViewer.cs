@@ -10,6 +10,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
@@ -1268,9 +1269,25 @@ public partial class MarkdownViewer : ContentControl
         // the platform launcher is the only cross-platform way to open an external URI
         // (desktop shell, mobile intent, or browser new-tab).
         if (!Uri.TryCreate(e.Url, UriKind.Absolute, out var uri)) return;
-        var launcher = TopLevel.GetTopLevel(this)?.Launcher;
-        if (launcher is not null)
+        if (TopLevel.GetTopLevel(this)?.Launcher is { } launcher)
+            await LaunchAsync(launcher, uri);
+    }
+
+    /// <summary>
+    /// Opens <paramref name="uri"/> with <paramref name="launcher"/>, ignoring a launcher that throws (no
+    /// application registered for the scheme, a sandbox refusing it): this runs from an <c>async void</c>
+    /// handler, where the exception would otherwise reach the dispatcher and end the application.
+    /// </summary>
+    internal static async Task LaunchAsync(ILauncher launcher, Uri uri)
+    {
+        try
+        {
             await launcher.LaunchUriAsync(uri);
+        }
+        catch (Exception)
+        {
+            // Nothing to report it to: a link that cannot open does nothing, as when the launcher returns false.
+        }
     }
 
     /// <summary>The root panel of the rendered document, or <c>null</c> when nothing is rendered.</summary>

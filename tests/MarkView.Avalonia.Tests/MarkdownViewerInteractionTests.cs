@@ -10,6 +10,7 @@ using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -382,5 +383,41 @@ public class MarkdownViewerInteractionTests
         {
             window.Close();
         }
+    }
+
+    private sealed class FakeLauncher(Exception? failure = null) : ILauncher
+    {
+        public List<Uri> Launched { get; } = [];
+
+        public Task<bool> LaunchUriAsync(Uri uri)
+        {
+            Launched.Add(uri);
+            return failure is null ? Task.FromResult(true) : Task.FromException<bool>(failure);
+        }
+
+        public Task<bool> LaunchFileAsync(IStorageItem storageItem) => Task.FromResult(false);
+    }
+
+    [AvaloniaFact]
+    public async Task Launching_a_link_hands_its_address_to_the_launcher()
+    {
+        var launcher = new FakeLauncher();
+        var uri = new Uri("https://example.com/");
+
+        await MarkdownViewer.LaunchAsync(launcher, uri);
+
+        Assert.Equal([uri], launcher.Launched);
+    }
+
+    [AvaloniaFact]
+    public async Task A_launcher_that_throws_does_not_end_the_application()
+    {
+        // OnLinkClicked is async void: an exception escaping it reaches the dispatcher.
+        var launcher = new FakeLauncher(new InvalidOperationException("No application handles this scheme."));
+
+        var exception = await Record.ExceptionAsync(() => MarkdownViewer.LaunchAsync(launcher, new Uri("custom:thing")));
+
+        Assert.Null(exception);
+        Assert.Single(launcher.Launched);
     }
 }
