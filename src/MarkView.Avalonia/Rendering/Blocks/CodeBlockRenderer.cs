@@ -12,6 +12,9 @@ public sealed class CodeBlockRenderer : AvaloniaObjectRenderer<CodeBlock>
 {
     protected override void Write(AvaloniaRenderer renderer, CodeBlock obj)
     {
+        if (GrowingCodeBlock.TryWrite(renderer, obj, highlighter: null))
+            return;
+
         var textBlock = new TextBlock
         {
             TextWrapping = TextWrapping.NoWrap,
