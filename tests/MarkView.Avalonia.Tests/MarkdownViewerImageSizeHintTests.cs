@@ -22,6 +22,8 @@ public class MarkdownViewerImageSizeHintTests
     [InlineData("- item\n\n    ![a](x.png =10x20)", "- item\n\n    ![a](x.png \"=10x20\")")]
     [InlineData("``a`b`` ![a](x.png =10x20)", "``a`b`` ![a](x.png \"=10x20\")")]
     [InlineData("`code` ![a](x.png =10x20) `code`", "`code` ![a](x.png \"=10x20\") `code`")]
+    // A lone backtick is not a code span: it doesn't pair with one in a later paragraph.
+    [InlineData("Type a ` here.\n\n![a](x.png =10x20)\n\nThen `x`.", "Type a ` here.\n\n![a](x.png \"=10x20\")\n\nThen `x`.")]
     public void Rewrites_size_hints_outside_code(string markdown, string expected) =>
         Assert.Equal(expected, Preprocess(markdown));
 
