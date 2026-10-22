@@ -8,6 +8,7 @@ site_project_description = "A Markdig-powered Markdown viewer control for Avalon
 site_project_baseurl = "https://kryptos-fr.github.io"
 site_project_basepath = "/MarkView.Avalonia"
 site_project_logo_path = "/img/markview-logo.svg"
+site_project_social_banner_path = "/img/social-preview.png"
 site_project_package_id = "MarkView.Avalonia"
 site_project_github_user = "Kryptos-FR"
 site_project_github_repo = "MarkView.Avalonia"
