@@ -1,10 +1,13 @@
 // Copyright (c) Nicolas Musset
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
+using System.Reflection;
+
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -534,6 +537,94 @@ public class MermaidDiagramRenderingTests
         {
             window.Close();
         }
+    }
+
+    // Holds its child in the logical tree while taking it in and out of the visual tree, as a TabControl does
+    // with the content of a tab that is not selected.
+    private sealed class VisualOnlyHost : Control
+    {
+        private readonly Control _child;
+
+        public VisualOnlyHost(Control child)
+        {
+            _child = child;
+            LogicalChildren.Add(child);
+            VisualChildren.Add(child);
+        }
+
+        public void Hide() => VisualChildren.Remove(_child);
+
+        public void Show() => VisualChildren.Add(_child);
+    }
+
+    [AvaloniaFact]
+    public async Task Diagram_hidden_from_the_visual_tree_does_not_track_viewport_resizes()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram);
+        var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        var host = new VisualOnlyHost(root);
+        var scrollViewer = new ScrollViewer { Content = host };
+        var window = new Window { Width = 600, Height = 300, Content = scrollViewer };
+        try
+        {
+            window.Show();
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+            var widthWhileShown = image.MaxWidth;
+            Assert.True(widthWhileShown > 0);
+
+            host.Hide();
+            window.Width = 300;
+            window.UpdateLayout();
+            await AsyncTestHelpers.PumpAsync();
+
+            Assert.Equal(widthWhileShown, image.MaxWidth);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Diagram_shown_again_tracks_the_viewport_once()
+    {
+        using var theme = new ThemeScope(ThemeVariant.Light);
+        var root = Render(Diagram);
+        var image = Assert.IsType<Image>(((Border)root.Children[0]).Child);
+        var host = new VisualOnlyHost(root);
+        var scrollViewer = new ScrollViewer { Content = host };
+        var window = new Window { Width = 600, Height = 300, Content = scrollViewer };
+        try
+        {
+            window.Show();
+            await AsyncTestHelpers.WaitUntilAsync(() => image.Source is not null);
+            var before = SizeChangedHandlers(scrollViewer);
+
+            for (var i = 0; i < 3; i++)
+            {
+                host.Hide();
+                host.Show();
+            }
+            window.Width = 300;
+            window.UpdateLayout();
+
+            Assert.Equal(before, SizeChangedHandlers(scrollViewer));
+            Assert.Equal(Math.Min(scrollViewer.Viewport.Width, 800), image.MaxWidth);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    // The handlers of Control.SizeChangedEvent on the control, read from Interactive's private store.
+    private static int SizeChangedHandlers(Interactive control)
+    {
+        var field = typeof(Interactive).GetField("_eventHandlers", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        return field.GetValue(control) is System.Collections.IDictionary handlers && handlers[Control.SizeChangedEvent] is System.Collections.ICollection list
+            ? list.Count
+            : 0;
     }
 
     [AvaloniaFact]

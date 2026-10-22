@@ -107,24 +107,32 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
             ViewportTracking.RunWhenNearViewport(border, Start);
 
         // A ScrollViewer passes infinite available width to its children.
-        // Constrain MaxWidth to the viewport width, updating on resize.
+        // Constrain MaxWidth to the viewport width, updating on resize while the diagram is shown in it. A diagram
+        // can leave the visual tree and come back without leaving its logical parent (the content of a tab that is
+        // not selected), so the subscription follows the visual tree.
+        ScrollViewer? viewport = null;
         image.AttachedToVisualTree += (_, _) =>
         {
-            var sv = image.FindAncestorOfType<ScrollViewer>();
-            if (sv is null) return;
+            viewport = image.FindAncestorOfType<ScrollViewer>();
+            if (viewport is null) return;
 
-            sv.SizeChanged += OnSizeChanged;
-            image.DetachedFromLogicalTree += (_, _) => sv.SizeChanged -= OnSizeChanged;
-            Update();
-
-            void Update()
-            {
-                var w = sv.Viewport.Width;
-                if (w > 0) image.MaxWidth = Math.Min(w, 800);
-            }
-
-            void OnSizeChanged(object? s, SizeChangedEventArgs e) => Update();
+            viewport.SizeChanged += OnViewportSizeChanged;
+            FitToViewport(viewport);
         };
+        image.DetachedFromVisualTree += (_, _) =>
+        {
+            if (viewport is not null)
+                viewport.SizeChanged -= OnViewportSizeChanged;
+            viewport = null;
+        };
+
+        void OnViewportSizeChanged(object? sender, SizeChangedEventArgs e) => FitToViewport((ScrollViewer)sender!);
+
+        void FitToViewport(ScrollViewer scrollViewer)
+        {
+            var w = scrollViewer.Viewport.Width;
+            if (w > 0) image.MaxWidth = Math.Min(w, 800);
+        }
 
         renderer.WriteBlock(border);
 
