@@ -107,6 +107,7 @@ internal sealed class LiveDocument
             (prefix, suffix) = (0, 0);
 
         // What is recorded by source position follows the text that did not change.
+        // Stryker disable once Logical : a session's text only changes in its last block, after every position recorded, which a shift leaves alone
         if (reuseAfterChange && text.Length != _text.Length)
             Renderer.ShiftSourcePositions(_text.Length - CommonSuffixLength(_text, text), text.Length - _text.Length);
 
@@ -462,8 +463,7 @@ internal sealed class LiveDocument
             if (record.WasProvisional)
                 break;
             var footnotes = record.BlockType == typeof(FootnoteGroup) && block is FootnoteGroup;
-            if (!footnotes && (record.SpanEnd - record.SpanStart != block.Span.End - block.Span.Start
-                || !SameSource(record, document, document.Count - 1 - m, text)))
+            if (!footnotes && !SameSource(record, document, document.Count - 1 - m, text))
                 break;
             m++;
         }
@@ -487,6 +487,7 @@ internal sealed class LiveDocument
             return false;
         // A block without a source span of its own (one a parser extension created) is judged by its
         // type and span alone.
+        // Stryker disable once Equality : an empty span compares equal as text too
         if (length <= 0 || record.SpanStart < 0 || start < 0
             || record.SpanStart + length > _text.Length || start + length > text.Length)
             return true;
@@ -497,7 +498,8 @@ internal sealed class LiveDocument
         var extentEnd = ExtentEnd(parent, index, text);
         var newGap = text.AsSpan(block.Span.End + 1, Math.Max(0, extentEnd - block.Span.End - 1));
         // Up to the end of the text, the gap may be the rest of a block Markdig left open there, whose
-        // blank lines count (an unclosed fence).
+        // blank lines count (an unclosed fence). An extent never passes the end of its text.
+        // Stryker disable once Equality : only an open block's gap holds more than blank lines, and only the last block of both texts can be open
         return record.ExtentEnd >= _text.Length || extentEnd >= text.Length
             ? oldGap.SequenceEqual(newGap)
             : oldGap.Trim().SequenceEqual(newGap.Trim());
@@ -517,6 +519,7 @@ internal sealed class LiveDocument
         var block = parent[index];
         for (var i = index + 1; i < parent.Count; i++)
         {
+            // Stryker disable once Equality : no two top-level blocks start at the same position
             if (parent[i].Span.Start > block.Span.Start)
                 return Math.Max(block.Span.End + 1, parent[i].Span.Start);
         }
@@ -527,7 +530,7 @@ internal sealed class LiveDocument
     /// How many characters <paramref name="a"/> and <paramref name="b"/> have in common at their end, leaving
     /// out those they also have in common at their start.
     /// </summary>
-    private static int CommonSuffixLength(string a, string b)
+    internal static int CommonSuffixLength(string a, string b)
     {
         var prefix = a.AsSpan().CommonPrefixLength(b);
         var limit = Math.Min(a.Length, b.Length) - prefix;
@@ -650,7 +653,10 @@ internal sealed class LiveDocument
         public void Flush()
         {
             var rendered = _panel.Children.ToList();
-            if (rendered.Count == 0 && _removed.Children == 0 && _removed.Entries == 0 && _removed.Stops == 0 && _removed.Targets == 0)
+            // A block without controls has no entries, stops or targets either. With nothing to replace,
+            // a splice would only drop the layers' caches.
+            // Stryker disable once Statement,Block : the splice below would replace nothing
+            if (rendered.Count == 0 && _removed.Children == 0)
                 return;
             _panel.Children.Clear();
 

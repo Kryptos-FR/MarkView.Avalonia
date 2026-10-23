@@ -479,6 +479,21 @@ public class MarkdownViewerIncrementalRenderingTests
         Assert.DoesNotContain(new ThinkingBlockOptions().ThinkingTitle, MarkdownSelectableTextBlock.ExtractPlainText(header.Inlines!), StringComparison.Ordinal);
     }
 
+    [AvaloniaFact]
+    public void Direct_set_during_a_session_renders_its_provisional_end_again()
+    {
+        using var f = Show("");
+        var session = f.Viewer.BeginStreaming();
+        // The paragraph that ends the text is provisional: its image is written as its alt text.
+        session.Append("a\n\n![alt](https://example.test/x.png)");
+        session.ApplyPendingUpdate();
+        Assert.Empty(f.Root.GetLogicalDescendants().OfType<Image>());
+
+        f.Viewer.Markdown = "b\n\n![alt](https://example.test/x.png)";
+
+        Assert.Single(f.Root.GetLogicalDescendants().OfType<Image>());
+    }
+
     private sealed class RendererCapture : IMarkViewExtension
     {
         public AvaloniaRenderer? Renderer { get; private set; }
