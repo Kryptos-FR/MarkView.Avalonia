@@ -212,6 +212,52 @@ public class LiveDocumentEditTests
     }
 
     [AvaloniaFact]
+    public void Patch_at_the_start_or_the_end_of_the_text_keeps_the_block()
+    {
+        var live = Live("a\n\nb");
+        var before = Children(live);
+
+        live.PatchText(0, 1, "x");
+        live.PatchText(3, 1, "y");
+
+        Assert.Equal(2, Edit(live, "x\n\ny").ReusedBlocks);
+        Assert.Equal(before, Children(live));
+    }
+
+    [AvaloniaFact]
+    public void Leading_blank_line_removed_from_an_unclosed_fence_is_rendered()
+    {
+        var live = Live("a\n\n```\n\ncode");
+
+        Edit(live, "a\n\n```\ncode");
+
+        Assert.Equal("a\ncode", AllText(live));
+    }
+
+    [AvaloniaFact]
+    public void Unclosed_fence_before_the_footnotes_shows_its_new_text()
+    {
+        // The footnote group comes after the fence, but starts where its definition is, before it.
+        var live = Live("[^1]: note\n\nx[^1]\n\n```\ncode");
+
+        Edit(live, "[^1]: note\n\nx[^1]\n\n```\ncode more");
+
+        Assert.Contains("code more", AllText(live));
+    }
+
+    [AvaloniaFact]
+    public void Block_before_the_footnotes_is_kept_when_a_definition_changes()
+    {
+        var live = Live("[^1]: note\n\na\n\nb[^1]");
+        var b = live.RootPanel.Children[1];
+
+        Edit(live, "[^1]: new note\n\nab\n\nb[^1]");
+
+        Assert.Same(b, live.RootPanel.Children[1]);
+        Assert.Contains("new note", AllText(live));
+    }
+
+    [AvaloniaFact]
     public void Footnotes_show_a_changed_definition()
     {
         // Markdig moves the definition into the footnote group, rendered last.
@@ -258,5 +304,27 @@ public class LiveDocumentEditTests
         Assert.False(Edit(live, "- [ ] a\n\nbe\n\n- [ ] c", toggles[1]).FocusDiscarded);
         Assert.False(Edit(live, "- [ ] a\n\nbee\n\n- [ ] c", toggles[0]).FocusDiscarded);
         Assert.True(Edit(live, "- [ ] a\n\nbee\n\n- [ ] cc", toggles[1]).FocusDiscarded);
+    }
+
+    [AvaloniaFact]
+    public void Focus_in_the_first_of_several_changed_blocks_is_reported_discarded()
+    {
+        var live = Live("- [ ] a\n\nb\n\nc");
+        var toggle = live.RootPanel.GetLogicalDescendants().OfType<ToggleButton>().Single();
+
+        Assert.True(Edit(live, "- [ ] aa\n\nbb\n\nc", toggle).FocusDiscarded);
+    }
+
+    [Theory]
+    [InlineData("abc", "abc", 0)]
+    [InlineData("abc", "abxc", 1)]
+    [InlineData("ab", "aab", 1)]
+    // What both texts start with is not counted again at their end.
+    [InlineData("aa", "aaa", 0)]
+    [InlineData("xa", "xaa", 0)]
+    public void Common_suffix_leaves_out_the_common_prefix(string a, string b, int expected)
+    {
+        Assert.Equal(expected, LiveDocument.CommonSuffixLength(a, b));
+        Assert.Equal(expected, LiveDocument.CommonSuffixLength(b, a));
     }
 }
