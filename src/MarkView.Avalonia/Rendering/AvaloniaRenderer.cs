@@ -342,9 +342,15 @@ public class AvaloniaRenderer : RendererBase
 
     private const int TaskMarkerLength = 3;
 
-    public AvaloniaRenderer()
+    public AvaloniaRenderer() : this(new StackPanel())
     {
-        RootPanel = new StackPanel { Spacing = 8 };
+    }
+
+    /// <summary>Creates a renderer that writes the top-level blocks into <paramref name="rootPanel"/>.</summary>
+    internal AvaloniaRenderer(StackPanel rootPanel)
+    {
+        RootPanel = rootPanel;
+        RootPanel.Spacing = 8;
         _topLevelPanel = RootPanel;
         _stack.Push(new BlockContainer(RootPanel));
         LoadRenderers();

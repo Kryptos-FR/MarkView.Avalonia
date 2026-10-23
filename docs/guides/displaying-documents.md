@@ -138,6 +138,8 @@ Turn it off for a viewer that must show everything without being scrolled, for e
 
 With it off, formulas and colours are built during the render, and images and diagrams start loading as soon as the viewer is shown.
 
+For documents of several hundred kilobytes, [virtualization](long-documents.md) goes further and keeps the blocks themselves out of the visual tree until they come near.
+
 ## Settings for every viewer
 
 `MarkdownViewerDefaults` sets a pipeline and extensions for every viewer of the application:

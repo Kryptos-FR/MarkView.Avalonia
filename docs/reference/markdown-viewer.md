@@ -21,6 +21,7 @@ Styled properties can be set in a style for every viewer of an application. The 
 | `IsImageZoomEnabled` | `bool` | `false` | Clicking an image or a diagram opens it in a lightbox. See [Lightbox](../guides/images.md#lightbox). |
 | `IsImageSaveEnabled` | `bool` | `true` | Images and diagrams can be saved from the lightbox and the context menu. See [Saving images and diagrams](../guides/images.md#saving-images-and-diagrams). |
 | `IsLazyRenderingEnabled` | `bool` | `true` | Images, formulas, diagrams and code colours are built when about to scroll into view. Re-renders. See [Lazy rendering](../guides/displaying-documents.md#lazy-rendering). |
+| `IsVirtualizationEnabled` | `bool` | `false` | Only the top-level blocks near the visible area are attached to the visual tree. Re-renders. See [Long documents](../guides/long-documents.md). |
 | `IsIncrementalRenderingEnabled` | `bool` | `false` | A new `Markdown` text re-renders only the blocks it changes, and keeps the scroll position. See [Live preview](../guides/live-preview.md). |
 | `IsSmoothScrollingEnabled` | `bool` | `false` | Animates jumps to anchors. See [Smooth scrolling](../guides/displaying-documents.md#smooth-scrolling). |
 | `ShowCodeBlockLanguage` | `bool` | `false` | Shows each code block's language in its toolbar. Re-renders. See [Code blocks](../guides/code-blocks.md#toolbar-and-copy-button). |

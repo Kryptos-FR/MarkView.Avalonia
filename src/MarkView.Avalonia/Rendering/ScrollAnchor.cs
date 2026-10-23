@@ -96,7 +96,8 @@ internal sealed class ScrollAnchor
     // block the view is in, which keeps it in place when content above that block grows.
     private void Choose(Panel root, double visibleTop, double visibleBottom)
     {
-        var children = root.Children;
+        // Only the blocks a virtualizing panel attached have been laid out where they are.
+        IReadOnlyList<Control> children = root is VirtualizingBlockPanel panel ? panel.AttachedChildren : root.Children;
         int low = 0, high = children.Count;
         while (low < high)
         {
