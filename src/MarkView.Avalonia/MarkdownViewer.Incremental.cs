@@ -54,7 +54,7 @@ public partial class MarkdownViewer
         var live = _liveDocument!;
         _renderedMarkdown = markdown;
 
-        var markdownText = PreprocessImageSizes(markdown, out _sourceShifts);
+        var markdownText = PreprocessImageSizes(markdown, EffectivePipeline, out _sourceShifts);
         var document = Markdig.Markdown.Parse(markdownText, EffectivePipeline);
         var renderer = live.Renderer;
         renderer.IsStreaming = false;
