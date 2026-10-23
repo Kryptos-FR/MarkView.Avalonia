@@ -5,6 +5,9 @@
     <UseAppHost>true</UseAppHost>
   </PropertyGroup>
   <ItemGroup>
+    <AvaloniaResource Include="TestAssets\**" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\MarkView.Avalonia.Svg\MarkView.Avalonia.Svg.csproj" />
     <ProjectReference Include="..\..\src\MarkView.Avalonia\MarkView.Avalonia.csproj" />
   </ItemGroup>

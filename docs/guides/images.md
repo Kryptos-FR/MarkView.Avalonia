@@ -110,6 +110,7 @@ MarkdownViewerDefaults.Extensions.AddSvg();   // every viewer
 | Address | Handled as |
 |----------|-----------|
 | `https://example.com/icon.svg` | Downloaded and read as SVG |
+| `avares://MyApp/Assets/logo.svg` | Read from the application's embedded resources as SVG |
 | Any other `http` or `https` address | Tried as SVG; when the response is not SVG, the bitmap loader takes it, so badge services such as shields.io, which serve SVG without a `.svg` address, work |
 | `data:image/svg+xml;base64,…`, `data:image/svg+xml,…` | Decoded and read as SVG |
 | `data:image/png;base64,…` and other images | Left to the bitmap loader |

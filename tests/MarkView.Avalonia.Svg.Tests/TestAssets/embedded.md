@@ -1,0 +1,3 @@
+# Embedded
+
+![Icon](icon.svg)

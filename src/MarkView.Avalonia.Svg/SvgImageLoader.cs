@@ -4,6 +4,7 @@
 using System.Xml;
 
 using Avalonia.Media;
+using Avalonia.Platform;
 using Avalonia.Svg.Skia;
 
 using MarkView.Avalonia.Extensions;
@@ -12,8 +13,8 @@ using MarkView.Avalonia.Rendering;
 namespace MarkView.Avalonia.Svg;
 
 /// <summary>
-/// Loads SVG images from remote URLs (ending in <c>.svg</c>) and
-/// from <c>data:image/svg+xml</c> data URIs.
+/// Loads SVG images from remote URLs and embedded resources (<c>avares://</c>) ending in
+/// <c>.svg</c>, and from <c>data:image/svg+xml</c> data URIs.
 /// </summary>
 public sealed class SvgImageLoader : IImageLoader
 {
@@ -60,9 +61,23 @@ public sealed class SvgImageLoader : IImageLoader
             {
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                     return null;
-                using var buffer = await SharedHttpClient.DownloadAsync(uri, cancellationToken);
-                bytes = buffer.ToArray();
-                source = await Task.Run(() => SvgSource.LoadFromStream(buffer), cancellationToken);
+                if (uri.Scheme == "avares")
+                {
+                    (bytes, source) = await Task.Run(() =>
+                    {
+                        using var buffer = new MemoryStream();
+                        using (var stream = AssetLoader.Open(uri))
+                            stream.CopyTo(buffer);
+                        buffer.Position = 0;
+                        return (buffer.ToArray(), SvgSource.LoadFromStream(buffer));
+                    }, cancellationToken);
+                }
+                else
+                {
+                    using var buffer = await SharedHttpClient.DownloadAsync(uri, cancellationToken);
+                    bytes = buffer.ToArray();
+                    source = await Task.Run(() => SvgSource.LoadFromStream(buffer), cancellationToken);
+                }
             }
 
             // SvgImage is an AvaloniaObject — must be created on the UI thread.
