@@ -10,10 +10,16 @@ title: "Selection and copy"
 
 | Gesture / Key | Action |
 |---------------|--------|
-| Click + drag | Select a text range |
+| Click + drag | Select a text range; near or past the top or bottom edge, the document [scrolls](#selecting-more-than-a-screen) |
 | `Ctrl+A` | Select all text in the document |
 | `Ctrl+C` | Copy the current selection to the clipboard |
 | Right-click or the menu key | Open the [context menu](#context-menu) |
+
+## Selecting more than a screen
+
+While a drag selects text, holding the pointer near the top or bottom edge of the viewer, or past it, scrolls the document and extends the selection to the text it brings into view, as a text box or a browser does. The further past the edge, the faster it scrolls; scrolling goes on while the pointer is held still and stops when the pointer moves back or the button is released. Scrolling with the mouse wheel during a drag extends the selection the same way.
+
+The scrolling starts 24 pixels inside each edge (a quarter of the viewer's height in a short viewer), so it also works where the pointer cannot get past the edge, such as a viewer at the bottom of a window that fills the screen, or in the browser. A drag that starts within that band, on a line cut by the edge, only scrolls once the pointer has left the band or gone past the edge. Only the viewer's own scroll viewer scrolls: a viewer that does not scroll, such as one sized to its content inside a chat list, does not scroll its container.
 
 ## Programmatic API
 
@@ -208,7 +214,7 @@ Custom renderers opt their own non-text controls in through the `MarkdownSelecti
 
 `DocumentSelectionLayer` is a single transparent `Control` rendered in a single-cell `Grid` on top of the document. It tracks a start and end character offset across the entire flattened character index built by the renderer.
 
-On `PointerMoved`, the layer calls `TextBlock.TextLayout.HitTestPoint` + `TranslatePoint` for each registered text block to find the nearest character offset, then redraws the selection highlight rectangles using `HitTestTextRange`. Both are limited to the part of each text block that its clipping ancestors inside the document (such as a code block's `ScrollViewer`) leave visible.
+On `PointerMoved`, the layer calls `TextBlock.TextLayout.HitTestPoint` + `TranslatePoint` for each registered text block to find the nearest character offset, then redraws the selection highlight rectangles using `HitTestTextRange`. While the pointer is above or below the viewport, it hits the text at the viewport's edge instead. The viewer scrolls on the rendered frames (`TopLevel.RequestAnimationFrame`), and after each layout pass that finds the scroll offset moved during a drag, it hit-tests the pointer again, so content realized on the way by [lazy rendering](displaying-documents.md#lazy-rendering) is laid out before it is selected. Both are limited to the part of each text block that its clipping ancestors inside the document (such as a code block's `ScrollViewer`) leave visible.
 
 On copy, `GetSelectedText()` extracts the substring from each text block's registered text and joins them with newlines (tabs between table cells, a space after a list marker). Every line ending in the result is `\n`, including those inside code blocks and copy texts. The clipboard, both from `Ctrl+C` and from a code block's copy button, gets the platform's line endings instead (`Environment.NewLine`, so `\r\n` on Windows). A list item's marker is registered as its own text block, so it is highlighted with the item and selection offsets inside the item text line up with what is rendered.
 
