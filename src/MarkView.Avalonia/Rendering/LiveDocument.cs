@@ -81,6 +81,12 @@ internal sealed class LiveDocument
     public int BlockCount => _records.Count;
 
     /// <summary>
+    /// How many top-level blocks of <see cref="Document"/> are not rendered yet: those after the limit of the
+    /// last <see cref="Update"/>, until <see cref="Extend"/> renders them.
+    /// </summary>
+    public int PendingCount => Document is null ? 0 : Document.Count - _records.Count;
+
+    /// <summary>
     /// Brings the rendering up to date with <paramref name="document"/>: keeps the controls of the
     /// longest prefix of blocks that cannot have changed (and, with <paramref name="reuseAfterChange"/>,
     /// of the longest suffix) and re-renders the rest.
@@ -95,8 +101,17 @@ internal sealed class LiveDocument
     /// Whether the blocks after the last changed one can be kept too, for a text edited anywhere.
     /// A streaming session's text only grows at its end, where nothing follows the change.
     /// </param>
-    public UpdateResult Update(MarkdownDocument document, string text, IInputElement? focusedElement = null, bool reuseAfterChange = false)
+    /// <param name="limit">
+    /// How many top-level blocks to have rendered at most; the others stay pending until <see cref="Extend"/>
+    /// renders them. Blocks kept from the last document count towards it, and are never dropped for it.
+    /// </param>
+    public UpdateResult Update(MarkdownDocument document, string text, IInputElement? focusedElement = null, bool reuseAfterChange = false,
+        int limit = int.MaxValue)
     {
+        // The records are compared with the last document as a whole.
+        if (PendingCount > 0)
+            Extend(PendingCount);
+
         var keys = CollectInvalidationKeys(document);
         // Before the first update there are no records, so both scans return 0 by themselves.
         var prefix = ReusablePrefix(_records, document, text);
@@ -112,7 +127,7 @@ internal sealed class LiveDocument
 
         var headingsBefore = Renderer.HeadingEntries.ToList();
         var (reused, focusDiscarded) = suffix == 0
-            ? Truncate(document, text, prefix, keysUnchanged, focusedElement)
+            ? Truncate(document, text, prefix, keysUnchanged, focusedElement, limit)
             : Splice(document, text, prefix, suffix, focusedElement);
 
         // New blocks after a collapsed heading belong to its section, and a heading rendered again keeps the
@@ -127,6 +142,24 @@ internal sealed class LiveDocument
     }
 
     /// <summary>
+    /// Renders the next <paramref name="count"/> pending blocks of <see cref="Document"/> (see
+    /// <see cref="PendingCount"/>), after those already rendered. Returns how many it rendered.
+    /// </summary>
+    public int Extend(int count)
+    {
+        var document = Document;
+        count = Math.Min(count, PendingCount);
+        if (document is null || count <= 0)
+            return 0;
+        var end = _records.Count + count;
+        for (var i = _records.Count; i < end; i++)
+            _records.Add(WriteTopLevel(document, i, _text));
+        HeadingFold.Apply(RootPanel);
+        Renderer.ApplyHeadingFolds();
+        return count;
+    }
+
+    /// <summary>
     /// Replaces <paramref name="length"/> characters of the last text from <paramref name="start"/>
     /// with <paramref name="replacement"/>, which has the same length, for a change the rendered controls
     /// already show (a toggled task), so that the next update finds that block unchanged.
@@ -138,13 +171,14 @@ internal sealed class LiveDocument
     }
 
     /// <summary>
-    /// Keeps the first <paramref name="prefix"/> blocks and renders the rest after them. The last block
+    /// Keeps the first <paramref name="prefix"/> blocks and renders the rest after them, up to <paramref name="limit"/>
+    /// blocks in all. The last block
     /// may still be growing inside the control rendered for it (see <see cref="IGrowingBlockRenderer"/>):
     /// that control is kept, and only the children that changed are rendered again. Returns how many
     /// blocks kept their controls, and whether the focused element was in one that did not.
     /// </summary>
     private (int Reused, bool FocusDiscarded) Truncate(
-        MarkdownDocument document, string text, int prefix, bool keysUnchanged, IInputElement? focusedElement)
+        MarkdownDocument document, string text, int prefix, bool keysUnchanged, IInputElement? focusedElement, int limit)
     {
         var growing = keysUnchanged && prefix == _records.Count - 1 ? GrowingTailFor(_records[prefix], document, prefix) : null;
         var childrenReused = growing is null ? 0 : ReusablePrefix(growing.Children, (ContainerBlock)document[prefix], text);
@@ -183,16 +217,18 @@ internal sealed class LiveDocument
         }
         _records.RemoveRange(written, _records.Count - written);
 
-        for (var i = written; i < document.Count; i++)
-        {
-            var block = document[i];
-            // Only the last block can grow with appended text.
-            _records.Add(i == document.Count - 1 && block is ContainerBlock container && GrowingRendererFor(container) is { } growingRenderer
-                ? WriteGrowing(document, i, text, growingRenderer)
-                : Write(document, i, text, RootPanel, SelectionLayer, LinkLayer, Renderer.WriteTopLevel));
-        }
+        var end = Math.Min(document.Count, Math.Max(limit, written));
+        for (var i = written; i < end; i++)
+            _records.Add(WriteTopLevel(document, i, text));
         return (prefix, focusDiscarded);
     }
+
+    /// <summary>Writes top-level block <paramref name="index"/> after those rendered, and returns its record.</summary>
+    private BlockRecord WriteTopLevel(MarkdownDocument document, int index, string text) =>
+        // Only the last block can grow with appended text.
+        index == document.Count - 1 && document[index] is ContainerBlock container && GrowingRendererFor(container) is { } growingRenderer
+            ? WriteGrowing(document, index, text, growingRenderer)
+            : Write(document, index, text, RootPanel, SelectionLayer, LinkLayer, Renderer.WriteTopLevel);
 
     /// <summary>
     /// Keeps the first <paramref name="prefix"/> and the last <paramref name="suffix"/> blocks and renders

@@ -52,6 +52,7 @@ public partial class MarkdownViewer
         if (_streamingSession is { } session)
             EndStreamingSession(session, keepDocument: true);
         var live = _liveDocument!;
+        SettleDeferredBlocks(live);
         _renderedMarkdown = markdown;
 
         var markdownText = PreprocessImageSizes(markdown, EffectivePipeline, out _sourceShifts);

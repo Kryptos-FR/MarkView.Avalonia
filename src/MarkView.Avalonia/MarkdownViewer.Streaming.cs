@@ -127,6 +127,7 @@ public partial class MarkdownViewer
             }
         }
 
+        SettleDeferredBlocks(_liveDocument);
         var install = _liveDocument is null;
         var live = _liveDocument ??= new LiveDocument(CreateRenderer(), ActivateLink);
         var renderer = live.Renderer;
