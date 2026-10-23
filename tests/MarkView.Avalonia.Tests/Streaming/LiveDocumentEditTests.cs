@@ -259,4 +259,55 @@ public class LiveDocumentEditTests
         Assert.False(Edit(live, "- [ ] a\n\nbee\n\n- [ ] c", toggles[0]).FocusDiscarded);
         Assert.True(Edit(live, "- [ ] a\n\nbee\n\n- [ ] cc", toggles[1]).FocusDiscarded);
     }
+
+    [AvaloniaFact]
+    public void A_limited_update_leaves_blocks_pending_that_Extend_renders_as_a_single_update_would()
+    {
+        const string text = "# A\n\n[link](https://example.com) one[^1]\n\n# A\n\ntwo\n\n[^1]: note";
+        var whole = Live(text);
+        var live = new LiveDocument(new AvaloniaRenderer { AreTaskListsInteractive = true }, _ => { });
+
+        live.Update(Markdown.Parse(text, Pipeline), text, limit: 2);
+
+        Assert.Equal(2, live.BlockCount);
+        Assert.Equal(whole.BlockCount - 2, live.PendingCount);
+        Assert.Equal(1, live.Extend(1));
+        Assert.Equal(whole.BlockCount - 3, live.Extend(100));
+        Assert.Equal(0, live.PendingCount);
+        Assert.Equal(0, live.Extend(1));
+        Assert.Equal(AllText(whole), AllText(live));
+        Assert.Equal(whole.RootPanel.Children.Count, live.RootPanel.Children.Count);
+        Assert.Equal(whole.LinkLayer.StopCount, live.LinkLayer.StopCount);
+        Assert.Equal(whole.Renderer.HeadingEntries, live.Renderer.HeadingEntries);
+        Assert.Equal(whole.Renderer.Anchors.Keys.Order(), live.Renderer.Anchors.Keys.Order());
+    }
+
+    [AvaloniaFact]
+    public void An_update_first_renders_the_blocks_the_last_one_left_pending()
+    {
+        var live = new LiveDocument(new AvaloniaRenderer(), _ => { });
+        live.Update(Markdown.Parse("a\n\nb\n\nc", Pipeline), "a\n\nb\n\nc", limit: 1);
+        var first = live.RootPanel.Children[0];
+
+        var result = Edit(live, "a\n\nb\n\ncd");
+
+        // Compared with the whole last document: only the changed block is rendered again.
+        Assert.Equal(2, result.ReusedBlocks);
+        Assert.Same(first, live.RootPanel.Children[0]);
+        Assert.Equal(0, live.PendingCount);
+        Assert.Equal("a\nb\ncd", AllText(live));
+    }
+
+    [AvaloniaFact]
+    public void A_limit_never_drops_the_blocks_kept_from_the_last_document()
+    {
+        var live = Live("a\n\nb\n\nc");
+
+        var result = live.Update(Markdown.Parse("a\n\nb\n\nc\n\nd", Pipeline), "a\n\nb\n\nc\n\nd", limit: 1);
+
+        // The blocks kept, and none rendered past them.
+        Assert.InRange(result.ReusedBlocks, 2, 3);
+        Assert.Equal(result.ReusedBlocks, live.BlockCount);
+        Assert.Equal(4 - live.BlockCount, live.PendingCount);
+    }
 }

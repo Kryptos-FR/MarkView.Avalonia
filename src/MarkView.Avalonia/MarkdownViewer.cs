@@ -396,11 +396,12 @@ public partial class MarkdownViewer : ContentControl
 
     /// <summary>
     /// Gets or sets whether only the top-level blocks near the visible area are part of the visual tree: those
-    /// within one viewport height of it are styled, laid out and drawn, and the others take the height they had
-    /// when last shown, or an estimate, until they come near. A long document then opens and switches theme in
-    /// about the time a short one does, and uses a fraction of the memory. Selection, find, links, the table of
-    /// contents and copying still cover the whole document; a jump to an anchor, a find match or a link reached
-    /// with Tab brings its block in first. The scroll bar is approximate until the document has been scrolled
+    /// within one viewport height of it are built, styled, laid out and drawn, and the others take the height they
+    /// had when last shown, or an estimate, until they come near. The blocks not built yet are built a few at a
+    /// time while the application is idle. A long document then opens and switches theme in about the time a
+    /// short one does, and uses a fraction of the memory. Selection, find, links and copying still cover the whole
+    /// document, and so does <see cref="TableOfContents"/> once the whole document is built; a jump to an anchor,
+    /// a find match or a link reached with Tab brings its block in first. The scroll bar is approximate until the document has been scrolled
     /// through, and screen readers see the blocks near the visible area only. Leave it off when the viewer is
     /// rendered to a bitmap, or when an application walks the document's controls in the visual tree.
     /// Defaults to <c>false</c>.
@@ -636,6 +637,7 @@ public partial class MarkdownViewer : ContentControl
         // Whatever is rendered now replaces what an active streaming session renders, so the session ends.
         EndStreamingSession();
         _liveDocument = null;
+        SettleDeferredBlocks(null);
         var markdown = _sourceMarkdown ?? Markdown;
         _renderedMarkdown = markdown;
         // A focused link is about to be replaced; keep focus in the viewer rather than losing it.
@@ -659,12 +661,15 @@ public partial class MarkdownViewer : ContentControl
 
         AvaloniaRenderer renderer;
         DocumentSelectionLayer layer;
-        if (IsIncrementalRenderingEnabled)
+        if (IsIncrementalRenderingEnabled || IsVirtualizationEnabled)
         {
-            // Rendered block by block, so that the next text can re-render only the blocks it changes.
+            // Rendered block by block, so that the next text can re-render only the blocks it changes, and, virtualized,
+            // so that each block is built only when it comes near the visible area or the document is idle.
             var live = new LiveDocument(CreateRenderer(), ActivateLink);
-            live.Update(document, markdownText);
-            _liveDocument = live;
+            live.Update(document, markdownText, limit: IsVirtualizationEnabled ? 0 : int.MaxValue);
+            if (IsIncrementalRenderingEnabled)
+                _liveDocument = live;
+            DeferBlocks(live);
             renderer = live.Renderer;
             layer = live.SelectionLayer;
             _linkFocusLayer = live.LinkLayer;
@@ -1240,6 +1245,8 @@ public partial class MarkdownViewer : ContentControl
     /// </summary>
     private void UpdateFind(int currentIndex)
     {
+        if (_findText is not null)
+            BuildAllBlocks();
         var layer = _selectionLayer;
         if (_findText is null)
             layer?.ClearFind();
@@ -1471,7 +1478,14 @@ public partial class MarkdownViewer : ContentControl
         StopSmoothScroll();
         _tabStart = null;
         if (!_anchors.TryGetValue(anchorId, out var control))
-            return;
+        {
+            // An anchor in a block not built yet is known once it is.
+            if (_deferred is null)
+                return;
+            BuildAllBlocks();
+            if (!_anchors.TryGetValue(anchorId, out control))
+                return;
+        }
         // While the viewer itself has the focus, Tab goes on from here.
         _tabStart = control;
 

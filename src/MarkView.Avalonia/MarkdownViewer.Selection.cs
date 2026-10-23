@@ -96,7 +96,11 @@ public partial class MarkdownViewer
     public string SelectedText => GetSelectedText();
 
     /// <summary>Selects all text in the rendered document.</summary>
-    public void SelectAll() => _selectionLayer?.SelectAll();
+    public void SelectAll()
+    {
+        BuildAllBlocks();
+        _selectionLayer?.SelectAll();
+    }
 
     /// <summary>Clears the current selection.</summary>
     public void ClearSelection() => _selectionLayer?.ClearSelection();
