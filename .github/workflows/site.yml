@@ -7,7 +7,9 @@ name: Site
 # - on each push to a docs/<version> branch (e.g. docs/12.4, cut from the release tag), which
 #   takes documentation fixes cherry-picked from main between releases;
 # - on a manual run, from the branch or tag picked.
-# Pull requests that change docs/ only build the docs, to catch a broken page.
+# Pull requests that change docs/ only build the docs, to catch a broken page; like ci.yml, a
+# draft skips it unless labelled `ci-run-on-draft` (from its next push), and it runs when the
+# draft is marked ready for review.
 on:
   release:
     types: [published]
@@ -15,6 +17,7 @@ on:
     branches: ['docs/*']
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'docs/**'
       - '.github/workflows/site.yml'
@@ -32,6 +35,10 @@ env:
 
 jobs:
   build:
+    if: >
+      github.event_name != 'pull_request'
+      || !github.event.pull_request.draft
+      || contains(github.event.pull_request.labels.*.name, 'ci-run-on-draft')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
