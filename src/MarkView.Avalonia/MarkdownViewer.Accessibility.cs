@@ -150,6 +150,8 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         if (_linkFocusLayer is null)
             return (false, null);
 
+        // The stops are those of the whole document, in reading order.
+        BuildAllBlocks();
         var stops = _linkFocusLayer.GetActiveStops();
         var forward = direction == NavigationDirection.Next;
         if (element == this)
