@@ -375,6 +375,42 @@ public class MarkdownViewerImageZoomTests
         Assert.True(f.Viewer.IsKeyboardFocusWithin);
     }
 
+    [AvaloniaFact]
+    public async Task The_document_scrolls_past_an_image_that_kept_the_focus_after_the_lightbox_closed()
+    {
+        var text = string.Join("\n\n", Enumerable.Range(0, 20).Select(i => $"Paragraph {i}"));
+        using var f = await ShowAsync($"{text}\n\n![A diagram]({FakeUrl()})\n\n{text}");
+        var scrollViewer = f.Viewer.GetVisualDescendants().OfType<ScrollViewer>().First();
+        f.Image.BringIntoView();
+        f.Window.UpdateLayout();
+        Click(f.Window, f.Center(f.Image));
+        Press(f.Window, Key.Escape);
+        Assert.True(f.Image.IsFocused);
+
+        // Scrolled until the image is partly out of view, then its paragraph laid out again (as a
+        // scroll does on Windows), which removes and re-adds the image.
+        var top = f.Image.TranslatePoint(default, scrollViewer)!.Value.Y;
+        scrollViewer.Offset += new Vector(0, top + 50);
+        f.Window.UpdateLayout();
+        var offset = scrollViewer.Offset;
+        var detached = 0;
+        f.Image.DetachedFromVisualTree += (_, _) => detached++;
+        var paragraph = f.Image.FindAncestorOfType<MarkdownSelectableTextBlock>()!;
+        paragraph.InvalidateMeasure();
+        paragraph.InvalidateArrange();
+        f.Window.UpdateLayout();
+
+        Assert.True(detached > 0, "The paragraph did not re-add the image.");
+        Assert.True(f.Image.IsFocused);
+        Assert.Equal(offset, scrollViewer.Offset);
+
+        // Focusing it anew still brings it into view.
+        f.Viewer.Focus();
+        f.Image.Focus();
+        f.Window.UpdateLayout();
+        Assert.True(scrollViewer.Offset.Y < offset.Y);
+    }
+
     [AvaloniaTheory]
     [InlineData(Key.Enter)]
     [InlineData(Key.Space)]
