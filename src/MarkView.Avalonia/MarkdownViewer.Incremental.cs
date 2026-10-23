@@ -73,12 +73,10 @@ public partial class MarkdownViewer
             Focus();
 
         // Nothing in common with the previous text: another document, read from its top. A document of
-        // one block has nothing in common with itself after any edit, so it keeps its place.
+        // one block has nothing in common with itself after any edit, so it keeps its place. The scroll
+        // anchor's block went with the others, which the anchor notices on the next layout pass.
         if (result.UnchangedBlocks == 0 && previousBlocks > 1 && document.Count > 1 && _scrollViewer is not null)
-        {
-            _scrollAnchor.Reset();
             _scrollViewer.Offset = default;
-        }
 
         UpdateFind(CurrentFindMatchIndex);
         if (result.ReusedBlocks < document.Count
