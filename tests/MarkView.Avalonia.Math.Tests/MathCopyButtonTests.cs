@@ -128,7 +128,8 @@ public class MathCopyButtonTests
 
         var border = Assert.IsType<Border>(Block(f.Viewer));
         Assert.Contains("markdown-math-block", border.Classes);
-        Assert.Empty(f.Viewer.GetVisualDescendants().OfType<Button>());
+        // The document's controls only: the viewer's template has its own (hidden) expand button.
+        Assert.Empty(Assert.IsType<Grid>(f.Viewer.Content).GetVisualDescendants().OfType<Button>());
     }
 
     [AvaloniaFact]

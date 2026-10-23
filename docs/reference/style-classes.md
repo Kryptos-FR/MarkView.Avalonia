@@ -43,6 +43,7 @@ Headings and paragraphs are `MarkdownSelectableTextBlock`s, a subclass of `TextB
 | `markdown-image-lightbox-save` | `Button` | The toolbar's save button, at its end (`IsImageSaveEnabled`) |
 | `markdown-image-lightbox-zoom-level` | `TextBlock` | The zoom level in the toolbar, as a percentage of the natural size |
 | `markdown-link` | `HyperlinkButton` | Hyperlink |
+| `markdown-expand-button` | `Button` | The viewer's "Show more" / "Show less" button below a document longer than [`MaxLines`](../guides/displaying-documents.md#previews), in the viewer's template (`PART_ExpandButton`), so a style selects it through `/template/` |
 | `markdown-context-copy`, `markdown-context-copy-markdown`, `markdown-context-copy-link`, `markdown-context-copy-heading-link`, `markdown-context-copy-table`, `markdown-context-copy-table-markdown`, `markdown-context-save-image`, `markdown-context-select-all` | `MenuItem` | Items of the viewer's default [context menu](../guides/text-selection.md#context-menu) |
 | `markdown-table` | `Grid` | Table |
 | `markdown-table-cell` | `Border` | Table body cell |

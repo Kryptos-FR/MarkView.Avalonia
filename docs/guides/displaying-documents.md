@@ -115,6 +115,48 @@ viewer.TableOfContentsMaxDepth = 2;   // h1 and h2 only
 
 The list is rebuilt after every render. The [demo](https://github.com/Kryptos-FR/MarkView.Avalonia/tree/main/samples/MarkView.Avalonia.Demo) binds it to a side panel, a drop-down and a top bar.
 
+## Previews
+
+`MaxLines` turns the viewer into a preview of the document's first lines, for a list of messages, notes or release notes:
+
+```xml
+<mv:MarkdownViewer Markdown="{Binding Body}" MaxLines="4" VerticalAlignment="Top" />
+```
+
+The viewer is then only as tall as those lines and cut right below the last of them, with a "Show more" button underneath. Clicking it sets `IsExpanded`, which shows the whole document and turns the button into "Show less". Nothing is rendered again: expanding, collapsing or changing `MaxLines` only changes how much of the laid-out document is shown.
+
+What counts as a line is what takes a row on screen:
+
+- every text line, so a paragraph that wraps over three lines counts three, and so do headings, list items, quotes, code lines and table cells;
+- each image, formula and diagram, as one line whatever its height;
+- lines side by side count once: a list marker and its text, the cells of a table row, a code line and its number.
+
+When the last line shown ends a block with padding or a border (a table cell, a code block, a quote), the cut goes below them, so the block is not left open. Spacing between blocks is not a line, and neither is a thematic break or a folded section.
+
+The cut follows the layout: it moves when the viewer gets narrower and text wraps more, when an image above it finishes loading, and as a [streaming session](streaming.md) appends text (`ExceedsMaxLines` turns `true`, and the button appears, once the document grows past `MaxLines`).
+
+- **`IsExpanded`** binds two-way by default, so a view model can hold it. It is kept when the document changes (a new `Markdown`, a streaming update), so a host that reuses a viewer for another document, as a virtualized list does, resets it.
+- **`ShowExpandButton`** set to `false` hides the button, for a host that provides its own (for example a whole preview card that opens the document). Bind its visibility to `ExceedsMaxLines`, or style the viewer's `:truncated` pseudo-class, which is set while lines are hidden.
+- **`ExceedsMaxLines`** says whether there is more to show, expanded or not. It is `false` until the document has been laid out.
+
+The hidden lines are still part of the document. `Ctrl+A` and copy include them, and `Find` counts their matches; moving to one of those matches (`FindNext`, `FindPrevious`), or following a link to a heading among the hidden lines, expands the viewer. `Tab` skips the links and controls in the hidden lines, then reaches the button.
+
+A viewer that stretches to fill a page puts the button at its bottom, below the empty space; give a preview `VerticalAlignment="Top"` (or any alignment but `Stretch`) so that the button sits right below the lines.
+
+The button is a `Button.markdown-expand-button`, the template part `PART_ExpandButton`. It looks like a link, and its padding is the viewer's `Padding`, so its text lines up with the document's. Its text comes from two string resources, which can be translated or reworded like any other resource:
+
+| Resource key | Default |
+|--------------|---------|
+| `MarkdownStringShowMore` | `Show more` |
+| `MarkdownStringShowLess` | `Show less` (while the viewer has the `:expanded` pseudo-class) |
+
+```xml
+<Application.Resources>
+  <x:String x:Key="MarkdownStringShowMore">Afficher plus</x:String>
+  <x:String x:Key="MarkdownStringShowLess">Afficher moins</x:String>
+</Application.Resources>
+```
+
 ## Lazy rendering
 
 Some content costs far more to build than text: decoding an image, typesetting a formula, laying out a Mermaid diagram, colouring a code block. The viewer builds it when it first comes within one screen of the visible area, so a long document shows its first screen quickly and the parts nobody scrolls to cost nothing. On the desktop, Mermaid diagrams are rendered in the background as soon as the viewer is shown instead.
@@ -171,7 +213,8 @@ The other properties are styled properties, so a style sets them for every viewe
 The theme's `ControlTemplate` puts the document in a `ScrollViewer` named `PART_ScrollViewer`:
 
 ```
-Border → ScrollViewer (PART_ScrollViewer) → ContentPresenter
+Border → DockPanel → Button (PART_ExpandButton, docked at the bottom, shown when MaxLines cuts the document)
+                   → ScrollViewer (PART_ScrollViewer) → ContentPresenter
 ```
 
 The usual `ScrollViewer` attached properties reach it, as with a `ListBox`:
@@ -182,7 +225,7 @@ The usual `ScrollViewer` attached properties reach it, as with a `ListBox`:
 
 The horizontal scroll bar is disabled by default, which gives the document the viewer's width: images scale down and code blocks [wrap](code-blocks.md#line-numbers-wrapping-and-height) to it. With `ScrollViewer.HorizontalScrollBarVisibility="Auto"` (or `Visible`), wide content scrolls instead, code does not wrap, and images may no longer scale down to the viewer's width.
 
-A template of your own can leave `PART_ScrollViewer` out. The document still renders, but `ScrollToAnchor()` falls back to `BringIntoView()`, and images no longer scale to the viewer's width unless the template constrains it:
+A template of your own can leave `PART_ScrollViewer` out. The document still renders, but `ScrollToAnchor()` falls back to `BringIntoView()`, and images no longer scale to the viewer's width unless the template constrains it. `PART_ExpandButton` is optional too: without it, [`MaxLines`](#previews) still cuts the document, but nothing expands it unless the host sets `IsExpanded`:
 
 ```xml
 <Style Selector="mv|MarkdownViewer">

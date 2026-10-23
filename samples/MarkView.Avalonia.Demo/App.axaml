@@ -26,6 +26,12 @@
       <Setter Property="Background" Value="#2d1b4d" />
     </Style>
 
+    <!-- View options > Show only the first lines: the viewer is as tall as the lines it shows, so its
+         Show more button sits right below them rather than at the bottom of the page. -->
+    <Style Selector="mv|MarkdownViewer.first-lines">
+      <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+
     <!-- Extensions showcase: targets the {.demo-highlight} generic attribute and the :::warning
          custom container. -->
     <Style Selector=":is(TextBlock).markdown-paragraph.demo-highlight">

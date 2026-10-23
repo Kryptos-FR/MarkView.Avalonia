@@ -710,6 +710,9 @@
       <x:String x:Key="MarkdownStringCopyTableAsMarkdown">Copy table as Markdown</x:String>
       <x:String x:Key="MarkdownStringSaveImage">Save image as…</x:String>
       <x:String x:Key="MarkdownStringSelectAll">Select all</x:String>
+      <!-- Text of the expand button below a document longer than MarkdownViewer.MaxLines -->
+      <x:String x:Key="MarkdownStringShowMore">Show more</x:String>
+      <x:String x:Key="MarkdownStringShowLess">Show less</x:String>
     </ResourceDictionary>
   </Styles.Resources>
 
@@ -725,26 +728,56 @@
         <Border BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="{TemplateBinding CornerRadius}">
-          <ScrollViewer Name="PART_ScrollViewer"
-                        Background="{TemplateBinding Background}"
-                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
-                        BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}"
-                        HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
-                        VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
-                        IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
-                        IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
-                        VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}"
-                        HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}">
-            <ContentPresenter Name="PART_ContentPresenter"
-                              Content="{TemplateBinding Content}"
-                              ContentTemplate="{TemplateBinding ContentTemplate}"
-                              Margin="{TemplateBinding Padding}"
-                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
-          </ScrollViewer>
+          <DockPanel Background="{TemplateBinding Background}">
+            <!-- Shown when the document has more than MaxLines lines; the viewer toggles IsExpanded on click -->
+            <Button Name="PART_ExpandButton"
+                    Classes="markdown-expand-button"
+                    DockPanel.Dock="Bottom"
+                    Padding="{TemplateBinding Padding}"
+                    IsVisible="False" />
+            <ScrollViewer Name="PART_ScrollViewer"
+                          AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                          BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}"
+                          HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                          VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+                          IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+                          IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
+                          VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}"
+                          HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}">
+              <ContentPresenter Name="PART_ContentPresenter"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </ScrollViewer>
+          </DockPanel>
         </Border>
       </ControlTemplate>
     </Setter>
+  </Style>
+
+  <!-- Expand button below a document longer than MaxLines: a link-like "Show more" / "Show less" -->
+  <Style Selector="Button.markdown-expand-button">
+    <Setter Property="Content" Value="{DynamicResource MarkdownStringShowMore}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Margin" Value="0,4,0,0" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownLinkForeground}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector=":is(mv|MarkdownViewer):expanded /template/ Button.markdown-expand-button">
+    <Setter Property="Content" Value="{DynamicResource MarkdownStringShowLess}" />
+  </Style>
+  <Style Selector="Button.markdown-expand-button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownLinkForeground}" />
+  </Style>
+  <Style Selector="Button.markdown-expand-button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource MarkdownLinkForeground}" />
   </Style>
 
   <!-- Foldable headings (MarkdownViewer.AreHeadingsFoldable): the fold button before the heading's text;
