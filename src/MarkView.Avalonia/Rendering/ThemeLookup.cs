@@ -74,13 +74,29 @@ internal sealed class ThemeLookup
     public static void Replace(ILogical root, Dictionary<ControlTheme, ControlTheme> changed)
     {
         foreach (var element in root.GetLogicalDescendants())
+            Replace(element, changed, restyle: true);
+    }
+
+    /// <summary>
+    /// Gives <paramref name="block"/>, a block out of the logical tree (see <see cref="VirtualizingBlockPanel"/>),
+    /// and the controls under it the new themes in <paramref name="changed"/>, which they are styled with once
+    /// attached.
+    /// </summary>
+    public static void ReplaceDetached(Control block, Dictionary<ControlTheme, ControlTheme> changed)
+    {
+        Replace(block, changed, restyle: false);
+        foreach (var element in block.GetLogicalDescendants())
+            Replace(element, changed, restyle: false);
+    }
+
+    private static void Replace(ILogical element, Dictionary<ControlTheme, ControlTheme> changed, bool restyle)
+    {
+        if (element is StyledElement { Theme: { } theme } styled && changed.TryGetValue(theme, out var replacement))
         {
-            if (element is StyledElement { Theme: { } theme } styled && changed.TryGetValue(theme, out var replacement))
-            {
-                styled.Theme = replacement;
-                // Restyled now, as a removed style would be, rather than on the next layout pass
+            styled.Theme = replacement;
+            // Restyled now, as a removed style would be, rather than on the next layout pass
+            if (restyle)
                 styled.ApplyStyling();
-            }
         }
     }
 
