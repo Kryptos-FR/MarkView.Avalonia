@@ -103,8 +103,30 @@ public class AvaloniaRenderer : RendererBase
     /// <summary>A callback that records the fold state of <paramref name="block"/> for <see cref="GetFoldState"/>.</summary>
     internal Action<bool> FoldStateRecorder(Block block)
     {
-        var key = (block.GetType(), block.Span.Start);
-        return expanded => _foldStates[key] = expanded;
+        // Read when the state changes: a block kept after an edit before it has moved since (see ShiftSourcePositions).
+        var type = block.GetType();
+        return expanded => _foldStates[(type, block.Span.Start)] = expanded;
+    }
+
+    /// <summary>
+    /// Moves what is recorded by source position (fold states, thinking times) for the text from
+    /// <paramref name="from"/> on by <paramref name="delta"/>, after an edit before it.
+    /// </summary>
+    internal void ShiftSourcePositions(int from, int delta)
+    {
+        Shift(_foldStates, key => key.Start, (key, start) => (key.BlockType, start));
+        Shift(_thinkingStarts, start => start, (_, start) => start);
+        Shift(_thinkingDurations, start => start, (_, start) => start);
+
+        void Shift<TKey, TValue>(Dictionary<TKey, TValue> positions, Func<TKey, int> startOf, Func<TKey, int, TKey> moved)
+            where TKey : notnull
+        {
+            var shifted = positions.Where(entry => startOf(entry.Key) >= from).ToList();
+            foreach (var (key, _) in shifted)
+                positions.Remove(key);
+            foreach (var (key, value) in shifted)
+                positions[moved(key, startOf(key) + delta)] = value;
+        }
     }
 
     // When a streaming session first rendered each thinking block still in progress, and how long each one
@@ -215,6 +237,9 @@ public class AvaloniaRenderer : RendererBase
         _anchorOrder.Add((id, control));
     }
 
+    /// <summary>The <see cref="RegisterAnchor"/> calls since the document began, in order, less those dropped by <see cref="TruncateAnchors"/>.</summary>
+    internal IReadOnlyList<(string Id, Control Control)> AnchorRegistrations => _anchorOrder;
+
     /// <summary>The number of <see cref="RegisterAnchor"/> calls since the document began, less those dropped by <see cref="TruncateAnchors"/>.</summary>
     internal int AnchorCount => _anchorOrder.Count;
 
@@ -320,6 +345,7 @@ public class AvaloniaRenderer : RendererBase
     public AvaloniaRenderer()
     {
         RootPanel = new StackPanel { Spacing = 8 };
+        _topLevelPanel = RootPanel;
         _stack.Push(new BlockContainer(RootPanel));
         LoadRenderers();
         ObjectWriteBefore += (_, obj) => _writing.Push((
@@ -329,14 +355,18 @@ public class AvaloniaRenderer : RendererBase
         ObjectWriteBefore += (_, obj) =>
         {
             if (obj is Block { Parent: MarkdownDocument })
-                _topLevelChildStart = RootPanel.Children.Count;
+            {
+                // The root panel, or the panel a top-level block is written into before it moves there (see WriteTopLevel).
+                _topLevelPanel = _stack.Peek() is BlockContainer container ? container.Panel : RootPanel;
+                _topLevelChildStart = _topLevelPanel.Children.Count;
+            }
         };
         ObjectWriteAfter += (_, obj) =>
         {
             if (obj is Block { Parent: MarkdownDocument } block)
             {
-                for (var i = _topLevelChildStart; i < RootPanel.Children.Count; i++)
-                    TopLevelBlocks.AddOrUpdate(RootPanel.Children[i], block);
+                for (var i = _topLevelChildStart; i < _topLevelPanel.Children.Count; i++)
+                    TopLevelBlocks.AddOrUpdate(_topLevelPanel.Children[i], block);
             }
         };
         ObjectWriteBefore += (_, obj) => _blockStarts.Push(
@@ -394,7 +424,8 @@ public class AvaloniaRenderer : RendererBase
     // The top-level block each control of a root panel was rendered for.
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Control, Block> TopLevelBlocks = new();
 
-    // How many controls the root panel held when the top-level block being written started.
+    // The panel the top-level block being written goes into, and how many controls it held when that block started.
+    private Panel _topLevelPanel;
     private int _topLevelChildStart;
 
     /// <summary>
@@ -466,6 +497,23 @@ public class AvaloniaRenderer : RendererBase
     /// container stack is the <see cref="RootPanel"/>, pushed by the constructor.
     /// </summary>
     internal void WriteTopLevel(Block block) => Write(block);
+
+    /// <summary>
+    /// Writes a top-level block into <paramref name="panel"/> instead of the root panel, without
+    /// resetting anything: the controls are then moved into the root panel, where the block belongs.
+    /// </summary>
+    internal void WriteTopLevel(Block block, Panel panel)
+    {
+        Push(panel);
+        try
+        {
+            Write(block);
+        }
+        finally
+        {
+            Pop();
+        }
+    }
 
     /// <summary>
     /// <c>true</c> while a streaming session renders the document, which may end in the middle of a
