@@ -347,6 +347,43 @@ public class MarkdownViewerSelectionAutoScrollTests
     }
 
     [AvaloniaFact]
+    public void Moving_within_an_edge_band_while_scrolling_asks_for_no_second_run_of_frames()
+    {
+        using var f = Show();
+        var requests = 0;
+        f.Viewer.RequestAnimationFrame = _ => requests++;
+        f.StartDrag(0);
+        f.Window.MouseMove(new Point(300, ViewerTop + 100), RawInputModifiers.LeftMouseButton);
+
+        f.Window.MouseMove(new Point(300, ViewerBottom + 26), RawInputModifiers.LeftMouseButton);
+        f.Window.MouseMove(new Point(300, ViewerBottom + 40), RawInputModifiers.LeftMouseButton);
+        f.Window.MouseMove(new Point(300, ViewerBottom - 4), RawInputModifiers.LeftMouseButton);
+
+        Assert.Equal(1, requests);
+    }
+
+    [AvaloniaFact]
+    public void Scrolling_again_after_moving_away_from_the_edges_starts_its_clock_again()
+    {
+        using var f = Show();
+        f.StartDrag(0);
+        f.Window.MouseMove(new Point(300, ViewerBottom + 26), RawInputModifiers.LeftMouseButton);
+        var scroll = f.Viewer.ActiveSelectionAutoScroll!;
+        scroll.Step(Start);
+        f.Window.MouseMove(new Point(300, ViewerTop + 100), RawInputModifiers.LeftMouseButton);
+        Assert.False(scroll.Step(Start + TimeSpan.FromMilliseconds(10)));
+
+        f.Window.MouseMove(new Point(300, ViewerBottom + 26), RawInputModifiers.LeftMouseButton);
+        var later = Start + TimeSpan.FromSeconds(5);
+        scroll.Step(later);
+        scroll.Step(later + TimeSpan.FromMilliseconds(20));
+
+        Assert.Same(scroll, f.Viewer.ActiveSelectionAutoScroll);
+        Assert.Equal(50 * SelectionAutoScroll.SpeedPerPixel * 0.02, f.ScrollViewer.Offset.Y, 3);
+    }
+
+    // The document leaves the old template's tree, which takes the pointer capture from it and so ends the drag.
+    [AvaloniaFact]
     public void A_new_template_stops_the_scrolling_of_the_old_one()
     {
         using var f = Show();

@@ -32,6 +32,7 @@ internal sealed class SelectionAutoScroll
     public const double MaxSpeed = 4000;
 
     // A frame late after a stall (e.g. a long layout pass) moves no further than this one would have.
+    // Stryker disable once all : a static initializer runs before any mutant is activated, so its mutants always survive
     private static readonly TimeSpan MaxStep = TimeSpan.FromMilliseconds(100);
 
     private readonly ScrollViewer _scrollViewer;
@@ -70,6 +71,7 @@ internal sealed class SelectionAutoScroll
     public void Stop()
     {
         IsRunning = false;
+        // Stryker disable once Statement : a stopped step asks for no frame anyway; this only lets the top level go
         _requestFrame = null;
     }
 
@@ -113,6 +115,7 @@ internal sealed class SelectionAutoScroll
         get
         {
             var height = _scrollViewer.Bounds.Height;
+            // Stryker disable once Equality : on the edge itself, the pointer is in the band either way
             var outside = Pointer.Y < 0 || Pointer.Y > height;
             return _leftEdgeBand || outside ? SpeedAt(Pointer.Y, height) : 0;
         }
@@ -127,6 +130,7 @@ internal sealed class SelectionAutoScroll
     internal static double SpeedAt(double y, double height)
     {
         var band = Math.Min(EdgeSize, height / 4);
+        // Stryker disable once Equality : at the inner edge of a band, the distance into it is zero either way
         var distance = y < band ? y - band : y > height - band ? y - (height - band) : 0;
         return Math.Clamp(distance * SpeedPerPixel, -MaxSpeed, MaxSpeed);
     }

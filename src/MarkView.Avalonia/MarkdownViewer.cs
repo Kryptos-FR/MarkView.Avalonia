@@ -1340,12 +1340,11 @@ public partial class MarkdownViewer : ContentControl
         {
             _scrollViewer.PropertyChanged -= OnScrollViewerPropertyChanged;
             LayoutUpdated -= OnLayoutUpdatedKeepAnchor;
+            // Stryker disable once Statement : subscribed twice, the handler only does again what it has just done
             LayoutUpdated -= OnLayoutUpdatedFollowDrag;
         }
         _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
         _scrollAnchor.Reset();
-        _selectionAutoScroll?.Stop();
-        _selectionAutoScroll = null;
         if (_scrollViewer is not null)
         {
             _scrollViewer.PropertyChanged += OnScrollViewerPropertyChanged;
