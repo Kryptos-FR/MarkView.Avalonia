@@ -2,9 +2,11 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 
@@ -31,6 +33,10 @@ public class MarkdownViewerIncrementalRenderingTests
 
         public DocumentSelectionLayer Layer =>
             Assert.IsType<DocumentSelectionLayer>(Assert.IsType<Grid>(Viewer.Content).Children[1]);
+
+        public LinkFocusTarget[] Targets => Viewer.GetVisualDescendants().OfType<LinkFocusTarget>().ToArray();
+
+        public IInputElement? Focused => Window.FocusManager?.GetFocusedElement();
 
         public void Dispose() => Window.Close();
     }
@@ -125,6 +131,65 @@ public class MarkdownViewerIncrementalRenderingTests
         await AsyncTestHelpers.PumpAsync();
 
         Assert.Equal(300, f.ScrollViewer.Offset.Y);
+    }
+
+    [AvaloniaFact]
+    public async Task Edit_from_one_block_to_several_keeps_the_scroll_offset()
+    {
+        var list = string.Join("\n", Enumerable.Range(0, 60).Select(i => $"- item {i}"));
+        using var f = Show(list);
+        await AsyncTestHelpers.PumpAsync();
+        f.ScrollViewer.Offset = new Vector(0, 300);
+        await AsyncTestHelpers.PumpAsync();
+
+        f.Viewer.Markdown = list.Replace("item 30", "item thirty", StringComparison.Ordinal) + "\n\nafter";
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.Equal(300, f.ScrollViewer.Offset.Y);
+    }
+
+    [AvaloniaFact]
+    public async Task Edit_from_several_blocks_to_one_keeps_the_scroll_offset()
+    {
+        var list = string.Join("\n", Enumerable.Range(0, 60).Select(i => $"- item {i}"));
+        using var f = Show(list + "\n\nafter");
+        await AsyncTestHelpers.PumpAsync();
+        f.ScrollViewer.Offset = new Vector(0, 300);
+        await AsyncTestHelpers.PumpAsync();
+
+        f.Viewer.Markdown = list.Replace("item 30", "item thirty", StringComparison.Ordinal);
+        await AsyncTestHelpers.PumpAsync();
+
+        Assert.Equal(300, f.ScrollViewer.Offset.Y);
+    }
+
+    [AvaloniaFact]
+    public void Focus_returns_to_the_viewer_when_its_block_is_rendered_again()
+    {
+        using var f = Show("[a](x)\n\nb");
+        f.Window.UpdateLayout();
+        Assert.True(f.Targets.Single().Focus());
+
+        f.Viewer.Markdown = "[a](x) more\n\nb";
+
+        Assert.True(f.Viewer.IsFocused);
+        Assert.Same(f.Viewer, f.Focused);
+    }
+
+    [AvaloniaFact]
+    public void Screen_readers_are_told_only_when_a_block_is_rendered_again()
+    {
+        using var f = Show("a\n\nb");
+        var peer = ControlAutomationPeer.CreatePeerForElement(f.Viewer);
+        var changes = 0;
+        peer.ChildrenChanged += (_, _) => changes++;
+
+        // A blank line more between two blocks keeps both.
+        f.Viewer.Markdown = "a\n\n\nb";
+        Assert.Equal(0, changes);
+
+        f.Viewer.Markdown = "a\n\n\nc";
+        Assert.Equal(1, changes);
     }
 
     [AvaloniaFact]
@@ -329,6 +394,19 @@ public class MarkdownViewerIncrementalRenderingTests
     }
 
     [AvaloniaFact]
+    public void Turned_off_and_on_again_the_next_text_renders_everything()
+    {
+        using var f = Show("a\n\nb");
+        var grid = f.Viewer.Content;
+
+        f.Viewer.IsIncrementalRenderingEnabled = false;
+        f.Viewer.IsIncrementalRenderingEnabled = true;
+        f.Viewer.Markdown = "a\n\nbe";
+
+        Assert.NotSame(grid, f.Viewer.Content);
+    }
+
+    [AvaloniaFact]
     public void Turned_on_the_next_text_renders_everything_once()
     {
         using var f = Show("a\n\nb", incremental: false);
@@ -375,6 +453,37 @@ public class MarkdownViewerIncrementalRenderingTests
         f.Viewer.SelectAll();
         Assert.Equal("a\nc", f.Viewer.GetSelectedText());
         Assert.Throws<InvalidOperationException>(() => session.Append("x"));
+    }
+
+    [AvaloniaFact]
+    public void Direct_set_during_a_session_renders_as_outside_one()
+    {
+        var capture = new RendererCapture();
+        using var f = Show("", configure: v =>
+        {
+            v.UseThinkingBlocks();
+            v.Extensions.Add(capture);
+        });
+        var session = f.Viewer.BeginStreaming();
+        session.Append("<think>\nidea");
+        session.ApplyPendingUpdate();
+
+        f.Viewer.Markdown = "<think>\nidea and more";
+
+        // Custom renderers see what they see outside a session, and an unclosed thinking block is no
+        // longer in progress.
+        var renderer = capture.Renderer!;
+        Assert.False(renderer.IsStreaming);
+        Assert.Equal(int.MaxValue, renderer.ProvisionalStart);
+        var header = f.Root.GetLogicalDescendants().OfType<FoldHeader>().Single();
+        Assert.DoesNotContain(new ThinkingBlockOptions().ThinkingTitle, MarkdownSelectableTextBlock.ExtractPlainText(header.Inlines!), StringComparison.Ordinal);
+    }
+
+    private sealed class RendererCapture : IMarkViewExtension
+    {
+        public AvaloniaRenderer? Renderer { get; private set; }
+
+        public void Register(AvaloniaRenderer renderer) => Renderer = renderer;
     }
 
     [AvaloniaFact]
