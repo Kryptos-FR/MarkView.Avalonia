@@ -8,6 +8,7 @@ site_project_description = "A Markdig-powered Markdown viewer control for Avalon
 site_project_baseurl = "https://kryptos-fr.github.io"
 site_project_basepath = "/MarkView.Avalonia"
 site_project_logo_path = "/img/markview-logo.svg"
+site_project_social_banner_path = "/img/social-preview.png"
 site_project_package_id = "MarkView.Avalonia"
 site_project_github_user = "Kryptos-FR"
 site_project_github_repo = "MarkView.Avalonia"
@@ -18,6 +19,11 @@ site_project_content_license_name = "CC BY-SA 4.0"
 site_project_content_license_url = "https://creativecommons.org/licenses/by-sa/4.0/"
 
 site_project_init
+
+# The project has no Twitter/X account, and the template's Twitter card always writes a twitter:site handle.
+# Keep only the card type: X and Discord read it for the large image, and fall back to the og:* tags.
+cards.twitter.enable = false
+html.head.metas.add '<meta name="twitter:card" content="summary_large_image">'
 
 with api.dotnet
   title = "MarkView.Avalonia API Reference"
