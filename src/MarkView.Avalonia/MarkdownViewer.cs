@@ -170,6 +170,12 @@ public partial class MarkdownViewer : ContentControl
         AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(IsLazyRenderingEnabled), true);
 
     /// <summary>
+    /// Defines the <see cref="IsVirtualizationEnabled"/> property.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsVirtualizationEnabledProperty =
+        AvaloniaProperty.Register<MarkdownViewer, bool>(nameof(IsVirtualizationEnabled));
+
+    /// <summary>
     /// Defines the <see cref="TableOfContentsMaxDepth"/> property.
     /// </summary>
     public static readonly StyledProperty<int> TableOfContentsMaxDepthProperty =
@@ -389,6 +395,23 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Gets or sets whether only the top-level blocks near the visible area are part of the visual tree: those
+    /// within one viewport height of it are styled, laid out and drawn, and the others take the height they had
+    /// when last shown, or an estimate, until they come near. A long document then opens and switches theme in
+    /// about the time a short one does, and uses a fraction of the memory. Selection, find, links, the table of
+    /// contents and copying still cover the whole document; a jump to an anchor, a find match or a link reached
+    /// with Tab brings its block in first. The scroll bar is approximate until the document has been scrolled
+    /// through, and screen readers see the blocks near the visible area only. Leave it off when the viewer is
+    /// rendered to a bitmap, or when an application walks the document's controls in the visual tree.
+    /// Defaults to <c>false</c>.
+    /// </summary>
+    public bool IsVirtualizationEnabled
+    {
+        get => GetValue(IsVirtualizationEnabledProperty);
+        set => SetValue(IsVirtualizationEnabledProperty, value);
+    }
+
+    /// <summary>
     /// Gets or sets the maximum heading level included in <see cref="TableOfContents"/>.
     /// Headings deeper than this level, and their descendants, are excluded. Defaults to 6 (no limit).
     /// </summary>
@@ -495,6 +518,7 @@ public partial class MarkdownViewer : ContentControl
         IsImageZoomEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         DetectTextDirectionProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         IsLazyRenderingEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        IsVirtualizationEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         IsIncrementalRenderingEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnIncrementalRenderingChanged());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
@@ -682,7 +706,7 @@ public partial class MarkdownViewer : ContentControl
     /// </summary>
     private AvaloniaRenderer CreateRenderer()
     {
-        var renderer = new AvaloniaRenderer
+        var renderer = new AvaloniaRenderer(IsVirtualizationEnabled ? new VirtualizingBlockPanel() : new StackPanel())
         {
             BaseUri = BaseUri ?? InferBaseUri(Source),
             ImageResizeMode = ImageResizeMode,
@@ -746,6 +770,7 @@ public partial class MarkdownViewer : ContentControl
         contentGrid.Children.Add(layer);
         contentGrid.Children.Add(linkLayer);
         layer.Document = renderer.RootPanel;
+        linkLayer.Document = renderer.RootPanel;
         // Tab moves through the document in reading order (ICustomKeyboardNavigation.GetNext),
         // so default navigation must not walk into it in visual-tree order as well.
         KeyboardNavigation.SetTabNavigation(contentGrid, KeyboardNavigationMode.None);
@@ -1254,8 +1279,9 @@ public partial class MarkdownViewer : ContentControl
         const double margin = 16;
         var textBlock = match.Entry.TextBlock!;
 
-        // A match inside a collapsed block has no position until the block is expanded and laid out.
-        if (RevealFolded(textBlock))
+        // A match inside a collapsed block, or in a block left out of the visual tree, has no position until the
+        // block is expanded, attached and laid out.
+        if (Realize(textBlock) | RevealFolded(textBlock))
             textBlock.UpdateLayout();
 
         // A viewer that is not shown has laid nothing out, so there is nothing to scroll.
@@ -1411,6 +1437,13 @@ public partial class MarkdownViewer : ContentControl
     }
 
     /// <summary>
+    /// Attaches the top-level block that holds <paramref name="control"/> when <see cref="IsVirtualizationEnabled"/>
+    /// left it out of the visual tree, and keeps it attached until it has been scrolled into view. Returns
+    /// <c>true</c> when it was left out.
+    /// </summary>
+    private bool Realize(Visual control) => DocumentRoot is VirtualizingBlockPanel panel && panel.Realize(control);
+
+    /// <summary>
     /// Expands the collapsed alerts, details elements and heading sections that hide <paramref name="control"/>.
     /// Returns <c>true</c> when one was expanded.
     /// </summary>
@@ -1442,8 +1475,9 @@ public partial class MarkdownViewer : ContentControl
         // While the viewer itself has the focus, Tab goes on from here.
         _tabStart = control;
 
-        // A heading inside a collapsed alert, details element or section has no position until it is expanded and laid out.
-        if (RevealFolded(control))
+        // A heading inside a collapsed alert, details element or section, or in a block left out of the visual tree,
+        // has no position until it is expanded, attached and laid out.
+        if (Realize(control) | RevealFolded(control))
             control.UpdateLayout();
 
         if (_scrollViewer is null)
