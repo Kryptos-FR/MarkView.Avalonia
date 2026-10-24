@@ -258,6 +258,9 @@ public sealed class MermaidBlockRenderer(MermaidStyle style = MermaidStyle.Quiet
 
     private static void WriteStandardCodeBlock(AvaloniaRenderer renderer, FencedCodeBlock obj)
     {
+        if (GrowingCodeBlock.TryWrite(renderer, obj, renderer.CodeHighlighter))
+            return;
+
         var language = obj.Info;
         var textBlock = new TextBlock { TextWrapping = TextWrapping.NoWrap };
         var border = new Border { Child = textBlock };
