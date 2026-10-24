@@ -232,10 +232,12 @@ An image that cannot be loaded shows a placeholder with its alt text instead:
 
 ## SVG Image
 
-The image below is rendered from an inline `data:image/svg+xml;base64` URI using the
-`MarkView.Avalonia.Svg` extension:
+The `MarkView.Avalonia.Svg` extension renders SVG images inline in the document, as `data:image/svg+xml` URIs, or from a file. Like the bitmaps above, a relative path resolves against the folder of the document, so `shapes.svg` is read from `avares://MarkView.Avalonia.Demo/Assets/shapes.svg`:
 
-![Colorful shapes on dark background](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgZmlsbD0iIzFlMWUyZSIvPgogIDxjaXJjbGUgY3g9IjQwIiBjeT0iNjAiIHI9IjI4IiBmaWxsPSIjODliNGZhIi8+CiAgPHJlY3QgeD0iODAiIHk9IjMyIiB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIGZpbGw9IiNhNmUzYTEiLz4KICA8cG9seWdvbiBwb2ludHM9IjE2MCwzMiAxNDAsOTIgMTgwLDkyIiBmaWxsPSIjZmFiMzg3Ii8+Cjwvc3ZnPg==)
+| Source          | Syntax                                      | Result |
+|-----------------|---------------------------------------------|----------------------------------------------|
+| Inline data URI | `![alt](data:image/svg+xml;base64,PHN2Zy…)` | ![Colorful shapes on dark background](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgZmlsbD0iIzFlMWUyZSIvPgogIDxjaXJjbGUgY3g9IjQwIiBjeT0iNjAiIHI9IjI4IiBmaWxsPSIjODliNGZhIi8+CiAgPHJlY3QgeD0iODAiIHk9IjMyIiB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIGZpbGw9IiNhNmUzYTEiLz4KICA8cG9seWdvbiBwb2ludHM9IjE2MCwzMiAxNDAsOTIgMTgwLDkyIiBmaWxsPSIjZmFiMzg3Ii8+Cjwvc3ZnPg==) |
+| Embedded file   | `![alt](shapes.svg)`                        | ![The same shapes in reverse order](shapes.svg) |
 
 ---
 
