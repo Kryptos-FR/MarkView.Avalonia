@@ -13,7 +13,8 @@ Styled properties can be set in a style for every viewer of an application. The 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `Markdown` | `string?` | `null` | The text to render. Re-renders. See [Displaying documents](../guides/displaying-documents.md). |
-| `Source` | `Uri?` | `null` | A document to load and render (`avares://`, `file://`, `http`, `https`); wins over `Markdown`. Re-renders. See [Loading a file or a URL](../guides/displaying-documents.md#loading-a-file-or-a-url). |
+| `Source` | `Uri?` | `null` | A document to load and render (`avares://`, `file://`, `http`, `https`, and whatever `ResourceResolver` opens); wins over `Markdown`. Re-renders. See [Loading a file or a URL](../guides/displaying-documents.md#loading-a-file-or-a-url). |
+| `ResourceResolver` | `IResourceResolver?` | `null` | Opens the document of `Source` and its images before the viewer's own loading, e.g. from a zip archive or a server that needs credentials; `null` falls back to `MarkdownViewerDefaults.ResourceResolver`. Loads `Source` again and re-renders. See [Reading from your own storage](../guides/displaying-documents.md#reading-from-your-own-storage). |
 | `BaseUri` | `Uri?` | `null` | Base address of relative links and images; the folder of `Source` when not set. Re-renders. |
 | `Pipeline` | `MarkdownPipeline?` | `null` | The Markdig pipeline; `null` falls back to `MarkdownViewerDefaults.Pipeline`, then to `UseGitHubExtensions()`. Re-renders. See [Markdown and the pipeline](../guides/markdown.md). |
 | `Extensions` | `IList<IMarkViewExtension>` | empty | The viewer's extensions, registered after `MarkdownViewerDefaults.Extensions`. Not a styled property. See [Choosing packages](../packages.md). |
@@ -89,5 +90,6 @@ Static settings for every viewer of the application. See [Settings for every vie
 |--------|-------------|
 | `Pipeline` | The pipeline of viewers without their own. |
 | `Extensions` | Extensions registered on every viewer, before its own. The packages add `AddTextMateHighlighting()`, `AddSvg()`, `AddMermaid()`, `AddMath()`, and the core `AddFenceRenderer()`. |
+| `ResourceResolver` | The resource resolver of viewers without their own. |
 | `ImageCacheSize` | Size of the shared image cache, in bytes (100 MB by default; 0 turns it off). See [Image cache](../guides/images.md#image-cache). |
 | `ClearImageCache()` | Empties the image cache. |

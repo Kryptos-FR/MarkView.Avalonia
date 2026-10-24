@@ -82,7 +82,7 @@ Enable an extension on one viewer (`viewer.UseMermaid()`), or on every viewer of
 
 ## Versioning
 
-Versions read `12.MAJOR.MINOR`: `12` is the Avalonia version, the second number changes with breaking changes, and the third with features and fixes. To receive only compatible updates, use a floating version such as `12.4.*`. See [Versioning](https://kryptos-fr.github.io/MarkView.Avalonia/reference/versioning/) and, when upgrading from 12.3, [Upgrading to 12.4](https://kryptos-fr.github.io/MarkView.Avalonia/upgrading/).
+Versions read `12.MAJOR.MINOR`: `12` is the Avalonia version, the second number changes with breaking changes, and the third with features and fixes. To receive only compatible updates, use a floating version such as `12.4.*`. See [Versioning](https://kryptos-fr.github.io/MarkView.Avalonia/reference/versioning/) and, when upgrading from an earlier version, [Upgrading](https://kryptos-fr.github.io/MarkView.Avalonia/upgrading/).
 
 ## Contributing
 

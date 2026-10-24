@@ -91,7 +91,7 @@ MarkdownViewerDefaults.ImageCacheSize = 200L * 1024 * 1024; // bytes; 0 turns th
 MarkdownViewerDefaults.ClearImageCache();                    // after the images behind some addresses changed
 ```
 
-- An image is cached under its resolved address and the types of the [image loaders](custom-extensions.md#writing-a-custom-image-loader) in use. A custom loader whose result depends on more than the address (settings passed to its constructor, for instance) should use addresses that tell those results apart, or clear the cache when the settings change.
+- An image is cached under its resolved address, the types of the [image loaders](custom-extensions.md#writing-a-custom-image-loader) in use and the [resource resolver](displaying-documents.md#reading-from-your-own-storage) they read through. The cache keeps that resolver alive as long as it holds images read through it. A custom loader whose result depends on more than the address (settings passed to its constructor, for instance) should use addresses that tell those results apart, or clear the cache when the settings change.
 - A bitmap weighs 4 bytes per pixel (a 1920×1080 photo is about 8 MB); any other image, such as an SVG drawing, as much as a bitmap of its size.
 - Past `ImageCacheSize`, the least recently used images are evicted first. They are never disposed, since a viewer may still show them. Lowering the size evicts the images beyond it at once.
 - An image heavier than a tenth of the size (10 MB by default) is shown but not cached, so one large picture never pushes the others out.

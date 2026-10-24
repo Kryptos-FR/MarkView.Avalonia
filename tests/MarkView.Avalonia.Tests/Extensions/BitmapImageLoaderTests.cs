@@ -39,12 +39,17 @@ public class BitmapImageLoaderTests
         Assert.True(_loader.CanLoad("https://example.com/image.png"));
 
     [Fact]
-    public void CanLoad_file_url_returns_false() =>
-        Assert.False(_loader.CanLoad("file:///C:/images/photo.png"));
+    public void CanLoad_file_url_returns_true() =>
+        Assert.True(_loader.CanLoad("file:///C:/images/photo.png"));
+
+    // A resource resolver may open any scheme.
+    [Fact]
+    public void CanLoad_custom_scheme_url_returns_true() =>
+        Assert.True(_loader.CanLoad("zip://manual/images/photo.png"));
 
     [Fact]
-    public void CanLoad_ftp_url_returns_false() =>
-        Assert.False(_loader.CanLoad("ftp://example.com/image.png"));
+    public void CanLoad_data_uri_that_is_not_an_image_returns_false() =>
+        Assert.False(_loader.CanLoad("data:text/plain,hello"));
 
     [Fact]
     public void CanLoad_relative_path_returns_false() =>
@@ -153,7 +158,56 @@ public class BitmapImageLoaderTests
         Assert.IsType<Bitmap>(result);
     }
 
+    // LoadAsync — through a resource resolver
+
+    [AvaloniaFact]
+    public async Task LoadAsync_reads_a_non_seekable_stream_from_the_resolver()
+    {
+        using var asset = AssetLoader.Open(new Uri("avares://MarkView.Avalonia.Tests/TestAssets/pixel.png"));
+        using var bytes = new MemoryStream();
+        asset.CopyTo(bytes);
+        var resolver = new StreamResolver(() => new NonSeekableStream(new MemoryStream(bytes.ToArray())));
+
+        var result = await _loader.LoadAsync("zip://manual/pixel.png", resolver, TestContext.Current.CancellationToken);
+
+        Assert.IsType<Bitmap>(result);
+    }
+
+    [Fact]
+    public async Task LoadAsync_returns_null_when_the_resolver_opens_nothing()
+    {
+        var result = await _loader.LoadAsync("zip://manual/pixel.png", new StreamResolver(() => null), TestContext.Current.CancellationToken);
+
+        Assert.Null(result);
+    }
+
     // Helpers
+
+    private sealed class StreamResolver(Func<Stream?> open) : IResourceResolver
+    {
+        public Task<Stream?> OpenAsync(Uri uri, CancellationToken cancellationToken = default) => Task.FromResult(open());
+    }
+
+    // A network stream, say: readable once, from the start.
+    private sealed class NonSeekableStream(Stream inner) : Stream
+    {
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) inner.Dispose();
+            base.Dispose(disposing);
+        }
+    }
 
     private static string CreatePngDataUri()
     {

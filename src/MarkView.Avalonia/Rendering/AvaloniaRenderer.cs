@@ -37,6 +37,17 @@ public class AvaloniaRenderer : RendererBase
     public Uri? BaseUri { get; set; }
 
     /// <summary>
+    /// Opens the content of the images the document shows, before the renderer's own loading of
+    /// <c>avares://</c>, <c>file://</c> and <c>http(s)://</c> URLs, which it falls back to when the resolver
+    /// returns <c>null</c>. <c>null</c> (the default) uses only the renderer's own loading.
+    /// </summary>
+    public IResourceResolver? ResourceResolver { get; set; }
+
+    /// <summary>The resolver image loaders read through: <see cref="ResourceResolver"/>, then the renderer's own loading.</summary>
+    internal IResourceResolver EffectiveResourceResolver =>
+        ResourceResolver is { } resolver ? new FallbackResourceResolver(resolver) : DefaultResourceResolver.Instance;
+
+    /// <summary>
     /// Controls how images without an explicit "=WxH" size hint are scaled.
     /// Defaults to <see cref="ImageResizeMode.ScaleDownToFit"/>.
     /// </summary>
