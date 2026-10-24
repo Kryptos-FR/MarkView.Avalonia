@@ -31,7 +31,7 @@ Images keep the standard Markdown syntax:
 ![Inline](data:image/svg+xml;base64,PHN2Zy8+)
 ```
 
-Addresses ending in `.svg`, `data:image/svg+xml` URIs and badge services that serve SVG without an `.svg` address all work; anything that is not SVG is left to the bitmap loader. An SVG image can be saved as SVG or PNG from the lightbox or the context menu.
+Addresses ending in `.svg` (web addresses and embedded `avares://` resources), `data:image/svg+xml` URIs and badge services that serve SVG without an `.svg` address all work; anything that is not SVG is left to the bitmap loader. An SVG image can be saved as SVG or PNG from the lightbox or the context menu.
 
 ## Documentation
 

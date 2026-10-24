@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Avalonia.Headless.XUnit;
+using Avalonia.Platform;
 using Avalonia.Svg.Skia;
 using MarkView.Avalonia.Extensions;
 using MarkView.Avalonia.Rendering;
@@ -19,6 +20,8 @@ public class SvgImageLoaderTests
     [InlineData("data:image/png;base64,abc", false)]
     [InlineData("https://example.com/icon.SVG", true)]   // case-insensitive extension
     [InlineData("relative/path/image.svg", true)]
+    [InlineData("avares://App/Assets/logo.svg", true)]
+    [InlineData("avares://App/Assets/logo.png", false)]  // left to the bitmap loader
     [InlineData("", false)]
     public void CanLoad_returns_expected_value(string url, bool expected)
     {
@@ -130,6 +133,40 @@ public class SvgImageLoaderTests
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             new SvgImageLoader().LoadAsync("data:image/svg+xml;base64,PHN2Zy8+", cts.Token));
+    }
+
+    [AvaloniaFact]
+    public async Task LoadAsync_with_avares_uri_returns_SvgImage()
+    {
+        var uri = new Uri("avares://MarkView.Avalonia.Svg.Tests/TestAssets/icon.svg");
+
+        var image = await new SvgImageLoader().LoadAsync(uri.ToString(), TestContext.Current.CancellationToken);
+
+        var svg = Assert.IsType<SvgImage>(image);
+        Assert.NotNull(svg.Source);
+        // Saved as its own file.
+        using var asset = new MemoryStream();
+        using (var stream = AssetLoader.Open(uri))
+            stream.CopyTo(asset);
+        Assert.Equal(asset.ToArray(), ImageExport.GetSvg(svg));
+    }
+
+    [AvaloniaTheory]
+    [InlineData("avares://MarkView.Avalonia.Svg.Tests/TestAssets/missing.svg")]
+    [InlineData("avares://MarkView.Avalonia.Svg.Tests/TestAssets/not-svg.svg")]
+    public async Task LoadAsync_avares_failures_return_null_so_the_bitmap_loader_can_try(string url)
+    {
+        Assert.Null(await new SvgImageLoader().LoadAsync(url, TestContext.Current.CancellationToken));
+    }
+
+    [AvaloniaFact]
+    public async Task LoadAsync_cancelled_avares_load_propagates_cancellation()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            new SvgImageLoader().LoadAsync("avares://MarkView.Avalonia.Svg.Tests/TestAssets/icon.svg", cts.Token));
     }
 
     private sealed class DummyLoader : IImageLoader
