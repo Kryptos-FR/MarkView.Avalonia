@@ -157,13 +157,13 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
             var start = _tabStart;
             _tabStart = null;
             if (start?.TranslatePoint(default, this) is not { } origin)
-                return forward && stops.Count > 0 ? (true, stops[0]) : (false, null);
+                return forward && stops.Count > 0 ? (true, Reachable(stops[0])) : (false, null);
             // The first stop at or below the anchor; stops are in reading order.
             var next = stops.FindIndex(stop => ((Visual)stop).TranslatePoint(default, this)?.Y >= origin.Y);
             if (next < 0) next = stops.Count;
             if (forward)
-                return (true, next < stops.Count ? stops[next] : null);
-            return next > 0 ? (true, stops[next - 1]) : (false, null);
+                return (true, next < stops.Count ? Reachable(stops[next]) : null);
+            return next > 0 ? (true, Reachable(stops[next - 1])) : (false, null);
         }
 
         var index = stops.IndexOf(element);
@@ -171,13 +171,28 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
         {
             // Default navigation from outside the viewer just landed on it, going backwards.
             var fromOutside = element is not Visual visual || !this.IsVisualAncestorOf(visual);
-            return !forward && fromOutside && stops.Count > 0 ? (true, stops[^1]) : (false, null);
+            return !forward && fromOutside && stops.Count > 0 ? (true, Reachable(stops[^1])) : (false, null);
         }
 
         if (forward)
             // Past the last stop, (true, null) continues default navigation after the viewer.
-            return (true, index + 1 < stops.Count ? stops[index + 1] : null);
-        return (true, index > 0 ? stops[index - 1] : this);
+            return (true, index + 1 < stops.Count ? Reachable(stops[index + 1]) : null);
+        return (true, index > 0 ? Reachable(stops[index - 1]) : this);
+    }
+
+    /// <summary>
+    /// <paramref name="stop"/>, with the block that holds it attached and laid out when
+    /// <see cref="IsVirtualizationEnabled"/> left it out of the visual tree, so that it can take the focus and be
+    /// scrolled into view. A link's focus target is laid out over its text after the text is.
+    /// </summary>
+    private IInputElement Reachable(IInputElement stop)
+    {
+        if (Realize(stop is LinkFocusTarget target ? target.TextBlock : (Visual)stop))
+        {
+            UpdateLayout();
+            UpdateLayout();
+        }
+        return stop;
     }
 
     internal void OnPlatformColorValuesChanged(object? sender, PlatformColorValues e)
@@ -215,8 +230,15 @@ public partial class MarkdownViewer : ICustomKeyboardNavigation
     /// </summary>
     private void UpdateThemes()
     {
-        if (_themes?.Refresh() is { } changed)
-            ThemeLookup.Replace(this, changed);
+        if (_themes?.Refresh() is not { } changed)
+            return;
+        ThemeLookup.Replace(this, changed);
+        // The blocks left out of the visual tree are styled with their new themes once they are attached.
+        if (DocumentRoot is VirtualizingBlockPanel panel)
+        {
+            foreach (var block in panel.DetachedChildren)
+                ThemeLookup.ReplaceDetached(block, changed);
+        }
     }
 
     /// <summary>
