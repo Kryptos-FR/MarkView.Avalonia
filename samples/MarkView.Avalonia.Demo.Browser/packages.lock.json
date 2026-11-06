@@ -279,8 +279,8 @@
         "type": "Project",
         "dependencies": {
           "MarkView.Avalonia": "[1.0.0, )",
-          "TextMateSharp": "[2.0.4, )",
-          "TextMateSharp.Grammars": "[2.0.4, )"
+          "TextMateSharp": "[2.0.5, )",
+          "TextMateSharp.Grammars": "[2.0.5, )"
         }
       },
       "Avalonia": {
@@ -377,20 +377,20 @@
       },
       "TextMateSharp": {
         "type": "CentralTransitive",
-        "requested": "[2.0.4, )",
-        "resolved": "2.0.4",
-        "contentHash": "5Pvn+A4zb1IF+ACAVhgw1aGf9kTyx6j7v5hdup7nCS89Nzby8KQAlCfQ54VC/GAsEoQwh4zKa5MKlAaql8nkPg==",
+        "requested": "[2.0.5, )",
+        "resolved": "2.0.5",
+        "contentHash": "nzoxbQsoB1jNtZVTF+bwc4/hbC3L8RDvWkjvV00p5o0MzViyHYPFxWo3wUXIrpH00it6cEFw7h6hbT9jJX0aeg==",
         "dependencies": {
           "Onigwrap": "1.0.11"
         }
       },
       "TextMateSharp.Grammars": {
         "type": "CentralTransitive",
-        "requested": "[2.0.4, )",
-        "resolved": "2.0.4",
-        "contentHash": "jzOY00q5u5Vs4L9n2m2PnRZDGwWt2uwkOLh7qlVdCx1kkGSn5eaW5XgnYCyTzEbsCwLV2xlEolnNkr/wuIMAbA==",
+        "requested": "[2.0.5, )",
+        "resolved": "2.0.5",
+        "contentHash": "s7YZZokJxVtKeWyU3xc11lDJwZpKZfRZt82+5YVALZr+R4bhhxd9o2yDqyywyAMQvYBMIug7IDcmGa/T/MUXbA==",
         "dependencies": {
-          "TextMateSharp": "2.0.4"
+          "TextMateSharp": "2.0.5"
         }
       }
     },
