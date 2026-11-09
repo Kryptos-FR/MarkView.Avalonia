@@ -14,12 +14,12 @@
       },
       "SkiaSharp": {
         "type": "Direct",
-        "requested": "[4.153.1, )",
-        "resolved": "4.153.1",
-        "contentHash": "TghYLOUaP3q6rTjQw7U9uQaaXh8lEs9rfA1U7/VtmyAptVDtj/SmjtcWzFWmcC/VMWxe3QgbV9uyvqDL7ySFtQ==",
+        "requested": "[4.154.1, )",
+        "resolved": "4.154.1",
+        "contentHash": "N4eQOPS2kuRlV5HhT8d2gH3lg4+/4tcw7fLunwgrxZ8nE68sYVjvIkoA9pdKikG3pZR65u2hJUn63o5TtuU4gA==",
         "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "4.153.1",
-          "SkiaSharp.NativeAssets.macOS": "4.153.1"
+          "SkiaSharp.NativeAssets.Win32": "4.154.1",
+          "SkiaSharp.NativeAssets.macOS": "4.154.1"
         }
       },
       "Avalonia.BuildServices": {
@@ -60,13 +60,13 @@
       },
       "SkiaSharp.NativeAssets.macOS": {
         "type": "Transitive",
-        "resolved": "4.153.1",
-        "contentHash": "YTojWeWIhnpF7uC8vpMxB5wRONKkDB2t3r/nNPA3DL2pgj9fqMXRevA/rIanYazWnco4jo1ufgp3HkXuh1Tz8A=="
+        "resolved": "4.154.1",
+        "contentHash": "KM+zd3av907y9HsXeOyfuHY2cce3W6wOgvLKopUHKjUXanrKQHkgcH7urrG1KVFJD0Fn4Vo9aRvtO1kVr71THA=="
       },
       "SkiaSharp.NativeAssets.Win32": {
         "type": "Transitive",
-        "resolved": "4.153.1",
-        "contentHash": "Yqg6rChTVh0BUE8QQxtOA3uUBnihfgID4yex/AvDa0+os2bVcBjmI3Qj9tnOB+R1hd/Jry1Gwl8qw5JI9HZG8Q=="
+        "resolved": "4.154.1",
+        "contentHash": "neuzXDRuJD+3Gv30fGNMTI4izUb69QFm+ugyOBGP0ysGX/uXn9EarYeG0WuHqSgl5lfiQzBJXGtMELFvm15OYw=="
       },
       "markview.avalonia": {
         "type": "Project",
