@@ -44,9 +44,9 @@
       },
       "SkiaSharp.NativeAssets.Linux": {
         "type": "Direct",
-        "requested": "[4.154.0, )",
-        "resolved": "4.154.0",
-        "contentHash": "OCnXgj54PXqd0S9FXbOUIlJEuJF4SWKK/rr5R2KnixaUayLQDNu3W/g0vOeFapxarO/LxmYIvC+nx2arxNjiiQ=="
+        "requested": "[4.154.1, )",
+        "resolved": "4.154.1",
+        "contentHash": "/TIvGTt+C4Fo/Ww4ilcZb1Sp+xcyqhkts8ARIGjm9hBOqsASXqcemRFURZzzzh/XLa85fbRwkB2HemH4S8VpIg=="
       },
       "xunit.v3.mtp-v2": {
         "type": "Direct",
@@ -223,13 +223,13 @@
       },
       "SkiaSharp.NativeAssets.macOS": {
         "type": "Transitive",
-        "resolved": "4.154.0",
-        "contentHash": "GgYL4ML3HT4CW33oXMHdp7BSRU87bPUfWBXdYgNduGlt4GAbAM/3eXcjjUdilS0H1r2R5iBhwvExCfSYGwFKlw=="
+        "resolved": "4.154.1",
+        "contentHash": "KM+zd3av907y9HsXeOyfuHY2cce3W6wOgvLKopUHKjUXanrKQHkgcH7urrG1KVFJD0Fn4Vo9aRvtO1kVr71THA=="
       },
       "SkiaSharp.NativeAssets.Win32": {
         "type": "Transitive",
-        "resolved": "4.154.0",
-        "contentHash": "GXgoY77GCXdPcveNAmy8o3gVit8sp6YtnI88h5camLPfihjulwJUajZXKhgVuZ8RhuwSTgfyt/00Dx8HRUSeAA=="
+        "resolved": "4.154.1",
+        "contentHash": "neuzXDRuJD+3Gv30fGNMTI4izUb69QFm+ugyOBGP0ysGX/uXn9EarYeG0WuHqSgl5lfiQzBJXGtMELFvm15OYw=="
       },
       "Svg.Animation": {
         "type": "Transitive",
@@ -353,7 +353,7 @@
         "type": "Project",
         "dependencies": {
           "MarkView.Avalonia": "[1.0.0, )",
-          "SkiaSharp": "[4.154.0, )",
+          "SkiaSharp": "[4.154.1, )",
           "Svg.Controls.Skia.Avalonia": "[12.0.0.15, )"
         }
       },
@@ -385,17 +385,17 @@
       },
       "SkiaSharp": {
         "type": "CentralTransitive",
-        "requested": "[4.154.0, )",
-        "resolved": "4.154.0",
-        "contentHash": "R3BuszJ3tUFmni37nZIRawXL0yx+XHyx7xi1716/0TybuEQFhnBx48Ig3rFpeVFQVytpGpJZZ+NLW9d9UPG7EA==",
+        "requested": "[4.154.1, )",
+        "resolved": "4.154.1",
+        "contentHash": "N4eQOPS2kuRlV5HhT8d2gH3lg4+/4tcw7fLunwgrxZ8nE68sYVjvIkoA9pdKikG3pZR65u2hJUn63o5TtuU4gA==",
         "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "4.154.0",
-          "SkiaSharp.NativeAssets.macOS": "4.154.0"
+          "SkiaSharp.NativeAssets.Win32": "4.154.1",
+          "SkiaSharp.NativeAssets.macOS": "4.154.1"
         }
       },
       "SkiaSharp.NativeAssets.WebAssembly": {
         "type": "CentralTransitive",
-        "requested": "[4.154.0, )",
+        "requested": "[4.154.1, )",
         "resolved": "3.119.3-preview.1.1",
         "contentHash": "Gzvr/fcJZODWNoLVBAIiM8NKudvZ9yL6WHb87fk7iadio9BWQR7GS0fUvWvE3kYaRAAutsjPdGAnkDR0ujlVDw=="
       },

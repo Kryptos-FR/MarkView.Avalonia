@@ -29,9 +29,9 @@
       },
       "SkiaSharp.NativeAssets.WebAssembly": {
         "type": "Direct",
-        "requested": "[4.153.1, )",
-        "resolved": "4.153.1",
-        "contentHash": "F9pVDw6tl6n657k4cunNExm2T0dPc2HfauR5nkKUBNCN1nnpKnfQ+4Chtzc6WVhmARarh/E7Knrghcvwus+Yjw=="
+        "requested": "[4.154.1, )",
+        "resolved": "4.154.1",
+        "contentHash": "5UZ5hl5faRScDuaBog7QKZ3Qmft1HddWjcPXa/qypVsFOs0sZY/IFRpZLiJ+98bGBGE7guQaQ5iiHgODXU03iA=="
       },
       "Avalonia.BuildServices": {
         "type": "Transitive",
@@ -163,13 +163,13 @@
       },
       "SkiaSharp.NativeAssets.macOS": {
         "type": "Transitive",
-        "resolved": "4.153.1",
-        "contentHash": "YTojWeWIhnpF7uC8vpMxB5wRONKkDB2t3r/nNPA3DL2pgj9fqMXRevA/rIanYazWnco4jo1ufgp3HkXuh1Tz8A=="
+        "resolved": "4.154.1",
+        "contentHash": "KM+zd3av907y9HsXeOyfuHY2cce3W6wOgvLKopUHKjUXanrKQHkgcH7urrG1KVFJD0Fn4Vo9aRvtO1kVr71THA=="
       },
       "SkiaSharp.NativeAssets.Win32": {
         "type": "Transitive",
-        "resolved": "4.153.1",
-        "contentHash": "Yqg6rChTVh0BUE8QQxtOA3uUBnihfgID4yex/AvDa0+os2bVcBjmI3Qj9tnOB+R1hd/Jry1Gwl8qw5JI9HZG8Q=="
+        "resolved": "4.154.1",
+        "contentHash": "neuzXDRuJD+3Gv30fGNMTI4izUb69QFm+ugyOBGP0ysGX/uXn9EarYeG0WuHqSgl5lfiQzBJXGtMELFvm15OYw=="
       },
       "Sugiyama": {
         "type": "Transitive",
@@ -255,7 +255,7 @@
         "dependencies": {
           "CSharpMath.SkiaSharp": "[0.5.1, )",
           "MarkView.Avalonia": "[1.0.0, )",
-          "SkiaSharp": "[4.153.1, )"
+          "SkiaSharp": "[4.154.1, )"
         }
       },
       "markview.avalonia.mermaid": {
@@ -263,7 +263,7 @@
         "dependencies": {
           "MarkView.Avalonia": "[1.0.0, )",
           "Mermaider": "[0.15.1, )",
-          "SkiaSharp": "[4.153.1, )",
+          "SkiaSharp": "[4.154.1, )",
           "Svg.Controls.Skia.Avalonia": "[12.0.0.15, )"
         }
       },
@@ -271,7 +271,7 @@
         "type": "Project",
         "dependencies": {
           "MarkView.Avalonia": "[1.0.0, )",
-          "SkiaSharp": "[4.153.1, )",
+          "SkiaSharp": "[4.154.1, )",
           "Svg.Controls.Skia.Avalonia": "[12.0.0.15, )"
         }
       },
@@ -350,17 +350,17 @@
       },
       "SkiaSharp": {
         "type": "CentralTransitive",
-        "requested": "[4.153.1, )",
-        "resolved": "4.153.1",
-        "contentHash": "TghYLOUaP3q6rTjQw7U9uQaaXh8lEs9rfA1U7/VtmyAptVDtj/SmjtcWzFWmcC/VMWxe3QgbV9uyvqDL7ySFtQ==",
+        "requested": "[4.154.1, )",
+        "resolved": "4.154.1",
+        "contentHash": "N4eQOPS2kuRlV5HhT8d2gH3lg4+/4tcw7fLunwgrxZ8nE68sYVjvIkoA9pdKikG3pZR65u2hJUn63o5TtuU4gA==",
         "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "4.153.1",
-          "SkiaSharp.NativeAssets.macOS": "4.153.1"
+          "SkiaSharp.NativeAssets.Win32": "4.154.1",
+          "SkiaSharp.NativeAssets.macOS": "4.154.1"
         }
       },
       "SkiaSharp.NativeAssets.Linux": {
         "type": "CentralTransitive",
-        "requested": "[4.153.1, )",
+        "requested": "[4.154.1, )",
         "resolved": "4.148.0",
         "contentHash": "diba2vLeoKmWVkVTdXYOG14c7+s5FsH/AQZ5UPiFLRwLKgrCQNJPLKw8q60HzfOcJt+t/blv+1xkinqd5ZjX5A=="
       },
@@ -417,17 +417,17 @@
       },
       "SkiaSharp.NativeAssets.macOS": {
         "type": "Transitive",
-        "resolved": "4.153.1",
-        "contentHash": "YTojWeWIhnpF7uC8vpMxB5wRONKkDB2t3r/nNPA3DL2pgj9fqMXRevA/rIanYazWnco4jo1ufgp3HkXuh1Tz8A=="
+        "resolved": "4.154.1",
+        "contentHash": "KM+zd3av907y9HsXeOyfuHY2cce3W6wOgvLKopUHKjUXanrKQHkgcH7urrG1KVFJD0Fn4Vo9aRvtO1kVr71THA=="
       },
       "SkiaSharp.NativeAssets.Win32": {
         "type": "Transitive",
-        "resolved": "4.153.1",
-        "contentHash": "Yqg6rChTVh0BUE8QQxtOA3uUBnihfgID4yex/AvDa0+os2bVcBjmI3Qj9tnOB+R1hd/Jry1Gwl8qw5JI9HZG8Q=="
+        "resolved": "4.154.1",
+        "contentHash": "neuzXDRuJD+3Gv30fGNMTI4izUb69QFm+ugyOBGP0ysGX/uXn9EarYeG0WuHqSgl5lfiQzBJXGtMELFvm15OYw=="
       },
       "SkiaSharp.NativeAssets.Linux": {
         "type": "CentralTransitive",
-        "requested": "[4.153.1, )",
+        "requested": "[4.154.1, )",
         "resolved": "4.148.0",
         "contentHash": "diba2vLeoKmWVkVTdXYOG14c7+s5FsH/AQZ5UPiFLRwLKgrCQNJPLKw8q60HzfOcJt+t/blv+1xkinqd5ZjX5A=="
       }
