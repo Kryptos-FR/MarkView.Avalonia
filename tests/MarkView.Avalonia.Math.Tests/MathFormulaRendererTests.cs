@@ -94,18 +94,98 @@ public class MathFormulaRendererTests
         foreach (var latex in formulas)
         {
             var painter = new MathPainter { LaTeX = latex, FontSize = 16f, TextColor = color, DisplayErrorInline = true };
-            using var stream = painter.DrawAsStream()!;
-            using var codec = SKCodec.Create(stream);
-            using var png = SKBitmap.Decode(codec, codec.Info with { ColorType = SKColorType.Bgra8888, AlphaType = SKAlphaType.Premul });
+            using var own = DecodePng(painter.DrawAsStream()!);
+            using var png = DecodePng(DrawAsRoundedUpStream(painter));
 
             using var drawn = MathFormulaRenderer.Draw(latex, color, 16f);
 
+            // CSharpMath's own surface truncates the measured size, which cuts off the last row or column of ink.
+            Assert.InRange(drawn.Width - own.Width, 0, 1);
+            Assert.InRange(drawn.Height - own.Height, 0, 1);
             Assert.Equal((png.Width, png.Height), (drawn.Width, drawn.Height));
             Assert.Equal(SKColorType.Bgra8888, drawn.ColorType);
             Assert.Equal(SKAlphaType.Premul, drawn.AlphaType);
             var delta = MaxDelta(png.GetPixelSpan(), drawn.GetPixelSpan());
             Assert.True(delta <= 8, $"Pixels differ by up to {delta} for {latex}");
         }
+    }
+
+    // CSharpMath's DrawAsStream() steps, with the surface size rounded up instead of truncated.
+    private static Stream DrawAsRoundedUpStream(MathPainter painter)
+    {
+        var size = painter.Measure().Size;
+        using var surface = SKSurface.Create(new SKImageInfo(
+            System.Math.Max((int)System.Math.Ceiling(size.Width), 1), System.Math.Max((int)System.Math.Ceiling(size.Height), 1)));
+        painter.Draw(surface.Canvas, CSharpMath.Rendering.FrontEnd.TextAlignment.TopLeft);
+        using var snapshot = surface.Snapshot();
+        return snapshot.Encode(SKEncodedImageFormat.Png, 100).AsStream();
+    }
+
+    private static SKBitmap DecodePng(Stream stream)
+    {
+        using (stream)
+        using (var codec = SKCodec.Create(stream))
+            return SKBitmap.Decode(codec, codec.Info with { ColorType = SKColorType.Bgra8888, AlphaType = SKAlphaType.Premul });
+    }
+
+    // CSharpMath measures in fractional pixels: at 16 px, E = mc^2 is about 17.9 px high and its ink
+    // reaches the 18th row, which a bitmap sized by truncating the measure cuts off (#269).
+    [AvaloniaFact]
+    public void Draw_keeps_the_whole_formula()
+    {
+        string[] formulas =
+        [
+            @"E = mc^2",
+            @"x^2",
+            @"\sum_{i=0}^{n} i^2 = \frac{n(n+1)(2n+1)}{6}",
+            @"\int_0^1 f(x)\,dx",
+            @"\begin{pmatrix} a & b \\ c & d \end{pmatrix}",
+        ];
+        var color = SKColor.Parse("#27272A");
+        foreach (var latex in formulas)
+        {
+            var painter = new MathPainter { LaTeX = latex, FontSize = 16f, TextColor = color, DisplayErrorInline = true };
+            var size = painter.Measure().Size;
+            const int margin = 8;
+            using var roomy = new SKBitmap(new SKImageInfo(
+                (int)System.Math.Ceiling(size.Width) + margin, (int)System.Math.Ceiling(size.Height) + margin,
+                SKColorType.Bgra8888, SKAlphaType.Premul));
+            using (var canvas = new SKCanvas(roomy))
+            {
+                canvas.Clear(SKColors.Transparent);
+                painter.Draw(canvas, CSharpMath.Rendering.FrontEnd.TextAlignment.TopLeft);
+            }
+
+            using var drawn = MathFormulaRenderer.Draw(latex, color, 16f);
+
+            Assert.Equal(((int)System.Math.Ceiling(size.Width), (int)System.Math.Ceiling(size.Height)), (drawn.Width, drawn.Height));
+            var inkBottom = -1;
+            var inkRight = -1;
+            for (var y = 0; y < roomy.Height; y++)
+            {
+                for (var x = 0; x < roomy.Width; x++)
+                {
+                    if (roomy.GetPixel(x, y).Alpha == 0)
+                        continue;
+                    inkBottom = System.Math.Max(inkBottom, y);
+                    inkRight = System.Math.Max(inkRight, x);
+                }
+            }
+            Assert.True(inkBottom < drawn.Height, $"Ink reaches row {inkBottom} of a {drawn.Height} px high bitmap for {latex}");
+            Assert.True(inkRight < drawn.Width, $"Ink reaches column {inkRight} of a {drawn.Width} px wide bitmap for {latex}");
+            Assert.True(Region(roomy, drawn.Width, drawn.Height).AsSpan().SequenceEqual(Region(drawn, drawn.Width, drawn.Height)),
+                $"Pixels differ for {latex}");
+        }
+    }
+
+    // The top-left width × height pixels of a bitmap, row by row.
+    private static byte[] Region(SKBitmap source, int width, int height)
+    {
+        var pixels = source.GetPixelSpan();
+        var region = new byte[width * height * 4];
+        for (var y = 0; y < height; y++)
+            pixels.Slice(y * source.RowBytes, width * 4).CopyTo(region.AsSpan(y * width * 4));
+        return region;
     }
 
     // The PNG round trip unpremultiplies and premultiplies again, which on ARM (macOS CI) moves the

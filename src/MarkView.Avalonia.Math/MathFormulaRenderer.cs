@@ -41,8 +41,10 @@ internal static class MathFormulaRenderer
     }
 
     /// <summary>
-    /// Typesets <paramref name="latex"/> and draws it into BGRA premultiplied pixels, sized as CSharpMath's
-    /// own <c>DrawAsStream()</c> sizes its surface, so that <see cref="Bake"/> needs no PNG encoding and decoding.
+    /// Typesets <paramref name="latex"/> and draws it into BGRA premultiplied pixels, as CSharpMath's own
+    /// <c>DrawAsStream()</c> draws it, so that <see cref="Bake"/> needs no PNG encoding and decoding. The size
+    /// rounds CSharpMath's fractional measure up, where <c>DrawAsStream()</c> truncates it and cuts off the
+    /// last row or column of ink (the bottom of <c>E = mc^2</c> at 16 px).
     /// </summary>
     internal static SKBitmap Draw(string latex, SKColor textColor, float fontSize)
     {
@@ -56,7 +58,8 @@ internal static class MathFormulaRenderer
 
         var size = painter.Measure().Size;
         var pixels = new SKBitmap(new SKImageInfo(
-            System.Math.Max((int)size.Width, 1), System.Math.Max((int)size.Height, 1), SKColorType.Bgra8888, SKAlphaType.Premul));
+            System.Math.Max((int)System.Math.Ceiling(size.Width), 1), System.Math.Max((int)System.Math.Ceiling(size.Height), 1),
+            SKColorType.Bgra8888, SKAlphaType.Premul));
         using var canvas = new SKCanvas(pixels);
         // Stryker disable once Statement: a new SKBitmap is already zeroed; cleared in case that changes
         canvas.Clear(SKColors.Transparent);
