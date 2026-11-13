@@ -12,6 +12,7 @@ using Avalonia.Controls.Documents;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 
 using Markdig.Syntax.Inlines;
 
@@ -88,7 +89,10 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
     private static void WriteImage(AvaloniaRenderer renderer, LinkInline obj)
     {
-        var url = renderer.ResolveUrl(obj.Url ?? string.Empty);
+        // The <img> of an HTML <picture> shows the address of the picture's source for the theme, if any.
+        var picture = obj.GetData(typeof(HtmlPicture)) as HtmlPicture;
+        string UrlForTheme() => renderer.ResolveUrl(picture?.UrlFor(IsDarkTheme()) ?? obj.Url ?? string.Empty);
+        var url = UrlForTheme();
         var altText = ExtractAltText(obj);
 
         var image = new Image();
@@ -128,7 +132,17 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         // Can be saved, under the name its address gives it.
         ImageExport.SetFileName(image, ImageExport.FileNameFromUrl(url));
 
-        StartLoading(renderer, image, url, () => ShowFailurePlaceholder(renderer, image, altText));
+        var load = StartLoading(renderer, image, url, () => ShowFailurePlaceholder(renderer, image, altText));
+        if (picture is not null)
+        {
+            ThemeTracking.ReapplyOnThemeChange(image, () =>
+            {
+                var themed = UrlForTheme();
+                image.Tag = themed;
+                ImageExport.SetFileName(image, ImageExport.FileNameFromUrl(themed));
+                load(themed);
+            });
+        }
 
         // An image inside a link opens the link instead.
         if (renderer.IsImageZoomEnabled && !IsInsideLink(obj))
@@ -246,17 +260,19 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
     /// <paramref name="image"/> comes within a screen of the viewport; otherwise loading starts once it
     /// is attached. Removing the image from the document cancels its load.
     /// </summary>
-    private static void StartLoading(AvaloniaRenderer renderer, Image image, string url, Action? failed = null)
+    /// <returns>
+    /// Switches the image to another address: loaded at once if the image already loaded or is loading (the
+    /// image it shows stays until then), otherwise when it would have loaded.
+    /// </returns>
+    private static Action<string> StartLoading(AvaloniaRenderer renderer, Image image, string url, Action? failed = null)
     {
         CancellationTokenSource? cts = null;
         if (renderer.IsLazyRenderingEnabled)
         {
             if (ImageCache.Shared.TryGet(url, renderer.ImageLoaders) is { } cached)
-            {
                 image.Source = cached;
-                return;
-            }
-            ViewportTracking.RunWhenNearViewport(image, Start);
+            else
+                ViewportTracking.RunWhenNearViewport(image, Start);
         }
         else
         {
@@ -288,7 +304,19 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             cts = new CancellationTokenSource();
             _ = LoadImageAsync(renderer, image, url, cts.Token, failed);
         }
+
+        return newUrl =>
+        {
+            if (newUrl == url) return;
+            url = newUrl;
+            if (image.Source is null && cts is null) return;
+            cts?.Cancel();
+            cts = new CancellationTokenSource();
+            _ = LoadImageAsync(renderer, image, url, cts.Token, failed);
+        };
     }
+
+    private static bool IsDarkTheme() => Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
 
     /// <summary>
     /// Loads <paramref name="url"/> into <paramref name="image"/> through the renderer's image loaders
