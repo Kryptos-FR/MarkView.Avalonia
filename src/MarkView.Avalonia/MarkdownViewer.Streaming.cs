@@ -114,13 +114,17 @@ public partial class MarkdownViewer
     {
         var markdownText = PreprocessImageSizes(text, EffectivePipeline, out _sourceShifts);
         var document = Markdig.Markdown.Parse(markdownText, EffectivePipeline);
+        var parsedText = markdownText;
         // The tail is taken before the second parse: a closer never moves the tail's start.
         var tail = final ? null : MarkdownHealer.TailBlock(document, markdownText);
         if (tail is ParagraphBlock or HeadingBlock { IsSetext: false } && _healing is { } options)
         {
             var healed = MarkdownHealer.Heal(markdownText, tail.Span.Start, options);
             if (!ReferenceEquals(healed, markdownText))
+            {
                 document = Markdig.Markdown.Parse(healed, EffectivePipeline);
+                parsedText = healed;
+            }
         }
 
         var install = _liveDocument is null;
@@ -132,7 +136,7 @@ public partial class MarkdownViewer
 
         renderer.IsStreaming = !final;
         renderer.ProvisionalStart = tail?.Span.Start ?? int.MaxValue;
-        var result = live.Update(document, focused);
+        var result = live.Update(document, parsedText, focused);
 
         _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);
         if (install || result.HeadingsChanged)
@@ -161,7 +165,9 @@ public partial class MarkdownViewer
 
         if (final)
         {
-            _liveDocument = null;
+            // Kept for the next text to be rendered incrementally as well.
+            if (!IsIncrementalRenderingEnabled)
+                _liveDocument = null;
             _streamingSession = null;
             _healing = null;
             IsStreaming = false;
@@ -185,13 +191,19 @@ public partial class MarkdownViewer
     /// Ends <paramref name="session"/> without a final update if it is still the viewer's active session;
     /// does nothing otherwise (it already ended, and another session may have begun since).
     /// </summary>
-    internal void EndStreamingSession(MarkdownStreamingSession session)
+    /// <param name="session">The session to end.</param>
+    /// <param name="keepDocument">
+    /// Whether the session's document stays the viewer's live document, for an incremental update to
+    /// render into.
+    /// </param>
+    internal void EndStreamingSession(MarkdownStreamingSession session, bool keepDocument = false)
     {
         if (!ReferenceEquals(_streamingSession, session))
             return;
         session.Abandon();
         _streamingSession = null;
-        _liveDocument = null;
+        if (!keepDocument)
+            _liveDocument = null;
         _healing = null;
         IsStreaming = false;
     }

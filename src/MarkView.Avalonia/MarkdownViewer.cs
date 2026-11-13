@@ -495,6 +495,7 @@ public partial class MarkdownViewer : ContentControl
         IsImageZoomEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         DetectTextDirectionProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         IsLazyRenderingEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
+        IsIncrementalRenderingEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.OnIncrementalRenderingChanged());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
     }
@@ -600,13 +601,17 @@ public partial class MarkdownViewer : ContentControl
     {
         if (_sourceMarkdown is null && string.Equals(Markdown, _renderedMarkdown, StringComparison.Ordinal))
             return;
-        RenderMarkdown();
+        if (_sourceMarkdown is null && _liveDocument is not null && IsIncrementalRenderingEnabled && !string.IsNullOrEmpty(Markdown))
+            RenderEdit(Markdown);
+        else
+            RenderMarkdown();
     }
 
     internal void RenderMarkdown()
     {
         // Whatever is rendered now replaces what an active streaming session renders, so the session ends.
         EndStreamingSession();
+        _liveDocument = null;
         var markdown = _sourceMarkdown ?? Markdown;
         _renderedMarkdown = markdown;
         // A focused link is about to be replaced; keep focus in the viewer rather than losing it.
@@ -628,20 +633,35 @@ public partial class MarkdownViewer : ContentControl
         var markdownText = PreprocessImageSizes(markdown, EffectivePipeline, out _sourceShifts);
         var document = Markdig.Markdown.Parse(markdownText, EffectivePipeline);
 
-        var renderer = CreateRenderer();
-        renderer.Render(document);
+        AvaloniaRenderer renderer;
+        DocumentSelectionLayer layer;
+        if (IsIncrementalRenderingEnabled)
+        {
+            // Rendered block by block, so that the next text can re-render only the blocks it changes.
+            var live = new LiveDocument(CreateRenderer(), ActivateLink);
+            live.Update(document, markdownText);
+            _liveDocument = live;
+            renderer = live.Renderer;
+            layer = live.SelectionLayer;
+            _linkFocusLayer = live.LinkLayer;
+        }
+        else
+        {
+            renderer = CreateRenderer();
+            renderer.Render(document);
+
+            // Set up document-wide selection layer
+            layer = new DocumentSelectionLayer();
+            RegisterBlocks(layer, renderer.RootPanel);
+
+            // Keyboard stand-ins for the document's links
+            _linkFocusLayer = LinkFocusLayer.Create(renderer.RootPanel, ActivateLink);
+        }
+        SetSelectionLayer(layer);
 
         _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);
         _headingEntries = [.. renderer.HeadingEntries];
         RebuildTableOfContents();
-
-        // Set up document-wide selection layer
-        var layer = new DocumentSelectionLayer();
-        RegisterBlocks(layer, renderer.RootPanel);
-        SetSelectionLayer(layer);
-
-        // Keyboard stand-ins for the document's links
-        _linkFocusLayer = LinkFocusLayer.Create(renderer.RootPanel, ActivateLink);
 
         InstallDocument(renderer, layer, _linkFocusLayer, focusWasInDocument);
 
@@ -829,6 +849,8 @@ public partial class MarkdownViewer : ContentControl
             _renderedMarkdown = string.Concat(rendered.AsSpan(0, start), e.IsChecked ? "[x]" : "[ ]", rendered.AsSpan(start + e.SourceLength));
         // The session's next update renders its own text, which must not revert the toggle.
         _streamingSession?.PatchText(start, e.SourceLength, e.IsChecked ? "[x]" : "[ ]");
+        // The toggled block already shows the new text, and need not be rendered again for it.
+        _liveDocument?.PatchText(e.SourceStart, e.SourceLength, e.IsChecked ? "[x]" : "[ ]");
         RaiseEvent(new TaskToggledEventArgs(e.IsChecked, start, e.SourceLength, line) { RoutedEvent = TaskToggledEvent });
     }
 
@@ -1405,6 +1427,9 @@ public partial class MarkdownViewer : ContentControl
 
     /// <summary>The ids of the rendered document's anchors, for tests.</summary>
     internal IEnumerable<string> AnchorIds => _anchors.Keys;
+
+    /// <summary>The rendered document's anchors and the controls they scroll to, for tests.</summary>
+    internal IReadOnlyDictionary<string, Control> AnchorControls => _anchors;
 
     /// <summary>
     /// Scrolls to the anchor (e.g. a heading's slug) named <paramref name="anchorId"/>, if the document

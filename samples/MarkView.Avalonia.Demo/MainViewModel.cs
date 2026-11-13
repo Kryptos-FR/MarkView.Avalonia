@@ -254,6 +254,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _navigating;
     // Whether the page is empty only because a replay emptied it; any other assignment to the page ends that.
     private bool _isReplaying;
+    private bool _isEditing;
 
     private Uri? _source;
     private Uri? _baseUri;
@@ -390,6 +391,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (!SetField(ref _pageView, value)) return;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsPreviewShown)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSourceShown)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSourceViewShown)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsEditorShown)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsPreviewSelected)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSourceSelected)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSideBySideSelected)));
@@ -399,6 +402,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool IsPreviewShown => _pageView != PageView.Source;
 
     public bool IsSourceShown => _pageView != PageView.Preview;
+
+    // The markdown pane holds the source view, or the editor while the page is edited.
+    public bool IsSourceViewShown => IsSourceShown && !_isEditing;
+
+    public bool IsEditorShown => IsSourceShown && _isEditing;
 
     // One per button of the switch; a radio button only ever sets its own to true.
     public bool IsPreviewSelected
@@ -437,6 +445,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         private set
         {
             _isReplaying = false;
+            IsEditing = false;
             // A replay's base belongs to the page it replayed; the viewer infers the new page's from its Source.
             BaseUri = null;
             SetField(ref _source, value);
@@ -459,12 +468,61 @@ public sealed class MainViewModel : INotifyPropertyChanged
         private set
         {
             _isReplaying = false;
-            SetField(ref _markdown, value);
+            IsEditing = false;
+            if (SetField(ref _markdown, value))
+                OnPropertyChanged(nameof(EditedMarkdown));
         }
     }
 
     /// <summary>Whether a replay has emptied the page to stream it back in; see <see cref="BeginReplay"/>.</summary>
     public bool IsReplaying => _isReplaying;
+
+    /// <summary>Whether the source editor shows the page's text next to the viewer.</summary>
+    public bool IsEditing
+    {
+        get => _isEditing;
+        private set
+        {
+            if (!SetField(ref _isEditing, value)) return;
+            OnPropertyChanged(nameof(IsSourceViewShown));
+            OnPropertyChanged(nameof(IsEditorShown));
+        }
+    }
+
+    /// <summary>
+    /// The page's text in the source editor; each change is rendered at once, re-rendering only the
+    /// blocks it touches. Changing the page closes the editor.
+    /// </summary>
+    public string? EditedMarkdown
+    {
+        get => _markdown;
+        set
+        {
+            if (_isEditing && SetField(ref _markdown, value, nameof(Markdown)))
+                OnPropertyChanged(nameof(EditedMarkdown));
+        }
+    }
+
+    /// <summary>
+    /// Opens the source editor on <paramref name="text"/>, the current page's text. Like a replay, it
+    /// unbinds the page from <see cref="Source"/> and keeps its folder as the base of relative links.
+    /// </summary>
+    public void BeginEditing(string text)
+    {
+        var source = Source;
+        if (source is not null)
+        {
+            Source = null;
+            BaseUri = FolderOf(source);
+        }
+        Markdown = text;
+        IsEditing = true;
+        // The editor takes the place of the markdown pane, so it opens beside the page when only the page shows.
+        if (_pageView == PageView.Preview)
+            PageView = PageView.SideBySide;
+    }
+
+    public void EndEditing() => IsEditing = false;
 
     public bool CanGoBack => _historyIndex > 0;
     public bool CanGoForward => _historyIndex < _history.Count - 1;
@@ -661,6 +719,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged(string propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {

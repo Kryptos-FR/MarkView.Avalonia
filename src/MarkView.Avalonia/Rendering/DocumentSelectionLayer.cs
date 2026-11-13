@@ -229,37 +229,96 @@ internal sealed class DocumentSelectionLayer : Control
     {
         ArgumentOutOfRangeException.ThrowIfNegative(entryCount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(entryCount, _entries.Count);
+        Splice(entryCount, _entries.Count - entryCount, []);
+    }
 
-        var removed = _entries.GetRange(entryCount, _entries.Count - entryCount);
-        _entries.RemoveRange(entryCount, removed.Count);
-        _totalLength = entryCount == 0 ? 0 : _entries[^1].AbsEndWithSep;
+    /// <summary>
+    /// Replaces the <paramref name="removeCount"/> entries from index <paramref name="start"/> with
+    /// <paramref name="inserted"/> (entries registered elsewhere, such as in a scratch layer), and
+    /// moves every later entry by the difference in length. A selection end in a kept entry stays on
+    /// its character; one in a removed entry moves to the end of the last entry kept before them, and
+    /// a selection with both ends in removed entries is cleared, unless it starts right at that end. The find matches in removed entries
+    /// are dropped, along with the current match when the remaining matches no longer reach it.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="start"/> or <paramref name="removeCount"/> is negative, or together they reach
+    /// beyond <see cref="EntryCount"/>.
+    /// </exception>
+    public void Splice(int start, int removeCount, IReadOnlyList<IndexEntry> inserted)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(start);
+        ArgumentOutOfRangeException.ThrowIfNegative(removeCount);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(start + removeCount, _entries.Count, nameof(removeCount));
 
-        if (_anchor is { } anchor && _focus is { } focus)
+        // Each selection end as a character of an entry, before the entries move, and the end of the
+        // last entry kept before the removed ones, which the entries do not move.
+        var anchor = Locate(_anchor);
+        var focus = Locate(_focus);
+        var keptEnd = start == 0 ? 0 : _entries[start - 1].AbsEnd;
+
+        var removed = _entries.GetRange(start, removeCount);
+        _entries.RemoveRange(start, removeCount);
+        _entries.InsertRange(start, inserted);
+        var offset = start == 0 ? 0 : _entries[start - 1].AbsEndWithSep;
+        for (var i = start; i < _entries.Count; i++)
         {
-            var keptEnd = entryCount == 0 ? 0 : _entries[^1].AbsEnd;
-            if (Math.Min(anchor, focus) > keptEnd)
+            _entries[i].AbsStart = offset;
+            // The top-level control it is part of may have moved in the document panel.
+            _entries[i].DocumentIndex = -1;
+            offset = _entries[i].AbsEndWithSep;
+        }
+        _totalLength = offset;
+        // The document panel's children changed too, and the text in the selected range may have.
+        _shownBlocksLayout = -1;
+        _selectedText = null;
+
+        var removedEntries = new HashSet<IndexEntry>(removed);
+        if (_anchor is { } anchorAt && _focus is { } focusAt)
+        {
+            // An end at the very start of the removed entries (at 0, with none kept before them) is at
+            // the kept end already, and stays there.
+            var anchorRemoved = removedEntries.Contains(anchor!.Value.Entry);
+            var focusRemoved = removedEntries.Contains(focus!.Value.Entry);
+            if (anchorRemoved && focusRemoved && Math.Min(anchorAt, focusAt) > keptEnd)
             {
                 _anchor = null;
                 _focus = null;
             }
             else
             {
-                _anchor = Math.Min(anchor, keptEnd);
-                _focus = Math.Min(focus, keptEnd);
+                _anchor = anchorRemoved ? keptEnd : anchor.Value.Entry.AbsStart + anchor.Value.Offset;
+                _focus = focusRemoved ? keptEnd : focus.Value.Entry.AbsStart + focus.Value.Offset;
             }
         }
 
-        // Matches are in entry order, so those in removed entries come last.
-        var removedEntries = new HashSet<IndexEntry>(removed);
-        var firstRemoved = _findMatches.Count;
-        while (firstRemoved > 0 && removedEntries.Contains(_findMatches[firstRemoved - 1].Entry))
-            firstRemoved--;
-        _findMatches.RemoveRange(firstRemoved, _findMatches.Count - firstRemoved);
+        _findMatches.RemoveAll(match => removedEntries.Contains(match.Entry));
         if (CurrentFindMatch >= _findMatches.Count)
             CurrentFindMatch = -1;
 
         InvalidateVisual();
         ReportSelectionChange();
+    }
+
+    /// <summary>
+    /// The entry an absolute offset falls in, and the offset from that entry's start: the first entry
+    /// whose text ends at or after it, so the end of an entry's text belongs to that entry and a
+    /// separator to the entry after it; the last entry for an offset beyond every entry's text.
+    /// </summary>
+    private (IndexEntry Entry, int Offset)? Locate(int? position)
+    {
+        if (position is not { } value || _entries.Count == 0)
+            return null;
+        int low = 0, high = _entries.Count - 1;
+        while (low < high)
+        {
+            var mid = (low + high) / 2;
+            if (_entries[mid].AbsEnd >= value)
+                high = mid;
+            else
+                low = mid + 1;
+        }
+        var entry = _entries[low];
+        return (entry, value - entry.AbsStart);
     }
 
     // ── Public selection API ──────────────────────────────────────────────────

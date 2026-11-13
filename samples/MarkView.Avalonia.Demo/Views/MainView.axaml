@@ -213,6 +213,10 @@
                         IsChecked="{Binding #MarkdownView.ShowCodeBlockCopyButtonOnHover, Mode=TwoWay}"
                         ToolTip.Tip="Show the copy buttons of code blocks and formulas only while the pointer is over them" />
               <Separator />
+              <MenuItem Header="Edit the source" ToggleType="CheckBox" Click="OnEditClicked"
+                        IsChecked="{Binding IsEditing, Mode=OneWay}"
+                        IsEnabled="{Binding !IsColorExtensionSelected}"
+                        ToolTip.Tip="Edit the page's markdown in place of the Markdown view, beside the page; each change re-renders only the blocks it touches, and the page keeps its scroll position. Changing the page closes the editor." />
               <MenuItem Header="Stream the document" Click="OnStreamClicked"
                         IsEnabled="{Binding !IsColorExtensionSelected}"
                         ToolTip.Tip="Replay the page through a streaming session, with the chunk size and interval below, following the end. Changing the page, opening a file or changing a view option above stops the replay." />
@@ -251,16 +255,22 @@
     <Grid x:Name="PageArea" ColumnDefinitions="*,Auto,*">
       <!-- The markdown, shown as a highlighted code block by a viewer of its own -->
       <mv:MarkdownViewer x:Name="SourceView" Grid.Column="0"
-                         IsVisible="{Binding IsSourceShown}"
+                         IsVisible="{Binding IsSourceViewShown}"
                          AutoScrollToEnd="True"
                          ShowCodeBlockLineNumbers="True" WrapCodeBlockLines="True"
                          AutomationProperties.Name="Markdown source"
                          Padding="4" />
+      <!-- The markdown in an editor, in place of the source view while the page is edited -->
+      <TextBox Grid.Column="0" IsVisible="{Binding IsEditorShown}"
+               Text="{Binding EditedMarkdown, Mode=TwoWay}"
+               AcceptsReturn="True" AcceptsTab="True" TextWrapping="Wrap"
+               FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="13"
+               AutomationProperties.Name="Markdown editor" />
       <GridSplitter x:Name="PageSplitter" Grid.Column="1" Width="4" ResizeDirection="Columns" />
       <Grid x:Name="PreviewArea" Grid.Column="2" IsVisible="{Binding IsPreviewShown}">
         <mv:MarkdownViewer x:Name="MarkdownView"
                            Source="{Binding Source}" Markdown="{Binding Markdown}" BaseUri="{Binding BaseUri}"
-                           AutoScrollToEnd="True"
+                           AutoScrollToEnd="True" IsIncrementalRenderingEnabled="True"
                            IsSmoothScrollingEnabled="True"
                            ShowCodeBlockLanguage="True"
                            IsImageZoomEnabled="True"

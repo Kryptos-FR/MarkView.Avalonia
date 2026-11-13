@@ -286,7 +286,9 @@ the document and the machine, so read them as orders of magnitude:
 - During a session the viewer holds the renderer, the last parsed document and text, and a record
   of a few hundred bytes per block. All of it is released when the session ends.
 
-Without a session, nothing changes: setting `Markdown` renders the document as before.
+Without a session, setting `Markdown` renders the whole document again, unless
+`IsIncrementalRenderingEnabled` is set: then a new text re-renders only the blocks it changes,
+wherever they are, as described in [Live preview](live-preview.md).
 
 ## For custom renderers
 

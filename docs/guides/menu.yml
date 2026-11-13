@@ -4,6 +4,7 @@ guides:
   - {path: markdown.md, title: "Markdown and the pipeline"}
   - {path: chat.md, title: "Chat and AI answers"}
   - {path: streaming.md, title: "Streaming"}
+  - {path: live-preview.md, title: "Live preview"}
   - {path: code-blocks.md, title: "Code blocks"}
   - {path: images.md, title: "Images and diagrams"}
   - {path: math.md, title: "Math"}

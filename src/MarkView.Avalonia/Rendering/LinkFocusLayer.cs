@@ -67,13 +67,33 @@ internal sealed class LinkFocusLayer : Panel
         ArgumentOutOfRangeException.ThrowIfNegative(targetCount);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(targetCount, Children.Count);
 
-        _stops.RemoveRange(stopCount, _stops.Count - stopCount);
-        for (var i = targetCount; i < Children.Count; i++)
+        Splice(stopCount, _stops.Count - stopCount, targetCount, Children.Count - targetCount, null);
+    }
+
+    /// <summary>
+    /// Replaces <paramref name="stopRemoveCount"/> keyboard stops from index <paramref name="stopStart"/>
+    /// and <paramref name="targetRemoveCount"/> link targets from index <paramref name="targetStart"/>
+    /// with the stops and targets <paramref name="collected"/> holds, which it gives up. The discarded
+    /// targets are also removed from their text blocks. As for <see cref="TruncateTo"/>, the ranges
+    /// must be those of whole children of the root panel.
+    /// </summary>
+    internal void Splice(int stopStart, int stopRemoveCount, int targetStart, int targetRemoveCount, LinkFocusLayer? collected)
+    {
+        _stops.RemoveRange(stopStart, stopRemoveCount);
+        for (var i = targetStart; i < targetStart + targetRemoveCount; i++)
         {
             if (Children[i] is LinkFocusTarget target)
                 target.TextBlock.LinkTargets = null;
         }
-        Children.RemoveRange(targetCount, Children.Count - targetCount);
+        Children.RemoveRange(targetStart, targetRemoveCount);
+
+        if (collected is null)
+            return;
+        _stops.InsertRange(stopStart, collected._stops);
+        collected._stops.Clear();
+        var targets = collected.Children.ToList();
+        collected.Children.Clear();
+        Children.InsertRange(targetStart, targets);
     }
 
     /// <summary>
