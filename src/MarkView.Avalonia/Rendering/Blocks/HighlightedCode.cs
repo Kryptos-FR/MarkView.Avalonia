@@ -40,12 +40,7 @@ internal static class HighlightedCode
 
         // Materialise source lines once so they can be reused on theme change.
         // AsMemory() references the Markdig source buffer directly — no per-line allocation.
-        var lines = new List<ReadOnlyMemory<char>>(block.Lines.Count);
-        for (int i = 0; i < block.Lines.Count; i++)
-        {
-            var slice = block.Lines.Lines[i].Slice;
-            lines.Add(slice.Text.AsMemory(slice.Start, slice.Length));
-        }
+        var lines = Lines(block);
 
         var highlighter = renderer.CodeHighlighter;
         if (highlighter != null && renderer.IsLazyRenderingEnabled)
@@ -53,43 +48,76 @@ internal static class HighlightedCode
             // The plain lines have the same text and the same monospace layout as the highlighted
             // ones, so the block can be selected, searched and copied before it is coloured, and the
             // colours, applied before the block is first shown, move nothing.
-            BuildInlines(textBlock, null, language, false, lines);
+            object? plainState = null;
+            BuildInlines(textBlock, null, language, false, lines, ref plainState);
             ViewportTracking.RunWhenNearViewport(border, () =>
             {
                 textBlock.Inlines!.Clear();
-                Highlight(border, textBlock, highlighter, language, lines);
+                object? lazyState = null;
+                Highlight(border, textBlock, highlighter, language, lines, ref lazyState);
             });
             return;
         }
 
-        Highlight(border, textBlock, highlighter, language, lines);
+        object? state = null;
+        Highlight(border, textBlock, highlighter, language, lines, ref state);
     }
 
-    private static void Highlight(
-        Border border,
+    /// <summary>
+    /// Writes <paramref name="lines"/>, a run of lines of a code block, into <paramref name="textBlock"/>, highlighted
+    /// at once by <paramref name="highlighter"/> from the state the line before them ended in, and recoloured with the
+    /// theme of <paramref name="textBlock"/>. On return <paramref name="lineState"/> is the state the last line ended in.
+    /// </summary>
+    public static void WriteLines(
         TextBlock textBlock,
         ICodeHighlighter? highlighter,
         string? language,
-        IReadOnlyList<ReadOnlyMemory<char>> lines)
+        IReadOnlyList<ReadOnlyMemory<char>> lines,
+        ref object? lineState)
+        => Highlight(textBlock, textBlock, highlighter, language, lines, ref lineState);
+
+    /// <summary>The lines of <paramref name="block"/>, as slices of the text it was parsed from.</summary>
+    public static List<ReadOnlyMemory<char>> Lines(CodeBlock block)
+    {
+        var lines = new List<ReadOnlyMemory<char>>(block.Lines.Count);
+        for (int i = 0; i < block.Lines.Count; i++)
+        {
+            var slice = block.Lines.Lines[i].Slice;
+            lines.Add(slice.Text.AsMemory(slice.Start, slice.Length));
+        }
+        return lines;
+    }
+
+    // themeElement: the control whose theme the colours follow (the code block, or the text block of a chunk of it).
+    // lineState: the state the line before the first one ended in, and on return the state the last one ended in.
+    private static void Highlight(
+        Control themeElement,
+        TextBlock textBlock,
+        ICodeHighlighter? highlighter,
+        string? language,
+        IReadOnlyList<ReadOnlyMemory<char>> lines,
+        ref object? lineState)
     {
         var isDark = IsDark();
         switch (highlighter)
         {
             case IDualThemeCodeHighlighter dual:
-                WriteDual(border, textBlock, dual, language, isDark, lines);
+                WriteDual(themeElement, textBlock, dual, language, isDark, lines, ref lineState);
                 break;
             case IThemeAwareCodeHighlighter themeAware:
-                BuildInlines(textBlock, themeAware, language, isDark, lines);
+                var startState = lineState;
+                BuildInlines(textBlock, themeAware, language, isDark, lines, ref lineState);
                 // Rebuild only TextBlock.Inlines when the theme changes; the Border and its
                 // position in the document stay untouched.
-                ThemeTracking.ReapplyOnThemeChange(border, () =>
+                ThemeTracking.ReapplyOnThemeChange(themeElement, () =>
                 {
                     textBlock.Inlines!.Clear();
-                    BuildInlines(textBlock, themeAware, language, IsDark(), lines);
+                    var state = startState;
+                    BuildInlines(textBlock, themeAware, language, IsDark(), lines, ref state);
                 });
                 break;
             default:
-                BuildInlines(textBlock, highlighter, language, isDark, lines);
+                BuildInlines(textBlock, highlighter, language, isDark, lines, ref lineState);
                 break;
         }
     }
@@ -101,12 +129,13 @@ internal static class HighlightedCode
     // repaint but no new runs, no re-tokenising and no new text layout. Any other token keeps
     // its brushes and has its Foreground swapped instead.
     private static void WriteDual(
-        Border border,
+        Control themeElement,
         TextBlock textBlock,
         IDualThemeCodeHighlighter highlighter,
         string? language,
         bool isDark,
-        IReadOnlyList<ReadOnlyMemory<char>> lines)
+        IReadOnlyList<ReadOnlyMemory<char>> lines,
+        ref object? lineState)
     {
         Dictionary<(Color Dark, Color Light), SolidColorBrush>? palette = null;
         List<(Run Run, IBrush? Dark, IBrush? Light)>? others = null;
@@ -127,7 +156,6 @@ internal static class HighlightedCode
         });
 
         // Each line goes on from the state the one before ended in (inside a block comment, a string...).
-        object? lineState = null;
         for (int i = 0; i < lines.Count; i++)
         {
             if (i > 0) runs.AddLineEnd();
@@ -147,7 +175,7 @@ internal static class HighlightedCode
         if (palette == null && others == null)
             return;
 
-        ThemeTracking.ReapplyOnThemeChange(border, () =>
+        ThemeTracking.ReapplyOnThemeChange(themeElement, () =>
         {
             var dark = IsDark();
             if (palette != null)
@@ -184,14 +212,14 @@ internal static class HighlightedCode
         ICodeHighlighter? highlighter,
         string? language,
         bool isDark,
-        IReadOnlyList<ReadOnlyMemory<char>> lines)
+        IReadOnlyList<ReadOnlyMemory<char>> lines,
+        ref object? lineState)
     {
         var runs = new CodeRuns(textBlock.Inlines!, static (run, foreground, _) =>
         {
             if (foreground != null)
                 run.Foreground = foreground;
         });
-        object? lineState = null;
         for (int i = 0; i < lines.Count; i++)
         {
             if (i > 0) runs.AddLineEnd();

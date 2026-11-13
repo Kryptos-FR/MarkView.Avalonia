@@ -9,6 +9,7 @@ using Avalonia.LogicalTree;
 using Markdig;
 
 using MarkView.Avalonia.Rendering;
+using MarkView.Avalonia.Rendering.Blocks;
 using MarkView.Avalonia.Tests.Shared;
 
 using Xunit;
@@ -68,6 +69,19 @@ public class MermaidStreamingTests
         session.Append("\n\nAfter the diagram.");
         await AsyncTestHelpers.WaitUntilAsync(() => TryRoot(viewer)?.Children.Count == 2);
         Assert.Contains("markdown-mermaid", Assert.IsType<Border>(Root(viewer).Children[0]).Classes);
+    }
+
+    [AvaloniaFact]
+    public void Mermaid_fence_that_ends_the_streamed_text_grows_in_chunks_of_lines()
+    {
+        var viewer = new MarkdownViewer().UseMermaid();
+        var session = viewer.BeginStreaming();
+        session.Append(OpenDiagram + "\n" + string.Concat(Enumerable.Range(0, 40).Select(i => $"  N{i} --> N{i + 1}\n")));
+        session.ApplyPendingUpdate();
+
+        var border = CodeBlockAssert.CodeBorder(Assert.Single(Root(viewer).Children));
+        Assert.Contains("language-mermaid", border.Classes);
+        Assert.Equal(2, Assert.IsAssignableFrom<IEnumerable<TextBlock>>(CodeBlockToolbar.FindCodeChunks(border)).Count());
     }
 
     /// <summary>The rendered root panel, or <c>null</c> before the first update has produced any content.</summary>

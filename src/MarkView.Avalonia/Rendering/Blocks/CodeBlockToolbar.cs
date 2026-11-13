@@ -32,12 +32,13 @@ internal static class CodeBlockToolbar
     /// <c>markdown-code-header</c> otherwise. The code block itself is the same either way, so
     /// styles and text selection that target it keep working. When <paramref name="border"/>
     /// holds the code's <see cref="TextBlock"/>, the code is first laid out as described in
-    /// <see cref="LayOut"/>.
+    /// <see cref="LayOut"/>. The copy button copies what <paramref name="code"/> returns, the code of
+    /// <paramref name="block"/> by default.
     /// </summary>
-    public static void Write(AvaloniaRenderer renderer, Border border, CodeBlock block, string? language)
+    public static void Write(AvaloniaRenderer renderer, Border border, CodeBlock block, string? language, Func<string>? code = null)
     {
-        if (border.Child is TextBlock code)
-            LayOut(renderer, border, code, block.Lines.Count);
+        if (border.Child is TextBlock text)
+            LayOut(renderer, border, text, block.Lines.Count);
 
         var showLanguage = renderer.ShowCodeBlockLanguage && !string.IsNullOrEmpty(language);
         var showCopyButton = renderer.ShowCodeBlockCopyButton;
@@ -59,7 +60,7 @@ internal static class CodeBlockToolbar
         }
         if (showCopyButton)
         {
-            var button = CreateCopyButton(() => GetCode(block), MarkdownCopyOrigin.CodeBlock);
+            var button = CreateCopyButton(code ?? (() => GetCode(block)), MarkdownCopyOrigin.CodeBlock);
             Grid.SetColumn(button, 1);
             toolbar.Children.Add(button);
         }
@@ -86,64 +87,79 @@ internal static class CodeBlockToolbar
     /// </summary>
     private static void LayOut(AvaloniaRenderer renderer, Border border, TextBlock code, int lineCount)
     {
+        border.Child = null;
+        border.Child = CapHeight(renderer, border, LayOutLines(renderer, code, 1, lineCount, sharedGutter: false));
+    }
+
+    /// <summary>
+    /// Applies the renderer's code options to <paramref name="code"/>, which holds <paramref name="lineCount"/> lines of
+    /// a code block from line <paramref name="firstLine"/> (1 for the first), and returns the control to show in its
+    /// place: the code itself, or a two-column <see cref="Grid"/> with a <c>markdown-code-line-numbers</c> gutter
+    /// before it. With <paramref name="sharedGutter"/>, the gutter column is in the <c>MarkdownCodeLineNumbers</c>
+    /// shared size group, so the gutters of the chunks of one block (see <see cref="GrowingCodeBlock"/>) line up.
+    /// </summary>
+    internal static Control LayOutLines(AvaloniaRenderer renderer, TextBlock code, int firstLine, int lineCount, bool sharedGutter)
+    {
         renderer.ApplyTheme(code, "MarkdownCodeTheme");
         var wrap = renderer.WrapCodeBlockLines;
         if (wrap)
             code.TextWrapping = TextWrapping.Wrap;
 
-        Control content = code;
-        if (renderer.ShowCodeBlockLineNumbers)
-        {
-            // The numbers are a text block of their own, which text selection never registers, so
-            // they are neither highlighted nor copied with the code.
-            var numbers = new TextBlock { Text = LineNumbers(lineCount), TextAlignment = TextAlignment.Right };
-            numbers.Classes.Add("markdown-code-line-numbers");
-            renderer.ApplyTheme(numbers, "MarkdownCodeLineNumbersTheme");
-            // Nor are they read out by screen readers.
-            AutomationRoles.Hide(numbers);
-            // A wrapped line takes several rows of the code, and the gutter leaves all but its
-            // first blank; which lines wrap is only known once the code is laid out at its width.
-            if (wrap)
-                code.SizeChanged += (_, _) => numbers.Text = LineNumbers(
-                    code.TextLayout, MarkdownSelectableTextBlock.ExtractPlainText(code.Inlines!), lineCount);
+        if (!renderer.ShowCodeBlockLineNumbers)
+            return code;
 
-            border.Child = null;
-            Grid.SetColumn(code, 1);
-            content = new Grid
-            {
-                ColumnDefinitions = new ColumnDefinitions("Auto,*"),
-                Children = { numbers, code },
-            };
-        }
+        // The numbers are a text block of their own, which text selection never registers, so
+        // they are neither highlighted nor copied with the code.
+        var numbers = new TextBlock { Text = LineNumbers(lineCount, firstLine), TextAlignment = TextAlignment.Right };
+        numbers.Classes.Add("markdown-code-line-numbers");
+        renderer.ApplyTheme(numbers, "MarkdownCodeLineNumbersTheme");
+        // Nor are they read out by screen readers.
+        AutomationRoles.Hide(numbers);
+        // A wrapped line takes several rows of the code, and the gutter leaves all but its
+        // first blank; which lines wrap is only known once the code is laid out at its width.
+        if (wrap)
+            code.SizeChanged += (_, _) => numbers.Text = LineNumbers(
+                code.TextLayout, MarkdownSelectableTextBlock.ExtractPlainText(code.Inlines!), lineCount, firstLine);
 
-        if (!double.IsPositiveInfinity(renderer.CodeBlockMaxHeight))
-        {
-            border.MaxHeight = renderer.CodeBlockMaxHeight;
-            border.Child = null;
-            // Horizontal scrolling stays with the document, as without a maximum height. Scroll
-            // chaining (on by default) hands the mouse wheel back to the document once the block
-            // has reached either end, so a long block never traps it.
-            var scroll = new ScrollViewer
-            {
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Content = content,
-            };
-            scroll.Classes.Add("markdown-code-scroll");
-            content = scroll;
-        }
-
-        border.Child = content;
+        Grid.SetColumn(code, 1);
+        var columns = sharedGutter
+            ? new ColumnDefinitions { new(GridLength.Auto) { SharedSizeGroup = "MarkdownCodeLineNumbers" }, new(GridLength.Star) }
+            : new ColumnDefinitions("Auto,*");
+        return new Grid { ColumnDefinitions = columns, Children = { numbers, code } };
     }
 
-    /// <summary>Returns the numbers from 1 to <paramref name="lineCount"/>, one per line.</summary>
-    internal static string LineNumbers(int lineCount)
+    /// <summary>
+    /// Caps the height of <paramref name="border"/> at the renderer's <see cref="AvaloniaRenderer.CodeBlockMaxHeight"/>,
+    /// and returns <paramref name="content"/> inside a vertical <c>markdown-code-scroll</c> <see cref="ScrollViewer"/>
+    /// then, or as it is without a maximum height.
+    /// </summary>
+    internal static Control CapHeight(AvaloniaRenderer renderer, Border border, Control content)
+    {
+        if (double.IsPositiveInfinity(renderer.CodeBlockMaxHeight))
+            return content;
+
+        border.MaxHeight = renderer.CodeBlockMaxHeight;
+        // Horizontal scrolling stays with the document, as without a maximum height. Scroll
+        // chaining (on by default) hands the mouse wheel back to the document once the block
+        // has reached either end, so a long block never traps it.
+        var scroll = new ScrollViewer
+        {
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = content,
+        };
+        scroll.Classes.Add("markdown-code-scroll");
+        return scroll;
+    }
+
+    /// <summary>Returns <paramref name="lineCount"/> numbers from <paramref name="first"/> on, one per line.</summary>
+    internal static string LineNumbers(int lineCount, int first = 1)
     {
         var sb = new StringBuilder();
-        for (int i = 1; i <= lineCount; i++)
+        for (int i = 0; i < lineCount; i++)
         {
-            if (i > 1) sb.Append('\n');
-            sb.Append(i);
+            if (i > 0) sb.Append('\n');
+            sb.Append(first + i);
         }
         return sb.ToString();
     }
@@ -151,9 +167,9 @@ internal static class CodeBlockToolbar
     /// <summary>
     /// Returns one line per row of <paramref name="layout"/>, the layout of <paramref name="text"/>,
     /// holding the number of the code line that starts on that row, or nothing for the rows a
-    /// wrapped line continues on.
+    /// wrapped line continues on. The first code line is number <paramref name="first"/>.
     /// </summary>
-    internal static string LineNumbers(TextLayout layout, string text, int lineCount)
+    internal static string LineNumbers(TextLayout layout, string text, int lineCount, int first = 1)
     {
         var sb = new StringBuilder();
         var number = 0;
@@ -165,7 +181,7 @@ internal static class CodeBlockToolbar
             // rows' own NewLineLength can't tell: it stays 0 after a LineBreak inline.
             var start = rows[i].FirstTextSourceIndex;
             if ((i == 0 || text[start - 1] == '\n') && number < lineCount)
-                sb.Append(++number);
+                sb.Append(first + number++);
         }
         return sb.ToString();
     }
@@ -183,6 +199,16 @@ internal static class CodeBlockToolbar
         Grid { Children: [TextBlock numbers, TextBlock code] } when numbers.Classes.Contains("markdown-code-line-numbers") => code,
         _ => null,
     };
+
+    /// <summary>
+    /// Returns the <see cref="TextBlock"/> of each chunk of a <c>markdown-code-block</c> border written as a
+    /// <see cref="GrowingCodeBlock"/>, in order, or <c>null</c> when the border holds anything else.
+    /// </summary>
+    internal static IEnumerable<TextBlock>? FindCodeChunks(Border codeBlock) =>
+        (codeBlock.Child is ScrollViewer scroll && scroll.Classes.Contains("markdown-code-scroll") ? scroll.Content : codeBlock.Child)
+            is StackPanel chunks && chunks.Classes.Contains(GrowingCodeBlock.ChunksClass)
+            ? chunks.Children.Select(FindCode).OfType<TextBlock>()
+            : null;
 
     /// <summary>
     /// Creates a <c>markdown-code-copy</c> button that copies the text <paramref name="text"/> returns

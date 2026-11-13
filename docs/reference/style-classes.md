@@ -24,6 +24,7 @@ Headings and paragraphs are `MarkdownSelectableTextBlock`s, a subclass of `TextB
 | `markdown-code-copy` | `Button` | Copy button in the toolbar, and in the corner of a display formula; also has the `copied` class for two seconds after a copy |
 | `markdown-code-line-numbers` | `TextBlock` | Line-number gutter of a code block, when `ShowCodeBlockLineNumbers` is set |
 | `markdown-code-scroll` | `ScrollViewer` | Scrolls the code of a block vertically, when `CodeBlockMaxHeight` is set |
+| `markdown-code-chunks` | `StackPanel` | Stacks the code of a block in chunks of 32 lines while it ends the text of a [streaming](../guides/streaming.md#how-rendering-works) session |
 | `markdown-custom-fence` | `Border` | Wraps the control a [fence renderer](../guides/custom-extensions.md#rendering-a-fence-language-as-your-own-control) returned for a fenced block |
 | `markdown-fence-<language>` | `Border` | The same `Border`, by fence language in lower case (e.g. `markdown-fence-chart`) |
 | `markdown-code-inline` | `Border` | Inline code container |

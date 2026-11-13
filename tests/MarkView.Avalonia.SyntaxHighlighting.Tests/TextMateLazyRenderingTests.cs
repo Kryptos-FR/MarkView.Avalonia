@@ -89,8 +89,11 @@ public class TextMateLazyRenderingTests
         }
     }
 
+    // While the session lasts, the block that ends the text is written in chunks of lines; the last holds the newest.
     private static TextBlock? StreamedCode(MarkdownViewer viewer) =>
         viewer.GetLogicalDescendants().OfType<Border>().FirstOrDefault(b => b.Classes.Contains("markdown-code-block")) is { } border
-            ? CodeBlockAssert.Layout(border).Code
+            ? border.Child is StackPanel chunks && chunks.Classes.Contains("markdown-code-chunks")
+                ? chunks.Children.OfType<TextBlock>().LastOrDefault()
+                : CodeBlockAssert.Layout(border).Code
             : null;
 }
