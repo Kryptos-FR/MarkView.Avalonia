@@ -829,7 +829,8 @@ internal sealed class DocumentSelectionLayer : Control
         for (var i = 0; i < document.Children.Count; i++)
         {
             var child = document.Children[i];
-            if (child.IsVisible)
+            // A block a virtualizing panel left out keeps the bounds it had when it was last laid out.
+            if (child.IsVisible && child.GetVisualParent() == document)
                 _shownBlocks.Add((i, child.Bounds.Top + offset, child.Bounds.Bottom + offset));
         }
         // Stryker disable once all : finding the blocks again finds the same blocks
@@ -847,9 +848,10 @@ internal sealed class DocumentSelectionLayer : Control
         if (entry.DocumentIndex >= 0)
             return entry.DocumentIndex;
 
-        Visual? visual = entry.Element;
-        while (visual is not null && visual.GetVisualParent() != Document)
-            visual = visual.GetVisualParent();
+        // The child of Document the entry is in, which a virtualizing panel may have left out of the visual tree.
+        Visual visual = entry.Element;
+        while (visual.GetVisualParent() is { } parent && parent != Document)
+            visual = parent;
         if (visual is Control child)
             entry.DocumentIndex = Document!.Children.IndexOf(child);
         return entry.DocumentIndex;

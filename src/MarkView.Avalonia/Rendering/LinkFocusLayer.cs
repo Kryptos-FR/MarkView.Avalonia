@@ -39,6 +39,12 @@ internal sealed class LinkFocusLayer : Panel
         return layer;
     }
 
+    /// <summary>
+    /// The panel whose children are the document's top-level controls. When it is a
+    /// <see cref="VirtualizingBlockPanel"/>, the stops of the blocks it left out of the visual tree still count.
+    /// </summary>
+    public Panel? Document { get; set; }
+
     /// <summary>The number of keyboard stops recorded, in reading order.</summary>
     internal int StopCount => _stops.Count;
 
@@ -108,7 +114,8 @@ internal sealed class LinkFocusLayer : Panel
         {
             var visible = stop is LinkFocusTarget target
                 ? target.TextBlock.IsEffectivelyVisible
-                : stop.IsEffectivelyVisible && stop.IsEffectivelyEnabled && ((Visual)stop).IsAttachedToVisualTree();
+                : stop.IsEffectivelyVisible && stop.IsEffectivelyEnabled
+                    && (((Visual)stop).IsAttachedToVisualTree() || Document is VirtualizingBlockPanel panel && panel.BlockOf((Visual)stop) is not null);
             if (visible) stops.Add(stop);
         }
         return stops;

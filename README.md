@@ -64,6 +64,7 @@ See [Getting started](https://kryptos-fr.github.io/MarkView.Avalonia/getting-sta
 - **Selection, copy and find** across the whole document, with copy as Markdown and as HTML. [Selection and copy](https://kryptos-fr.github.io/MarkView.Avalonia/guides/text-selection/) · [Find in document](https://kryptos-fr.github.io/MarkView.Avalonia/guides/find-in-document/)
 - **Navigation**: heading anchors, a table of contents, foldable headings and interactive task lists. [Displaying documents](https://kryptos-fr.github.io/MarkView.Avalonia/guides/displaying-documents/)
 - **Accessible**: keyboard navigation, screen reader roles, WCAG AA colours, a high-contrast palette and right-to-left text. [Accessibility](https://kryptos-fr.github.io/MarkView.Avalonia/guides/accessibility/)
+- **Long documents**: optionally, only the blocks near the visible area are in the visual tree, so a 500 KB document opens in about a second. [Long documents](https://kryptos-fr.github.io/MarkView.Avalonia/guides/long-documents/)
 - **Lazy rendering**: images, formulas, diagrams and code colours are built as they come near the visible area. [Lazy rendering](https://kryptos-fr.github.io/MarkView.Avalonia/guides/displaying-documents/#lazy-rendering)
 - **Extensible**: renderers, image loaders and code highlighters are extension points. [Custom extensions](https://kryptos-fr.github.io/MarkView.Avalonia/guides/custom-extensions/)
 
