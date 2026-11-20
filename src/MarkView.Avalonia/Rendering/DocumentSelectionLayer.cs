@@ -511,9 +511,10 @@ internal sealed class DocumentSelectionLayer : Control
             // Stryker disable once Equality : which side the exact middle falls on is arbitrary
             return entry.AbsStart + (posInLayer.Y - bounds.Top < bounds.Height / 2 ? 0 : 1);
 
-        // Clamped into the text, the hit test gives the start or end of the line on that height.
+        // Clamped into the block's content width, the hit test gives the start or end of the line on that height.
         var layout = textBlock.TextLayout;
-        var x = Math.Clamp(posInLayer.X - bounds.Left - textBlock.Padding.Left, 0, Math.Max(0, layout.WidthIncludingTrailingWhitespace));
+        var x = Math.Clamp(posInLayer.X - bounds.Left - textBlock.Padding.Left, 0,
+            Math.Max(0, bounds.Width - textBlock.Padding.Left - textBlock.Padding.Right));
         var y = Math.Clamp(posInLayer.Y - bounds.Top - textBlock.Padding.Top, 0, Math.Max(0, layout.Height - 1));
         return entry.AbsStart + layout.HitTestPoint(new Point(x, y)).TextPosition;
     }

@@ -6,6 +6,8 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
@@ -53,13 +55,17 @@ public class MarkdownViewerSelectBesideTextTests
         public void Dispose() => Window.Close();
     }
 
-    private static Fixture Show(string markdown)
+    private static Fixture Show(string markdown, Thickness padding = default)
     {
         var viewer = new MarkdownViewer
         {
-            Template = ScrollingViewerTemplate.Create(),
+            Padding = padding,
             Markdown = markdown,
         };
+        viewer.Styles.Add(new StyleInclude((Uri?)null)
+        {
+            Source = new Uri("avares://MarkView.Avalonia/Themes/MarkdownTheme.axaml"),
+        });
         var window = new Window { Width = 500, Height = 400, Content = viewer };
         // The headless text drawing has no hit-testable glyphs; a transparent background stands in.
         window.Styles.Add(new Style(x => x.OfType<MarkdownSelectableTextBlock>())
@@ -71,14 +77,70 @@ public class MarkdownViewerSelectBesideTextTests
         return new Fixture(window, viewer);
     }
 
+    private static Point InRightPadding(Fixture fixture, double y)
+    {
+        var origin = fixture.Viewer.TranslatePoint(default, fixture.Window)!.Value;
+        return new Point(origin.X + fixture.Viewer.Bounds.Width - fixture.Viewer.Padding.Right / 2, y);
+    }
+
     [AvaloniaFact]
     public void A_press_past_the_end_of_a_short_line_starts_at_its_end()
     {
-        using var f = Show("Short\n\nSecond paragraph");
-        var end = f.At(f.Blocks[0], 5);
+        using var f = Show("Short\n\nSecond paragraph", new Thickness(0, 0, 180, 0));
+        var block = f.Blocks[0];
+        var end = f.At(block, 5);
+        var press = InRightPadding(f, end.Y);
+        var blockRight = block.TranslatePoint(new Point(block.Bounds.Width, 0), f.Window)!.Value.X;
+        Assert.True(press.X > blockRight, "the press is outside the paragraph's TextBlock");
 
-        f.Drag(new Point(450, end.Y), f.At(f.Blocks[1], 6));
+        f.Drag(press, f.At(f.Blocks[1], 6));
 
+        Assert.Equal("\nSecond", f.Viewer.SelectedText);
+    }
+
+    [AvaloniaFact]
+    public void A_press_in_the_right_padding_of_an_rtl_paragraph_starts_at_its_logical_start()
+    {
+        using var f = Show("שלום עולם", new Thickness(0, 0, 180, 0));
+        var block = f.Blocks[0];
+        var press = InRightPadding(f, f.At(block, 0).Y);
+
+        f.Drag(press, f.At(block, 4));
+
+        Assert.Equal("שלום", f.Viewer.SelectedText);
+    }
+
+    [AvaloniaTheory]
+    [InlineData("<p align=\"center\">Centre text</p>", 7)]
+    [InlineData("<p align=\"right\">Right text</p>", 6)]
+    public void A_press_in_the_right_padding_of_an_aligned_paragraph_starts_at_its_end(string markdown, int target)
+    {
+        using var f = Show(markdown, new Thickness(0, 0, 180, 0));
+        var block = Assert.Single(f.Blocks);
+        var press = InRightPadding(f, f.At(block, 0).Y);
+
+        f.Drag(press, f.At(block, target));
+
+        Assert.Equal("text", f.Viewer.SelectedText);
+    }
+
+    [AvaloniaFact]
+    public void A_parent_sees_a_press_in_the_viewer_padding_unhandled()
+    {
+        using var f = Show("Short\n\nSecond paragraph", new Thickness(0, 0, 180, 0));
+        var sawPress = false;
+        var wasHandled = true;
+        f.Window.AddHandler(InputElement.PointerPressedEvent, (_, e) =>
+        {
+            sawPress = true;
+            wasHandled = e.Handled;
+        }, RoutingStrategies.Bubble);
+        var press = InRightPadding(f, f.At(f.Blocks[0], 5).Y);
+
+        f.Drag(press, f.At(f.Blocks[1], 6));
+
+        Assert.True(sawPress);
+        Assert.False(wasHandled);
         Assert.Equal("\nSecond", f.Viewer.SelectedText);
     }
 

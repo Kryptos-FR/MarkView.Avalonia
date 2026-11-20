@@ -47,8 +47,6 @@ public partial class MarkdownViewer : ContentControl
     private readonly ScrollAnchor _scrollAnchor = new();
     private bool _isDragging;
     private Point _dragStart;
-    // The press the document saw last, to tell whether a press that comes back unhandled was on the text.
-    private PointerPressedEventArgs? _contentPress;
     private const double DragThreshold = 3.0;
 
     private string? _sourceMarkdown;
@@ -1039,34 +1037,34 @@ public partial class MarkdownViewer : ContentControl
         if (!e.Properties.IsLeftButtonPressed || _selectionLayer is null) return;
         Focus();
         _isDragging = false;
-        _contentPress = e;
         _dragStart = e.GetPosition(_selectionLayer);
         _selectionLayer.OnPointerPressed(_dragStart);
     }
 
     /// <summary>
-    /// A left press no control took and that hit no text (beside a line, between blocks, in the padding): the next
+    /// A left mouse press no control took and that hit no text (beside a line, between blocks, in the padding): the next
     /// selection starts at the nearest text, as in a browser. A press outside the document (the padding) also
     /// captures the pointer for the document, so that a drag from there reaches its handlers.
     /// </summary>
     private void OnPointerPressedBesideText(PointerPressedEventArgs e)
     {
         // The open lightbox covers the document: its presses are its own.
-        if (!e.Properties.IsLeftButtonPressed || _lightbox is not null || _selectionLayer is not { } layer
+        if (e.Pointer.Type != PointerType.Mouse || !e.Properties.IsLeftButtonPressed || _lightbox is not null
+            || _selectionLayer is not { } layer
             || layer.GetVisualParent() is not InputElement content)
             return;
-        var onText = ReferenceEquals(e, _contentPress) && layer.HasAnchor;
-        _contentPress = null;
-        if (onText) return;
+        var inContent = e.Source is Visual source
+            && (ReferenceEquals(source, content) || content.IsVisualAncestorOf(source));
+        if (inContent && layer.HasAnchor) return;
 
         var position = e.GetPosition(layer);
         if (!layer.OnPointerPressedBesideText(position)) return;
+        _tabStart = null;
         Focus();
         _isDragging = false;
         _dragStart = position;
-        if (e.Source is not Visual source || !content.IsVisualAncestorOf(source))
+        if (!inContent)
             e.Pointer.Capture(content);
-        e.Handled = true;
     }
 
     private void OnContentPointerMoved(object? sender, PointerEventArgs e)
