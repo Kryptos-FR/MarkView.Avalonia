@@ -6,6 +6,8 @@ title: "Selection and copy"
 
 `MarkdownViewer` supports document-wide text selection via a transparent `DocumentSelectionLayer` overlay. The layer covers the entire rendered document and uses `TextBlock.TextLayout` hit-testing to map pointer positions to character offsets.
 
+A press beside the text, between two blocks or above or below everything starts the selection at the nearest text position, as in a browser: the end of the block above or the start of the block below, whichever is closer. A press that a control inside the document takes itself, such as a code block's copy button, starts no selection.
+
 ## User interactions
 
 | Gesture / Key | Action |

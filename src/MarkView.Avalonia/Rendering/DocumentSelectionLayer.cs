@@ -395,6 +395,24 @@ internal sealed class DocumentSelectionLayer : Control
         _focus = offset;
     }
 
+    /// <summary>Whether a press has set where a selection starts (a drag from there selects).</summary>
+    internal bool HasAnchor => _anchor is not null;
+
+    /// <summary>
+    /// Called by <see cref="MarkdownViewer"/> for a press beside the text that no control in the document took:
+    /// clears the selection and starts the next one at the text position nearest to <paramref name="posInLayer"/>
+    /// (see <see cref="NearestOffset"/>). Returns <c>false</c> when there is no text to start at.
+    /// </summary>
+    public bool OnPointerPressedBesideText(Point posInLayer)
+    {
+        ClearSelection();
+        var offset = NearestOffset(posInLayer);
+        if (offset is null) return false;
+        _anchor = offset;
+        _focus = offset;
+        return true;
+    }
+
     /// <summary>
     /// Updates the focus end of selection during a drag.
     /// <paramref name="posInLayer"/> is the pointer position in this control's coordinate space.
@@ -403,7 +421,7 @@ internal sealed class DocumentSelectionLayer : Control
     {
         if (_anchor is null) return;
         IsSelecting = true;
-        var offset = HitTestOffset(posInLayer);
+        var offset = HitTestOffset(posInLayer) ?? NearestOffset(posInLayer);
         if (offset is null) return;
         _focus = offset;
         InvalidateVisual();
@@ -444,6 +462,80 @@ internal sealed class DocumentSelectionLayer : Control
             return entry.AbsStart + hit.TextPosition;
         }
         return null;
+    }
+
+    /// <summary>
+    /// The text position nearest to <paramref name="posInLayer"/>, for a press or drag beside the text, as in a
+    /// browser: beside a line, its start or end (the entry on that height nearest to the pointer, e.g. of
+    /// several table cells); in a gap between blocks, the end of the text above or the start of the text below,
+    /// whichever is closer (above on a tie); above or below all text, the document's start or end. Only the
+    /// top-level blocks next to the pointer are looked at. <c>null</c> when no entry has been laid out.
+    /// </summary>
+    internal int? NearestOffset(Point posInLayer)
+    {
+        var y = posInLayer.Y;
+        var (first, end) = EntriesNear(y);
+        IndexEntry? beside = null, above = null, below = null;
+        double besideDistance = double.PositiveInfinity, aboveDistance = double.PositiveInfinity, belowDistance = double.PositiveInfinity;
+        for (var i = first; i < end; i++)
+        {
+            var entry = _entries[i];
+            if (IsHidden(entry) || !EnsureBounds(entry)) continue;
+
+            var bounds = entry.CachedClip!.Value;
+            if (y >= bounds.Top && y <= bounds.Bottom)
+            {
+                var distance = Math.Max(0, Math.Max(bounds.Left - posInLayer.X, posInLayer.X - bounds.Right));
+                if (distance < besideDistance)
+                    (beside, besideDistance) = (entry, distance);
+            }
+            else if (bounds.Bottom < y && y - bounds.Bottom < aboveDistance)
+                (above, aboveDistance) = (entry, y - bounds.Bottom);
+            else if (bounds.Top > y && bounds.Top - y < belowDistance)
+                (below, belowDistance) = (entry, bounds.Top - y);
+        }
+
+        if (beside is not null)
+            return OffsetBeside(beside, posInLayer);
+        // Stryker disable once Equality : which side an exactly centred press falls on is arbitrary
+        if (above is not null && aboveDistance <= belowDistance)
+            return above.AbsEnd;
+        return below?.AbsStart ?? above?.AbsEnd;
+    }
+
+    /// <summary>The position in <paramref name="entry"/> on the pointer's height nearest to it.</summary>
+    private static int OffsetBeside(IndexEntry entry, Point posInLayer)
+    {
+        var bounds = entry.CachedBounds!.Value;
+        if (entry.TextBlock is not { } textBlock)
+            // Stryker disable once Equality : which side the exact middle falls on is arbitrary
+            return entry.AbsStart + (posInLayer.Y - bounds.Top < bounds.Height / 2 ? 0 : 1);
+
+        // Clamped into the text, the hit test gives the start or end of the line on that height.
+        var layout = textBlock.TextLayout;
+        var x = Math.Clamp(posInLayer.X - bounds.Left - textBlock.Padding.Left, 0, Math.Max(0, layout.WidthIncludingTrailingWhitespace));
+        var y = Math.Clamp(posInLayer.Y - bounds.Top - textBlock.Padding.Top, 0, Math.Max(0, layout.Height - 1));
+        return entry.AbsStart + layout.HitTestPoint(new Point(x, y)).TextPosition;
+    }
+
+    /// <summary>
+    /// The entries of the top-level blocks next to <paramref name="y"/>: the block it is in, or the blocks just
+    /// above and below the gap it is in (only one of them above or below all blocks). Every entry without a
+    /// document.
+    /// </summary>
+    private (int First, int End) EntriesNear(double y)
+    {
+        if (Document is null)
+            return (0, _entries.Count);
+
+        var blocks = ShownBlocks();
+        if (blocks.Count == 0)
+            return (0, 0);
+
+        var next = FirstIndex(blocks, block => block.Bottom >= y);
+        var top = next > 0 ? blocks[next - 1].Top : blocks[0].Top;
+        var bottom = next < blocks.Count ? blocks[next].Bottom : blocks[^1].Bottom;
+        return EntriesAcross(top, bottom);
     }
 
     /// <summary>
