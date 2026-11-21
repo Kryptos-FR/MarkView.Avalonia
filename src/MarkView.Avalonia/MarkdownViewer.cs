@@ -497,6 +497,9 @@ public partial class MarkdownViewer : ContentControl
         IsLazyRenderingEnabledProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RenderMarkdown());
         TableOfContentsMaxDepthProperty.Changed.AddClassHandler<MarkdownViewer>((x, _) => x.RebuildTableOfContents());
         FocusableProperty.OverrideDefaultValue<MarkdownViewer>(true);
+        // Bubbling and not for handled events: a press a control in the document took (a button, a scroll bar,
+        // a task marker's toggle) never gets here.
+        PointerPressedEvent.AddClassHandler<MarkdownViewer>((x, e) => x.OnPointerPressedBesideText(e));
     }
 
     // ── Source loading ────────────────────────────────────────────────────────
@@ -1036,6 +1039,32 @@ public partial class MarkdownViewer : ContentControl
         _isDragging = false;
         _dragStart = e.GetPosition(_selectionLayer);
         _selectionLayer.OnPointerPressed(_dragStart);
+    }
+
+    /// <summary>
+    /// A left mouse press no control took and that hit no text (beside a line, between blocks, in the padding): the next
+    /// selection starts at the nearest text, as in a browser. A press outside the document (the padding) also
+    /// captures the pointer for the document, so that a drag from there reaches its handlers.
+    /// </summary>
+    private void OnPointerPressedBesideText(PointerPressedEventArgs e)
+    {
+        // The open lightbox covers the document: its presses are its own.
+        if (e.Pointer.Type != PointerType.Mouse || !e.Properties.IsLeftButtonPressed || _lightbox is not null
+            || _selectionLayer is not { } layer
+            || layer.GetVisualParent() is not InputElement content)
+            return;
+        var inContent = e.Source is Visual source
+            && (ReferenceEquals(source, content) || content.IsVisualAncestorOf(source));
+        if (inContent && layer.HasAnchor) return;
+
+        var position = e.GetPosition(layer);
+        if (!layer.OnPointerPressedBesideText(position)) return;
+        _tabStart = null;
+        Focus();
+        _isDragging = false;
+        _dragStart = position;
+        if (!inContent)
+            e.Pointer.Capture(content);
     }
 
     private void OnContentPointerMoved(object? sender, PointerEventArgs e)
