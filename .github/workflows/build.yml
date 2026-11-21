@@ -53,7 +53,7 @@ jobs:
 
       - name: Generate coverage report
         if: inputs.coverage
-        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.6.0
         with:
           reports: 'TestResults/**/*.cobertura.xml'
           targetdir: coveragereport
