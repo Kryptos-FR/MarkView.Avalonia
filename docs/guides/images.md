@@ -41,6 +41,20 @@ Relative addresses resolve against `BaseUri` or the folder of `Source` (see [Dis
 
 `Fill` and `ScaleDownToFit` need a width to scale to, which the template's `ScrollViewer` gives while its horizontal scroll bar is disabled (the default). With `ScrollViewer.HorizontalScrollBarVisibility="Auto"` on the viewer, or a template without `PART_ScrollViewer`, they may behave like `Natural`.
 
+## Images for light and dark themes
+
+An image whose address ends with `#gh-dark-mode-only` shows only in a dark theme, and one whose address ends with `#gh-light-mode-only` only in a light theme, as on GitHub. Put one of each side by side for an image that follows the theme:
+
+```markdown
+![Build times](media/chart.light.png#gh-light-mode-only)
+![Build times](media/chart.dark.png#gh-dark-mode-only)
+```
+
+- Two marked images next to each other, one for each theme, show as one image: its address switches when the theme changes, and it keeps the alt text and size of the first one. They can be separated by spaces or a line break, but nothing else, and can each be the only content of a link to the same address (`[![…](…#gh-light-mode-only)](url) [![…](…#gh-dark-mode-only)](url)`). It is selected, copied, saved and reached with Tab as one image.
+- A marked image on its own shows nothing in the other theme: it is not loaded, takes no room and is hidden from screen readers, but is still copied with a selection, and a link around it is still reached with Tab.
+- The mark is not part of the address the [image loaders](custom-extensions.md#writing-a-custom-image-loader) get. It works for an HTML `<img>` too; the HTML way of doing this, `<picture>` with `prefers-color-scheme` sources, is in the [HTML subset](markdown.md#html-subset).
+- The theme is the application's (`Application.ActualThemeVariant`); a viewer on a hidden tab catches up when it is shown.
+
 ## Images that fail to load
 
 When an image cannot be loaded (no loader accepts its address, the server answers with an error, the data cannot be decoded…), a small placeholder shows in its place: a broken-image icon followed by the alt text, in a muted colour. Selection still copies the alt text. The placeholder is one line high whatever the `=WxH` hint, which only caps it, so a missing picture never leaves a large empty box in the text. Removing an image while it loads (a new render, a closed document) cancels the load.

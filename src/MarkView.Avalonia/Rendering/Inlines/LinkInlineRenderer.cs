@@ -45,6 +45,9 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         var provisional = renderer.IsProvisional(obj);
         if (obj.IsImage)
         {
+            // The first image of a pair for each theme shows the second one too.
+            if (ThemeImages.IsSecond(obj))
+                return;
             if (provisional)
             {
                 WriteProvisionalImage(renderer, obj);
@@ -59,6 +62,10 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             WriteImage(renderer, obj);
             return;
         }
+
+        // So does the link around the first image, for a link around the second image only.
+        if (obj.FirstChild is LinkInline { IsImage: true, NextSibling: null } onlyImage && ThemeImages.IsSecond(onlyImage))
+            return;
 
         var url = renderer.ResolveUrl(obj.Url ?? string.Empty);
 
@@ -89,10 +96,22 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
 
     private static void WriteImage(AvaloniaRenderer renderer, LinkInline obj)
     {
-        // The <img> of an HTML <picture> shows the address of the picture's source for the theme, if any.
+        // The <img> of an HTML <picture> shows the address of the picture's source for the theme, if any. An
+        // image marked for one theme (#gh-dark-mode-only, #gh-light-mode-only) shows nothing in the other one,
+        // unless it starts a pair, which shows the second image there.
         var picture = obj.GetData(typeof(HtmlPicture)) as HtmlPicture;
-        string UrlForTheme() => renderer.ResolveUrl(picture?.UrlFor(IsDarkTheme()) ?? obj.Url ?? string.Empty);
-        var url = UrlForTheme();
+        var mark = ThemeImages.MarkOf(obj);
+        var partner = ThemeImages.PartnerOf(obj);
+        string? UrlFor(bool dark)
+        {
+            if (picture is not null)
+                return picture.UrlFor(dark) ?? obj.Url ?? string.Empty;
+            if (mark is not { } markedDark || markedDark == dark)
+                return ThemeImages.Unmarked(obj);
+            return partner is null ? null : ThemeImages.Unmarked(partner);
+        }
+        var shown = UrlFor(IsDarkTheme());
+        var url = renderer.ResolveUrl(shown ?? ThemeImages.Unmarked(obj));
         var altText = ExtractAltText(obj);
 
         var image = new Image();
@@ -110,6 +129,9 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             AutomationRoles.Hide(image);
         }
         MarkdownSelection.SetCopyText(image, altText);
+        // Hidden in this theme: no source (so no size), and nothing for a screen reader.
+        if (shown is null)
+            AutomationRoles.Hide(image);
 
         // Apply explicit dimensions from =WxH title (set by MarkdownViewer's preprocessor), or from the
         // width and height attributes of an HTML <img>, either of which can be missing.
@@ -132,16 +154,46 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         // Can be saved, under the name its address gives it.
         ImageExport.SetFileName(image, ImageExport.FileNameFromUrl(url));
 
-        var load = StartLoading(renderer, image, url, () => ShowFailurePlaceholder(renderer, image, altText));
-        if (picture is not null)
+        if (picture is null && mark is null)
         {
-            ThemeTracking.ReapplyOnThemeChange(image, () =>
+            StartLoading(renderer, image, url, () => ShowFailurePlaceholder(renderer, image, altText));
+        }
+        else
+        {
+            // Assigned at once; the failure callback, which uses it through ApplyTheme, runs after a load.
+            Action<string?> load = _ => { };
+            load = StartLoading(renderer, image, shown is null ? null : url, () =>
             {
-                var themed = UrlForTheme();
-                image.Tag = themed;
-                ImageExport.SetFileName(image, ImageExport.FileNameFromUrl(themed));
-                load(themed);
+                // The placeholder follows the theme too: it gives the image back for another address.
+                var placeholder = ShowFailurePlaceholder(renderer, image, altText);
+                ThemeTracking.ReapplyOnThemeChange(placeholder, () =>
+                {
+                    if (placeholder.Parent is InlineUIContainer container)
+                        container.Child = image;
+                    ApplyTheme();
+                });
             });
+            ThemeTracking.ReapplyOnThemeChange(image, ApplyTheme);
+
+            void ApplyTheme()
+            {
+                var themed = UrlFor(IsDarkTheme());
+                if (themed is not null)
+                {
+                    var resolved = renderer.ResolveUrl(themed);
+                    image.Tag = resolved;
+                    ImageExport.SetFileName(image, ImageExport.FileNameFromUrl(resolved));
+                    load(resolved);
+                }
+                else
+                {
+                    load(null);
+                }
+                if (themed is null || string.IsNullOrEmpty(altText))
+                    AutomationRoles.Hide(image);
+                else
+                    image.ClearValue(AutomationProperties.AccessibilityViewProperty);
+            }
         }
 
         // An image inside a link opens the link instead.
@@ -180,7 +232,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
     /// image. A "=WxH" size hint does not size the placeholder, which keeps its own compact size: the hint
     /// only caps it, the alt text being cut with an ellipsis beyond the width.
     /// </summary>
-    private static void ShowFailurePlaceholder(AvaloniaRenderer renderer, Image image, string altText)
+    private static Border ShowFailurePlaceholder(AvaloniaRenderer renderer, Image image, string altText)
     {
         var content = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 4 };
         content.Children.Add(new BrokenImageGlyph { VerticalAlignment = VerticalAlignment.Center });
@@ -224,6 +276,7 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         // Written by AvaloniaRenderer.WriteInline, the image is the child of an InlineUIContainer.
         if (image.Parent is InlineUIContainer container)
             container.Child = placeholder;
+        return placeholder;
     }
 
     private static string ExtractAltText(LinkInline obj)
@@ -260,19 +313,28 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
     /// <paramref name="image"/> comes within a screen of the viewport; otherwise loading starts once it
     /// is attached. Removing the image from the document cancels its load.
     /// </summary>
+    /// <param name="url">The address to load, or <c>null</c> to show nothing until another address is given.</param>
     /// <returns>
-    /// Switches the image to another address: loaded at once if the image already loaded or is loading (the
-    /// image it shows stays until then), otherwise when it would have loaded.
+    /// Switches the image to another address: loaded at once if the image would already have loaded (the
+    /// image it shows stays until then), otherwise when it would have loaded. <c>null</c> removes the image
+    /// shown, which leaves the image with no size.
     /// </returns>
-    private static Action<string> StartLoading(AvaloniaRenderer renderer, Image image, string url, Action? failed = null)
+    private static Action<string?> StartLoading(AvaloniaRenderer renderer, Image image, string? url, Action? failed = null)
     {
         CancellationTokenSource? cts = null;
+        // Whether the image would have loaded by now: it was in the cache, near the viewport or attached.
+        var due = false;
         if (renderer.IsLazyRenderingEnabled)
         {
-            if (ImageCache.Shared.TryGet(url, renderer.ImageLoaders) is { } cached)
+            if (url is not null && ImageCache.Shared.TryGet(url, renderer.ImageLoaders) is { } cached)
+            {
                 image.Source = cached;
+                due = true;
+            }
             else
+            {
                 ViewportTracking.RunWhenNearViewport(image, Start);
+            }
         }
         else
         {
@@ -290,7 +352,10 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             cts = null;
             // Tracking ended when the cancelled load started: it starts again where the image lands.
             if (renderer.IsLazyRenderingEnabled && image.Source is null)
+            {
+                due = false;
                 ViewportTracking.RunWhenNearViewport(image, Start);
+            }
         };
 
         void Start()
@@ -301,6 +366,8 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
             // the first in-flight task would be cancelled and a new one started, causing the image
             // to never load.
             if (image.Source != null || cts != null) return;
+            due = true;
+            if (url is null) return;
             cts = new CancellationTokenSource();
             _ = LoadImageAsync(renderer, image, url, cts.Token, failed);
         }
@@ -309,8 +376,14 @@ public sealed partial class LinkInlineRenderer : AvaloniaObjectRenderer<LinkInli
         {
             if (newUrl == url) return;
             url = newUrl;
-            if (image.Source is null && cts is null) return;
             cts?.Cancel();
+            cts = null;
+            if (url is null)
+            {
+                image.Source = null;
+                return;
+            }
+            if (!due) return;
             cts = new CancellationTokenSource();
             _ = LoadImageAsync(renderer, image, url, cts.Token, failed);
         };
