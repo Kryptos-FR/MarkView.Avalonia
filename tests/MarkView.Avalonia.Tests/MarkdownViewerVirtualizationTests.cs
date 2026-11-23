@@ -35,8 +35,12 @@ public class MarkdownViewerVirtualizationTests
         public MarkdownViewer Viewer { get; }
         public Window Window { get; }
 
-        public Fixture(string markdown, Action<MarkdownViewer>? configure = null, bool virtualize = true)
+        // Whether Settle runs the dispatcher's queued jobs, among which the background build of the blocks.
+        private readonly bool _idle;
+
+        public Fixture(string markdown, Action<MarkdownViewer>? configure = null, bool virtualize = true, bool idle = true)
         {
+            _idle = idle;
             Viewer = new MarkdownViewer { Template = ScrollingViewerTemplate.Create(), IsVirtualizationEnabled = virtualize };
             configure?.Invoke(Viewer);
             Viewer.Markdown = markdown;
@@ -76,7 +80,8 @@ public class MarkdownViewerVirtualizationTests
 
         public void Settle()
         {
-            Dispatcher.UIThread.RunJobs();
+            if (_idle)
+                Dispatcher.UIThread.RunJobs();
             Window.UpdateLayout();
             Window.UpdateLayout();
         }
@@ -331,6 +336,128 @@ public class MarkdownViewerVirtualizationTests
         Assert.Equal(300, f.Root.Children.Count);
         f.Viewer.SelectAll();
         Assert.EndsWith("Paragraph 301", f.Viewer.GetSelectedText().TrimEnd('\n'));
+    }
+
+    [AvaloniaFact]
+    public void Only_the_blocks_near_the_visible_area_are_built_at_first_and_the_others_while_idle()
+    {
+        var markdown = Paragraphs(300, i => i % 30 == 0 ? $"## Section {i / 30}" : $"Paragraph {i}");
+        double expected;
+        using (var plain = new Fixture(markdown, virtualize: false))
+            expected = plain.ScrollViewer.Extent.Height;
+
+        using var f = new Fixture(markdown, idle: false);
+
+        var built = f.Root.Children.Count;
+        Assert.InRange(built, 15, 60);
+        Assert.Equal(300 - built, f.Viewer.PendingBlockCount);
+        Assert.Equal(Enumerable.Range(0, built), f.AttachedIndexes);
+        // The blocks not built yet are estimated like those built but never laid out.
+        Assert.InRange(f.ScrollViewer.Extent.Height, expected * 0.9, expected * 1.1);
+        // The table of contents waits for the whole document.
+        Assert.Empty(f.Viewer.TableOfContents);
+
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(300, f.Root.Children.Count);
+        Assert.Equal(0, f.Viewer.PendingBlockCount);
+        Assert.Equal(10, f.Viewer.TableOfContents.Count);
+        Assert.Equal(Paragraphs(300, i => i % 30 == 0 ? $"Section {i / 30}" : $"Paragraph {i}").Replace("\n\n", "\n"),
+            SelectedAll(f));
+    }
+
+    private static string SelectedAll(Fixture f)
+    {
+        f.Viewer.SelectAll();
+        return f.Viewer.GetSelectedText().Replace("\n\n", "\n").TrimEnd('\n');
+    }
+
+    [AvaloniaFact]
+    public void Scrolling_far_builds_every_block_up_to_the_visible_area_before_it_is_drawn()
+    {
+        using var f = new Fixture(Paragraphs(300), idle: false);
+
+        f.ScrollTo(f.ScrollViewer.Extent.Height / 2);
+
+        var attached = f.AttachedIndexes.ToList();
+        Assert.InRange(attached[0], 100, 200);
+        Assert.Contains(attached, i => f.IsInView(f.Root.Children[i]));
+        Assert.True(f.Viewer.PendingBlockCount > 0);
+
+        f.ScrollToEnd();
+
+        Assert.Equal(0, f.Viewer.PendingBlockCount);
+        Assert.True(f.IsInView(f.Paragraph(299)));
+    }
+
+    [AvaloniaFact]
+    public void Find_select_all_anchors_and_tab_build_the_blocks_they_need()
+    {
+        var markdown = Paragraphs(300, i => i switch { 250 => "## Far", 280 => "[Far link](https://example.com)", _ => $"Paragraph {i}" });
+
+        using (var f = new Fixture(markdown, idle: false))
+        {
+            Assert.Equal(1, f.Viewer.Find("Paragraph 299"));
+            Assert.Equal(0, f.Viewer.PendingBlockCount);
+        }
+        using (var f = new Fixture(markdown, idle: false))
+        {
+            Assert.EndsWith("Paragraph 299", SelectedAll(f));
+        }
+        using (var f = new Fixture(markdown, viewer => viewer.IsSmoothScrollingEnabled = false, idle: false))
+        {
+            f.Viewer.ScrollToAnchor("far");
+            f.Settle();
+
+            Assert.InRange(f.Top(f.Root.Children[250]), 0, 40);
+        }
+        using (var f = new Fixture(markdown, idle: false))
+        {
+            var (handled, next) = ((ICustomKeyboardNavigation)f.Viewer).GetNext(f.Viewer, NavigationDirection.Next);
+
+            Assert.True(handled);
+            var target = Assert.IsType<LinkFocusTarget>(next);
+            Assert.Same(f.Root.Children[280], target.TextBlock);
+        }
+    }
+
+    [AvaloniaFact]
+    public void A_new_document_drops_the_blocks_the_last_one_had_not_built()
+    {
+        using var f = new Fixture(Paragraphs(300), idle: false);
+
+        f.Viewer.Markdown = Paragraphs(200, i => $"Other {i}");
+        f.Settle();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(200, f.Root.Children.Count);
+        Assert.Equal(Paragraphs(200, i => $"Other {i}").Replace("\n\n", "\n"), SelectedAll(f));
+    }
+
+    [AvaloniaFact]
+    public void An_edit_or_a_stream_builds_the_blocks_left_before_it_updates_the_document()
+    {
+        using var f = new Fixture(Paragraphs(300), viewer => viewer.IsIncrementalRenderingEnabled = true, idle: false);
+        var first = f.Root.Children[0];
+        Assert.True(f.Viewer.PendingBlockCount > 0);
+
+        f.Viewer.Markdown = Paragraphs(300).Replace("Paragraph 299", "Last");
+        f.Settle();
+
+        Assert.Same(first, f.Root.Children[0]);
+        Assert.Equal(0, f.Viewer.PendingBlockCount);
+        Assert.EndsWith("Paragraph 298\nLast", SelectedAll(f));
+
+        f.Viewer.IsVirtualizationEnabled = false;
+        f.Viewer.IsVirtualizationEnabled = true;
+        Assert.True(f.Viewer.PendingBlockCount > 0);
+        var session = f.Viewer.BeginStreaming();
+        session.Append("\n\nStreamed");
+        session.Complete();
+        f.Settle();
+
+        Assert.Equal(0, f.Viewer.PendingBlockCount);
+        Assert.EndsWith("Last\nStreamed", SelectedAll(f));
     }
 
     [AvaloniaFact]

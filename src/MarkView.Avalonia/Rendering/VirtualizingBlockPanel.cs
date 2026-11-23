@@ -27,6 +27,12 @@ namespace MarkView.Avalonia.Rendering;
 /// attached (the target of a jump), until it comes into view. Child indexes are those of
 /// <see cref="Panel.Children"/>, attached or not, so a theme's <c>:nth-child</c> selectors see the document's
 /// order.
+/// <para>
+/// The document's last blocks may not be built yet (see <see cref="Pending"/>): they take a height estimated from
+/// their source after the children, and once a measure finds some of them within the band it attaches, the
+/// arrange that follows has them built, which adds them to the children and has the panel measured again in the
+/// same layout pass, before anything is drawn.
+/// </para>
 /// </remarks>
 internal sealed class VirtualizingBlockPanel : StackPanel, IChildIndexProvider
 {
@@ -57,9 +63,31 @@ internal sealed class VirtualizingBlockPanel : StackPanel, IChildIndexProvider
     private double _bandBottom = double.NegativeInfinity;
     private Control? _pinned;
 
+    // How many pending blocks the last measure found within the band, for the arrange that follows to build.
+    private int _buildCount;
+
+    // The weight (see Weight) of each pending block at _weightsWidth.
+    private readonly Dictionary<Block, double> _pendingWeights = new(ReferenceEqualityComparer.Instance);
+    private double _weightsWidth = double.NaN;
+
     public VirtualizingBlockPanel()
     {
         EffectiveViewportChanged += OnEffectiveViewportChanged;
+    }
+
+    /// <summary>
+    /// The top-level blocks that follow the children but are not built yet, in document order, and the means to build
+    /// them, or <c>null</c> when every block is built.
+    /// </summary>
+    internal IPendingBlocks? Pending
+    {
+        get;
+        set
+        {
+            field = value;
+            _pendingWeights.Clear();
+            InvalidateMeasure();
+        }
     }
 
     /// <summary>The attached blocks, in document order.</summary>
@@ -197,6 +225,26 @@ internal sealed class VirtualizingBlockPanel : StackPanel, IChildIndexProvider
                 hasVisible = true;
             }
         }
+
+        // The blocks not built yet: those that start within the band are built by the arrange that follows.
+        _buildCount = 0;
+        if (Pending is { Count: > 0 } pending)
+        {
+            if (_weightsWidth != width)
+            {
+                _weightsWidth = width;
+                _pendingWeights.Clear();
+            }
+            for (var p = 0; p < pending.Count; p++)
+            {
+                var block = pending[p];
+                var top = y + (hasVisible ? spacing : 0);
+                if (top <= attachBottom)
+                    _buildCount = p + 1;
+                y = top + PendingWeight(block, width) * PixelsPerUnit(block.GetType());
+                hasVisible = true;
+            }
+        }
         return new Size(_desiredWidth, y);
     }
 
@@ -208,6 +256,14 @@ internal sealed class VirtualizingBlockPanel : StackPanel, IChildIndexProvider
                 continue;
             var size = child.DesiredSize;
             child.Arrange(new Rect(0, _slots[child].Top, Math.Max(finalSize.Width, size.Width), size.Height));
+        }
+
+        // Built now, the blocks are added to the children, which has the panel measured again within this layout pass.
+        if (_buildCount > 0 && Pending is { } pending)
+        {
+            var count = _buildCount;
+            _buildCount = 0;
+            pending.Build(count);
         }
         return finalSize;
     }
@@ -243,9 +299,24 @@ internal sealed class VirtualizingBlockPanel : StackPanel, IChildIndexProvider
     {
         if (!double.IsNaN(slot.Height))
             return slot.Height;
-        var samples = _samples.TryGetValue(TypeOf(child), out var ofType) ? ofType : _allSamples;
-        return WeightOf(child, slot, width) * (samples.Weight > 0 ? samples.Height / samples.Weight : DefaultPixelsPerUnit);
+        return WeightOf(child, slot, width) * PixelsPerUnit(TypeOf(child));
     }
+
+    // How tall a unit of weight is in a block of type type, by what the blocks laid out so far say.
+    private double PixelsPerUnit(Type type)
+    {
+        var samples = _samples.TryGetValue(type, out var ofType) ? ofType : _allSamples;
+        return samples.Weight > 0 ? samples.Height / samples.Weight : DefaultPixelsPerUnit;
+    }
+
+    private double PendingWeight(Block block, double width)
+    {
+        if (!_pendingWeights.TryGetValue(block, out var weight))
+            _pendingWeights[block] = weight = Weight(block, CharactersPerLine(width));
+        return weight;
+    }
+
+    private static double CharactersPerLine(double width) => Math.Max(20, width / CharacterWidth);
 
     // Records the height a block was laid out with; the first at a width also tells how tall a unit of weight is.
     private void Learn(Control child, Slot slot, double width, double height)
@@ -267,7 +338,7 @@ internal sealed class VirtualizingBlockPanel : StackPanel, IChildIndexProvider
         if (slot.WeightWidth != width)
         {
             slot.Weight = AvaloniaRenderer.GetTopLevelBlock(child) is { } block
-                ? Weight(block, Math.Max(20, width / CharacterWidth))
+                ? Weight(block, CharactersPerLine(width))
                 : 1;
             slot.WeightWidth = width;
         }
@@ -302,6 +373,19 @@ internal sealed class VirtualizingBlockPanel : StackPanel, IChildIndexProvider
     {
         add => _childIndexChanged += value;
         remove => _childIndexChanged -= value;
+    }
+
+    /// <summary>The top-level blocks of a document that are not built yet, in document order.</summary>
+    internal interface IPendingBlocks
+    {
+        /// <summary>How many blocks are not built yet.</summary>
+        int Count { get; }
+
+        /// <summary>The block at <paramref name="index"/> among those not built yet.</summary>
+        Block this[int index] { get; }
+
+        /// <summary>Builds the first <paramref name="count"/> blocks, adding their controls to the panel's children.</summary>
+        void Build(int count);
     }
 
     private sealed class Slot
