@@ -32,9 +32,20 @@ public sealed class SlugGenerator
     /// Generates the slug for a heading, appending <c>-1</c>, <c>-2</c>, ... when it is already in use,
     /// until it is not: headings "A", "A" and "A-1" get <c>a</c>, <c>a-1</c> and <c>a-1-1</c>.
     /// </summary>
-    public string GenerateSlug(string headingText)
+    public string GenerateSlug(string headingText) => GenerateFromBase(Normalize(headingText));
+
+    /// <summary>
+    /// The slugs generated so far, in order, each with its normalized base (the slug before any
+    /// <c>-N</c> suffix).
+    /// </summary>
+    internal IReadOnlyList<(string Base, string Slug, int Suffixes)> Generated => _generated;
+
+    /// <summary>
+    /// Generates the slug for a normalized base (one from <see cref="Generated"/>), as
+    /// <see cref="GenerateSlug"/> does for a heading text with that base.
+    /// </summary>
+    internal string GenerateFromBase(string baseSlug)
     {
-        var baseSlug = Normalize(headingText);
         var slug = baseSlug;
         var suffixes = 0;
         while (_seen.ContainsKey(slug))

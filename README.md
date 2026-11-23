@@ -56,6 +56,7 @@ See [Getting started](https://kryptos-fr.github.io/MarkView.Avalonia/getting-sta
 
 - **GitHub-flavoured Markdown** out of the box: tables, task lists, alerts, footnotes, `<details>` and the HTML subset that READMEs use, plus Markdig's opt-in syntax. [Markdown syntax](https://kryptos-fr.github.io/MarkView.Avalonia/reference/markdown-syntax/)
 - **Built for AI chat**: [streaming](https://kryptos-fr.github.io/MarkView.Avalonia/guides/streaming/) that re-renders only the end of the document and closes unfinished syntax, foldable [thinking blocks](https://kryptos-fr.github.io/MarkView.Avalonia/guides/chat/#thinking-blocks), and a compact chat preset. [Chat and AI answers](https://kryptos-fr.github.io/MarkView.Avalonia/guides/chat/)
+- **Live preview**: next to an editor, an edit re-renders only the blocks it changes and keeps the scroll position. [Live preview](https://kryptos-fr.github.io/MarkView.Avalonia/guides/live-preview/)
 - **Code blocks** with a copy button, language label, line numbers, wrapping and TextMate syntax highlighting, or your own control for any fence language. [Code blocks](https://kryptos-fr.github.io/MarkView.Avalonia/guides/code-blocks/)
 - **Images and diagrams**: sizing, a zoomable lightbox, saving, an image cache, SVG and Mermaid diagrams, all in .NET. [Images and diagrams](https://kryptos-fr.github.io/MarkView.Avalonia/guides/images/)
 - **Math**: `$…$` and `$$…$$` LaTeX formulas. [Math](https://kryptos-fr.github.io/MarkView.Avalonia/guides/math/)

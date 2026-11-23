@@ -12,6 +12,7 @@ Each guide starts with the short answer and an example, then the details.
 | [Markdown and the pipeline](markdown.md) | The GitHub default, adding syntax, subscript, alerts, `<details>`, the HTML subset |
 | [Chat and AI answers](chat.md) | A viewer per message, the Chat preset, streaming, thinking blocks |
 | [Streaming](streaming.md) | Streaming sessions in depth: appending, completing, healing, provisional blocks |
+| [Live preview](live-preview.md) | Re-rendering only the blocks an edit changes, for a preview next to an editor |
 | [Code blocks](code-blocks.md) | The toolbar, copy buttons, line numbers, wrapping, syntax highlighting, custom fenced blocks |
 | [Images and diagrams](images.md) | Sizing, the lightbox, saving, the image cache, SVG, Mermaid |
 | [Math](math.md) | LaTeX formulas and their delimiters |

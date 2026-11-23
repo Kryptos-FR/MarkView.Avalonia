@@ -56,7 +56,7 @@ public partial class MainView : UserControl
     {
         switch (e.PropertyName)
         {
-            case nameof(MainViewModel.PageView):
+            case nameof(MainViewModel.PageView) or nameof(MainViewModel.IsEditing):
                 UpdatePageArea();
                 RefreshSource();
                 break;
@@ -89,7 +89,7 @@ public partial class MainView : UserControl
     /// </summary>
     private async void RefreshSource()
     {
-        if (_viewModel is not { IsSourceShown: true, IsReplaying: false } viewModel)
+        if (_viewModel is not { IsSourceViewShown: true, IsReplaying: false } viewModel)
             return;
         var version = ++_sourceVersion;
         var text = await viewModel.ReadPageMarkdownAsync();
@@ -114,7 +114,7 @@ public partial class MainView : UserControl
 
     // ── Find in document ─────────────────────────────────────────────────────
 
-    private MarkdownViewer FindTarget => _viewModel?.PageView == PageView.Source ? SourceView : MarkdownView;
+    private MarkdownViewer FindTarget => _viewModel is { PageView: PageView.Source, IsEditing: false } ? SourceView : MarkdownView;
 
     private void OnViewerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
@@ -229,6 +229,22 @@ public partial class MainView : UserControl
     }
 
     // ── Streaming replay ─────────────────────────────────────────────────────
+
+    private async void OnEditClicked(object? sender, RoutedEventArgs e)
+    {
+        var viewModel = (MainViewModel)DataContext!;
+        if (viewModel.IsEditing)
+        {
+            viewModel.EndEditing();
+            return;
+        }
+        // A replay in progress stops first, which gives the page its whole text back to edit.
+        _streamCts?.Cancel();
+        if (_streamTask is not null)
+            await Task.WhenAny(_streamTask);
+        if (await viewModel.ReadCurrentMarkdownAsync() is { } text)
+            viewModel.BeginEditing(text);
+    }
 
     private async void OnStreamClicked(object? sender, RoutedEventArgs e)
     {
