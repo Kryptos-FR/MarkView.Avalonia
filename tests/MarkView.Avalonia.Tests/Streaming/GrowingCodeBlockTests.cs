@@ -30,6 +30,9 @@ public class GrowingCodeBlockTests
     private static List<TextBlock> Chunks(MarkdownViewer viewer) =>
         Assert.IsAssignableFrom<IEnumerable<TextBlock>>(CodeBlockToolbar.FindCodeChunks(CodeBorder(viewer))).ToList();
 
+    private static DocumentSelectionLayer Layer(MarkdownViewer viewer) =>
+        Assert.IsType<DocumentSelectionLayer>(Assert.IsType<Grid>(viewer.Content).Children[1]);
+
     private static string Text(TextBlock text) => MarkdownSelectableTextBlock.ExtractPlainText(text.Inlines!);
 
     private static (MarkdownViewer Viewer, MarkdownStreamingSession Session) Stream(string text, Action<MarkdownViewer>? configure = null)
@@ -75,6 +78,55 @@ public class GrowingCodeBlockTests
         Assert.NotSame(before[2], after[2]);
         Assert.Equal(Lines(64, 32).TrimEnd('\n'), Text(after[2]));
         Assert.Equal(4, after.Count);
+    }
+
+    [AvaloniaFact]
+    public void Update_keeps_the_selection_entries_of_the_complete_chunks()
+    {
+        var (viewer, session) = Stream("```\n" + Lines(0, 70));
+        var layer = Layer(viewer);
+        var before = layer.Entries.ToList();
+
+        session.Append(Lines(70, 30));
+        session.ApplyPendingUpdate();
+
+        var after = layer.Entries.ToList();
+        Assert.Equal(3, before.Count);
+        Assert.Equal(4, after.Count);
+        // The entries of the kept chunks are not registered again; those of the chunks written again are new.
+        Assert.Same(before[0], after[0]);
+        Assert.Same(before[1], after[1]);
+        Assert.NotSame(before[2], after[2]);
+        Assert.Equal(Chunks(viewer), after.Select(entry => entry.Element));
+        // Every entry belongs to the block as parsed by this update, that of the new entries.
+        var block = Assert.IsAssignableFrom<Markdig.Syntax.CodeBlock>(after[^1].TopLevelBlock);
+        Assert.All(after, entry => Assert.Same(block, entry.TopLevelBlock));
+    }
+
+    [AvaloniaFact]
+    public void Selection_in_a_kept_chunk_stays_on_its_lines_after_an_update()
+    {
+        var (viewer, session) = Stream("```\n" + Lines(0, 70));
+        var layer = Layer(viewer);
+        layer.SetSelectionForTest(Lines(0, 2).Length, Lines(0, 4).Length - 1);
+
+        session.Append(Lines(70, 30));
+        session.ApplyPendingUpdate();
+
+        Assert.Equal(Lines(2, 2).TrimEnd('\n'), viewer.GetSelectedText());
+    }
+
+    [AvaloniaFact]
+    public void Selection_as_markdown_fences_a_kept_chunk_and_one_written_again_together()
+    {
+        var (viewer, session) = Stream("```cs\n" + Lines(0, 40));
+        session.Append(Lines(40, 30) + "last");
+        session.ApplyPendingUpdate();
+
+        // From "line 30", in the first chunk, kept, to the end of "line 33", in the second, written again.
+        Layer(viewer).SetSelectionForTest(Lines(0, 30).Length, Lines(0, 34).Length - 1);
+
+        Assert.Equal("```cs\n" + Lines(30, 4) + "```", viewer.GetSelectedMarkdown());
     }
 
     [AvaloniaFact]

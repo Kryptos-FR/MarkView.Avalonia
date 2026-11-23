@@ -38,6 +38,8 @@ internal sealed class GrowingCodeBlock
     private readonly string? _language;
     private readonly StackPanel _chunks;
     private readonly List<Chunk> _written = [];
+    // What KeptChunks found, for the Grow that follows it.
+    private (CodeBlock Block, List<ReadOnlyMemory<char>> Lines, int Keep)? _next;
 
     private GrowingCodeBlock(AvaloniaRenderer renderer, CodeBlock block, ICodeHighlighter? highlighter, string? language, StackPanel chunks)
     {
@@ -90,20 +92,34 @@ internal sealed class GrowingCodeBlock
         block.GetType() == Block.GetType() && (block as FencedCodeBlock)?.Info == _language;
 
     /// <summary>
-    /// Brings the chunks up to date with <paramref name="block"/>: keeps those whose lines are all complete (a line
-    /// followed them when they were written) and unchanged, and writes the others again.
+    /// How many of the chunks written so far <see cref="Grow"/> keeps for <paramref name="block"/>: the leading chunks
+    /// whose lines are all complete (a line followed them when they were written) and unchanged. Each chunk is one
+    /// selection entry, so the caller keeps that many of the block's entries.
     /// </summary>
-    public void Grow(CodeBlock block)
+    public int KeptChunks(CodeBlock block)
     {
         var lines = HighlightedCode.Lines(block);
         var keep = 0;
         while (keep < _written.Count && _written[keep].IsComplete && _written[keep].Matches(lines))
             keep++;
+        _next = (block, lines, keep);
+        return keep;
+    }
 
+    /// <summary>
+    /// Brings the chunks up to date with the block last passed to <see cref="KeptChunks"/>: keeps the chunks it
+    /// counted and writes the others again.
+    /// </summary>
+    /// <returns>The text blocks of the chunks written again, in order, to register with text selection.</returns>
+    public List<TextBlock> Grow()
+    {
+        var (block, lines, keep) = _next ?? throw new InvalidOperationException("KeptChunks was not called before Grow.");
+        _next = null;
         _chunks.Children.RemoveRange(keep, _chunks.Children.Count - keep);
         _written.RemoveRange(keep, _written.Count - keep);
         Block = block;
         WriteChunks(keep, lines);
+        return [.. _written.Skip(keep).Select(chunk => chunk.Text)];
     }
 
     private void WriteChunks(int start, List<ReadOnlyMemory<char>> lines)
@@ -115,15 +131,16 @@ internal sealed class GrowingCodeBlock
             var text = new TextBlock { TextWrapping = TextWrapping.NoWrap };
             HighlightedCode.WriteLines(text, _highlighter, _language, chunkLines, ref state);
             _chunks.Children.Add(CodeBlockToolbar.LayOutLines(_renderer, text, first + 1, chunkLines.Count, sharedGutter: true));
-            _written.Add(new Chunk(first, chunkLines, IsComplete: first + chunkLines.Count < lines.Count, state));
+            _written.Add(new Chunk(text, first, chunkLines, IsComplete: first + chunkLines.Count < lines.Count, state));
         }
     }
 
+    /// <param name="Text">The text block that shows its lines.</param>
     /// <param name="First">The index of its first line in the block.</param>
     /// <param name="Lines">Its lines, as written.</param>
     /// <param name="IsComplete">Whether a line followed its last one when it was written, so none of its lines can still grow.</param>
     /// <param name="EndState">The highlighter's state after its last line.</param>
-    private sealed record Chunk(int First, List<ReadOnlyMemory<char>> Lines, bool IsComplete, object? EndState)
+    private sealed record Chunk(TextBlock Text, int First, List<ReadOnlyMemory<char>> Lines, bool IsComplete, object? EndState)
     {
         public bool Matches(List<ReadOnlyMemory<char>> lines)
         {

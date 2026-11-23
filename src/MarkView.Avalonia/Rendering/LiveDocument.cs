@@ -91,6 +91,7 @@ internal sealed class LiveDocument
         var childrenReused = growing is null ? 0 : ReusablePrefix(growing.Children, (ContainerBlock)document[reused]);
         // Or the last block is a code block that still ends the text, whose kept chunks need no new layout (see GrowingCodeBlock).
         var growingCode = keysUnchanged && reused == _records.Count - 1 ? GrowingCodeFor(_records[reused], document, reused) : null;
+        var keptChunks = growingCode?.KeptChunks((CodeBlock)document[reused]) ?? 0;
 
         // The state the kept blocks produced: the sum of their counts.
         var kept = Sum(_records, reused);
@@ -105,9 +106,10 @@ internal sealed class LiveDocument
         }
         else if (growingCode is not null)
         {
-            // The code block keeps its shell; its selection entries, one per chunk, are registered again once it grew.
+            // The code block keeps its shell, and the selection entries of the chunks it keeps, one per chunk; those of
+            // the chunks written again are registered once it grew.
             rootChildren += _records[reused].Counts.Children;
-            kept += _records[reused].Counts with { Entries = 0 };
+            kept += _records[reused].Counts with { Entries = keptChunks };
         }
 
         var focusDiscarded = IsInDiscarded(focusedElement,
@@ -133,17 +135,25 @@ internal sealed class LiveDocument
         else if (growingCode is not null)
         {
             var block = (CodeBlock)document[reused];
-            growingCode.Grow(block);
             var shellStart = rootChildren - _records[reused].Counts.Children;
             for (var c = shellStart; c < rootChildren; c++)
                 AvaloniaRenderer.SetTopLevelBlock(RootPanel.Children[c], block);
-            var entries = SelectionLayer.EntryCount;
-            MarkdownViewer.RegisterBlocks(SelectionLayer, RootPanel, shellStart);
+            // The kept entries now belong to the block as parsed this time (selection copied as Markdown groups the
+            // entries by block), and only the chunks written again get new ones.
+            var firstEntry = SelectionLayer.EntryCount - keptChunks;
+            for (var k = firstEntry; k < SelectionLayer.EntryCount; k++)
+                SelectionLayer.Entries[k].TopLevelBlock = block;
+            foreach (var chunk in growingCode.Grow())
+            {
+                var entry = MarkdownViewer.CodeChunkEntry(chunk);
+                entry.TopLevelBlock = block;
+                SelectionLayer.Register(entry);
+            }
             _records[reused] = _records[reused] with
             {
                 SpanEnd = block.Span.End,
                 WasOpen = block.IsOpen,
-                Counts = _records[reused].Counts with { Entries = SelectionLayer.EntryCount - entries },
+                Counts = _records[reused].Counts with { Entries = SelectionLayer.EntryCount - firstEntry },
             };
             reused++;
         }
