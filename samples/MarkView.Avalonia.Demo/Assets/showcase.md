@@ -233,6 +233,13 @@ The table below shows the same image at different sizes:
 
 Click any image to open it in a lightbox over the viewer; click anywhere or press Esc to close it.
 
+As on GitHub, an address that ends with `#gh-light-mode-only` or `#gh-dark-mode-only` shows its image in that
+theme only. Side by side, two of them make one image that follows the theme: switch the theme and the sun turns
+into a moon.
+
+![A sun in the light theme, a moon in the dark theme](picture-light.png#gh-light-mode-only "=64x64")
+![A sun in the light theme, a moon in the dark theme](picture-dark.png#gh-dark-mode-only "=64x64")
+
 An image that cannot be loaded shows a placeholder with its alt text instead:
 ![Architecture diagram (missing file)](missing-diagram.png)
 
