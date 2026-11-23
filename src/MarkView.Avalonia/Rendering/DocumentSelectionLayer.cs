@@ -256,7 +256,11 @@ internal sealed class DocumentSelectionLayer : Control
         var focus = Locate(_focus);
         var keptEnd = start == 0 ? 0 : _entries[start - 1].AbsEnd;
 
-        var removed = _entries.GetRange(start, removeCount);
+        // Which entries were removed matters only for a selection or find matches; a streaming update, which
+        // usually has neither, allocates nothing for it.
+        var removedEntries = removeCount > 0 && (_anchor is not null || _findMatches.Count > 0)
+            ? new HashSet<IndexEntry>(_entries.Skip(start).Take(removeCount))
+            : null;
         _entries.RemoveRange(start, removeCount);
         _entries.InsertRange(start, inserted);
         var offset = start == 0 ? 0 : _entries[start - 1].AbsEndWithSep;
@@ -272,13 +276,12 @@ internal sealed class DocumentSelectionLayer : Control
         _shownBlocksLayout = -1;
         _selectedText = null;
 
-        var removedEntries = new HashSet<IndexEntry>(removed);
         if (_anchor is { } anchorAt && _focus is { } focusAt)
         {
             // An end at the very start of the removed entries (at 0, with none kept before them) is at
             // the kept end already, and stays there.
-            var anchorRemoved = removedEntries.Contains(anchor!.Value.Entry);
-            var focusRemoved = removedEntries.Contains(focus!.Value.Entry);
+            var anchorRemoved = removedEntries?.Contains(anchor!.Value.Entry) == true;
+            var focusRemoved = removedEntries?.Contains(focus!.Value.Entry) == true;
             if (anchorRemoved && focusRemoved && Math.Min(anchorAt, focusAt) > keptEnd)
             {
                 _anchor = null;
@@ -286,12 +289,13 @@ internal sealed class DocumentSelectionLayer : Control
             }
             else
             {
-                _anchor = anchorRemoved ? keptEnd : anchor.Value.Entry.AbsStart + anchor.Value.Offset;
-                _focus = focusRemoved ? keptEnd : focus.Value.Entry.AbsStart + focus.Value.Offset;
+                _anchor = anchorRemoved ? keptEnd : anchor!.Value.Entry.AbsStart + anchor.Value.Offset;
+                _focus = focusRemoved ? keptEnd : focus!.Value.Entry.AbsStart + focus.Value.Offset;
             }
         }
 
-        _findMatches.RemoveAll(match => removedEntries.Contains(match.Entry));
+        if (removedEntries is not null)
+            _findMatches.RemoveAll(match => removedEntries.Contains(match.Entry));
         if (CurrentFindMatch >= _findMatches.Count)
             CurrentFindMatch = -1;
 
@@ -749,16 +753,34 @@ internal sealed class DocumentSelectionLayer : Control
     /// an embedded control is a U+FFFC placeholder in its entry's text, so copy texts are never matched.
     /// Hidden entries (e.g. the body of a collapsed alert) are searched like the others.
     /// </summary>
-    public int Find(string text, MarkdownFindOptions options)
+    /// <param name="text">The text to find.</param>
+    /// <param name="options">How to compare.</param>
+    /// <param name="fromEntry">
+    /// The first entry to search: the matches in the entries before it are kept as they are, for entries that have not
+    /// changed since the last search with the same text and options (after a streaming update, the entries it kept).
+    /// </param>
+    public int Find(string text, MarkdownFindOptions options, int fromEntry = 0)
     {
-        _findMatches.Clear();
+        ArgumentOutOfRangeException.ThrowIfNegative(fromEntry);
+        if (fromEntry == 0)
+            _findMatches.Clear();
+        else
+        {
+            // Matches are in entry order, so those from fromEntry on come last.
+            var kept = _findMatches.Count;
+            var searched = new HashSet<IndexEntry>(_entries.Skip(fromEntry));
+            while (kept > 0 && searched.Contains(_findMatches[kept - 1].Entry))
+                kept--;
+            _findMatches.RemoveRange(kept, _findMatches.Count - kept);
+        }
         var comparison = options.HasFlag(MarkdownFindOptions.MatchCase)
             ? StringComparison.Ordinal
             : StringComparison.OrdinalIgnoreCase;
         var wholeWord = options.HasFlag(MarkdownFindOptions.WholeWord);
 
-        foreach (var entry in _entries)
+        for (var i = fromEntry; i < _entries.Count; i++)
         {
+            var entry = _entries[i];
             if (entry.TextBlock is null || entry.IsMarker) continue;
 
             var plainText = entry.PlainText;

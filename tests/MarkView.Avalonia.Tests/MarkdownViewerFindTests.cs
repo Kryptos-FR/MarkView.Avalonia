@@ -62,6 +62,20 @@ public class MarkdownViewerFindTests
     // ── What is matched ───────────────────────────────────────────────────────
 
     [AvaloniaFact]
+    public void Layer_search_from_an_entry_keeps_the_matches_before_it()
+    {
+        var layer = Layer(Viewer("x y\n\nx y\n\nx y"));
+        layer.Find("x", MarkdownFindOptions.None);
+
+        // The caller vouches for the entries before fromEntry: their matches stay, the others are searched again.
+        var count = layer.Find("y", MarkdownFindOptions.None, fromEntry: 1);
+
+        Assert.Equal(3, count);
+        Assert.Equal([0, 2, 2], layer.FindMatches.Select(m => m.Start));
+        Assert.Equal([0, 1, 2], layer.FindMatches.Select(m => layer.Entries.ToList().IndexOf(m.Entry)));
+    }
+
+    [AvaloniaFact]
     public void Find_ignores_case_by_default()
     {
         var viewer = Viewer("Apple apple APPLE");

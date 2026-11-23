@@ -23,7 +23,11 @@ namespace MarkView.Avalonia.Rendering;
 /// How many top-level blocks have the same source as before, whether or not they kept their controls
 /// (a changed link reference definition re-renders them all).
 /// </param>
-internal readonly record struct UpdateResult(int ReusedBlocks, bool HeadingsChanged, bool FocusDiscarded, int UnchangedBlocks = 0);
+/// <param name="KeptEntries">
+/// How many selection entries, from the first, are those of the last update, unchanged; the update registered the
+/// ones after them. Always 0 for an update that replaced blocks before the last one it kept.
+/// </param>
+internal readonly record struct UpdateResult(int ReusedBlocks, bool HeadingsChanged, bool FocusDiscarded, int UnchangedBlocks = 0, int KeptEntries = 0);
 
 /// <summary>
 /// A markdown document rendered incrementally. Each <see cref="Update"/> receives the whole re-parsed
@@ -127,9 +131,12 @@ internal sealed class LiveDocument
             Renderer.ShiftSourcePositions(_text.Length - CommonSuffixLength(_text, text), text.Length - _text.Length);
 
         var headingsBefore = Renderer.HeadingEntries.ToList();
-        var (reused, focusDiscarded) = suffix == 0
-            ? Truncate(document, text, prefix, keysUnchanged, focusedElement, limit)
-            : Splice(document, text, prefix, suffix, focusedElement);
+        int reused, keptEntries = 0;
+        bool focusDiscarded;
+        if (suffix == 0)
+            (reused, focusDiscarded, keptEntries) = Truncate(document, text, prefix, keysUnchanged, focusedElement, limit);
+        else
+            (reused, focusDiscarded) = Splice(document, text, prefix, suffix, focusedElement);
 
         // New blocks after a collapsed heading belong to its section, and a heading rendered again keeps the
         // state the user left it in.
@@ -139,7 +146,7 @@ internal sealed class LiveDocument
         Document = document;
         _text = text;
         _invalidationKeys = keys;
-        return new UpdateResult(reused, !headingsBefore.SequenceEqual(Renderer.HeadingEntries), focusDiscarded, unchanged);
+        return new UpdateResult(reused, !headingsBefore.SequenceEqual(Renderer.HeadingEntries), focusDiscarded, unchanged, keptEntries);
     }
 
     /// <summary>
@@ -176,9 +183,10 @@ internal sealed class LiveDocument
     /// blocks in all. The last block
     /// may still be growing inside the control rendered for it (see <see cref="IGrowingBlockRenderer"/>):
     /// that control is kept, and only the children that changed are rendered again. Returns how many
-    /// blocks kept their controls, and whether the focused element was in one that did not.
+    /// blocks kept their controls, whether the focused element was in one that did not, and how many selection
+    /// entries were kept.
     /// </summary>
-    private (int Reused, bool FocusDiscarded) Truncate(
+    private (int Reused, bool FocusDiscarded, int KeptEntries) Truncate(
         MarkdownDocument document, string text, int prefix, bool keysUnchanged, IInputElement? focusedElement, int limit)
     {
         var growing = keysUnchanged && prefix == _records.Count - 1 ? GrowingTailFor(_records[prefix], document, prefix) : null;
@@ -258,7 +266,7 @@ internal sealed class LiveDocument
         var end = Math.Min(document.Count, Math.Max(limit, written));
         for (var i = written; i < end; i++)
             _records.Add(WriteTopLevel(document, i, text));
-        return (prefix, focusDiscarded);
+        return (prefix, focusDiscarded, kept.Entries);
     }
 
     /// <summary>Writes top-level block <paramref name="index"/> after those rendered, and returns its record.</summary>

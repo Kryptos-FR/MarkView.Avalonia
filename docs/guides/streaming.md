@@ -170,6 +170,11 @@ Healing is a step of each update, before the parse is rendered:
    whitespace, and the text is parsed again. The second parse only happens when closers were added.
 3. The result is rendered.
 
+While the end of the text is still on the first line of the paragraph or heading the last update
+ended in, the viewer adds the closers from that block's start and parses once, keeping the result
+when that block still starts at the same place; otherwise it takes the two steps above. Either way
+the result is the same.
+
 Healing only ever adds characters, and only to what is parsed. `Markdown` always holds the text as
 it was received, and the final update, the one `Complete()` applies, renders the text as it is,
 without healing. Only a paragraph or an ATX heading (`# Title`) at the end of the text is healed:

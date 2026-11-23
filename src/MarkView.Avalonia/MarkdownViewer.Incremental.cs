@@ -64,7 +64,7 @@ public partial class MarkdownViewer
         var previousBlocks = live.BlockCount;
         var result = live.Update(document, markdownText, focused, reuseAfterChange: true);
 
-        _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);
+        _anchors = renderer.Anchors;
         if (result.HeadingsChanged)
         {
             _headingEntries = [.. renderer.HeadingEntries];

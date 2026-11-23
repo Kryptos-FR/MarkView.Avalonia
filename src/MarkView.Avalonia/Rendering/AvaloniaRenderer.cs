@@ -249,6 +249,9 @@ public class AvaloniaRenderer : RendererBase
     /// </summary>
     internal void TruncateAnchors(int count)
     {
+        // Nothing dropped, as on most streaming updates: the anchors are the same.
+        if (count == _anchorOrder.Count)
+            return;
         _anchorOrder.RemoveRange(count, _anchorOrder.Count - count);
         _anchors.Clear();
         foreach (var (id, control) in _anchorOrder)

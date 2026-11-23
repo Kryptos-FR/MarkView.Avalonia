@@ -50,6 +50,11 @@ namespace MarkView.Avalonia.Rendering;
 /// When the content ends with an unescaped backslash, the text is returned as it is, since any closer
 /// written after it would be escaped.
 /// </remarks>
+/// <summary>The tail of a streaming update, for the next one (see <see cref="MarkdownHealer.ParseStreamed"/>).</summary>
+/// <param name="Start">Where the tail started.</param>
+/// <param name="TextLength">The length of the text it was the tail of.</param>
+internal readonly record struct TailHint(int Start, int TextLength);
+
 internal static class MarkdownHealer
 {
     /// <summary>
@@ -223,6 +228,66 @@ internal static class MarkdownHealer
         new(
             pipeline.Extensions.Contains<MathExtension>(),
             pipeline.Extensions.Any(extension => extension.GetType().FullName == BracketMathExtensionName));
+
+    /// <summary>
+    /// Parses <paramref name="text"/>, the text of a streaming update, healed with <paramref name="options"/> unless
+    /// <paramref name="final"/>, and returns the document, the text it was parsed from (healed or not) and the block
+    /// that contains the end of the text (see <see cref="TailBlock"/>; <c>null</c> for a final update).
+    /// </summary>
+    /// <param name="text">The text so far.</param>
+    /// <param name="pipeline">The pipeline to parse with.</param>
+    /// <param name="options">The syntaxes to heal, or <c>null</c> to heal nothing.</param>
+    /// <param name="final">Whether this is the session's last update, which is neither healed nor has a tail.</param>
+    /// <param name="hint">
+    /// The last update's tail, when it was a block that heals (see <see cref="Heals"/>), and the length of its text.
+    /// When the text since then only made its last line longer, that line is still the last line of the same tail:
+    /// the text is healed from the tail's start first and parsed once, and the result is kept when the tail of that
+    /// parse is a block that heals starting there. Otherwise, as on a new line or a block change, the text is parsed,
+    /// healed from the tail of that parse and, only when closers were added, parsed again.
+    /// </param>
+    internal static (MarkdownDocument Document, string ParsedText, Block? Tail) ParseStreamed(
+        string text, MarkdownPipeline pipeline, HealingOptions? options, bool final, TailHint? hint)
+    {
+        // Closers appended to a line can undo what made it start a block of its own: a list item or a quote
+        // line after a line break, a backtick fence ("```cs" + "```" is no fence), an HTML block. So the
+        // guess is only taken while the tail is still the single line it started on, starting with a
+        // character that keeps it in a paragraph or an ATX heading whatever follows on that line.
+        if (!final && options is { } hintOptions && hint is { } last && last.TextLength <= text.Length
+            && last.Start < last.TextLength && StartsSettledLine(text[last.Start])
+            && text.AsSpan(last.Start).IndexOfAny('\n', '\r') < 0)
+        {
+            var guessed = Heal(text, last.Start, hintOptions);
+            // With nothing to close, the usual path parses once too.
+            if (!ReferenceEquals(guessed, text))
+            {
+                var guessedDocument = Markdown.Parse(guessed, pipeline);
+                // A closer never moves the start of the tail, so a tail that still starts at the hint is the one the
+                // text parsed as it is has, and the text was healed from the right place.
+                if (TailBlock(guessedDocument, guessed) is { } guessedTail && Heals(guessedTail) && guessedTail.Span.Start == last.Start)
+                    return (guessedDocument, guessed, guessedTail);
+            }
+        }
+
+        var document = Markdown.Parse(text, pipeline);
+        // The tail is taken before the second parse: a closer never moves the tail's start.
+        var tail = final ? null : TailBlock(document, text);
+        if (Heals(tail) && options is { } tailOptions)
+        {
+            var healed = Heal(text, tail.Span.Start, tailOptions);
+            if (!ReferenceEquals(healed, text))
+                return (Markdown.Parse(healed, pipeline), healed, tail);
+        }
+        return (document, text, tail);
+    }
+
+    // A letter or a digit (a list marker needs a space after its digits, which would have moved the tail),
+    // an ATX heading's '#', or emphasis, which turns into a thematic break only on a delimiter-only line,
+    // which Heal leaves as it is.
+    private static bool StartsSettledLine(char c) => char.IsLetterOrDigit(c) || c is '#' or '*' or '_';
+
+    /// <summary>Whether <paramref name="tail"/>, the tail of a streamed text, is a block whose inline syntax is healed.</summary>
+    internal static bool Heals([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] Block? tail) =>
+        tail is ParagraphBlock or HeadingBlock { IsSetext: false };
 
     /// <summary>
     /// Returns the block that contains the end of <paramref name="text"/>: the deepest last descendant
