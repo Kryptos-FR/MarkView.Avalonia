@@ -268,6 +268,15 @@ blocks stay open until they end:
   for pages before the answer starts, so while it is the last block, its frame is kept and only its
   blocks that changed are rendered again, the same way as top-level blocks. It is rendered again
   whole once, when its closing tag arrives and its header changes.
+- A code block, fenced or indented, is kept the same way while it is the last block: laying out
+  a text block costs time in proportion to its whole text, so while the code block ends the text,
+  its lines are written in chunks of 32, each in a text block of its own, and an update writes
+  again only the chunks that changed, usually the last one. Highlighting goes on from the state
+  the chunk before ended in, line numbers go on across the chunks, and selecting or copying the
+  chunks gives the lines they hold. The block is written again as a single text block once it no
+  longer ends the text, or the session completes, so the finished document is the same as
+  without streaming. A code block inside a list or a quote, and one written by a custom renderer,
+  is rendered whole on each update.
 - Markdig reports some tables open after they end. The viewer does not rely on that flag for
   blocks before the last one, so a finished table is kept.
 - A link reference definition, a footnote or an abbreviation anywhere in the text can change how
@@ -279,8 +288,9 @@ the document and the machine, so read them as orders of magnitude:
 
 - Parsing the whole text takes about 1 to 3 ms for 20 KB.
 - On a chat-sized answer, an update takes roughly 0.5 ms at the median. On a README-sized
-  document it takes roughly 1 to 1.4 ms, rising to about 10 to 13 ms only at the end of its
-  longest code blocks, where the open block is the large one.
+  document it takes roughly 1 to 1.4 ms. Laying out what changed comes on top: in the
+  last quarter of a 9,500-character highlighted code block with line numbers, an update and its layout
+  take about 7 ms, against about 50 ms when the whole code block was rendered again.
 - An update allocates about 0.2 MB for a chat-sized answer and about 1 MB for a README, against
   roughly 10 to 18 MB to render the whole document again.
 - During a session the viewer holds the renderer, the last parsed document and text, and a record

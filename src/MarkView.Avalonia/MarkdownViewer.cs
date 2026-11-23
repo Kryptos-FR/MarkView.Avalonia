@@ -892,6 +892,12 @@ public partial class MarkdownViewer : ContentControl
                             ? MarkdownSelectableTextBlock.ExtractPlainText(codeTb.Inlines)
                             : codeTb.Text ?? string.Empty), ref marker);
                     break;
+                // A code block a streaming session is growing: a text block per chunk of lines (see GrowingCodeBlock).
+                case Border border when border.Classes.Contains("markdown-code-block")
+                    && CodeBlockToolbar.FindCodeChunks(border) is { } chunks:
+                    foreach (var chunk in chunks)
+                        Register(layer, CodeChunkEntry(chunk), ref marker);
+                    break;
                 case Panel listPanel when listPanel.Classes.Contains("markdown-list"):
                     RegisterListItems(layer, listPanel);
                     break;
@@ -932,6 +938,10 @@ public partial class MarkdownViewer : ContentControl
             RegisterBlocks(layer, contentPanel, ref marker);
         }
     }
+
+    /// <summary>The selection entry of a chunk of a code block a streaming session is growing (see GrowingCodeBlock).</summary>
+    internal static IndexEntry CodeChunkEntry(TextBlock chunk) =>
+        new(chunk, MarkdownSelectableTextBlock.ExtractPlainText(chunk.Inlines!));
 
     private static void Register(DocumentSelectionLayer layer, IndexEntry entry, ref TextBlock? marker)
     {

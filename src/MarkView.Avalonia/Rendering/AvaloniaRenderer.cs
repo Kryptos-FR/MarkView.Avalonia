@@ -405,6 +405,24 @@ public class AvaloniaRenderer : RendererBase
         TopLevelBlocks.TryGetValue(control, out var block) ? block : null;
 
     /// <summary>
+    /// Records <paramref name="block"/> as the top-level block <paramref name="control"/> was rendered for, for a
+    /// control a streaming session kept while its block grew (see <see cref="GrowingCodeBlock"/>).
+    /// </summary>
+    internal static void SetTopLevelBlock(Control control, Block block) => TopLevelBlocks.AddOrUpdate(control, block);
+
+    /// <summary>
+    /// The code block a streaming session wants written as a <see cref="GrowingCodeBlock"/>, the one that
+    /// ends the text so far, or <c>null</c>. Set by the session around writing that block only.
+    /// </summary>
+    internal CodeBlock? GrowingCodeTarget { get; set; }
+
+    /// <summary>
+    /// The <see cref="GrowingCodeBlock"/> written for <see cref="GrowingCodeTarget"/>, or <c>null</c> when the
+    /// renderer that wrote the block does not write growing code blocks. Taken by the session.
+    /// </summary>
+    internal GrowingCodeBlock? WrittenGrowingCode { get; set; }
+
+    /// <summary>
     /// When <c>true</c>, the classes Markdig attaches to an element (<c>{.name}</c> with Markdig's
     /// <c>UseGenericAttributes()</c>) are added to the <see cref="StyledElement.Classes"/> of the
     /// control or inline rendered for it, so they can be targeted by styles.

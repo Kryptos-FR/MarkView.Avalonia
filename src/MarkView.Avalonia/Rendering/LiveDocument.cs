@@ -89,6 +89,9 @@ internal sealed class LiveDocument
         // that control is kept, and only the children that changed are rendered again.
         var growing = keysUnchanged && reused == _records.Count - 1 ? GrowingTailFor(_records[reused], document, reused) : null;
         var childrenReused = growing is null ? 0 : ReusablePrefix(growing.Children, (ContainerBlock)document[reused]);
+        // Or the last block is a code block that still ends the text, whose kept chunks need no new layout (see GrowingCodeBlock).
+        var growingCode = keysUnchanged && reused == _records.Count - 1 ? GrowingCodeFor(_records[reused], document, reused) : null;
+        var keptChunks = growingCode?.KeptChunks((CodeBlock)document[reused]) ?? 0;
 
         // The state the kept blocks produced: the sum of their counts.
         var kept = Sum(_records, reused);
@@ -100,6 +103,13 @@ internal sealed class LiveDocument
             rootChildren += growing.Shell.Children;
             panelChildren = keptChildren.Children;
             kept += growing.Shell + keptChildren;
+        }
+        else if (growingCode is not null)
+        {
+            // The code block keeps its shell, and the selection entries of the chunks it keeps, one per chunk; those of
+            // the chunks written again are registered once it grew.
+            rootChildren += _records[reused].Counts.Children;
+            kept += _records[reused].Counts with { Entries = keptChunks };
         }
 
         var focusDiscarded = IsInDiscarded(focusedElement,
@@ -122,6 +132,31 @@ internal sealed class LiveDocument
             _records[reused] = TailRecord(container, growing);
             reused++;
         }
+        else if (growingCode is not null)
+        {
+            var block = (CodeBlock)document[reused];
+            var shellStart = rootChildren - _records[reused].Counts.Children;
+            for (var c = shellStart; c < rootChildren; c++)
+                AvaloniaRenderer.SetTopLevelBlock(RootPanel.Children[c], block);
+            // The kept entries now belong to the block as parsed this time (selection copied as Markdown groups the
+            // entries by block), and only the chunks written again get new ones.
+            var firstEntry = SelectionLayer.EntryCount - keptChunks;
+            for (var k = firstEntry; k < SelectionLayer.EntryCount; k++)
+                SelectionLayer.Entries[k].TopLevelBlock = block;
+            foreach (var chunk in growingCode.Grow())
+            {
+                var entry = MarkdownViewer.CodeChunkEntry(chunk);
+                entry.TopLevelBlock = block;
+                SelectionLayer.Register(entry);
+            }
+            _records[reused] = _records[reused] with
+            {
+                SpanEnd = block.Span.End,
+                WasOpen = block.IsOpen,
+                Counts = _records[reused].Counts with { Entries = SelectionLayer.EntryCount - firstEntry },
+            };
+            reused++;
+        }
         _records.RemoveRange(reused, _records.Count - reused);
 
         for (var i = reused; i < document.Count; i++)
@@ -130,7 +165,9 @@ internal sealed class LiveDocument
             // Only the last block can grow with appended text.
             _records.Add(i == document.Count - 1 && block is ContainerBlock container && GrowingRendererFor(container) is { } growingRenderer
                 ? WriteGrowing(container, growingRenderer)
-                : Write(block, RootPanel, Renderer.WriteTopLevel));
+                : i == document.Count - 1 && block is CodeBlock code && Renderer.IsProvisional(code)
+                    ? WriteGrowingCode(code)
+                    : Write(block, RootPanel, Renderer.WriteTopLevel));
         }
 
         // New blocks after a collapsed heading belong to its section, and a heading rendered again keeps the
@@ -140,7 +177,7 @@ internal sealed class LiveDocument
 
         Document = document;
         _invalidationKeys = keys;
-        return new UpdateResult(reused - (growing is null ? 0 : 1), removedHeadings > 0 || Renderer.HeadingCount != kept.Headings, focusDiscarded);
+        return new UpdateResult(reused - (growing is null && growingCode is null ? 0 : 1), removedHeadings > 0 || Renderer.HeadingCount != kept.Headings, focusDiscarded);
     }
 
     /// <summary>
@@ -174,6 +211,38 @@ internal sealed class LiveDocument
         var tail = new GrowingTail(growingRenderer, growingRenderer.ShellKey(Renderer, container), panel, shell.Counts, []);
         WriteChildren(container, tail, 0);
         return TailRecord(container, tail);
+    }
+
+    /// <summary>
+    /// Writes the last block of the document, a code block that ends the text so far, asking its renderer for a
+    /// <see cref="GrowingCodeBlock"/>; a renderer that does not write one writes the block as usual.
+    /// </summary>
+    private BlockRecord WriteGrowingCode(CodeBlock block)
+    {
+        Renderer.GrowingCodeTarget = block;
+        try
+        {
+            var record = Write(block, RootPanel, Renderer.WriteTopLevel);
+            return record with { Code = Renderer.WrittenGrowingCode };
+        }
+        finally
+        {
+            Renderer.GrowingCodeTarget = null;
+            Renderer.WrittenGrowingCode = null;
+        }
+    }
+
+    /// <summary>
+    /// The growing code block of <paramref name="record"/> when the block now at <paramref name="index"/>, the last one,
+    /// is the same code block, still ending the text: same type, start and language.
+    /// </summary>
+    private GrowingCodeBlock? GrowingCodeFor(BlockRecord record, MarkdownDocument document, int index)
+    {
+        if (record.Code is not { } code || index != document.Count - 1 || document[index] is not CodeBlock block)
+            return null;
+        if (record.BlockType != block.GetType() || record.SpanStart != block.Span.Start || !Renderer.IsProvisional(block))
+            return null;
+        return code.CanGrow(block) ? code : null;
     }
 
     private void WriteChildren(ContainerBlock container, GrowingTail tail, int start)
@@ -332,8 +401,10 @@ internal sealed class LiveDocument
     }
 
     /// <param name="Tail">For the last block, when it was written as a growing container: its shell and children.</param>
+    /// <param name="Code">For the last block, when it was written as a growing code block: that block.</param>
     private readonly record struct BlockRecord(
-        Type BlockType, int SpanStart, int SpanEnd, bool WasOpen, bool WasProvisional, Counts Counts, GrowingTail? Tail = null);
+        Type BlockType, int SpanStart, int SpanEnd, bool WasOpen, bool WasProvisional, Counts Counts, GrowingTail? Tail = null,
+        GrowingCodeBlock? Code = null);
 
     /// <summary>
     /// A growing container written as a shell and then child by child.
