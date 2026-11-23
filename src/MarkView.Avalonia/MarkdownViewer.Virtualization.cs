@@ -68,7 +68,7 @@ public partial class MarkdownViewer
         var live = deferred.Live;
         live.Extend(count);
         var renderer = live.Renderer;
-        _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);
+        _anchors = renderer.Anchors;
         if (live.PendingCount > 0)
             return;
 

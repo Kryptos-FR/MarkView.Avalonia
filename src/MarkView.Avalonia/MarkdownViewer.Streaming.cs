@@ -37,6 +37,8 @@ public partial class MarkdownViewer
     private LiveDocument? _liveDocument;
     // The syntaxes the active session heals, or null when it does not heal.
     private HealingOptions? _healing;
+    // Where the tail of the session's last update started, when it was a block that heals (see MarkdownHealer.ParseStreamed).
+    private TailHint? _tailHint;
     // Whether auto-scroll follows the end: true when a session begins, false while the user has
     // scrolled away from the bottom.
     private bool _followEnd;
@@ -100,6 +102,7 @@ public partial class MarkdownViewer
 
         _followEnd = true;
         _healing = healIncompleteSyntax ? MarkdownHealer.OptionsFor(EffectivePipeline) : null;
+        _tailHint = null;
         _streamingSession = new MarkdownStreamingSession(this, Markdown ?? "", interval);
         IsStreaming = true;
         return _streamingSession;
@@ -113,19 +116,9 @@ public partial class MarkdownViewer
     internal void ApplyStreamingUpdate(string text, bool final)
     {
         var markdownText = PreprocessImageSizes(text, EffectivePipeline, out _sourceShifts);
-        var document = Markdig.Markdown.Parse(markdownText, EffectivePipeline);
-        var parsedText = markdownText;
-        // The tail is taken before the second parse: a closer never moves the tail's start.
-        var tail = final ? null : MarkdownHealer.TailBlock(document, markdownText);
-        if (tail is ParagraphBlock or HeadingBlock { IsSetext: false } && _healing is { } options)
-        {
-            var healed = MarkdownHealer.Heal(markdownText, tail.Span.Start, options);
-            if (!ReferenceEquals(healed, markdownText))
-            {
-                document = Markdig.Markdown.Parse(healed, EffectivePipeline);
-                parsedText = healed;
-            }
-        }
+        var (document, parsedText, tail) = MarkdownHealer.ParseStreamed(markdownText, EffectivePipeline, _healing, final, _tailHint);
+        // The next update heals from there first, which usually saves it the parse of the text as it is.
+        _tailHint = MarkdownHealer.Heals(tail) ? new TailHint(tail.Span.Start, markdownText.Length) : null;
 
         SettleDeferredBlocks(_liveDocument);
         var install = _liveDocument is null;
@@ -139,7 +132,7 @@ public partial class MarkdownViewer
         renderer.ProvisionalStart = tail?.Span.Start ?? int.MaxValue;
         var result = live.Update(document, parsedText, focused);
 
-        _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);
+        _anchors = renderer.Anchors;
         if (install || result.HeadingsChanged)
         {
             _headingEntries = [.. renderer.HeadingEntries];
@@ -160,7 +153,8 @@ public partial class MarkdownViewer
         SetCurrentValue(MarkdownProperty, text);
 
         // Unlike a direct set, an update never resets the scroll position.
-        UpdateFind(CurrentFindMatchIndex);
+        // Matches in the entries the update kept are still where they were.
+        UpdateFind(CurrentFindMatchIndex, install ? 0 : result.KeptEntries);
         if (AutoScrollToEnd && _followEnd && _scrollViewer is not null)
             RequestScrollToEnd();
 

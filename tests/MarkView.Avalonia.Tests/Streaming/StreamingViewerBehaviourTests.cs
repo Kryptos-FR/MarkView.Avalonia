@@ -438,6 +438,44 @@ public class StreamingViewerBehaviourTests
         Assert.Equal(3, f.Layer.FindMatches.Count);
     }
 
+    [AvaloniaFact]
+    public void Find_keeps_the_matches_of_the_kept_blocks_and_searches_only_the_new_ones()
+    {
+        using var f = Show("");
+        var session = f.Viewer.BeginStreaming();
+        session.Append("x\n\nx");
+        session.ApplyPendingUpdate();
+        f.Viewer.Find("x");
+        var first = f.Layer.FindMatches[0];
+
+        session.Append("\n\nx x");
+        session.ApplyPendingUpdate();
+
+        // The first paragraph was kept, and so was its match; the tail and the new paragraph were searched.
+        Assert.Equal(4, f.Viewer.FindMatchCount);
+        Assert.Same(first.Entry, f.Layer.FindMatches[0].Entry);
+        Assert.Equal([0, 0, 0, 2], f.Layer.FindMatches.Select(match => match.Start));
+    }
+
+    [AvaloniaFact]
+    public void Anchor_of_a_heading_rendered_again_points_at_its_current_control()
+    {
+        using var f = Show("");
+        var session = f.Viewer.BeginStreaming();
+        session.Append("# Intro");
+        session.ApplyPendingUpdate();
+        var before = f.Viewer.AnchorControls["intro"];
+
+        session.Append(" text");
+        session.ApplyPendingUpdate();
+
+        // The heading ends the text, so the update rendered it again, under another id.
+        Assert.False(f.Viewer.AnchorControls.ContainsKey("intro"));
+        var heading = f.Viewer.AnchorControls["intro-text"];
+        Assert.NotSame(before, heading);
+        Assert.Contains(heading, Assert.IsType<Grid>(f.Viewer.Content).GetLogicalDescendants());
+    }
+
     // ── Task lists ────────────────────────────────────────────────────────────
 
     private static ToggleButton[] Toggles(MarkdownViewer viewer) =>

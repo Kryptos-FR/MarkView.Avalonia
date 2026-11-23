@@ -39,7 +39,8 @@ public partial class MarkdownViewer : ContentControl
 
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
 
-    private Dictionary<string, Control> _anchors = new(StringComparer.OrdinalIgnoreCase);
+    // The rendered document's anchors: its renderer's own, which a streaming or incremental update keeps up to date.
+    private IReadOnlyDictionary<string, Control> _anchors = new Dictionary<string, Control>(StringComparer.OrdinalIgnoreCase);
     private List<(int Level, string Text, string Slug)> _headingEntries = [];
     private DocumentSelectionLayer? _selectionLayer;
     private LinkFocusLayer? _linkFocusLayer;
@@ -649,7 +650,7 @@ public partial class MarkdownViewer : ContentControl
         {
             Content = null;
             CloseLightbox();
-            _anchors = new(StringComparer.OrdinalIgnoreCase);
+            _anchors = new Dictionary<string, Control>(StringComparer.OrdinalIgnoreCase);
             _headingEntries = [];
             RebuildTableOfContents();
             SetSelectionLayer(null);
@@ -691,7 +692,7 @@ public partial class MarkdownViewer : ContentControl
         }
         SetSelectionLayer(layer);
 
-        _anchors = new Dictionary<string, Control>(renderer.Anchors, StringComparer.OrdinalIgnoreCase);
+        _anchors = renderer.Anchors;
         _headingEntries = [.. renderer.HeadingEntries];
         RebuildTableOfContents();
 
@@ -1284,14 +1285,16 @@ public partial class MarkdownViewer : ContentControl
     /// Runs the active search on the rendered document and makes the match at <paramref name="currentIndex"/>
     /// current (the last match when there are fewer, none for -1).
     /// </summary>
-    private void UpdateFind(int currentIndex)
+    // fromEntry: the first selection entry to search, the matches before it being those of the last search (see
+    // DocumentSelectionLayer.Find).
+    private void UpdateFind(int currentIndex, int fromEntry = 0)
     {
         if (_findText is not null)
             BuildAllBlocks();
         var layer = _selectionLayer;
         if (_findText is null)
             layer?.ClearFind();
-        var count = _findText is null || layer is null ? 0 : layer.Find(_findText, _findOptions);
+        var count = _findText is null || layer is null ? 0 : layer.Find(_findText, _findOptions, fromEntry);
         FindMatchCount = count;
         SetCurrentFindMatch(Math.Min(currentIndex, count - 1));
     }
