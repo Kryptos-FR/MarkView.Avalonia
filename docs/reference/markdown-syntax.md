@@ -15,7 +15,7 @@ Always on, whatever the pipeline.
 | Headings, `#` and underlined | Each gets a GitHub-style anchor and is listed in `TableOfContents`; can [fold](../guides/folding.md) |
 | `**bold**`, `*italic*`, `` `code` `` | |
 | Links and `<https://…>` autolinks | Open with the platform's launcher, or raise [`LinkClicked`](../guides/displaying-documents.md#links) |
-| Images | Loaded in the background, [sized](../guides/images.md#sizing) to the viewer; `![alt](url =WxH)` caps the size |
+| Images | Loaded in the background, [sized](../guides/images.md#sizing) to the viewer; `![alt](url =WxH)` caps the size; an address ending with `#gh-dark-mode-only` or `#gh-light-mode-only` [shows in that theme only](../guides/images.md#images-for-light-and-dark-themes) |
 | Fenced and indented code blocks | Copy button, optional language, line numbers, wrapping; any language can render as [your own control](../guides/code-blocks.md#custom-fenced-blocks) |
 | Block quotes, ordered and unordered lists, thematic breaks | Tight and loose lists |
 | Hard line breaks | `\` or two spaces at the end of a line |
@@ -37,7 +37,7 @@ Enabled by `UseGitHubExtensions()`, the pipeline of a viewer without one.
 | CJK-friendly emphasis | Emphasis next to Chinese, Japanese and Korean punctuation |
 | YAML front matter | A `---` block at the top of the document, hidden |
 | [Details blocks](../guides/markdown.md#details-blocks) | HTML `<details>` and `<summary>`; also `UseHtmlDetails()` on its own |
-| [HTML subset](../guides/markdown.md#html-subset) | `<p align>` and `<div align>` headers, `<a><img></a>` badges, `<kbd>`, `<sub>`, `<sup>`, `<mark>`, `<b>`, `<code>`, `<hr>`…; nothing runs, only `<img>` sources are fetched. Also `UseHtmlSubset()` on its own |
+| [HTML subset](../guides/markdown.md#html-subset) | `<p align>` and `<div align>` headers, `<a><img></a>` badges, `<picture>` light/dark logos, `<kbd>`, `<sub>`, `<sup>`, `<mark>`, `<b>`, `<code>`, `<hr>`…; nothing runs, only `<img>` and `<picture>` sources are fetched. Also `UseHtmlSubset()` on its own |
 
 ## Opt-in syntax
 
