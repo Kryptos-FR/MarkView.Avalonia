@@ -3,7 +3,8 @@ name: Site
 # Builds the documentation site (docs/, with Lunet) and the browser demo, and deploys both to
 # GitHub Pages: the docs at the site root, the demo under /demo/. The site shows the latest
 # release rather than unreleased main, so it deploys:
-# - on each published release, from its tag;
+# - on each published release, from its tag, except pre-releases (a beta must not replace the
+#   stable release's docs and demo);
 # - on each push to a docs/<version> branch (e.g. docs/12.4, cut from the release tag), which
 #   takes documentation fixes cherry-picked from main between releases;
 # - on a manual run, from the branch or tag picked.
@@ -36,9 +37,12 @@ env:
 jobs:
   build:
     if: >
-      github.event_name != 'pull_request'
-      || !github.event.pull_request.draft
-      || contains(github.event.pull_request.labels.*.name, 'ci-run-on-draft')
+      (github.event_name == 'release' && !github.event.release.prerelease)
+      || github.event_name == 'push'
+      || github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'pull_request'
+          && (!github.event.pull_request.draft
+              || contains(github.event.pull_request.labels.*.name, 'ci-run-on-draft')))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
