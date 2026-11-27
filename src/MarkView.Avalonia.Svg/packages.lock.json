@@ -10,12 +10,12 @@
       },
       "SkiaSharp": {
         "type": "Direct",
-        "requested": "[4.156.2, )",
-        "resolved": "4.156.2",
-        "contentHash": "m74RYNTYLFoMVjgHz+YoGvBAvlO9Qt2lNPmOTZjOANgGBNrwIQzaNmtI10SmE4BKRP7YHznwy4LA6zNCj8dkuA==",
+        "requested": "[4.157.0, )",
+        "resolved": "4.157.0",
+        "contentHash": "C0PYSs8z0OGihExuIPaCEJnoEmDwiVRTFmDI2TZ44rWr2u7UiQX4rZyEwfVSHEiV5Zn/FYh1WbcO9uMPRxAsbw==",
         "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "4.156.2",
-          "SkiaSharp.NativeAssets.macOS": "4.156.2"
+          "SkiaSharp.NativeAssets.Win32": "4.157.0",
+          "SkiaSharp.NativeAssets.macOS": "4.157.0"
         }
       },
       "Svg.Controls.Skia.Avalonia": {
@@ -99,13 +99,13 @@
       },
       "SkiaSharp.NativeAssets.macOS": {
         "type": "Transitive",
-        "resolved": "4.156.2",
-        "contentHash": "T8go9CbN3wUqrr6TzGbt6XnzK1Pm6dDfnk0ZwAWtXFbvjuE+5nFfP8mzCqIMrjrzn24bU/5PyKkcvIZvuv77mw=="
+        "resolved": "4.157.0",
+        "contentHash": "s44YB0BMAEudDf/AdcJLCcN6AXxhpKto0ZnJjats1TwNC+SD4mI2FhotDft58M593Ocea1ra6ad5slfJBhxfvg=="
       },
       "SkiaSharp.NativeAssets.Win32": {
         "type": "Transitive",
-        "resolved": "4.156.2",
-        "contentHash": "iZ6cOZ1MqW+syjw2GuBIlWyyx6tyH3PgW63axxb3mt1zZTJeVIqpo5RpoDOh9swSE/nlxf7w/nUimBmYtQhUuA=="
+        "resolved": "4.157.0",
+        "contentHash": "tP54cTnPqGrzf2pBcyupMZWdIUjV34ELdKuh3/c329kRQF4UCVLZvilQZrDMqPJ9P/+AUJC8kDRMBgT/jBvYug=="
       },
       "Svg.Animation": {
         "type": "Transitive",
@@ -187,13 +187,13 @@
       },
       "SkiaSharp.NativeAssets.Linux": {
         "type": "CentralTransitive",
-        "requested": "[4.156.2, )",
+        "requested": "[4.157.0, )",
         "resolved": "4.148.0",
         "contentHash": "diba2vLeoKmWVkVTdXYOG14c7+s5FsH/AQZ5UPiFLRwLKgrCQNJPLKw8q60HzfOcJt+t/blv+1xkinqd5ZjX5A=="
       },
       "SkiaSharp.NativeAssets.WebAssembly": {
         "type": "CentralTransitive",
-        "requested": "[4.156.2, )",
+        "requested": "[4.157.0, )",
         "resolved": "3.119.3-preview.1.1",
         "contentHash": "Gzvr/fcJZODWNoLVBAIiM8NKudvZ9yL6WHb87fk7iadio9BWQR7GS0fUvWvE3kYaRAAutsjPdGAnkDR0ujlVDw=="
       }
